@@ -5,7 +5,7 @@ Pixel light sequences for a home's roofline, written as Python scripts, played b
 
 Each sequence computes every pixel, frame by frame, from the home's real 3D layout. There is no
 sequencing editor: sequences are code, written by hand or by agents. Halloween is first; Christmas,
-New Year's, the other holidays and just-for-fun pieces follow.
+New Year's and the other holidays follow; everything else goes in `other`.
 
 ## Layout
 
@@ -19,7 +19,7 @@ site/                            the static player (HTML, CSS, JS; no build step
 ```
 
 Occasion folders are listed in `pixelhome/occasions.py` (`halloween`, `christmas`, `new-years`,
-`valentines`, `st-patricks`, `easter`, `independence-day`, `thanksgiving`, `fun`).
+`valentines`, `st-patricks`, `easter`, `independence-day`, `thanksgiving`, `other`).
 
 ## Commands
 
