@@ -20,7 +20,7 @@ class Sequence:
     description: str
 
     def load(self):
-        name = f'pixelhome_seq.{self.home}.{self.occasion}.{self.id}'.replace('-', '_')
+        name = f'pixelhome_seq.{self.home}.{self.id}'.replace('-', '_').replace('/', '.')
         spec = importlib.util.spec_from_file_location(name, self.path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -35,18 +35,19 @@ def load_home(home_id):
     return Home(os.path.join(HOMES, home_id))
 
 
-def sequences(home_id):
-    """All sequences of a home, validated, sorted by occasion order then code."""
+def sequences(home_id, occasion=None):
+    """All sequences of a home (or of one occasion), validated, sorted by occasion order then code.
+    Only the requested occasion's modules are imported, so a broken file elsewhere doesn't get in the way."""
     out = []
     base = os.path.join(HOMES, home_id, 'sequences')
-    for path in sorted(glob.glob(os.path.join(base, '*', '*.py'))):
+    for path in sorted(glob.glob(os.path.join(base, occasion or '*', '*.py'))):
         stem = os.path.splitext(os.path.basename(path))[0]
         if stem.startswith('_'):
             continue
         occasion = os.path.basename(os.path.dirname(path))
         if occasion not in BY_ID:
             raise SystemExit(f'{path}: unknown occasion folder {occasion!r} (see pixelhome/occasions.py)')
-        s = Sequence(home_id, occasion, stem.replace('_', '-'), path, '', '', '', '')
+        s = Sequence(home_id, occasion, f"{occasion}/{stem.replace('_', '-')}", path, '', '', '', '')
         mod = s.load()
         missing = [k for k in ('CODE', 'TITLE', 'KIND', 'DESCRIPTION', 'render') if not hasattr(mod, k)]
         if missing:

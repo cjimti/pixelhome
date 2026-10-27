@@ -3,7 +3,8 @@
   python -m pixelhome list                      every home and sequence
   python -m pixelhome build [--out dist] [match ...]
                                                 render sequences, write the site to dist/
-  python -m pixelhome preview match [...]       MP4 preview + timeline PNG into build/preview/
+  python -m pixelhome preview [--occasion O] [--video] match [...]
+                                                timeline + stills PNGs (and MP4) into build/preview/
 
 `match` is a substring of a sequence id, code or title (case-insensitive).
 """
@@ -22,6 +23,8 @@ def main():
     b.add_argument('match', nargs='*')
     p = sub.add_parser('preview')
     p.add_argument('--out', default=os.path.join(catalog.ROOT, 'build', 'preview'))
+    p.add_argument('--occasion', help='only load this occasion folder')
+    p.add_argument('--video', action='store_true', help='also write an MP4 (needs ffmpeg)')
     p.add_argument('match', nargs='+')
     a = ap.parse_args()
     if a.cmd == 'list':
@@ -33,7 +36,7 @@ def main():
     elif a.cmd == 'build':
         build(os.path.abspath(a.out), a.match)
     else:
-        preview(a.match, a.out)
+        preview(a.match, a.out, a.occasion, a.video)
 
 
 if __name__ == '__main__':

@@ -108,10 +108,7 @@ input[type="search"] {
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px;
 }
 input[type="search"]::placeholder { color: var(--muted); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips button { border-radius: 999px; padding: 5px 11px; }
-.chips button[aria-pressed="true"] { border-color: var(--c, var(--accent)); color: var(--c, var(--accent)); }
-.chips .n { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: 4px; }
+#occasions { width: 100%; font-size: 14px; padding: 8px 10px; }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { flex: 1; border: 0; border-radius: 0; background: var(--panel); }
 .seg button + button { border-left: 1px solid var(--line); }
