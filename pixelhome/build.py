@@ -34,6 +34,8 @@ def _build_one(args):
     frames = render(s)
     data = to_bytes_dithered(frames) if s.kind == 'ambient' else to_bytes(frames)
     step = int(round(DT * 1000))
+    for sub in ('fseq', 'data'):
+        os.makedirs(os.path.join(out, sub, s.home, s.occasion), exist_ok=True)
     fseq.write(os.path.join(out, 'fseq', s.home, s.id + '.fseq'), data, step)
     every = 2 if len(data) * DT > WEB_MAX_SECONDS else 1
     web = data[::every]
@@ -103,11 +105,32 @@ def _splat(home):
     return np.concatenate(idx), np.concatenate(wts), np.concatenate(node)
 
 
-def preview(want, out):
+def stills(home, frames, path, gain, n=12):
+    """n evenly spaced frames of the top-down splat in a grid, each labelled with its time.
+    Top-down: x across, the street at the bottom; the porch is the notch set back in the middle."""
+    from PIL import ImageDraw
+    idx, wts, node = _splat(home)
+    outline = np.zeros(H * W)
+    np.add.at(outline, idx, wts * 0.01)
+    cols, sw, sh = 3, W // 2, H // 2
+    sheet = Image.new('RGB', (cols * sw, -(-n // cols) * sh))
+    for j, f in enumerate(np.linspace(0, len(frames) - 1, n).astype(int)):
+        img = np.empty((H * W, 3))
+        for c in range(3):
+            img[:, c] = gain * np.bincount(idx, weights=wts * frames[f][node, c], minlength=H * W) + outline
+        tile = Image.fromarray((np.clip(img, 0, 1) ** (1 / 2.2) * 255).astype(np.uint8).reshape(H, W, 3)).resize((sw, sh))
+        ImageDraw.Draw(tile).text((8, 6), f'{f * DT:.1f}s', fill=(160, 150, 140))
+        sheet.paste(tile, ((j % cols) * sw, (j // cols) * sh))
+    sheet.save(path)
+
+
+def preview(want, out, occasion=None, video=False):
+    """Per matching sequence: timeline PNG (time down at 10 rows/s, roofline path across), stills PNG,
+    optional MP4, and a line of numbers."""
     os.makedirs(out, exist_ok=True)
     for h in catalog.homes():
         home = catalog.load_home(h)
-        for s in catalog.sequences(h):
+        for s in catalog.sequences(h, occasion):
             if not _matches(s, want):
                 continue
             frames = render(s)
@@ -116,22 +139,26 @@ def preview(want, out):
             rows = np.clip(frames[::4][:, home.path] * gain, 0, 1) ** (1 / 2.2)     # 10 rows/s, path order
             img = (rows * 255).astype(np.uint8)
             Image.fromarray(img).resize((img.shape[1] * 2, img.shape[0] * 2), Image.NEAREST).save(name + ' timeline.png')
-            idx, wts, node = _splat(home)
-            outline = np.zeros(H * W)
-            np.add.at(outline, idx, wts * 0.01)
-            every = 2
-            ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
-                                   '-s', f'{W}x{H}', '-r', str(int(round(1 / DT / every))), '-i', '-',
-                                   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', name + ' preview.mp4'],
-                                  stdin=subprocess.PIPE)
-            for fr in frames[::every]:
-                img = np.empty((H * W, 3))
-                for c in range(3):
-                    img[:, c] = gain * np.bincount(idx, weights=wts * fr[node, c], minlength=H * W) + outline
-                ff.stdin.write((np.clip(img, 0, 1) ** (1 / 2.2) * 255).astype(np.uint8).tobytes())
-            ff.stdin.close()
-            ff.wait()
+            stills(home, frames, name + ' stills.png', gain)
+            if video:
+                idx, wts, node = _splat(home)
+                outline = np.zeros(H * W)
+                np.add.at(outline, idx, wts * 0.01)
+                every = 2
+                ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
+                                       '-s', f'{W}x{H}', '-r', str(int(round(1 / DT / every))), '-i', '-',
+                                       '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', name + ' preview.mp4'],
+                                      stdin=subprocess.PIPE)
+                for fr in frames[::every]:
+                    img = np.empty((H * W, 3))
+                    for c in range(3):
+                        img[:, c] = gain * np.bincount(idx, weights=wts * fr[node, c], minlength=H * W) + outline
+                    ff.stdin.write((np.clip(img, 0, 1) ** (1 / 2.2) * 255).astype(np.uint8).tobytes())
+                ff.stdin.close()
+                ff.wait()
             p = np.clip(frames, 0, 1) ** (1 / 2.2)
             step = np.abs(np.diff(np.concatenate([p, p[:1]]), axis=0))
-            print(f'{name}: {len(frames) * DT:.0f}s  peak {p.max():.2f}  max pixel step {step.max():.3f}  '
-                  f'max whole-house step {step.mean(axis=(1, 2)).max():.4f}')
+            lit = (p.max(axis=2) > 0.02).mean()
+            print(f'{name}: {len(frames) * DT:.0f}s  peak {p.max():.2f}  mean {p.mean():.3f}  lit {lit:.0%}  '
+                  f'max pixel step {step.max():.3f}  max whole-house step {step.mean(axis=(1, 2)).max():.4f}  '
+                  f'loop seam {np.abs(p[0] - p[-1]).max():.3f}')

@@ -6,10 +6,13 @@ never commit `dist/`, `build/`, FSEQ or PNG output.
 ## Sequence contract
 
 - File: `homes/<home>/sequences/<occasion>/<name>.py`. The folder is the occasion and must be an id
-  in `pixelhome/occasions.py`. The id on the site is the file name with `_` changed to `-`.
-- Module constants: `CODE` (unique per home, e.g. `HW6`, `XM1`, `NY1`, `FN1`), `TITLE`,
+  in `pixelhome/occasions.py`. The id on the site is `<occasion>/<name>` with `_` changed to `-`.
+- Module constants: `CODE` (unique per home: the occasion's `prefix` from `occasions.py` plus two
+  digits, e.g. `XM01`..`XM10`; Halloween's originals are `SC1`.. and `NT1`..), `TITLE`,
   `KIND` (`'show'` or `'ambient'`), `DESCRIPTION` (one or two sentences for the card).
-- `render(G, seed=N) -> ndarray (F, G.N, 3)`, float PWM 0..1, node (channel) order. 1 s to 15 min.
+- `render(G, seed=N) -> ndarray (F, G.N, 3)`, float PWM 0..1, node (channel) order.
+- Length: shows 40-90 s, ambient loops 120-180 s (`looped()`). Every frame ships to the site and
+  to FPP, so length is size. Render time should stay under ~15 s; vectorize over pixels with numpy.
 - Module docstring: `"""Title: what happens, for someone reading the code."""`
 - Files starting with `_` are ignored by discovery. A sequence imports only from `pixelhome` and
   the standard library/numpy; keep each one self-contained.
@@ -38,14 +41,20 @@ loops, `candle_bed`.
 - `ambient` pieces play all night: peaks around 0.4 perceptual, never fully dark, nothing fast or
   strobing. They are dithered on output. Use `looped()` so the end flows into the start.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
-- Pieces are specific to a home's segment names. Check `homes/<home>/home.json` before using one.
+- Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
+  path indices, spacing, what reads from the street) before designing for a home.
 
 ## Checking work
 
 ```sh
+uv run python -m pixelhome preview --occasion <occasion> --out build/preview/<occasion> <CODE>
 uv run python -m pixelhome list
-uv run python -m pixelhome build <match>        # validates shape, NaN, duration
-uv run python -m pixelhome preview <match>      # prints peak / max step; writes MP4 + timeline PNG
+make verify                                     # full build, required before committing
 ```
 
-Look at the timeline PNG (time down, path along) to judge a piece without playing it.
+`preview` validates the render and writes two images to look at with an image viewer:
+`... timeline.png` (time down at 10 rows/s, the roofline path left to right: Side, Left, Porch
+Left, Porch Front, Porch Right, Right) and `... stills.png` (12 moments of the house from above,
+street at the bottom). It prints peak, mean, how much of the house is lit, the largest frame-to-
+frame jumps, and the loop seam (should be ~0 for ambient loops). `--video` adds an MP4. Plain
+`build` wipes `dist/`; don't run it while others are working in the same checkout.

@@ -12,6 +12,13 @@
     return;
   }
   const occasion = Object.fromEntries(CAT.occasions.map((o) => [o.id, o]));
+  // Start the list at the next holiday (a holiday stays first through the day after it); undated ones last.
+  {
+    const d = new Date(Date.now() - 864e5);
+    const today = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const key = (o) => !o.date ? '2' : (o.date >= today ? '0' : '1') + o.date;
+    CAT.occasions.sort((a, b) => key(a).localeCompare(key(b)));
+  }
   $('built').textContent = 'Built ' + new Date(CAT.built).toLocaleDateString(undefined, { dateStyle: 'medium' });
 
   // ---------- scene ----------
@@ -267,21 +274,12 @@
   function renderLibrary() {
     const home = H.home;
     cards.clear();
-    const chips = $('occasions');
-    chips.replaceChildren();
+    const sel = $('occasions');
+    sel.replaceChildren();
     const counts = {};
     home.sequences.forEach((s) => { counts[s.occasion] = (counts[s.occasion] || 0) + 1; });
-    const chip = (id, label, n, color) => {
-      const b = el('button', null, label);
-      b.dataset.occasion = id;
-      if (color) b.style.setProperty('--c', color);
-      b.append(el('span', 'n', String(n)));
-      b.setAttribute('aria-pressed', String(filters.occasion === id));
-      b.addEventListener('click', () => { filters.occasion = id; applyFilters(); });
-      chips.append(b);
-    };
-    chip('', 'All', home.sequences.length);
-    CAT.occasions.filter((o) => counts[o.id]).forEach((o) => chip(o.id, o.label, counts[o.id], o.accent));
+    sel.append(new Option(`All occasions (${home.sequences.length})`, ''));
+    CAT.occasions.filter((o) => counts[o.id]).forEach((o) => sel.append(new Option(`${o.label} (${counts[o.id]})`, o.id)));
 
     const groups = $('groups');
     groups.replaceChildren();
@@ -313,7 +311,7 @@
   function applyFilters() {
     const q = filters.q.trim().toLowerCase();
     let shown = 0;
-    document.querySelectorAll('#occasions button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.occasion === filters.occasion)));
+    $('occasions').value = filters.occasion;
     document.querySelectorAll('#kinds button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === filters.kind)));
     document.querySelectorAll('.group').forEach((g) => {
       let n = 0;
@@ -332,6 +330,7 @@
     $('empty').hidden = shown > 0;
   }
   document.querySelectorAll('#kinds button').forEach((b) => b.addEventListener('click', () => { filters.kind = b.dataset.kind; applyFilters(); }));
+  $('occasions').addEventListener('change', (e) => { filters.occasion = e.target.value; applyFilters(); });
   $('search').addEventListener('input', (e) => { filters.q = e.target.value; applyFilters(); });
 
   // ---------- choosing / playing ----------
@@ -517,7 +516,10 @@
     if (!list.length) { status.textContent = 'This home has no sequences yet.'; return; }
     const pick = list.find((s) => s.id === seqId);
     if (pick) choose(pick);
-    else choose(list[0], list[0].seconds * 0.3);
+    else {
+      const first = CAT.occasions.map((o) => list.find((s) => s.occasion === o.id)).find(Boolean) || list[0];
+      choose(first, first.seconds * 0.3);
+    }
   }
 
   const sel = $('homeSelect');
@@ -526,8 +528,8 @@
   sel.addEventListener('change', () => openHome(CAT.homes.find((h) => h.id === sel.value)));
 
   function fromHash() {
-    const [hid, sid] = decodeURIComponent(location.hash.slice(1)).split('/');
-    return { home: CAT.homes.find((h) => h.id === hid), seqId: sid };
+    const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/occasion/name
+    return { home: CAT.homes.find((h) => h.id === hid), seqId: rest.join('/') };
   }
   window.addEventListener('hashchange', () => {
     const { home, seqId } = fromHash();
