@@ -248,11 +248,15 @@ def whoosh(seconds, f0=300.0, f1=3000.0, amp=0.25, seed=0):
 
 
 class Mix:
-    """Buses summed through a shared reverb send and a gentle master (compressor, limiter)."""
+    """Buses summed through a shared reverb send and a gentle master (compressor, limiter). With loop=True (all-night
+    ambient pieces) the mix is a seamless loop: whatever rings past the end, reverb included, wraps round onto the
+    start, and there are no fades."""
+    TAIL = 10                       # seconds rendered past the end of a loop, then wrapped onto its start
 
-    def __init__(self, seconds, seed=1, plan=None):
+    def __init__(self, seconds, seed=1, plan=None, loop=False):
         self.seconds = seconds
-        self.n = int(seconds * SR) + SR
+        self.loop = loop
+        self.n = int(seconds * SR) + (self.TAIL if loop else 1) * SR
         self.rng = np.random.default_rng(seed)
         self.buses = {}
         self.plan = plan            # octaves to drop each instrument, by creation order; None on the probe pass
@@ -309,17 +313,23 @@ class Mix:
                                                                dry_level=0.0, width=1.0)])
         wet = verb(send.astype(np.float32), SR)
         out = dry + wet
-        out = out[:, :int(self.seconds * SR)]
+        N = int(self.seconds * SR)
+        master = pb.Pedalboard([pb.HighpassFilter(30), pb.Compressor(threshold_db=-18, ratio=2.0, attack_ms=10,
+                                                                     release_ms=180),
+                                pb.Gain(2.5), pb.Limiter(threshold_db=-2.0, release_ms=120),
+                                pb.Gain(-1.0)])   # JUCE's limiter brings its threshold up to 0 dBFS
+        if self.loop:
+            out, tail = out[:, :N].copy(), out[:, N:]
+            out[:, :tail.shape[1]] += tail
+            # run the master over two passes and keep the second, so its compressor starts the loop where it ends
+            return master(np.concatenate([out, out], axis=1).astype(np.float32), SR)[:, N:]
+        out = out[:, :N]
         t = np.arange(out.shape[1]) / SR
         env = np.ones_like(t)
         if fade_in:
             env *= np.clip(t / fade_in, 0, 1)
         env *= np.clip((self.seconds - t) / fade_out, 0, 1)
         out *= env
-        master = pb.Pedalboard([pb.HighpassFilter(30), pb.Compressor(threshold_db=-18, ratio=2.0, attack_ms=10,
-                                                                     release_ms=180),
-                                pb.Gain(2.5), pb.Limiter(threshold_db=-2.0, release_ms=120),
-                                pb.Gain(-1.0)])   # JUCE's limiter brings its threshold up to 0 dBFS
         return master(out.astype(np.float32), SR)
 
     def write(self, path, audio=None):
@@ -361,9 +371,10 @@ def music(want, occasion=None, video=False, out=None):
                 continue
             t = time.time()
             seconds = len(mod.render(home)) / 40 if not hasattr(mod, 'D') else float(mod.D)
-            probe = Mix(seconds)
+            loop = getattr(mod, 'KIND', 'show') == 'ambient'
+            probe = Mix(seconds, loop=loop)
             mod.score(probe, home)
-            M = Mix(seconds, plan=probe.planned())
+            M = Mix(seconds, plan=probe.planned(), loop=loop)
             mod.score(M, home)
             moved = [f'{v.name} -{v.shift * 12}' for v in M.voices if v.shift]
             path = audio_path(s)

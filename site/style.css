@@ -310,3 +310,25 @@ body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px,
   .lanes { grid-template-columns: 1fr 1fr; }
   .legend { grid-template-columns: 1fr 1fr; }
 }
+.licenses { display: grid; gap: 14px; margin-top: 18px; }
+.lic { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.lic h3 { font-size: 20px; margin: 10px 0 6px; }
+.lic p { margin: 0; font-size: 14px; color: var(--muted); max-width: 60ch; }
+.lic p a { color: var(--accent); }
+.licbadge { display: flex; gap: 4px; }
+.licbadge span {
+  display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 999px;
+  border: 2px solid var(--ink); color: var(--ink); font: 700 13px var(--body); text-transform: uppercase;
+}
+.licbadge.mit span { border-radius: 7px; }
+.oss { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.oss li { display: grid; gap: 2px; padding: 10px 2px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.oss li span { font-weight: 400; font-size: 13px; color: var(--muted); }
+@media (min-width: 760px) {
+  .licenses { grid-template-columns: 1fr 1fr; }
+  .oss { grid-template-columns: 1fr 1fr; column-gap: 28px; }
+  .oss li { grid-template-columns: minmax(0, 15em) 1fr; align-items: baseline; gap: 12px; }
+}
+.oss li b { font-weight: 600; }
+.oss li a { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent); text-underline-offset: 3px; }
+.oss li a:hover { color: var(--accent); }

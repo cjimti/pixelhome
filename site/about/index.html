@@ -83,12 +83,14 @@
     <p>Each sequence is one Python file with two functions that share the same timings. <code>render()</code> computes
       the lights and <code>score()</code> writes the music, so every hit lands on its flash and is panned to where it
       happens on the house.</p>
+    <p>The house itself comes from two exceptional open-source projects: I laid out the pixels in <a href="https://xlights.org/">xLights</a>, and modeled the
+      house in <a href="https://www.blender.org/">Blender</a>. Pixelhome imports both, so every sequence knows where each pixel sits in 3D.</p>
 
     <figure class="diagram" aria-labelledby="d2">
       <figcaption id="d2">From an idea to the roofline</figcaption>
       <ol class="pipe">
         <li class="stage1"><b>The house as data</b><span>home.json: 501 pixels, their 3D positions and six runs,
-          imported from my xLights layout and Blender model.</span></li>
+          imported from my <a href="https://xlights.org/">xLights</a> layout and <a href="https://www.blender.org/">Blender</a> model.</span></li>
         <li class="stage1"><b>A story</b><span>"A ghost train stops at the porch station." AI writes one Python file in
           numpy against that layout.</span></li>
       </ol>
@@ -120,13 +122,47 @@
     </figure>
   </section>
 
-  <section>
+  <section id="license">
     <h2>Open source</h2>
     <p>This site and everything behind it is open source <a href="https://github.com/cjimti/pixelhome">on GitHub</a>.
-      The code is MIT licensed, and the sequences and music are
-      <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0</a>.</p>
-    <p>Everything is tailored to my pixel runs and roofline. In the future I may make it easy to adjust the segments to
+      Everything is tailored to my pixel runs and roofline. In the future I may make it easy to adjust the segments to
       fit other people's setups, and I plan on adding a lot more pixels.</p>
+    <div class="licenses">
+      <div class="lic">
+        <p class="licbadge"><span>cc</span><span>by</span><span>sa</span></p>
+        <h3>Sequences and music</h3>
+        <p>Every light sequence (FSEQ and the Python that makes it) and every soundtrack is licensed under
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0</a>.
+          Use them on your own house, remix them, even commercially: credit Craig Johnston / pixelhome.app and share
+          what you make under the same license.</p>
+      </div>
+      <div class="lic">
+        <p class="licbadge mit"><span>MIT</span></p>
+        <h3>Code</h3>
+        <p>The pixelhome engine, the site and the scripts are under the
+          <a href="https://github.com/cjimti/pixelhome/blob/main/LICENSE">MIT License</a>. Do what you like with it;
+          keep the copyright notice.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Built with open source</h2>
+    <p>None of this exists without these projects and the people who give their time to them.</p>
+    <ul class="oss">
+      <li><b><a href="https://xlights.org/">xLights</a></b><span>Pixel layout and the home's channel map</span></li>
+      <li><b><a href="https://www.blender.org/">Blender</a></b><span>The 3D model of the house</span></li>
+      <li><b><a href="https://github.com/FalconChristmas/fpp">Falcon Player (FPP)</a></b><span>Plays the sequences and music on the Raspberry Pi</span></li>
+      <li><b><a href="https://surge-synthesizer.github.io/">Surge XT</a></b><span>Synthesizer for pads, leads, bells and basses</span></li>
+      <li><b><a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a></b><span>Orchestral and percussion samples</span></li>
+      <li><b><a href="https://github.com/spotify/pedalboard">pedalboard</a></b><span>Reverb, compression and limiting for the mix</span></li>
+      <li><b><a href="https://ffmpeg.org/">FFmpeg</a></b><span>MP3 encoding and preview videos</span></li>
+      <li><b><a href="https://www.python.org/">Python</a> and <a href="https://numpy.org/">NumPy</a></b><span>Every frame and every note</span></li>
+      <li><b><a href="https://python-pillow.org/">Pillow</a> and <a href="https://github.com/facebook/zstd">Zstandard</a></b><span>Preview images and FSEQ compression</span></li>
+      <li><b><a href="https://threejs.org/">three.js</a></b><span>The 3D preview on this site</span></li>
+      <li><b><a href="https://github.com/astral-sh/uv">uv</a></b><span>Python environments and locked dependencies</span></li>
+      <li><b><a href="https://fonts.google.com/specimen/Big+Shoulders+Display">Big Shoulders</a>, <a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a>, <a href="https://www.jetbrains.com/lp/mono/">JetBrains Mono</a></b><span>Open Font License typefaces</span></li>
+    </ul>
   </section>
 
   <section>
@@ -191,7 +227,8 @@
   </section>
 
   <footer>
-    <p><a href="../">Back to the sequences</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a></p>
+    <p><a href="../">Back to the sequences</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> ·
+      Sequences and music <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · Code MIT</p>
   </footer>
 </main>
 </body>

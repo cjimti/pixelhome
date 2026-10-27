@@ -45,15 +45,17 @@ loops, `candle_bed`.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.
 
-## Music (optional, shows)
+## Music (optional)
 
-A show may define `score(M, G)` that writes its soundtrack into the mix `M` (`pixelhome/audio.py`): Surge XT
+A show or an ambient loop may define `score(M, G)` that writes its soundtrack into the mix `M` (`pixelhome/audio.py`): Surge XT
 patches, VSCO2 CE samples, slide whistles, whooshes. Take every hit from the same timings render() uses,
 pan sounds to where they happen on the house, and compose something original (no existing songs).
 `homes/cjimti/sequences/halloween/bone_yard.py` is the reference. One-time setup: `scripts/audio-setup.sh`.
 Shows play outdoors to the street, so keep melodies in the middle register. Most VSCO2 sets are labelled an
 octave low (`tune=-12` plays them as written), and the engine lowers parts that sit high and folds any note
 above E6 (C7 for bells and mallets); `music` prints what it lowered.
+Ambient pieces render as seamless loops (whatever rings past the end wraps onto the start, no fades) and play
+all night, also over an FM transmitter: keep them soft (rms around -22 dBFS), with no beat and nothing startling.
 Render: `uv run --group audio python -m pixelhome music [--video] <CODE>` (writes the MP3, and with
 `--video` a preview MP4 with sound). If a show's timing changes, re-render its music. Never auto-play
 audio on the machine you are working on.
