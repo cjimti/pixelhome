@@ -351,8 +351,12 @@
     if (meta.fseq) {
       dl.href = meta.fseq;
       dl.download = meta.fseqName;
-      dl.textContent = `Download .fseq · ${(meta.fseqBytes / 1e6).toFixed(1)} MB`;
+      dl.innerHTML = `<span class="dlword">Download </span>.fseq · ${(meta.fseqBytes / 1e6).toFixed(1)} MB`;
     }
+    const da = $('downloadAudio');
+    da.hidden = !meta.audio;
+    if (meta.audio) { da.href = meta.audio; da.download = meta.audioName; }
+    $('sound').hidden = !meta.audio;
     setAccent(meta.occasion);
     document.title = `${meta.title} · Pixelhome`;
   }
@@ -371,6 +375,12 @@
       exposure.value = meta.kind === 'ambient' ? 4 : 1;
       exposure.dispatchEvent(new Event('input'));
       t = startAt;
+      if (meta.audio) {
+        if (music.getAttribute('src') !== meta.audio) music.src = meta.audio;
+      } else {
+        music.pause();
+        music.removeAttribute('src');
+      }
       status.hidden = true;
       setPlaying(autoplay && !reduceMotion);
     } catch (e) {
@@ -382,11 +392,47 @@
     playing = p && !!seq;
     $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
     $('playIcon').innerHTML = playing ? '<path d="M6 4.5h4.5v15H6zM13.5 4.5H18v15h-4.5z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
+    syncMusic();
   }
   $('play').addEventListener('click', () => setPlaying(!playing));
+
+  // ---------- music: when a show has a soundtrack and sound is on, the audio clock drives the lights ----------
+  const music = new Audio();
+  music.preload = 'auto';
+  music.loop = true;
+  let soundOn = false;
+  try { soundOn = localStorage.getItem('pixelhome.sound') === '1'; } catch (e) { /* storage blocked */ }
+  const hasMusic = () => !!(seq && seq.meta.audio && music.getAttribute('src'));
+  function showSound() {
+    const b = $('sound');
+    b.setAttribute('aria-pressed', String(soundOn));
+    b.textContent = soundOn ? 'Sound on' : 'Sound off';
+  }
+  function syncMusic() {
+    if (playing && soundOn && hasMusic()) {
+      if (music.paused) {
+        music.currentTime = t;
+        music.play().catch(() => { soundOn = false; showSound(); });   // autoplay blocked until the visitor taps
+      }
+    } else if (!music.paused) {
+      music.pause();
+    }
+  }
+  function seek(nt) {
+    t = nt;
+    if (!music.paused) music.currentTime = nt;
+  }
+  $('sound').addEventListener('click', () => {
+    soundOn = !soundOn;
+    try { localStorage.setItem('pixelhome.sound', soundOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
+    showSound();
+    if (soundOn && !playing) setPlaying(true); else syncMusic();
+  });
+  showSound();
   document.addEventListener('keydown', (e) => {
     if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
     if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+    if (e.code === 'KeyM' && seq && seq.meta.audio) $('sound').click();
     if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
       const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
       if (!rows.length) return;
@@ -397,12 +443,12 @@
     }
     if (seq && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
       const dur = seq.frames / seq.fps;
-      t = (t + (e.code === 'ArrowLeft' ? -5 : 5) + dur) % dur;
+      seek((t + (e.code === 'ArrowLeft' ? -5 : 5) + dur) % dur);
     }
   });
 
   const scrub = $('scrub');
-  scrub.addEventListener('input', () => { if (seq) t = scrub.value * seq.frames / seq.fps; scrubbing = true; });
+  scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
   scrub.addEventListener('change', () => { scrubbing = false; });
   exposure.addEventListener('input', () => { $('expOut').textContent = (+exposure.value).toFixed(1) + '×'; });
 
@@ -479,7 +525,10 @@
     if (!H) return;
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
-    if (playing && seq) t = (t + dt) % (seq.frames / seq.fps);
+    if (playing && seq) {
+      if (!music.paused && hasMusic()) t = Math.min(music.currentTime, seq.frames / seq.fps);
+      else t = (t + dt) % (seq.frames / seq.fps);
+    }
     if (goal) {
       const k = 1 - Math.exp(-dt * 4);
       for (const key of ['az', 'el', 'dist']) cam[key] += (goal[key] - cam[key]) * k;

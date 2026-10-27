@@ -108,8 +108,7 @@ class Sampler:
 
 
 class Hits:
-    """Unpitched one-shots chosen at random from a glob; louder velocities pick the later (louder) files
-    when the names sort that way."""
+    """Unpitched one-shots chosen at random from a glob (use separate globs for separate dynamics)."""
 
     def __init__(self, pattern, rng, gain=1.0):
         self.files = sorted(glob.glob(os.path.join(VSCO, pattern)))
