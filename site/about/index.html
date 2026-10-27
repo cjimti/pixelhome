@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About · Pixelhome</title>
+<meta name="description" content="Why and how Pixelhome is made: AI writes Python scripts that compute every pixel and every note, open-source tools render them, and FPP plays them on a 12V pixel roofline.">
+<meta name="theme-color" content="#0b0a09">
+<meta property="og:title" content="About Pixelhome">
+<meta property="og:url" content="https://pixelhome.app/about/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="page">
+<header class="top">
+  <a class="brand" href="../" aria-label="Pixelhome home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><use href="../favicon.svg#mark"/></svg>
+    <span>Pixel<b>home</b></span>
+  </a>
+  <nav class="nav"><a href="../">Sequences</a><a href="./" aria-current="page">About</a></nav>
+</header>
+
+<main class="doc">
+  <section class="intro">
+    <p class="kicker">About</p>
+    <h1>Scripts, not black boxes</h1>
+    <p class="lede">I'm Craig Johnston. Pixelhome is the light show on my house's roofline. Every frame of light and every
+      note of music on this site is computed by a Python script that AI and I wrote together.</p>
+    <ul class="links">
+      <li><a href="https://github.com/cjimti/">GitHub</a></li>
+      <li><a href="https://imti.co">imti.co</a></li>
+      <li><a href="https://deasil.works">Deasil Works</a></li>
+      <li><a href="https://plexara.io">Plexara</a></li>
+      <li><a href="https://diffusionlab.io/">Diffusion Lab</a></li>
+      <li><a href="https://fewbottles.com">Few Bottles</a></li>
+      <li><a href="https://www.linkedin.com/in/cjimti/">LinkedIn</a></li>
+      <li><a href="https://x.com/cjimti">X</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Why</h2>
+    <p>I've been a software developer for over 30 years, and I've fully embraced AI. But generative AI is often all or
+      nothing: change one parameter, wait for a black box, and get back a whole new finished result. As of 2026 I only
+      have one string of pixels around my house, and I wanted to get the most out of it.</p>
+    <p>So rather than asking AI to generate light sequences, I have it write configurable Python scripts that compute
+      them. The music works the same way: Python writes each score note by note and plays it through great open-source
+      instruments like the <a href="https://surge-synthesizer.github.io/">Surge XT</a> free and open-source hybrid
+      synthesizer and the <a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a>
+      orchestral samples. When something's off, I change a number, not a prompt.</p>
+
+    <figure class="diagram" aria-labelledby="d1">
+      <figcaption id="d1">Two ways to make a light show</figcaption>
+      <div class="ways">
+        <div class="way dim">
+          <p class="wayname">All or nothing</p>
+          <div class="flow">
+            <span class="node">Prompt</span><span class="arrow" aria-hidden="true"></span>
+            <span class="node box">Black box</span><span class="arrow" aria-hidden="true"></span>
+            <span class="node">Finished show</span>
+          </div>
+          <p class="note">Want the bats a little slower? Rewrite the prompt, wait, and get a different show.</p>
+        </div>
+        <div class="way">
+          <p class="wayname">Pixelhome</p>
+          <div class="flow">
+            <span class="node">Idea</span><span class="arrow" aria-hidden="true"></span>
+            <span class="node">AI writes Python</span><span class="arrow" aria-hidden="true"></span>
+            <span class="node code">BEAT = 0.5<br>GLOW = '#40ff70'<br>bats = 12</span><span class="arrow" aria-hidden="true"></span>
+            <span class="node">Rendered in ~1 s</span>
+          </div>
+          <p class="note loop">Change one number and re-render. Everything else stays exactly as it was.</p>
+        </div>
+      </div>
+    </figure>
+  </section>
+
+  <section>
+    <h2>How a show gets made</h2>
+    <p>Each sequence is one Python file with two functions that share the same timings. <code>render()</code> computes
+      the lights and <code>score()</code> writes the music, so every hit lands on its flash and is panned to where it
+      happens on the house.</p>
+
+    <figure class="diagram" aria-labelledby="d2">
+      <figcaption id="d2">From an idea to the roofline</figcaption>
+      <ol class="pipe">
+        <li class="stage1"><b>The house as data</b><span>home.json: 501 pixels, their 3D positions and six runs,
+          imported from my xLights layout and Blender model.</span></li>
+        <li class="stage1"><b>A story</b><span>"A ghost train stops at the porch station." AI writes one Python file in
+          numpy against that layout.</span></li>
+      </ol>
+      <div class="lanes">
+        <div class="lane">
+          <p class="lanename">Lights</p>
+          <ol class="pipe">
+            <li><b>render(G)</b><span>Every frame for every pixel at 40 fps.</span></li>
+            <li><b>Preview</b><span>A timeline and stills images, plus brightness and strobe checks. I adjust and
+              re-render.</span></li>
+            <li><b>FSEQ</b><span>FPP's sequence format, zstd compressed.</span></li>
+          </ol>
+        </div>
+        <div class="lane">
+          <p class="lanename">Music</p>
+          <ol class="pipe">
+            <li><b>score(M, G)</b><span>Notes from the same timings, panned along the roofline.</span></li>
+            <li><b>Surge XT + VSCO 2</b><span>Synth patches and orchestral samples, mixed with Spotify's
+              pedalboard.</span></li>
+            <li><b>MP3</b><span>Rendered on my Mac and committed with the script.</span></li>
+          </ol>
+        </div>
+      </div>
+      <ol class="pipe">
+        <li class="stage2"><b>git push</b><span>GitHub Actions re-renders only the sequences that changed and builds
+          this site, with a 3D preview of each one.</span></li>
+        <li class="stage2"><b>FPP</b><span>The FSEQ and MP3 go into a playlist, and the Pi plays the roofline.</span></li>
+      </ol>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Open source</h2>
+    <p>This site and everything behind it is open source <a href="https://github.com/cjimti/pixelhome">on GitHub</a>.
+      The code is MIT licensed, and the sequences and music are
+      <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0</a>.</p>
+    <p>Everything is tailored to my pixel runs and roofline. In the future I may make it easy to adjust the segments to
+      fit other people's setups, and I plan on adding a lot more pixels.</p>
+  </section>
+
+  <section>
+    <h2>The hardware</h2>
+    <p>501 12V pixels (WS2811) in six straight runs along the roofline, driven by
+      <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Raspberry Pi 4 with a Falcon PiCap v2. Data leaves
+      the controller at the back-left corner of the porch on two ports. One 12V supply powers the controller end, and
+      power is injected again at the far end of each string so the last pixels stay as bright and as white as the
+      first.</p>
+
+    <figure class="diagram hw" aria-labelledby="d3">
+      <figcaption id="d3">The roofline from above, street at the bottom</figcaption>
+      <div class="hwscroll">
+        <svg viewBox="-720 -760 1480 720" role="img" aria-label="Plan of the roofline. The controller at the back-left corner of the porch sends port 1 down Porch Left, along Left and up Side, and port 2 along Porch Front, down Porch Right and out along Right. A 12V supply powers the controller and injects power at the far end of each port: the back end of Side and the free end of Right.">
+          <defs>
+            <marker id="ah1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
+            <marker id="ah2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
+          </defs>
+          <!-- runs, drawn in data order: port 1 Porch Left > Left > Side, port 2 Porch Front > Porch Right > Right -->
+          <polyline class="run p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
+          <polyline class="run p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
+          <polyline class="dots p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
+          <polyline class="dots p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
+          <!-- data direction -->
+          <path class="dir p1" d="M-172,-300 V-170" marker-end="url(#ah1)"/>
+          <path class="dir p1" d="M-300,-115 H-480" marker-end="url(#ah1)"/>
+          <path class="dir p1" d="M-630,-260 V-480" marker-end="url(#ah1)"/>
+          <path class="dir p2" d="M-60,-600 H90" marker-end="url(#ah2)"/>
+          <path class="dir p2" d="M128,-300 V-170" marker-end="url(#ah2)"/>
+          <path class="dir p2" d="M300,-158 H480" marker-end="url(#ah2)"/>
+          <!-- run labels -->
+          <text class="lbl" x="-560" y="-560">Side 81</text>
+          <text class="lbl" x="-500" y="-180">Left 98</text>
+          <text class="lbl" transform="translate(-222 -358) rotate(-90)" text-anchor="middle">Porch Left 82</text>
+          <text class="lbl" x="-120" y="-640">Porch Front 71</text>
+          <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 49</text>
+          <text class="lbl" x="340" y="-225">Right 120</text>
+          <!-- controller and supply inside the porch notch -->
+          <rect class="ctrl" x="-150" y="-545" width="250" height="118" rx="12"/>
+          <text class="ctxt" x="-132" y="-503">Pi 4 + PiCap v2</text>
+          <text class="csub" x="-132" y="-466">FPP 9.4 · 2 ports</text>
+          <rect class="psu" x="-150" y="-390" width="250" height="80" rx="12"/>
+          <text class="ctxt" x="-132" y="-341">12V supply</text>
+          <path class="pwr" d="M-25,-390 V-427"/>
+          <!-- injection runs to the far ends -->
+          <path class="pwr inj" d="M-150,-350 H-660 V-660 H-596"/>
+          <path class="pwr inj" d="M100,-350 H700 V-191 H629"/>
+          <circle class="injpt" cx="-596" cy="-637" r="16"/>
+          <circle class="injpt" cx="629" cy="-191" r="16"/>
+          <text class="plbl" x="-650" y="-690">12V injected</text>
+          <text class="plbl" x="629" y="-130" text-anchor="middle">12V injected</text>
+          <text class="street" x="16" y="-60">street</text>
+        </svg>
+      </div>
+      <dl class="legend">
+        <div><dt><i class="sw p1"></i>Port 1</dt><dd>Porch Left → Left → Side · 261 pixels</dd></div>
+        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 240 pixels</dd></div>
+        <div><dt><i class="sw pw"></i>Power</dt><dd>12V at the controller, injected at both far ends</dd></div>
+        <div><dt><i class="sw ch"></i>Channels</dt><dd>501 × RGB = 1,503, at 80% brightness, gamma 1.0</dd></div>
+      </dl>
+    </figure>
+  </section>
+
+  <footer>
+    <p><a href="../">Back to the sequences</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a></p>
+  </footer>
+</main>
+</body>
+</html>

@@ -399,7 +399,7 @@
   // ---------- music: when a show has a soundtrack and sound is on, the audio clock drives the lights ----------
   const music = new Audio();
   music.preload = 'auto';
-  music.loop = true;
+  music.addEventListener('ended', () => { if (playing) advance(); });
   let soundOn = false;
   try { soundOn = localStorage.getItem('pixelhome.sound') === '1'; } catch (e) { /* storage blocked */ }
   const hasMusic = () => !!(seq && seq.meta.audio && music.getAttribute('src'));
@@ -434,18 +434,28 @@
     if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
     if (e.code === 'KeyM' && seq && seq.meta.audio) $('sound').click();
     if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
-      const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
-      if (!rows.length) return;
       e.preventDefault();
-      const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
-      const next = i < 0 ? 0 : (i + (e.code === 'ArrowUp' ? -1 : 1) + rows.length) % rows.length;
-      choose(rows[next]._seq);
+      step(e.code === 'ArrowUp' ? -1 : 1);
     }
     if (seq && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
       const dur = seq.frames / seq.fps;
       seek((t + (e.code === 'ArrowLeft' ? -5 : 5) + dur) % dur);
     }
   });
+
+  // the sequence above or below the current one in the list as filtered, wrapping round
+  function step(dir) {
+    const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
+    if (!rows.length) return false;
+    const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
+    choose(rows[i < 0 ? 0 : (i + dir + rows.length) % rows.length]._seq);
+    return true;
+  }
+  // at the end of a sequence, play the next one; a dropped-in file just loops
+  function advance() {
+    if (seq.meta.id === 'file' || !step(1)) { seek(0); syncMusic(); return; }
+    setPlaying(false);
+  }
 
   const scrub = $('scrub');
   scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
@@ -526,8 +536,9 @@
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     if (playing && seq) {
-      if (!music.paused && hasMusic()) t = Math.min(music.currentTime, seq.frames / seq.fps);
-      else t = (t + dt) % (seq.frames / seq.fps);
+      const dur = seq.frames / seq.fps;
+      if (!music.paused && hasMusic()) t = Math.min(music.currentTime, dur);   // 'ended' moves on
+      else if ((t += dt) >= dur) { t = dur; advance(); }
     }
     if (goal) {
       const k = 1 - Math.exp(-dt * 4);

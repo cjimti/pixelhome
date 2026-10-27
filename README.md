@@ -89,4 +89,5 @@ positions of its first and last pixel.
 
 ## License
 
-MIT
+Code (the `pixelhome` engine, site and scripts): MIT, see `LICENSE`. Sequences and music under
+`homes/`: CC BY-SA 4.0, see `homes/LICENSE.md`.
