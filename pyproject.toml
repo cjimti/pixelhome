@@ -13,3 +13,9 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+audio = [
+    "mido>=1.3.3",
+    "pedalboard>=0.9.26",
+]

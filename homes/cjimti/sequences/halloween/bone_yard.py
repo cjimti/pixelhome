@@ -398,3 +398,276 @@ def render(G, seed=4):
         buf = light(BONE, Ib) + light(GLOW, Ig) + light(FOG, fog * (1 - cov))
         out[fi][G.path] = np.clip(buf, 0, 1)
     return out
+
+
+# ---------------------------------------------------------------- music ----------------------------------------------
+# A skeleton band in D minor at the lights' 120 BPM: xylophone bones, tuba and pizzicato oom-pah, a calliope for the
+# conga, slide whistles for the head tosses. Every hit below is a moment in render(): bone landings, count-in taps,
+# clacks, slams, catches, the explosion, the wrong reassembly, the collapses and the rolling skulls. Sounds are
+# panned to where they happen on the house as seen from the street.
+
+RISE = {'Left': 4.5, 'Porch Left': 6.5, 'Porch Front': 2.5, 'Porch Right': 6.5, 'Right': 4.5}
+STEPS = [0, 3, 5, 7, 10]                    # bone landings climb a minor pentatonic: ribs, pelvis, femur, shin, foot
+BASE = {'Porch Front': 74, 'Left': 77, 'Right': 77, 'Porch Left': 81, 'Porch Right': 81}
+CHORD = {'Dm': (50, 53, 57), 'A7': (49, 52, 55, 57), 'Gm': (50, 55, 58)}
+ROOT = {'Dm': (38, 33), 'A7': (33, 40), 'Gm': (31, 38)}
+
+
+def score(M, G):
+    from pixelhome.audio import note, slide, whoosh
+    n = note
+    xylo = M.sampler('Percussion/Xylo/*.wav')
+    mar = M.sampler('Percussion/Marimba/*.wav')
+    glock = M.sampler('Percussion/Glock/*.wav')
+    tuba = M.sampler('Brass/Tuba/stac/*.wav')
+    tpt = M.sampler('Brass/Trumpet/stac/*.wav')
+    pizz = M.sampler('Strings/Cello Section/pizzT/*.wav')
+    trem = M.sampler('Strings/Cello Section/trem/*.wav')
+    wood = M.hits('VSCO 1 Percussion/varWood/wood_click*.wav')
+    clave = M.hits('Percussion/Claves1_Hit*.wav')
+    slap = M.hits('VSCO 1 Percussion/varWood/slapstick[0-9].wav')
+    cow = M.hits('Percussion/Cowbell1_Hit*.wav')
+    conga = M.hits('Percussion/Conga-HitN*.wav')
+    tumba = M.hits('Percussion/Tumba-HitN*.wav')
+    tamb = M.hits('Percussion/Tamb1-Hit*.wav')
+    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
+    crash_s = M.hits('Percussion/cymbal-crashshort*.wav')
+    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
+    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
+    troll = M.hits('Percussion/Timpani/Rolls/*.wav')
+    ratchet = M.hits('Percussion/Ratchet1-Crank*.wav')
+    ratchet_f = M.hits('Percussion/Ratchet1-Fast*.wav')
+    log = M.hits('VSCO 1 Percussion/varWood/log_drum/*.wav')
+
+    for name, gain, rev in (('xylo', 0.42, 0.22), ('mallet', 0.4, 0.2), ('bass', 0.55, 0.08), ('pizz', 0.3, 0.15),
+                            ('perc', 0.65, 0.12), ('drums', 0.5, 0.18), ('organ', 0.22, 0.4), ('calliope', 0.42, 0.25),
+                            ('brass', 0.35, 0.2), ('fx', 0.14, 0.25), ('strings', 0.3, 0.3)):
+        M.bus(name, gain=gain, reverb=rev)
+
+    order = np.argsort(G.pd)
+    xs, ds = G.pos[order, 0], G.pd[order]
+    x0, x1 = xs.min(), xs.max()
+
+    def pan_at(d):                          # path distance -> left/right across the facade, as seen from the street
+        x = np.interp(d, ds, xs)
+        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
+
+    mid = {k: float(G.pd[G.seg[k]].mean()) for k in G.seg}
+    span = {k: pan_at(mid[k]) for k in G.seg}
+    L = G.length
+
+    def beat(k):                            # time of beat k of the routine grid (beat 0 = T0)
+        return T0 + k * BEAT
+
+    def chord_at(t, prog):
+        return prog[min(len(prog) - 1, int((t - T0) // (4 * BEAT)) % len(prog))]
+
+    organ, calliope = [], []
+
+    # ---- 0-13 s: fog, skulls push up, bones fly in and click into place ----
+    organ += [(0.2, n('D2'), 52, 12.6), (0.2, n('A2'), 46, 12.6), (6.0, n('F3'), 40, 6.8)]
+    M.add('fx', whoosh(7.0, 120, 500, 0.5, seed=3), 0.0, 0.3)
+    for k, rise in RISE.items():
+        p = span[k]
+        M.add('drums', troll.play(55, dur=1.0), rise - 0.8, 0.5, p)
+        M.add('mallet', mar.play(BASE[k] - 36, 105), rise, 1.0, p)
+        for j in range(1, 6):
+            land = rise + 1.1 + 0.55 * (j - 1)
+            M.add('fx', whoosh(0.5, 900, 3800, 0.35, seed=j + int(rise * 10)), land - 0.5, 0.35, p)
+            M.add('xylo', xylo.play(BASE[k] + STEPS[j - 1], 100), land, 1.0, p)
+            M.add('perc', wood.play(90), land, 0.6, p)
+        M.add('perc', ratchet.play(80, dur=0.35), rise + 1.1 + 0.55 * 4 + 0.1, 0.7, p)
+
+    # ---- 13-14.5: the porch skeleton taps its own skull four times ----
+    for i, tc in enumerate((13.0, 13.5, 14.0, 14.5)):
+        M.add('perc', clave.play(85 + 12 * i), tc, 1.0, span['Porch Front'])
+
+    # ---- 15-31: the routine, 4 phrases of 8 beats; oom-pah under all of it ----
+    prog = ['Dm', 'A7', 'Dm', 'A7', 'Gm', 'Dm', 'A7', 'Dm']
+
+    def oompah(k0, k1, prog, vel=96):
+        for k in range(k0, k1):
+            t = beat(k)
+            c = chord_at(t, prog)
+            if k % 2 == 0:
+                M.add('bass', tuba.play(ROOT[c][(k // 2) % 2], vel), t)
+            else:
+                for m in CHORD[c]:
+                    M.add('pizz', pizz.play(m, vel - 12), t, 0.7, -0.35)
+
+    oompah(0, 30, prog)
+    melody = [(0, 'A5'), (0.5, 'F5'), (1, 'D5'), (1.5, 'F5'), (2, 'A5'), (3, 'D6'),
+              (4, 'C#6'), (4.5, 'A5'), (5, 'E5'), (5.5, 'G5'), (6, 'A5'), (7, 'A4')]
+    for b, m in melody:                     # phrase 1: the sway, a clack on every beat
+        M.add('xylo', xylo.play(n(m), 104), beat(b), 1.0, 0.1)
+    for k in range(0, 8):
+        M.add('perc', wood.play(100), beat(k), 0.8)
+    for k in range(8, 16):                  # phrase 2: accordion call and response; who slams alternates by beat
+        t, c = beat(k), chord_at(beat(k), prog)
+        if k % 2:                           # wings and porch front slam: high xylophone chord, left and right
+            for m in CHORD[c]:
+                M.add('xylo', xylo.play(m + 24, 110), t, 0.55, span['Left'] * 0.8)
+                M.add('xylo', xylo.play(m + 24, 110), t, 0.55, span['Right'] * 0.8)
+        elif k > 8:                         # porch sides answer low
+            for m in CHORD[c]:
+                M.add('mallet', mar.play(m, 112), t, 0.7, 0.0)
+        M.add('perc', slap.play(70), t, 0.5)
+    for k0, f0, f1, grp in ((16, 700, 1500, ('Left', 'Right')), (18, 800, 1700, ('Porch Left', 'Porch Right')),
+                            (20, 700, 1500, ('Left', 'Right')), (22, 800, 1700, ('Porch Left', 'Porch Right')),
+                            (22, 1000, 2600, ('Porch Front',))):   # phrase 3: head tosses up and caught
+        for g in grp:
+            M.add('fx', slide(0.0, 0.5, f0, f1, 0.5, 0.5), beat(k0), 0.8, span[g])
+            M.add('fx', slide(0.0, 0.5, f1, f0, 0.5, 0.5), beat(k0 + 1), 0.8, span[g])
+    for k, g in ((18, 'Left'), (18, 'Right'), (20, 'Porch Left'), (20, 'Porch Right'), (22, 'Left'), (22, 'Right')):
+        M.add('perc', clave.play(115), beat(k), 0.9, span[g])
+        M.add('xylo', xylo.play(n('D6'), 90), beat(k), 0.5, span[g])
+    for e in range(12):                     # phrase 4: shimmy in eighths, wind up, one big hit
+        t = beat(24) + e * BEAT / 2
+        M.add('perc', tamb.play(70 + 20 * (e % 2 == 0)), t, 0.8)
+        M.add('xylo', xylo.play(n('A5') if e % 2 == 0 else n('G5'), 84), t, 0.6, 0.15)
+    M.add('perc', ratchet.play(100, dur=0.5), beat(30), 1.0)
+    M.add('drums', troll.play(80, dur=0.5), beat(30), 0.7)
+
+    def tutti(t, big=1.0):
+        M.add('drums', crash.play(118), t, 0.9 * big)
+        M.add('drums', bd.play(120), t, 1.0 * big)
+        M.add('drums', timp.play(120, pitch=-2), t, 0.8 * big)
+        M.add('bass', tuba.play(n('D1'), 120), t)
+        M.add('bass', tuba.play(n('D2'), 120), t, 0.7)
+        for m in CHORD['Dm']:
+            M.add('pizz', pizz.play(m, 120), t, 0.8, -0.3)
+            M.add('xylo', xylo.play(m + 24, 120), t, 0.7, 0.1)
+            M.add('brass', tpt.play(m + 12, 112, dur=0.35), t, 0.8, 0.2)
+
+    tutti(beat(31))
+
+    # ---- 31-45: the conga, step-step-step-KICK for 7 bars; calliope tune ----
+    M.add('fx', slide(0.0, 0.3, 500, 1300, 0.3, 0.4), TC, 0.6)
+    tune = {'Dm': ['D5', 'F5', 'A5', 'D6'], 'A7': ['C#5', 'E5', 'G5', 'A5']}
+    for bar in range(7):
+        c = 'Dm' if bar % 2 == 0 or bar == 6 else 'A7'
+        for jb in range(4):
+            t = TC + bar * 2 + jb * BEAT
+            if jb < 3:
+                calliope.append((t, n(tune[c][jb]), 100, 0.38))
+                M.add('perc', conga.play(95 + 10 * (jb == 0)), t, 1.0, -0.2)
+                M.add('perc', tumba.play(70), t + BEAT / 2, 0.7, 0.25)
+                if jb != 1:
+                    M.add('bass', tuba.play(ROOT[c][jb // 2], 100), t)
+                else:
+                    for m in CHORD[c]:
+                        M.add('pizz', pizz.play(m, 84), t, 0.6, -0.35)
+            else:                           # the kick: everyone, hard
+                for m in (n(tune[c][3]), n(tune[c][3]) - 7):
+                    calliope.append((t, m, 120, 0.2))
+                M.add('perc', slap.play(120), t, 1.0)
+                M.add('drums', crash_s.play(110), t, 0.6)
+                M.add('bass', tuba.play(ROOT[c][0], 118), t)
+                M.add('xylo', xylo.play(n(tune[c][3]) + 12, 118), t, 0.8)
+
+    # ---- 45-56: his solo, the explosion, a stunned pause, the wrong reassembly, ta-da ----
+    organ += [(45.0, n('A2'), 76, 3.0), (45.0, n('E3'), 66, 3.0)]
+    M.add('drums', troll.play(60, dur=3.0), 45.0, 0.6)
+    for i, (m, v) in enumerate((('D5', 80), ('F5', 95), ('A5', 110), ('D6', 127))):
+        t = TP + 1 + i * BEAT
+        M.add('xylo', xylo.play(n(m), v), t, 1.0, 0.0)
+        M.add('drums', timp.play(70 + 15 * i), t, 0.5 + 0.15 * i)
+        M.add('perc', wood.play(70), t, 0.5, span['Left'])
+        M.add('perc', wood.play(70), t, 0.5, span['Right'])
+    tutti(TX, 1.1)
+    M.add('perc', slap.play(127), TX, 1.0)
+    for i in range(14):                     # bones scattering in every direction
+        M.add('xylo', xylo.play(n('D7') - 2 * i - int(M.rng.integers(0, 2)), 110 - 4 * i), TX + 0.04 * i, 0.8,
+              float(M.rng.uniform(-0.8, 0.8)))
+    M.add('perc', ratchet_f.play(90, dur=1.3), TX + 0.1, 0.6, span['Left'])
+    M.add('perc', ratchet_f.play(90, dur=1.3), TX + 0.15, 0.6, span['Right'])
+    for i in range(6):                      # the scattered bones twitch
+        M.add('xylo', xylo.play(n('C7') + int(M.rng.integers(-5, 5)), 55), TX + 1.65 + 0.09 * i, 0.5,
+              float(M.rng.uniform(-0.6, 0.6)))
+    organ += [(50.0, n('D2'), 50, 6.0)]
+    pitch = {1 + i: BASE['Porch Front'] + s for i, s in enumerate(STEPS)}
+    pitch[0] = BASE['Porch Front'] - 12
+    for r, b in enumerate(WRONG):           # the same notes as his assembly, in the wrong order
+        land = TR + 0.5 * r + 0.42
+        M.add('fx', whoosh(0.42, 1200, 4000, 0.4, seed=40 + r), land - 0.42, 0.5)
+        M.add('xylo', xylo.play(pitch[b], 108), land, 1.0, 0.0)
+        M.add('perc', wood.play(95), land, 0.7)
+    M.add('fx', slide(0.0, 0.25, 600, 1500, 0.75, 0.6), TR + 3.2, 0.9)
+    M.add('fx', slide(0.0, 0.17, 1500, 700, 0.17, 0.6), TR + 3.95, 0.9)
+    ta = TR + 4.12
+    M.add('perc', clave.play(120), ta, 1.0)
+    M.add('brass', tpt.play(n('A4'), 110, dur=0.16), ta, 1.0, 0.1)
+    for m in ('D5', 'F#5', 'A5'):           # ta-da, in the major for once
+        M.add('brass', tpt.play(n(m), 118, dur=0.7), ta + 0.2, 0.9, 0.1)
+    M.add('drums', crash_s.play(100), ta + 0.2, 0.6)
+
+    # ---- 56-64: the dance again; he is half a beat late until he skips ahead at 62 ----
+    for k in range(82, 98):
+        t = beat(k)
+        c = chord_at(t, ['Dm', 'A7'])
+        if k % 2 == 0:
+            M.add('bass', tuba.play(ROOT[c][(k // 2) % 2], 96), t)
+        else:
+            for m in CHORD[c]:
+                M.add('pizz', pizz.play(m, 84), t, 0.7, -0.35)
+        M.add('perc', wood.play(95), t, 0.8)
+        late = 0.25 if t < TL + 6.0 else 0.0
+        M.add('perc', cow.play(88), t + late, 0.55, span['Porch Front'])
+    for rep in range(2):
+        for b, m in melody:
+            t = TL + rep * 4 * BEAT * 2 + b * BEAT
+            if t >= TH:
+                continue
+            M.add('xylo', xylo.play(n(m), 100), t, 0.9, 0.1)
+            if t < TL + 6.0:                # his glockenspiel echo, late
+                M.add('mallet', glock.play(n(m), 90), t + 0.25, 0.7, span['Porch Front'])
+            else:
+                M.add('mallet', glock.play(n(m), 90), t, 0.7, span['Porch Front'])
+    M.add('fx', slide(0.0, 0.12, 900, 2200, 0.14, 0.5), TL + 5.86, 0.8)
+    tutti(TH)
+
+    # ---- 65-68: collapse into heaps, pair by pair; he does one more pump on his own ----
+    for k, g in (('Left', 0), ('Right', 0), ('Porch Left', 1), ('Porch Right', 1), ('Porch Front', 2)):
+        tc = [65.5, 66.2, 67.4][g]
+        p = span[k]
+        for rank in range(6):
+            M.add('xylo', xylo.play(BASE[k] + 12 - 3 * rank, 96 - 6 * rank), tc + 0.07 * rank, 0.7, p)
+        M.add('perc', slap.play(80), tc + 0.55, 0.6, p)
+        M.add('drums', bd.play(70), tc + 0.55, 0.4, p)
+    M.add('perc', clave.play(110), 67.0, 1.0)
+    M.add('bass', tuba.play(n('D2'), 110), 67.0)
+
+    # ---- 68.6-77: skulls roll off the ends; his crawls to the edge, wobbles, and drops ----
+    def exit_time(d0, sgn):
+        tt = np.arange(0, 6, 0.01)
+        x = d0 + sgn * 340 * (tt - 0.3 * (1 - np.exp(-tt / 0.3)))
+        out = np.nonzero((x < -20) | (x > L + 20))[0]
+        return tt[out[0]] if len(out) else 6.0, tt, x
+
+    for k, ts, sgn in (('Left', 68.6, -1), ('Right', 68.6, 1), ('Porch Left', 69.4, -1), ('Porch Right', 69.4, 1)):
+        te, tt, x = exit_time(mid[k], sgn)
+        nrolls = int(te / 0.085)
+        for i in range(nrolls):
+            t = i * 0.085
+            d = float(np.interp(t, tt, x))
+            M.add('mallet', mar.play(n('D3') + (i % 2) * 5 - i // 6, 92 - 50 * i / max(nrolls, 1)), ts + t, 0.3,
+                  pan_at(np.clip(d, 0, L)))
+    for i in range(int(5.0 / 0.16)):        # his rolls slowly toward the right end
+        t = 70.6 + i * 0.16 * (1 + 0.6 * i / 31)
+        if t >= 75.6:
+            break
+        u = smoothstep(0, 1, (t - 70.6) / 5.0)
+        d = mid['Porch Front'] + u * (L - mid['Porch Front'])
+        M.add('mallet', mar.play(n('F3') + (i % 2) * 7, 88), t, 0.5, pan_at(d))
+    M.add('strings', trem.play(n('A2'), 70, dur=1.9), 75.6, 1.0, 0.75)
+    M.add('strings', trem.play(n('D3'), 70, dur=1.9), 75.6, 0.8, 0.75)
+    M.add('drums', troll.play(55, dur=1.8), 75.6, 0.5, 0.75)
+    M.add('perc', clave.play(100), 77.4, 0.9, 0.85)
+    M.add('fx', slide(0.0, 0.5, 1400, 260, 0.55, 0.7), 77.42, 0.9, 0.85)
+    M.add('drums', bd.play(110), 77.95, 0.9, 0.85)
+    M.add('drums', timp.play(100, pitch=-5), 77.95, 0.7, 0.85)
+    organ += [(78.3, n('D2'), 80, 2.6), (78.3, n('A2'), 70, 2.6), (78.3, n('F3'), 64, 2.6)]
+    M.add('xylo', xylo.play(n('D6'), 70), 78.9, 0.8, 0.85)
+
+    M.add('organ', M.synth('Keys/Church').render(organ, D), 0.0)
+    M.add('calliope', M.synth('Keys/Circus 1').render(calliope, D), 0.0)

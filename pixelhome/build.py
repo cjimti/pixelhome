@@ -41,11 +41,17 @@ def _build_one(args):
     web = data[::every]
     Image.fromarray(web.reshape(len(web), -1, 3), 'RGB').save(
         os.path.join(out, 'data', s.home, s.id + '.png'), optimize=True)
-    return dict(id=s.id, code=s.code, title=s.title, occasion=s.occasion, kind=s.kind, description=s.description,
+    meta = dict(id=s.id, code=s.code, title=s.title, occasion=s.occasion, kind=s.kind, description=s.description,
                 seconds=round(len(data) * DT, 2), fps=round(1000 / (step * every)), frames=len(web),
                 fseq=f'fseq/{s.home}/{s.id}.fseq', fseqName=f'{s.code} {s.title}.fseq',
                 fseqBytes=os.path.getsize(os.path.join(out, 'fseq', s.home, s.id + '.fseq')),
                 data=f'data/{s.home}/{s.id}.png', renderSeconds=round(time.time() - t0, 2))
+    mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
+    if os.path.exists(mp3):
+        os.makedirs(os.path.join(out, 'audio', s.home, s.occasion), exist_ok=True)
+        shutil.copyfile(mp3, os.path.join(out, 'audio', s.home, s.id + '.mp3'))
+        meta.update(audio=f'audio/{s.home}/{s.id}.mp3', audioName=f'{s.code} {s.title}.mp3')
+    return meta
 
 
 def build(out, want):

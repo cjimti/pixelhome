@@ -370,3 +370,449 @@ def render(G, seed=13):
                 buf += light(SPARK, 0.9 * np.exp(-age / 0.08) * np.exp(-((pdp - centre) / 10) ** 2))
         out[f][G.path] = buf
     return np.clip(out, 0, 1)
+
+
+# ---------------------------------------------------------------- music ----------------------------------------------
+# A witches' waltz in E minor that boils. Its downbeats are pinned to the lights: the three ingredients land on bars
+# 0, 4 and 8, each bringing in a new colour of the tune (clarinet for violet, muted horn for amber, a squelchy synth for
+# lime), and from the lime the waltz speeds up with the heat until every other downbeat is one of the big glurps at the
+# rims. Every bubble that pops in the pot is a little upward-chirping bloop pitched from the chord of the moment, small
+# bubbles high, so the plucks thicken as it heats; when the brew spills, a harp runs down each wing with the flood
+# front. It curdles with a trombone fall, the frogs' eyes open on an E major chord and they hop away to the same tune in
+# the major, each landing a ribbit, the band thinning as they leave. The big frog croaks twice and leaps off on slide
+# whistles. Times come from render() itself (bubbles, hops and the flood are random or simulated, so score() runs it
+# once with its random generator and its frogs on tape) and sounds are panned to where they happen on the house.
+
+HEAT = [(0, 0.08), (16, 0.12), (22, 0.35), (32, 0.75), (38, 1.0), (46, 1.0), (49, 0.0)]   # render()'s heat keys
+T_CURDLE, T_FROGS, T_EYES = 50.5, 54.0, 54.6                                             # as in render()
+CH = {'Em': (40, (4, 7, 11)), 'Am': (33, (9, 0, 4)), 'B7': (35, (11, 3, 6, 9)), 'C': (36, (0, 4, 7)),
+      'F': (41, (5, 9, 0)), 'E': (40, (4, 8, 11)), 'A': (33, (9, 1, 4)), 'C#m': (37, (1, 4, 8))}
+PROG_A = ['Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'Em']
+TUNE_A = [[('B4', 1), ('E5', 1), ('G5', 1)], [('A5', 2), ('C6', 1)], [('B5', 1), ('A5', 1), ('D#5', 1)],
+          [('E5', 3)], [('E5', 1), ('G5', 1), ('C6', 1)], [('C6', 1), ('B5', 1), ('A5', 1)],
+          [('A5', 1), ('F#5', 1), ('D#5', 1)], [('E5', 2), ('B4', 1)]]
+PROG_B = ['Em', 'F', 'Em', 'F', 'Am', 'B7']              # the bubbling strain: up a semitone and back, twice
+TUNE_B = [[('E5', 1), ('G5', 1), ('B5', 1)], [('F5', 1), ('A5', 1), ('C6', 1)], [('E5', 1), ('G5', 1), ('B5', 1)],
+          [('F5', 1), ('A5', 1), ('C6', 1)], [('A5', 1), ('C6', 1), ('E6', 1)], [('D#6', 1), ('B5', 1), ('F#5', 1)]]
+MAJOR = {'Em': 'E', 'Am': 'A', 'B7': 'B7', 'C': 'C#m'}  # the frogs' version
+SCALE = (0, 2, 3, 4, 6, 7, 9, 11)                       # E harmonic minor with a G# for the floods: E F# G G# A B C D#
+ON = {'clar': 0.11, 'horn': 0.14, 'buzz': 0.19, 'fall': 0.17}   # measured lead-in before these samples speak
+LEVEL = [(0, 0.5), (3.5, 0.32), (16.5, 0.38), (26, 0.5), (33.7, 0.8), (38, 1.0), (47.3, 1.0), (50.5, 0.85),
+         (51.5, 1.0)]                                   # the band's level, by measurement against the lights
+
+
+def _events(G):
+    """Run render() once with its random generator and its frogs on tape. Bubbles and hops are random and the frogs
+    come out of the curdling, so their times can only come from the render. Returns the frames, the bubble spawns
+    [('bubble', frame, x, grow, size)] and glurps [('glurp', frame, offset)], and the frogs (with .born and .hops)."""
+    pops, frogs = [], []
+
+    class Tape:
+        def __init__(self, g):
+            self.g, self.frame, self.spawn = g, -1, None
+
+        def random(self, *a):
+            self.frame += 1                              # render() draws exactly one random() per frame before 48.5 s
+            return self.g.random(*a)
+
+        def uniform(self, lo, hi, *a):
+            v = self.g.uniform(lo, hi, *a)
+            if self.spawn is not None:
+                self.spawn.append(v)
+                if len(self.spawn) == 3:
+                    pops.append(('bubble', self.frame) + tuple(self.spawn))
+                    self.spawn = None
+            elif lo > 100:                               # uniform(rimA + 25, rimB - 25): a new bubble's position
+                self.spawn = [v]
+            elif (lo, hi) == (0, 60):                    # a big glurp near a rim
+                pops.append(('glurp', self.frame, v))
+            return v
+
+        def __getattr__(self, k):
+            return getattr(self.g, k)
+
+    class Frog(_Frog):
+        def __init__(self, d, *a, **k):
+            self.hops, self.born = [], d
+            super().__init__(d, *a, **k)
+            frogs.append(self)
+
+        def __setattr__(self, k, v):
+            object.__setattr__(self, k, v)
+            if k == 'd1' and getattr(self, 't0', None) is not None:
+                self.hops.append((self.t0, self.d0, v, self.hopdur))
+
+    g, real_rng, real_frog = globals(), np.random.default_rng, _Frog
+    np.random.default_rng = lambda seed=None: Tape(real_rng(seed))
+    g['_Frog'] = Frog
+    try:
+        frames = render(G)
+    finally:
+        np.random.default_rng, g['_Frog'] = real_rng, real_frog
+    return frames, pops, frogs
+
+
+def score(M, G):
+    from pixelhome.audio import SR, note, slide, whoosh
+    n = note
+    frames, spawns, frogs = _events(G)
+    F = len(frames)
+    ft = np.arange(F) * DT
+
+    def frame_at(x):                        # the first frame render() treats as at or after time x
+        return float(ft[np.nonzero(ft >= x)[0][0]])
+
+    def after(t0, dur):                     # render()'s `t - t0 >= dur` test, on the frame grid
+        return float(ft[np.nonzero(ft - t0 >= dur)[0][0]])
+
+    order = np.argsort(G.pd)
+    xs, ds = G.pos[order, 0], G.pd[order]
+    x0, x1 = xs.min(), xs.max()
+    pdp = G.pd[G.path]
+    L = G.length
+    rimA, rimB = 0.5 * (pdp[178] + pdp[179]), 0.5 * (pdp[380] + pdp[381])
+    centre = 0.5 * (pdp[261] + pdp[331])
+
+    def pan_at(d):                          # path distance -> left/right across the facade, as seen from the street
+        x = np.interp(d, ds, xs)
+        return 0.85 * (2 * (x - x0) / (x1 - x0) - 1)
+
+    def moving(sig, t, d_of_t):             # pan a sound sample by sample along a path through the house
+        tt = t + np.arange(sig.shape[1]) / SR
+        a = (pan_at(np.clip(d_of_t(tt), 0, L)) + 1) * np.pi / 4
+        return sig * np.vstack([np.cos(a), np.sin(a)]) * np.sqrt(2)
+
+    def heat(t):
+        return float(keys(t, HEAT))
+
+    def bloop(f, dur=0.09, rise=1.7, amp=0.5):   # a bubble: a sine that chirps upward as it rings out
+        tt = np.arange(int(dur * SR)) / SR
+        fr = f * (1 + (rise - 1) * (1 - np.exp(-tt / (dur * 0.35))))
+        sig = amp * np.sin(2 * np.pi * np.cumsum(fr) / SR) * (1 - np.exp(-tt / 0.002)) * np.exp(-tt / (dur * 0.3))
+        return np.vstack([sig, sig])
+
+    def voicing(c, lo, k=None):             # chord tones from MIDI lo upward
+        pcs = CH[c][1][:k]
+        return sorted(lo + (pc - lo) % 12 for pc in pcs)
+
+    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav')
+    clar_st = M.sampler('Woodwinds/Clarinet/stac/*.wav')
+    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav')
+    picc = M.sampler('Woodwinds/Piccolo/Stac/*.wav')
+    horn_m = M.sampler('Brass/F Horn/mute/*.wav')
+    horn = M.sampler('Brass/F Horn/sus/*.wav')
+    tuba = M.sampler('Brass/Tuba/sus/*.wav')
+    tbn_fall = M.sampler('Brass/OldTrombone/Fall/*.wav')
+    tbn_buzz = M.sampler('Brass/OldTrombone/Buzz/*.wav')
+    harp = M.sampler('Strings/Harp/*.wav')
+    vln_sp = M.sampler('Strings/Violin Section/Spic/*.wav')
+    vln_pz = M.sampler('Strings/Violin Section/Pizz/*.wav')
+    vla_pz = M.sampler('Strings/Viola Section/pizz/*.wav')
+    vln_tr = M.sampler('Strings/Violin Section/Trem/*.wav')
+    cb_pz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav')
+    glock = M.sampler('Percussion/Glock/*.wav')
+    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
+    bd = M.hits('Percussion/BDrumNewhit_v[3-6]*.wav')
+    cym = M.hits('Percussion/susCymb1-hit_f_*.wav')
+    cym_up = M.hits('Percussion/susCymb1-cresc-Short*.wav')
+    gong = M.hits('Percussion/gongscrape_pp.wav')
+    guiro = M.hits('Percussion/Guiro-Hit*.wav')
+    brew = M.hits('Miscellania Raw/Misc 1/bubbles*.wav')
+    zap = M.hits('Percussion/zap[12]_v1.wav')
+
+    def boil_up(dur):                       # a burst of real bubbling, from its loudest moment
+        s = brew.play(127)
+        k = max(0, int(np.argmax(np.abs(s).mean(0))) - int(0.05 * SR))
+        s = s[:, k:k + int(dur * SR)].copy()
+        s[:, -int(0.3 * SR):] *= np.linspace(1, 0, int(0.3 * SR))
+        return s
+
+    for name, gain, rev in (('bass', 0.5, 0.1), ('pah', 0.32, 0.2), ('tune', 0.42, 0.25), ('lead', 0.3, 0.2),
+                            ('choir', 0.3, 0.45), ('bubbles', 0.3, 0.3), ('brew', 0.16, 0.2), ('perc', 0.5, 0.2),
+                            ('fx', 0.3, 0.3), ('frogs', 0.42, 0.18), ('pad', 0.3, 0.5)):
+        M.bus(name, gain=gain, reverb=rev)
+
+    # ---- the bar grid: ingredients on bars 0, 4, 8; accelerando with the heat to the glurps; 16 bars of boil ----
+    throws = [(1.6, L, centre + 140, 1, 1.4), (8.0, 0.0, 1110.0, 2, 1.7), (15.0, L, centre - 30, 3, 1.5)]  # render()
+    lands = [frame_at(t0 + fl) for t0, _, _, _, fl in throws]
+    glurps = []
+    for _, f, v in [p for p in spawns if p[0] == 'glurp']:
+        k = int(round((ft[f] - 33.0) / 1.7))
+        x = rimA + 110 + v if k % 2 == 0 else rimB - 110 - v
+        glurps.append((after(ft[f], 0.7), x, k))
+    tb0, tb1 = glurps[0][0], glurps[-1][0]
+    nboil = int(round((tb1 - tb0) / 1.7)) * 2
+    bars = [lands[0] + i * (lands[1] - lands[0]) / 4 for i in range(4)]
+    bars += [lands[1] + i * (lands[2] - lands[1]) / 4 for i in range(4)]
+
+    def ramp(c, t):
+        out = []
+        while t < tb0 - 0.3:
+            out.append(t)
+            t += c / (1 + 1.32 * heat(t))
+        return out, t
+
+    lo_c, hi_c = 1.5, 2.5
+    for _ in range(40):                     # fit the accelerando so a whole number of bars ends on the first glurp
+        c = 0.5 * (lo_c + hi_c)
+        acc, end = ramp(c, lands[2])
+        if len(acc) != 14:
+            lo_c, hi_c = (c, hi_c) if len(acc) > 14 else (lo_c, c)
+            continue
+        lo_c, hi_c = (c, hi_c) if end < tb0 else (lo_c, c)
+    acc, end = ramp(c, lands[2])
+    acc = [lands[2] + (a - lands[2]) * (tb0 - lands[2]) / (end - lands[2]) for a in acc]   # land exactly on it
+    bars += acc
+    bars += [tb0 + i * (tb1 - tb0) / nboil for i in range(nboil)]
+    rit = np.array([1.0, 1.1, 1.22])
+    rit = tb1 + np.concatenate([[0], np.cumsum(rit * (T_CURDLE - tb1) / rit.sum())])
+    bars += list(rit[:-1])
+    bars.append(T_CURDLE)
+    bars = np.array(bars)
+    blen = np.diff(bars)
+    B0, BB, BR = 8, 8 + len(acc), 8 + len(acc) + nboil   # first lime bar, first boil bar, first rit bar
+    assert (BB, nboil) == (22, 16), (BB, nboil)
+    chords = PROG_A + PROG_A + PROG_B + PROG_A + PROG_A + ['Am', 'B7', 'B7']
+    tunes = TUNE_A + TUNE_A + TUNE_B + TUNE_A + TUNE_A + [[('C6', 3)], [('B5', 1), ('A5', 1), ('F#5', 1)], [('D#5', 3)]]
+
+    # the frogs' waltz: ten bars from the eyes opening to the croak
+    fbar = T_EYES + np.arange(11) * (T_CROAK - T_EYES) / 10
+    fchords = ['E'] + [MAJOR[c] for c in PROG_A] + ['E']
+
+    def chord_at(t):
+        if t >= T_FROGS:
+            return fchords[min(9, max(0, int(np.searchsorted(fbar, t, 'right')) - 1))]
+        return chords[min(len(chords) - 1, max(0, int(np.searchsorted(bars, t, 'right')) - 1))]
+
+    # ---- the waltz itself ----
+    lead_n, choir_n = [], []
+    for i in range(len(bars) - 1):
+        t, bl, c = bars[i], blen[i], chords[i]
+        bt = bl / 3
+        root, _ = CH[c]
+        boil = BB <= i < BR
+        dyn = 0.7 + 0.3 * heat(t) if i < BR else 0.9 - 0.15 * (i - BR)
+        # oom: bassoon, then contrabass under it from the lime, tuba in the boil
+        M.add('bass', bsn.play(root + 12 * (root < 38), int(95 * dyn)), t, 0.9)
+        if i >= B0:
+            M.add('bass', cb_pz.play(root, int(105 * dyn)), t, 0.8)
+        if boil or i >= BR:
+            M.add('bass', tuba.play(root - 12 * (root > 38), int(110 * dyn), dur=bt * 0.9), t, 0.7)
+        # pah-pah: harp, viola pizz from the lime, violins in the boil
+        if i < BR:
+            for b in (1, 2):
+                for m in voicing(c, 55):
+                    M.add('pah', harp.play(m, int(80 * dyn)), t + b * bt, 0.55, -0.25)
+                    if i >= B0:
+                        M.add('pah', vla_pz.play(m, int(90 * dyn)), t + b * bt, 0.6, 0.3)
+                    if boil:
+                        M.add('pah', vln_pz.play(m + 12, int(100 * dyn)), t + b * bt, 0.6, -0.4)
+        # the tune, in the colour of the last ingredient
+        beat = 0
+        for name, nb in tunes[i]:
+            m, tt, dd = n(name), t + beat * bt, nb * bt
+            if i < 4:                        # violet: clarinet
+                M.add('tune', clar.play(m - 12, 92, dur=dd * 0.95, release=0.15), tt - ON['clar'], 1.0, 0.15)
+            elif i < B0:                     # amber: muted horn, the clarinet a sixth below
+                M.add('tune', horn_m.play(m - 12, 100, dur=dd * 0.92), tt, 0.7, 0.1)
+                M.add('tune', clar.play(m - 21 + (m % 12 in (4, 11)), 70, dur=dd * 0.9), tt - ON['clar'], 0.5, 0.3)
+            elif i < BB:                     # lime: the squelch, doubled by staccato clarinet
+                lead_n.append((tt, m, int(80 + 30 * heat(tt)), dd * 0.8))
+                M.add('tune', clar_st.play(m - 12, 95), tt, 0.7, 0.15)
+            elif i < BR:                     # the boil: violins spiccato, squelch on top, horns hold the chord
+                M.add('tune', vln_sp.play(m, 118), tt, 1.0, -0.1)
+                lead_n.append((tt, m + 12 * (i >= BB + 8), 112, dd * 0.6))
+            else:                            # running out of heat: horn and clarinet alone
+                M.add('tune', horn.play(m - 12, 100, dur=dd * 0.95), tt - ON['horn'], 0.9, 0.1)
+                M.add('tune', clar.play(m - 12, 90, dur=dd * 0.95), tt - ON['clar'], 0.7, 0.15)
+            beat += nb
+        if boil:
+            for m in voicing(c, 52, 3):
+                M.add('tune', horn.play(m, 100, dur=bl * 0.95), t - ON['horn'], 0.45, 0.25)
+            for m in voicing(c, 64, 3):
+                choir_n.append((t, m, 90, bl * 0.98))
+        elif i >= BR:
+            for m in voicing(c, 52):
+                choir_n.append((t, m, 70, bl * 0.98))
+    # the splashes, each with its own colour, and the flight of each ingredient across the house
+    for (t0, frm, land, ci, fl), tl in zip(throws, lands):
+        p = float(pan_at(land))
+        M.add('fx', moving(whoosh(fl + 0.1, 500, 2600, 0.5, seed=ci), t0,
+                           lambda tt: frm + (land - frm) * (1 - (1 - np.clip((tt - t0) / fl, 0, 1)) ** 1.6)), t0, 0.6)
+        M.add('perc', timp.play(105, pitch=-3), tl, 0.8, p)
+        M.add('perc', cym.play(85), tl, 0.35, p)
+        M.add('brew', boil_up(1.2), tl, 2.5, p)
+        M.add('bubbles', bloop(130, 0.3, 2.2, 0.8), tl, 1.0, p)
+        if ci == 1:                          # violet: a harp sweeping up under the flight
+            for j, m in enumerate(voicing('Em', 52) + voicing('Em', 64) + voicing('Em', 76)):
+                tt = t0 + 0.15 + j * (fl - 0.2) / 9
+                M.add('pah', harp.play(m, 85), tt, 0.8, float(pan_at(frm + (land - frm) * (tt - t0) / fl)))
+        elif ci == 2:                        # amber: a horn rips up out of the splash
+            M.add('tune', horn.play(n('E3'), 112, dur=0.9), tl - ON['horn'], 0.7, p)
+            M.add('tune', horn.play(n('B3'), 112, dur=0.9), tl + 0.06 - ON['horn'], 0.6, p)
+        else:                                # lime: a zap
+            M.add('fx', zap.play(110), tl, 0.9, p)
+    # glurps: a deep bloop at the rim, timpani and bass drum on the downbeat
+    for tg, x, k in glurps:
+        p = float(pan_at(x))
+        M.add('bubbles', bloop(70, 0.5, 2.0, 1.0), tg, 1.0, p)
+        M.add('perc', timp.play(118, pitch=-5), tg, 0.9, p)
+        M.add('perc', bd.play(110), tg, 0.8, p)
+        M.add('brew', boil_up(1.0), tg, 2.0, p)
+
+    # every bubble that pops: a chirp from the chord of the moment, the small ones high
+    for _, f, x, grow, raw in [p for p in spawns if p[0] == 'bubble']:
+        tp = after(ft[f], grow)
+        size = raw * (0.5 + heat(ft[f]))
+        tones = [m for m in voicing(chord_at(tp), 72) + voicing(chord_at(tp), 84) + voicing(chord_at(tp), 96)
+                 if m <= 100]
+        u = np.clip((size - 0.025) / 0.155, 0, 1)
+        m = tones[int(round((1 - u) * (len(tones) - 1)))]
+        f0 = 440 * 2 ** ((m - 69) / 12) / 1.7 * 1.25
+        M.add('bubbles', bloop(f0, 0.07 + 0.08 * u, 1.7, 0.18 + 0.5 * u), tp, 1.0, float(pan_at(x)))
+    # the brew's own bubbling under it, as loud as the heat
+    bed = np.zeros((2, int(T_CURDLE * SR)))
+    pos = int(0.5 * SR)
+    while pos < bed.shape[1]:
+        s = brew.play(127)
+        e = min(bed.shape[1], pos + s.shape[1])
+        bed[:, pos:e] += s[:, :e - pos] * np.hanning(s.shape[1])[:e - pos]
+        pos += int(s.shape[1] * 0.5)
+    tt = np.arange(bed.shape[1]) / SR
+    bed *= np.interp(tt, np.arange(0, 51, 0.25), [heat(t) ** 1.3 for t in np.arange(0, 51, 0.25)])
+    bed *= 1 - smoothstep(47.5, 49.0, tt)
+    M.add('brew', bed, 0.0, 0.8)
+
+    # ---- the flood: a harp runs down each wing with the front, and a rush of water behind it ----
+    lit = frames[:, G.path].max(-1) > 0.02
+    for lo_i, hi_i, sgn, top, steps in ((0, 179, -1, n('E6'), 22), (381, 501, 1, n('B6'), 14)):
+        front = []
+        for f in range(F):
+            if not 34.0 <= ft[f] <= 47.0:
+                continue
+            idx = np.nonzero(lit[f, lo_i:hi_i])[0]
+            if len(idx):
+                d = pdp[lo_i + (idx.min() if sgn < 0 else idx.max())]
+                front.append((ft[f], d))
+        ftm = np.array([a for a, _ in front])
+        fd = np.array([b for _, b in front])
+        fd = np.minimum.accumulate(fd) if sgn < 0 else np.maximum.accumulate(fd)
+        rim, end = (rimA, 0.0) if sgn < 0 else (rimB, L)
+        frac = (fd - rim) / (end - rim)
+        ok = frac > 0.01
+        t_spill, t_end = ftm[ok][0], ftm[frac >= 0.995][0]
+        notes, m = [], top
+        while len(notes) < steps:
+            if (m - 40) % 12 in SCALE:
+                notes.append(m)
+            m -= 1
+        for k, m in enumerate(notes):
+            tk = float(np.interp((k + 0.5) / steps, frac, ftm))
+            M.add('pah', harp.play(m, 100), tk, 0.9, float(pan_at(np.interp(tk, ftm, fd))))
+        M.add('perc', cym.play(110), t_spill, 0.6, float(pan_at(rim)))
+        if sgn > 0:                          # a cymbal swells into the flood reaching the right end
+            M.add('perc', cym_up.play(90), t_end - 1.52, 0.5, float(pan_at(end)))
+        rush = whoosh(t_end - t_spill + 0.6, 2400, 500, 0.6, seed=sgn + 5)
+        M.add('fx', moving(rush, t_spill, lambda q: np.interp(q, ftm, fd)), t_spill, 0.8)
+
+    # ---- the curdle: the waltz deflates; blobs form in the dark ----
+    M.add('tune', tbn_fall.play(n('E2'), 110), T_CURDLE - ON['fall'], 0.9)
+    M.add('bass', tuba.play(n('E1'), 110, dur=1.0), T_CURDLE, 0.5)
+    M.add('perc', timp.play(100, pitch=-7), T_CURDLE, 0.4)
+    M.add('perc', gong.play(127), T_CURDLE + 0.6, 0.3)
+    pad_n = [(T_CURDLE + 0.8, n('E3'), 60, T_FROGS - T_CURDLE - 0.6), (T_CURDLE + 1.6, n('F3'), 55, 2.4),
+             (T_CURDLE + 2.2, n('B3'), 60, 1.6)]
+    for m in (n('E5'), n('F5')):
+        M.add('pad', vln_tr.play(m, 60, dur=2.4), T_CURDLE + 1.2, 0.5)
+    for j in range(6):                       # the brew separating: slow low gloops
+        tg = T_CURDLE + 1.1 + j * 0.45
+        M.add('bubbles', bloop(110 - 8 * j, 0.25, 1.5, 0.4), tg, 0.8, float(M.rng.uniform(-0.6, 0.6)))
+
+    # ---- frogs: they pop out, their eyes open on E major, and they hop away to the waltz in the major ----
+    for m in voicing('E', 64):
+        M.add('pah', vln_pz.play(m, 110), T_FROGS, 0.8)
+    M.add('bubbles', bloop(160, 0.2, 2.0, 0.7), T_FROGS, 1.0)
+    pings = [n('E6'), n('G#6'), n('B6'), n('E7')]
+    for j, fr in enumerate(sorted(frogs, key=lambda q: q.born)):
+        M.add('frogs', glock.play(pings[j % 4], 70), T_EYES + 0.008 * j, 0.35, float(pan_at(fr.born)))
+    for tb in (T_EYES + 0.9, T_EYES + 1.0):  # the blink
+        M.add('frogs', harp.play(n('E7'), 70), tb, 0.5)
+
+    def gone_at(fr):                         # when a frog has hopped off the end of the house
+        t0, d0, d1, hd = fr.hops[-1]
+        return t0 + hd * 0.5 if (d1 < -30 or d1 > L + 30) else 99.0
+
+    small = [fr for fr in frogs if not fr.last]
+    for fr in small:
+        semis = int(round(np.interp(fr.size, [12, 28], [5, -4])))
+        for t0, d0, d1, hd in fr.hops:
+            if d1 < -30 or d1 > L + 30:
+                continue
+            tl = after(t0, hd)
+            M.add('frogs', guiro.play(int(M.rng.integers(70, 100)), pitch=semis), tl, 0.5, float(pan_at(d1)))
+    for i in range(10):
+        t, bl, c = fbar[i], fbar[i + 1] - fbar[i], fchords[i]
+        bt = bl / 3
+        alive = sum(gone_at(fr) > t for fr in small) / len(small)
+        dyn = 0.45 + 0.55 * alive
+        root = CH[c][0]
+        M.add('bass', bsn.play(root + 12 * (root < 38), int(105 * dyn)), t, 0.6, -0.2)
+        for b in (1, 2):
+            for m in voicing(c, 60, 3):
+                M.add('pah', vln_pz.play(m, int(90 * dyn)), t + b * bt, 0.55, 0.25)
+        if 1 <= i <= 8:
+            beat = 0
+            for name, nb in TUNE_A[i - 1]:
+                m = n(name)
+                if m % 12 in (7, 0) and MAJOR[PROG_A[i - 1]] in ('E', 'A', 'C#m'):
+                    m += 1                   # G -> G#, C -> C#
+                M.add('tune', clar_st.play(m - 12, int(100 * dyn)), t + beat * bt, 0.7, 0.1)
+                if i >= 5:
+                    M.add('tune', picc.play(m + 12, int(85 * dyn)), t + beat * bt, 0.45, 0.2)
+                beat += nb
+    M.add('bass', bsn.play(n('E2'), 90), fbar[10] - 0.43, 0.8)   # the band stops; one frog left
+
+    # ---- the big frog: two croaks, then huge leaps off the right end on slide whistles ----
+    big = next(fr for fr in frogs if fr.last)
+    pb = float(pan_at(big.born + 0.9 * big.size))
+    for j, c0 in enumerate((T_CROAK + 0.2, T_CROAK + 1.2)):
+        M.add('frogs', tbn_buzz.play(n('G1') - 3 * j, 120, dur=0.6 + ON['buzz'] + 0.1 * j), c0 - ON['buzz'], 2.0, pb)
+        for r in range(3):                   # the rasp in it: three slow scrapes of a guiro, pitched down
+            M.add('frogs', guiro.play(115, pitch=-9 - 3 * j), c0 + 0.04 + 0.16 * r, 1.0, pb)
+    for k, (t0, d0, d1, hd) in enumerate(big.hops):
+        hop = slide(0.0, hd * 0.5, 500 + 80 * k, 1300 + 150 * k, hd * 0.5, 0.2, 0.6)
+        M.add('fx', moving(hop, t0, lambda q, d0=d0, d1=d1, t0=t0: d0 + (d1 - d0) * (q - t0) / hd), t0, 0.5)
+        if d1 > L + 40:                      # off the end: up and away, a splash somewhere far off
+            M.add('fx', slide(0.0, hd, 1300 + 150 * k, 2600, hd, 0.3, 0.6), t0 + hd * 0.5, 0.6, 0.85)
+            M.add('perc', timp.play(60, pitch=4), t0 + hd + 0.35, 0.3, 0.85)
+            M.add('frogs', guiro.play(70, pitch=-2), t0 + hd + 0.4, 0.4, 0.85)
+            break
+        down = slide(0.0, hd * 0.5, 1300 + 150 * k, 500 + 80 * k, hd * 0.5, 0.2, 0.6)
+        M.add('fx', moving(down, t0 + hd * 0.5, lambda q, d0=d0, d1=d1, t0=t0: d0 + (d1 - d0) * (q - t0) / hd),
+              t0 + hd * 0.5, 0.5)
+        tl = after(t0, hd)
+        p = float(pan_at(d1))
+        M.add('perc', timp.play(100, pitch=-2 + 2 * k), tl, 0.5, p)
+        M.add('bass', bsn.play(n(['E2', 'G#2', 'B2', 'E3'][min(k, 3)]), 110), tl, 0.6, p)
+        M.add('frogs', guiro.play(100, pitch=-4), tl, 0.7, p)
+
+    # ---- one last bubble rises in the empty pot and pops ----
+    tb, tp = T_CROAK + 6.0, T_CROAK + 7.6
+    rise = np.arange(int((tp - tb) * SR)) / SR
+    ph = 2 * np.pi * np.cumsum(180 * 2 ** (rise / (tp - tb) * 1.5)) / SR
+    s = 0.25 * np.sin(ph) * (rise / (tp - tb)) ** 1.5
+    M.add('pad', np.vstack([s, s]), tb, 0.8, float(pan_at(centre)))
+    M.add('bubbles', bloop(500, 0.18, 2.0, 0.9), tp, 0.6, float(pan_at(centre)))
+    M.add('frogs', glock.play(n('B6'), 80), tp, 0.5, float(pan_at(centre)))
+    for j, m in enumerate((n('E3'), n('B3'), n('E4'), n('G#4'), n('B4'))):
+        M.add('pah', harp.play(m, 85), tp + 0.05 + 0.05 * j, 0.5)
+    M.add('bass', bsn.play(n('E2'), 100), tp + 0.05, 0.5)
+
+    M.add('lead', M.synth('Leads/Squelch').render(lead_n, D), 0.0)
+    M.add('choir', M.synth('Pads/Ooh').render(choir_n, D), 0.0)
+    M.add('pad', M.synth('Pads/Ghost Pad').render(pad_n, D), 0.0)
+    # the band follows the brew: a murmur while it simmers, full when it floods the house
+    tt = np.arange(M.n) / SR
+    env = np.interp(tt, *zip(*LEVEL))
+    for k in ('bass', 'pah', 'tune', 'lead', 'choir', 'perc', 'fx', 'brew'):
+        M.buses[k]['sig'] *= env

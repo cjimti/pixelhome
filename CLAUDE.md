@@ -1,7 +1,8 @@
 # Pixelhome: notes for agents
 
 Sequences are Python modules that render frames. The site (pixelhome.app) is built from them in CI;
-never commit `dist/`, `build/`, FSEQ or PNG output.
+never commit `dist/`, `build/`, FSEQ or PNG output. The one generated thing that is committed is a show's
+soundtrack, `homes/<home>/audio/<occasion>/<name>.mp3`: it needs local tools CI doesn't have.
 
 ## Sequence contract
 
@@ -43,6 +44,16 @@ loops, `candle_bed`.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.
+
+## Music (optional, shows)
+
+A show may define `score(M, G)` that writes its soundtrack into the mix `M` (`pixelhome/audio.py`): Surge XT
+patches, VSCO2 CE samples, slide whistles, whooshes. Take every hit from the same timings render() uses,
+pan sounds to where they happen on the house, and compose something original (no existing songs).
+`homes/cjimti/sequences/halloween/bone_yard.py` is the reference. One-time setup: `scripts/audio-setup.sh`.
+Render: `uv run --group audio python -m pixelhome music [--video] <CODE>` (writes the MP3, and with
+`--video` a preview MP4 with sound). If a show's timing changes, re-render its music. Never auto-play
+audio on the machine you are working on.
 
 ## Checking work
 
