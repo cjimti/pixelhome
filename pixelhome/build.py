@@ -1,5 +1,5 @@
 """Render sequences into the static site (dist/) and local previews."""
-import json, os, shutil, subprocess, sys, time
+import glob, hashlib, json, os, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
@@ -9,6 +9,8 @@ from .occasions import OCCASIONS, KINDS
 
 WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half frame rate
 MAX_SECONDS = 15 * 60
+# Rendered output is cached by a hash of everything it depends on, so a build only renders what changed.
+CACHE = os.environ.get('PIXELHOME_RENDER_CACHE', os.path.join(catalog.ROOT, 'build', 'render-cache'))
 
 
 def _matches(s, want):
@@ -28,24 +30,60 @@ def render(s):
     return frames
 
 
-def _build_one(args):
-    s, out = args
+def _engine_hash():
+    """The code and locked dependencies every render goes through (not the music or command-line code)."""
+    h = hashlib.sha256()
+    pkg = os.path.join(catalog.ROOT, 'pixelhome')
+    for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
+        if os.path.basename(p) not in ('audio.py', '__main__.py'):
+            h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
+    return h.hexdigest()
+
+
+def _key(s, engine):
+    h = hashlib.sha256(f'{engine}\0{s.home}\0{s.id}\0'.encode())
+    h.update(open(os.path.join(catalog.HOMES, s.home, 'home.json'), 'rb').read())
+    h.update(open(s.path, 'rb').read())
+    return h.hexdigest()[:40]
+
+
+def _render_one(s, dest):
+    """Render a sequence into dest/ as seq.fseq, seq.png and meta.json."""
     t0 = time.time()
     frames = render(s)
     data = to_bytes_dithered(frames) if s.kind == 'ambient' else to_bytes(frames)
     step = int(round(DT * 1000))
-    for sub in ('fseq', 'data'):
-        os.makedirs(os.path.join(out, sub, s.home, s.occasion), exist_ok=True)
-    fseq.write(os.path.join(out, 'fseq', s.home, s.id + '.fseq'), data, step)
+    fseq.write(os.path.join(dest, 'seq.fseq'), data, step)
     every = 2 if len(data) * DT > WEB_MAX_SECONDS else 1
     web = data[::every]
-    Image.fromarray(web.reshape(len(web), -1, 3), 'RGB').save(
-        os.path.join(out, 'data', s.home, s.id + '.png'), optimize=True)
+    Image.fromarray(web.reshape(len(web), -1, 3), 'RGB').save(os.path.join(dest, 'seq.png'), optimize=True)
     meta = dict(id=s.id, code=s.code, title=s.title, occasion=s.occasion, kind=s.kind, description=s.description,
                 seconds=round(len(data) * DT, 2), fps=round(1000 / (step * every)), frames=len(web),
                 fseq=f'fseq/{s.home}/{s.id}.fseq', fseqName=f'{s.code} {s.title}.fseq',
-                fseqBytes=os.path.getsize(os.path.join(out, 'fseq', s.home, s.id + '.fseq')),
+                fseqBytes=os.path.getsize(os.path.join(dest, 'seq.fseq')),
                 data=f'data/{s.home}/{s.id}.png', renderSeconds=round(time.time() - t0, 2))
+    with open(os.path.join(dest, 'meta.json'), 'w') as f:
+        json.dump(meta, f)
+
+
+def _build_one(args):
+    s, out, key = args
+    cached = os.path.join(CACHE, key)
+    hit = os.path.exists(os.path.join(cached, 'meta.json'))
+    if not hit:
+        tmp = f'{cached}.tmp{os.getpid()}'
+        shutil.rmtree(tmp, ignore_errors=True)
+        os.makedirs(tmp)
+        _render_one(s, tmp)
+        shutil.rmtree(cached, ignore_errors=True)
+        os.replace(tmp, cached)
+    for sub in ('fseq', 'data'):
+        os.makedirs(os.path.join(out, sub, s.home, s.occasion), exist_ok=True)
+    shutil.copyfile(os.path.join(cached, 'seq.fseq'), os.path.join(out, 'fseq', s.home, s.id + '.fseq'))
+    shutil.copyfile(os.path.join(cached, 'seq.png'), os.path.join(out, 'data', s.home, s.id + '.png'))
+    with open(os.path.join(cached, 'meta.json')) as f:
+        meta = json.load(f)
+    meta['cached'] = hit
     mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
     if os.path.exists(mp3):
         os.makedirs(os.path.join(out, 'audio', s.home, s.occasion), exist_ok=True)
@@ -60,6 +98,7 @@ def build(out, want):
         shutil.rmtree(out)
     shutil.copytree(site, out)
     homes, jobs = [], []
+    engine = _engine_hash()
     for h in catalog.homes():
         home = catalog.load_home(h)
         seqs = [s for s in catalog.sequences(h) if _matches(s, want)]
@@ -72,19 +111,28 @@ def build(out, want):
         homes.append(dict(id=h, name=home.name, description=home.spec.get('description', ''), pixels=home.N,
                           channels=home.channels, segments=len(home.seg), controller=home.spec.get('controller'),
                           layout=f'data/{h}/layout.json', sequences=[]))
-        jobs += [(s, out) for s in seqs]
+        jobs += [(s, out, _key(s, engine)) for s in seqs]
     by_home = {h['id']: h for h in homes}
+    os.makedirs(CACHE, exist_ok=True)
+    hits = 0
     with ProcessPoolExecutor() as pool:
-        for (s, _), meta in zip(jobs, pool.map(_build_one, jobs)):
+        for (s, _, _), meta in zip(jobs, pool.map(_build_one, jobs)):
+            hit = meta.pop('cached')
+            hits += hit
             by_home[s.home]['sequences'].append(meta)
             print(f"{s.home}/{s.id}: {meta['seconds']:.0f}s, {meta['fseqBytes'] / 1e6:.1f} MB fseq, "
-                  f"rendered in {meta['renderSeconds']}s")
+                  + ('cached' if hit else f"rendered in {meta['renderSeconds']}s"))
+    if not want:                     # a full build drops cache entries nothing uses any more
+        keep = {k for _, _, k in jobs}
+        for d in os.listdir(CACHE):
+            if d not in keep:
+                shutil.rmtree(os.path.join(CACHE, d), ignore_errors=True)
     used = {m['occasion'] for h in homes for m in h['sequences']}
     cat = dict(occasions=[o for o in OCCASIONS if o['id'] in used], kinds=KINDS, homes=homes,
                built=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))
-    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s)')
+    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache')
 
 
 # ---------------------------------------------------------------------------
