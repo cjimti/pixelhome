@@ -24,7 +24,13 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - name: Render every sequence and build the site
+      # Rendered sequences, keyed by content hash (see pixelhome/build.py); only changed ones re-render.
+      - uses: actions/cache@v4
+        with:
+          path: build/render-cache
+          key: render-${{ github.sha }}
+          restore-keys: render-
+      - name: Render changed sequences and build the site
         run: uv run python -m pixelhome build --out dist
       - uses: actions/upload-pages-artifact@v3
         with:
