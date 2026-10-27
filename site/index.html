@@ -16,75 +16,75 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap">
+<div class="app">
   <header class="top">
     <a class="brand" href="./" aria-label="Pixelhome home">
       <svg viewBox="0 0 32 32" aria-hidden="true"><use href="favicon.svg#mark"/></svg>
       <span>Pixel<b>home</b></span>
     </a>
-    <div class="homeinfo">
-      <select id="homeSelect" aria-label="Home" hidden></select>
-      <span class="spec" id="homeSpec"></span>
-    </div>
+    <select id="homeSelect" aria-label="Home" hidden></select>
   </header>
 
-  <div class="player">
-    <div class="stage" id="stage">
-      <canvas id="view" aria-label="3D view of the house with its roofline lights"></canvas>
-      <div class="now"><span class="code" id="nowCode"></span><span class="name" id="nowName"></span></div>
-      <div class="views" role="group" aria-label="Camera">
-        <button data-view="street" aria-pressed="true">Street</button>
-        <button data-view="corner" aria-pressed="false">Corner</button>
-        <button data-view="above" aria-pressed="false">Above</button>
+  <main class="main">
+    <div class="player">
+      <div class="stage" id="stage">
+        <canvas id="view" aria-label="3D view of the house with its roofline lights"></canvas>
+        <div class="now"><span class="code" id="nowCode"></span><span class="name" id="nowName"></span></div>
+        <div class="views" role="group" aria-label="Camera">
+          <button data-view="street" aria-pressed="true">Street</button>
+          <button data-view="corner" aria-pressed="false">Corner</button>
+          <button data-view="above" aria-pressed="false">Above</button>
+        </div>
+        <div class="hint">Drag to orbit · scroll or pinch to zoom · ↑ ↓ to change sequence</div>
+        <div class="status" id="status">Loading…</div>
       </div>
-      <div class="hint">Drag to orbit · scroll or pinch to zoom</div>
-      <div class="status" id="status">Loading…</div>
+
+      <div class="transport">
+        <button class="play" id="play" aria-label="Play">
+          <svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5v15l13-7.5z"/></svg>
+        </button>
+        <input type="range" id="scrub" min="0" max="1" step="0.0001" value="0" aria-label="Position in sequence">
+        <div class="time" id="time"><b>0:00.0</b> / 0:00</div>
+        <label class="exposure" for="exposure">Exposure <input type="range" id="exposure" min="1" max="8" step="0.1" value="1"><output id="expOut">1.0×</output></label>
+        <a class="dl" id="download" href="#" download hidden>Download .fseq</a>
+      </div>
     </div>
 
-    <div class="transport">
-      <button class="play" id="play" aria-label="Play">
-        <svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5v15l13-7.5z"/></svg>
-      </button>
-      <div class="time" id="time"><b>0:00.0</b> / 0:00</div>
-      <input type="range" id="scrub" min="0" max="1" step="0.0001" value="0" aria-label="Position in sequence">
-      <label class="exposure" for="exposure">Exposure <input type="range" id="exposure" min="1" max="8" step="0.1" value="1"><output id="expOut">1.0×</output></label>
-      <a class="dl" id="download" href="#" download hidden>Download .fseq</a>
+    <div class="extras">
+      <p class="about" id="nowDesc"></p>
+      <p class="spec" id="homeSpec"></p>
+      <div class="drop" id="drop">
+        <span><strong>Play your own .fseq.</strong> Drop a file rendered for this layout, or choose one.</span>
+        <label><input type="file" id="file" accept=".fseq"><button type="button" id="pick">Choose file</button></label>
+        <span id="dropMsg" hidden></span>
+      </div>
+      <footer>
+        <p>Every sequence is a Python script that computes each pixel, frame by frame, from the home's 3D layout.
+          Downloads are FSEQ v2 (zstd) at 40 fps for <a href="https://github.com/FalconChristmas/fpp">FPP</a>, made for a
+          controller at <span id="ctrlNote">80% brightness and gamma 1.0</span>. All-night loops are dim on purpose; raise
+          Exposure to see them on screen.</p>
+        <p><a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> · <span id="built"></span></p>
+      </footer>
     </div>
-  </div>
+  </main>
 
   <section class="library" aria-labelledby="libHead">
-    <div class="libhead">
-      <h2 id="libHead">Sequences</h2>
-      <span class="count" id="count"></span>
-    </div>
     <div class="filters">
+      <div class="libhead">
+        <h2 id="libHead">Sequences</h2>
+        <span class="count" id="count"></span>
+      </div>
+      <input type="search" id="search" placeholder="Search sequences" aria-label="Search sequences">
       <div class="chips" id="occasions" role="group" aria-label="Occasion"></div>
-      <div class="filterrow">
-        <div class="seg" id="kinds" role="group" aria-label="Kind">
-          <button data-kind="" aria-pressed="true">All</button>
-          <button data-kind="show" aria-pressed="false">Shows</button>
-          <button data-kind="ambient" aria-pressed="false">All night</button>
-        </div>
-        <input type="search" id="search" placeholder="Search sequences" aria-label="Search sequences">
+      <div class="seg" id="kinds" role="group" aria-label="Kind">
+        <button data-kind="" aria-pressed="true">All</button>
+        <button data-kind="show" aria-pressed="false">Shows</button>
+        <button data-kind="ambient" aria-pressed="false">All night</button>
       </div>
     </div>
-    <div id="groups"></div>
+    <div class="list" id="groups"></div>
     <p class="empty" id="empty" hidden>No sequences match. Clear the search or pick another occasion.</p>
   </section>
-
-  <div class="drop" id="drop">
-    <span><strong>Play your own .fseq.</strong> Drop a file rendered for this layout, or choose one.</span>
-    <label><input type="file" id="file" accept=".fseq"><button type="button" id="pick">Choose file</button></label>
-    <span id="dropMsg" hidden></span>
-  </div>
-
-  <footer>
-    <p>Every sequence is a Python script that computes each pixel, frame by frame, from the home's 3D layout.
-      Downloads are FSEQ v2 (zstd) at 40 fps for <a href="https://github.com/FalconChristmas/fpp">FPP</a>, made for a
-      controller at <span id="ctrlNote">80% brightness and gamma 1.0</span>. All-night loops are dim on purpose; raise
-      Exposure to see them on screen.</p>
-    <p><a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> · <span id="built"></span></p>
-  </footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
