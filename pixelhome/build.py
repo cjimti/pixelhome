@@ -3,7 +3,7 @@ import glob, hashlib, json, os, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq
+from . import catalog, fseq, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import OCCASIONS, KINDS
 
@@ -31,11 +31,11 @@ def render(s):
 
 
 def _engine_hash():
-    """The code and locked dependencies every render goes through (not the music or command-line code)."""
+    """The code and locked dependencies every render goes through (not the music, share images or command line)."""
     h = hashlib.sha256()
     pkg = os.path.join(catalog.ROOT, 'pixelhome')
     for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', '__main__.py'):
+        if os.path.basename(p) not in ('audio.py', 'share.py', '__main__.py'):
             h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
     return h.hexdigest()
 
@@ -132,6 +132,7 @@ def build(out, want):
                built=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))
+    share.write(out, homes)
     print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache')
 
 
