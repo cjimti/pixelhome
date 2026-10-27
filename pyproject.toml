@@ -1,0 +1,15 @@
+[project]
+name = "pixelhome"
+version = "0.1.0"
+description = "Pixel light sequences for homes, generated in Python, played by FPP, previewed at pixelhome.app"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "pillow>=11.0",
+    "zstandard>=0.23",
+]
+
+[tool.uv]
+package = false

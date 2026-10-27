@@ -1,0 +1,84 @@
+{
+  "name": "Roofline House",
+  "description": "Single-story house with a front porch. 501 RGB pixels along the roofline in six runs, driven by FPP on a Falcon PiCap V2.",
+  "units": "xLights layout units",
+  "controller": {
+    "name": "fpp",
+    "hardware": "Falcon PiCap V2",
+    "host": "fpp.local",
+    "protocol": "DDP",
+    "brightness": 0.8,
+    "gamma": 1.0
+  },
+  "segments": [
+    {
+      "name": "Porch Left",
+      "start_channel": 1,
+      "nodes": 82,
+      "first": [-196.110107, 151.127197, -564.842773],
+      "last": [-196.110107, 151.127197, -151.236663]
+    },
+    {
+      "name": "Left",
+      "start_channel": 247,
+      "nodes": 98,
+      "first": [-195.490997, 152.147797, -147.645996],
+      "last": [-595.210846, 152.147797, -147.645996]
+    },
+    {
+      "name": "Side",
+      "start_channel": 541,
+      "nodes": 81,
+      "first": [-595.541199, 153.566101, -146.384796],
+      "last": [-595.541199, 153.088394, -636.595764]
+    },
+    {
+      "name": "Porch Front",
+      "start_channel": 784,
+      "nodes": 71,
+      "first": [-193.941223, 151.044067, -568.726685],
+      "last": [150.0, 150.0, -568.726685]
+    },
+    {
+      "name": "Porch Right",
+      "start_channel": 997,
+      "nodes": 49,
+      "first": [152.031799, 149.787903, -564.860718],
+      "last": [152.031799, 149.787903, -196.425385]
+    },
+    {
+      "name": "Right",
+      "start_channel": 1144,
+      "nodes": 120,
+      "first": [152.977707, 149.444702, -190.836594],
+      "last": [628.623459, 149.444702, -190.836598]
+    }
+  ],
+  "path": [
+    {
+      "segment": "Side",
+      "dir": -1
+    },
+    {
+      "segment": "Left",
+      "dir": -1
+    },
+    {
+      "segment": "Porch Left",
+      "dir": -1
+    },
+    {
+      "segment": "Porch Front",
+      "dir": 1
+    },
+    {
+      "segment": "Porch Right",
+      "dir": 1
+    },
+    {
+      "segment": "Right",
+      "dir": 1
+    }
+  ],
+  "mesh": "house.obj"
+}
