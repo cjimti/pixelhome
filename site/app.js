@@ -256,7 +256,7 @@
 
   // ---------- library ----------
   const filters = { occasion: '', kind: '', q: '' };
-  const cards = new Map();         // sequence id -> card element
+  const cards = new Map();         // sequence id -> list row
 
   function fmt(s, tenths = true) {
     const m = Math.floor(s / 60), r = s - m * 60;
@@ -291,23 +291,20 @@
       const g = el('div', 'group');
       g.dataset.occasion = o.id;
       g.style.setProperty('--c', o.accent);
-      const head = el('div', 'grouphead');
-      head.append(el('h3', null, o.label));
-      g.append(head);
-      const grid = el('div', 'cards');
+      g.append(el('h3', null, o.label));
       for (const s of list) {
-        const b = el('button', 'card');
+        const b = el('button', 'item');
         b.type = 'button';
-        const meta = el('span', 'meta');
-        meta.append(el('span', 'c', s.code), el('span', null, fmt(s.seconds, false)));
-        b.append(meta, el('span', 't', s.title), el('span', 'd', s.description),
-          el('span', 'k', s.kind === 'ambient' ? 'All night loop' : 'Show'));
-        b.addEventListener('click', () => { choose(s); if (matchMedia('(max-width: 640px)').matches) stage.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); });
+        const r1 = el('span', 'r1');
+        r1.append(el('span', 'c', s.code), el('span', 't', s.title));
+        if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
+        r1.append(el('span', 'dur', fmt(s.seconds, false)));
+        b.append(r1, el('span', 'd', s.description));
+        b.addEventListener('click', () => choose(s));
         b._seq = s;
         cards.set(s.id, b);
-        grid.append(b);
+        g.append(b);
       }
-      g.append(grid);
       groups.append(g);
     }
     applyFilters();
@@ -320,7 +317,7 @@
     document.querySelectorAll('#kinds button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === filters.kind)));
     document.querySelectorAll('.group').forEach((g) => {
       let n = 0;
-      g.querySelectorAll('.card').forEach((c) => {
+      g.querySelectorAll('.item').forEach((c) => {
         const s = c._seq;
         const ok = (!filters.occasion || s.occasion === filters.occasion) && (!filters.kind || s.kind === filters.kind) &&
           (!q || `${s.code} ${s.title} ${s.description}`.toLowerCase().includes(q));
@@ -338,6 +335,7 @@
   $('search').addEventListener('input', (e) => { filters.q = e.target.value; applyFilters(); });
 
   // ---------- choosing / playing ----------
+  const wide = matchMedia('(min-width: 760px)');     // sidebar layout: the list scrolls on its own
   function setAccent(occ) {
     document.documentElement.style.setProperty('--accent', (occasion[occ] || CAT.occasions[0] || { accent: '#ff6a1f' }).accent);
   }
@@ -346,6 +344,9 @@
     cards.forEach((c, id) => c.setAttribute('aria-current', String(id === meta.id)));
     $('nowCode').textContent = meta.code;
     $('nowName').textContent = meta.title;
+    $('nowDesc').textContent = meta.description || '';
+    const row = cards.get(meta.id);
+    if (row && wide.matches) row.scrollIntoView({ block: 'nearest' });
     const dl = $('download');
     dl.hidden = !meta.fseq;
     if (meta.fseq) {
@@ -385,8 +386,16 @@
   }
   $('play').addEventListener('click', () => setPlaying(!playing));
   document.addEventListener('keydown', (e) => {
-    if (e.target.closest('input, button, select, a')) return;
+    if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
     if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+    if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+      const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
+      if (!rows.length) return;
+      e.preventDefault();
+      const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
+      const next = i < 0 ? 0 : (i + (e.code === 'ArrowUp' ? -1 : 1) + rows.length) % rows.length;
+      choose(rows[next]._seq);
+    }
     if (seq && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
       const dur = seq.frames / seq.fps;
       t = (t + (e.code === 'ArrowLeft' ? -5 : 5) + dur) % dur;
