@@ -30,7 +30,6 @@ KIND = 'show'
 DESCRIPTION = ('A bat colony pours out of the attic at dusk, swirls around the wings and hunts moths by '
                'sonar, its pings lighting the roof by distance. At dawn they all stream home, all but one.')
 VOICEOVER = 'At dusk... the attic opens. Listen, and you can hear them hunting. Count them out tonight... and count them home.'
-VOICEOVER_TAKE = 2                          # take 0 lost the accent
 
 SONAR = hexc('#20e8ff')
 MOTH = hexc('#ffa020')

@@ -1,30 +1,31 @@
-"""Is Anyone There?: a seance around the porch table. A struck match lights ten candles around the
-porch notch (the table), outward from the front door. The sitters ask four questions, each one a
-music-box phrase whose syllables roll out of the porch down both wings as warm ripples; the house
-answers with knocks, lit where they land: one for yes from the far back end of Side, two for no
-from the free end of Right, one right at the front door, among the candles. Asked if it wants them
-to leave, it says no from both ends at once and then knocks its way in along both wings to the
-table. Cold drafts run down the roofline from the free ends and every candle leans the way the
-wind goes; two drafts meet at the table and the flames shrink blue and nearly die. A planchette
-appears at the door and glides all over the house, stopping at six letters (each one stays lit);
-then the table levitates: the candles slide back up the porch rails, the light of the wings is
-drawn in, it all shakes harder and harder until the spirit slams the door. One flash, a shockwave
-out of the door, every candle blown out in a puff of smoke. Darkness. Then, at the very back of
-the house where the first knock came from, one candle relights, cold blue, and knocks once: yes.
+"""Is Anyone There?: a mystery on the porch, solved. A struck match lights ten candles around the
+porch notch (the table), outward from the front door, on a dark and windy night. Someone calls into the
+dark four times, each call a music-box phrase whose syllables roll out of the porch down both wings as
+warm ripples, and something knocks back, lit where it lands: once from the far back end of Side, twice
+from the free end of Right, once right at the front door, among the candles; the fourth time from both
+ends at once, and then it knocks its way in along both wings to the table. Cold drafts run down the
+roofline from the free ends and every candle leans the way the wind goes; two drafts meet at the table
+and the flames shrink blue and nearly die. Two glowing eyes appear at the door and dart all over the
+house, stopping to stare; they settle on the table, which rattles harder and harder, the candles
+sliding back up the porch rails, until the door slams. One flash, a shockwave out of the door, every
+candle blown out in a puff of smoke. Darkness. Then the porch light clicks on and the mystery is
+solved: at the very back of the house where the first knock came from, the cat, thumping its tail
+against the wall. It blinks, thumps once more and trots off the end of the house. The drafts were the
+window it left open.
 
-Everything is in path distance (G.pd), so knocks, ripples, drafts and the planchette move evenly
-across runs with different pixel spacing. The show runs on an internal 80 BPM waltz (3/4); all the
-cue times are beats so the score below takes its hits from the same constants."""
+Everything is in path distance (G.pd), so knocks, ripples, drafts and the eyes move evenly across runs
+with different pixel spacing. The show runs on an internal 80 BPM waltz (3/4); all the cue times are
+beats so the score below takes its hits from the same constants."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, smoothstep, lerp, Flicker, nframes
 
 CODE = 'HW07'
 TITLE = 'Is Anyone There?'
 KIND = 'show'
-DESCRIPTION = ('A seance at the porch table: the house answers questions with knocks where they land, '
-               'blows cold drafts through the candles, spells with a planchette and lifts the table, '
-               'until the spirit slams the door. One candle comes back on its own.')
-VOICEOVER = 'Late at night, the old table on the porch starts to knock. Some say the house is answering... Listen.'
+DESCRIPTION = ('Candles on the porch table, and someone calls into the dark. Knocks answer from the ends of '
+               'the house, cold drafts bend the flames, two glowing eyes dart around the roof and the table '
+               'rattles until the door slams. Then the porch light comes on: it was the cat all along.')
+VOICEOVER = 'A dark and windy night, a table full of candles, and knocks that come from nowhere. Every mystery has an explanation...'
 
 BEAT = 0.75                                  # 80 BPM, 3/4
 
@@ -45,33 +46,35 @@ T_LIT = {k: B(3 + i) for i, k in enumerate(LIGHT_ORDER)}
 INTRO = ['A4', 'D5', 'F5', 'E5', 'D5', 'Bb4', 'A4', 'C#5', 'E5', 'D5']   # one note per candle, beats 3..12
 
 BACK_END, RIGHT_END = 8.0, 2504.0            # the free ends
-# questions: syllables (beat, note); the ripple of each syllable leaves the porch on its beat
+# calls into the dark: syllables (beat, note); the ripple of each syllable leaves the porch on its beat
 QUESTIONS = [
     [(15, 'A4'), (15.5, 'A4'), (16, 'C5'), (16.5, 'D5'), (17, 'E5')],                       # is anyone there?
-    [(24, 'A4'), (24.5, 'A4'), (25, 'C5'), (25.5, 'C5'), (26, 'D5'), (26.5, 'F5'), (27, 'E5')],  # are you a friendly spirit?
-    [(33, 'A4'), (33.5, 'C5'), (34, 'D5'), (34.5, 'E5'), (35, 'G5')],                       # are you here with us?
-    [(42, 'E5'), (42.5, 'D5'), (43, 'C5'), (43.5, 'A4'), (44, 'Bb4'), (44.5, 'A4')],          # do you want us to leave?
+    [(24, 'A4'), (24.5, 'A4'), (25, 'C5'), (25.5, 'C5'), (26, 'D5'), (26.5, 'F5'), (27, 'E5')],  # hello? who's out there?
+    [(33, 'A4'), (33.5, 'C5'), (34, 'D5'), (34.5, 'E5'), (35, 'G5')],                       # is somebody there?
+    [(42, 'E5'), (42.5, 'D5'), (43, 'C5'), (43.5, 'A4'), (44, 'Bb4'), (44.5, 'A4')],          # come out, whoever you are
 ]
 SYLLABLES = [s for q in QUESTIONS for s in q]
 # knocks: (beat, path distance, strength)
-ANSWERS = [(20, BACK_END, 0.75),                                   # yes
-           (30, RIGHT_END, 0.8), (30.5, RIGHT_END, 0.8),           # no
-           (38, DOOR, 1.0),                                        # yes, here, at the door
-           (47, BACK_END, 0.85), (47.5, RIGHT_END, 0.85)]          # no, from both ends
+ANSWERS = [(20, BACK_END, 0.75),                                   # from the back of the house (the cat)
+           (30, RIGHT_END, 0.8), (30.5, RIGHT_END, 0.8),           # from the far end
+           (38, DOOR, 1.0),                                        # right at the door
+           (47, BACK_END, 0.85), (47.5, RIGHT_END, 0.85)]          # from both ends
 RUN = [(48 + 0.5 * i, float(np.interp(i // 2, [0, 5], [60, 905])) if i % 2 == 0 else
         float(np.interp(i // 2, [0, 5], [2460, 2025])), 0.55 + 0.04 * i) for i in range(12)]
 KNOCKS = ANSWERS + RUN
 # drafts: (beat, start distance, direction, strength); the last two meet at the table
 SPEED_DRAFT, LEN_DRAFT = 700.0, 320.0
 GUSTS = [(54, 0.0, 1, 0.7), (57, 0.0, 1, 0.85), (60, 2512.0, -1, 0.9), (63, 0.0, 1, 1.0), (63, 2512.0, -1, 1.0)]
-# the planchette: appears at the door, glides to six letters, returns to the door
-T_PLAN, GLIDE = 66, 1.5
+# the eyes: appear at the door, dart to six places and stare, then settle on the table
+T_EYES, GLIDE = 66, 1.5
 STOPS = [(69, 2330.0, 'E5'), (71, 1150.0, 'D5'), (73, 300.0, 'C5'), (75, 1800.0, 'A4'), (77, 700.0, 'F4'),
          (79, 2470.0, 'D4'), (81, DOOR, None)]
-T_LIFT, T_SLAM = 81, 93                      # the table rises, then the door slams
+T_LIFT, T_SLAM = 81, 93                      # the table rattles, then the door slams
 WAVE = 1400.0                                # slam shockwave speed
-T_RELIGHT, T_LAST = 101, 104                 # the blue candle, its knock
-BLUE_AT = 10.0
+T_RELIGHT, T_LAST = 101, 104                 # the porch light comes on; the cat's tail thumps
+CAT_AT = 10.0                                # the cat, at the back of the house where the first knock came from
+T_GONE = 106                                 # it trots off the free end of Side
+EYE_GAP = 7.0                                # half the distance between a pair of eyes
 
 FLAME = hexc('#ff8418')
 TIP = hexc('#ffc860')
@@ -80,12 +83,11 @@ COLD = hexc('#4f86ff')
 DRAFT = hexc('#3c74ff')
 KNOCK = hexc('#e4ecff')
 VOICE = hexc('#ffa040')
-PLAN = hexc('#e6eeff')
-LETTER = hexc('#70ffa8')
+EYES = hexc('#b4ff3c')
+LAMP = hexc('#ffd8a0')
 SMOKE = hexc('#80889c')
 BASE = hexc('#3a1666')
 TABLE = hexc('#ff7a30')
-PULL = hexc('#7a6cff')
 
 
 def blowout(k):
@@ -93,8 +95,8 @@ def blowout(k):
     return B(T_SLAM) + abs(CANDLES[k] - DOOR) / WAVE + 0.02
 
 
-def plan_pos(t):
-    """Planchette position and speed (units/s) at time t."""
+def eyes_pos(t):
+    """Where the eyes are, and their speed (units/s), at time t."""
     prev = DOOR
     for b, d, _ in STOPS:
         if t < B(b - GLIDE):
@@ -120,7 +122,6 @@ def render(G, seed=7):
     shake_p = rng.uniform(0, 2 * np.pi, NC)
     sway_p = rng.uniform(0, 2 * np.pi, NC)
     tex_p = rng.uniform(0, 2 * np.pi, 3)
-    pull_off = rng.uniform(0, 1, 6)
     t_out = np.array([blowout(k) for k in range(NC)])
     t_lit = np.array([T_LIT[k] for k in range(NC)])
     ts_slam = B(T_SLAM)
@@ -164,12 +165,12 @@ def render(G, seed=7):
         lean = np.clip(lean, -1, 1)
         lev = lev * (1 - 0.72 * np.clip(clash, 0, 1)) * (1 + 0.3 * np.clip(push, 0, 1) * fl_fast(t))
         # knocks make the flames jump
-        for b, d, st in KNOCKS + [(T_LAST, BLUE_AT, 0.5)]:
+        for b, d, st in KNOCKS:
             tk = B(b) + np.abs(CANDLES - d) / 650.0
             dip = np.where(t >= tk, np.exp(-np.maximum(t - tk, 0) / 0.18), 0.0)
             lev = lev * (1 - 0.45 * st * dip)
             lean = lean + 0.5 * st * dip * np.sign(CANDLES - d + 1e-3)
-        # levitation: slide back up the rails, shake harder and harder; snaps down at the slam
+        # the rattle: slide back up the rails, shake harder and harder; still at the slam
         ul = smoothstep(B(T_LIFT), ts_slam - 0.3, t) if t < ts_slam else 0.0
         cpos = CANDLES.copy()
         if ul > 0:
@@ -208,7 +209,7 @@ def render(G, seed=7):
             mi *= 1 - smoothstep(t_lit.max(), t_lit.max() + 0.4, t)
             buf += light(TIP, mi * np.exp(-((pdp - mp) / 6) ** 2))
 
-        # ---- the sitters' voices: warm ripples out of the porch down both wings ----
+        # ---- the calls into the dark: warm ripples out of the porch down both wings ----
         vo = np.zeros(G.N)
         for b, _ in SYLLABLES:
             ts = B(b)
@@ -223,12 +224,12 @@ def render(G, seed=7):
 
         # ---- knocks: a burst where it lands and a ring running out from it ----
         kn = np.zeros(G.N)
-        for b, d, st in ANSWERS + [(T_LAST, BLUE_AT, 0.5)]:     # something gathers where it is about to knock
+        for b, d, st in ANSWERS:                                # something gathers where it is about to knock
             tk = B(b)
             if tk - 1.8 <= t < tk:
                 g = smoothstep(tk - 1.8, tk - 0.05, t) ** 2
                 buf += light(COLD, 0.3 * st * g * np.exp(-((pdp - d) / (110 - 60 * g)) ** 2))
-        for b, d, st in KNOCKS + [(T_LAST, BLUE_AT, 0.5)]:
+        for b, d, st in KNOCKS:
             tk = B(b)
             if not (tk <= t < tk + 1.8):
                 continue
@@ -242,37 +243,21 @@ def render(G, seed=7):
         # ---- drafts ----
         buf += light(DRAFT, np.clip(draft_px, 0, 0.6))
 
-        # ---- the planchette and its letters ----
-        tp = B(T_PLAN)
+        # ---- the eyes: a pair that darts about, stops and stares, blinking now and then ----
+        tp = B(T_EYES)
         if tp <= t < ts_slam:
-            pi = smoothstep(tp, tp + 1.2, t)
-            for j, lagt in enumerate((0.0, 0.035, 0.07, 0.105)):
-                p, v = plan_pos(t - lagt)
-                p += (1.5 + 13 * ul ** 2) * np.sin(2 * np.pi * 8.8 * t + 0.4) if ul > 0 else 0.0
-                if j and abs(v) < 250:
-                    continue
-                w = 1.0 if j == 0 else 0.45 / j
-                ring = np.exp(-((pdp - p) / 20) ** 2) - 0.85 * np.exp(-((pdp - p) / 6.5) ** 2)
-                glow = 0.22 * np.exp(-((pdp - p) / 45) ** 2)
-                buf += light(PLAN, pi * w * np.clip(0.75 * ring + glow, 0, 1) * (1 + 0.1 * np.sin(3 * t)))
-            for b, d, _ in STOPS[:-1]:
-                if t >= B(b):
-                    a = t - B(b)
-                    li = 0.3 + 0.7 * np.exp(-a / 0.3)
-                    if t >= B(T_LIFT):
-                        li *= 1 - 0.5 * smoothstep(B(T_LIFT), ts_slam, t)
-                    buf += light(LETTER, li * np.exp(-((pdp - d) / 6) ** 2))
+            p, v = eyes_pos(t)
+            if ul > 0:
+                p += (1.5 + 13 * ul ** 2) * np.sin(2 * np.pi * 8.8 * t + 0.4)
+            o = 1 - 0.95 * (((t - tp) % 2.7) < 0.12)                # a blink every few seconds
+            o *= smoothstep(tp, tp + 0.6, t) * (1 - 0.35 * np.clip(abs(v) / 900, 0, 1))
+            buf += light(EYES, 0.9 * o * (np.exp(-((pdp - p + EYE_GAP) / 4) ** 2) + np.exp(-((pdp - p - EYE_GAP) / 4) ** 2)))
+            buf += light(EYES, 0.08 * o * np.exp(-((pdp - p) / 40) ** 2))
 
-        # ---- levitation: the table glows and shakes, the wings' light is drawn into it ----
+        # ---- the rattle: the table glows and shakes ----
         if ul > 0:
             sh = 1 + 0.35 * ul * np.sin(2 * np.pi * 9.3 * t) * np.sin(2 * np.pi * 0.7 * t + 1)
             buf += light(TABLE, (0.08 + 0.32 * ul ** 1.5) * sh * porch)
-            pl = np.zeros(G.N)
-            for j in range(6):                 # dashes sliding in from both free ends, faster and faster
-                ph = (pull_off[j] + (t - B(T_LIFT)) * (0.35 + 0.5 * ul)) % 1
-                x = ph * 893
-                pl += np.exp(-((pdp - x) / 30) ** 2) + np.exp(-((pdp - (L - ph * (L - 2033))) / 30) ** 2)
-            buf += light(PULL, 0.42 * ul * np.clip(pl, 0, 1) * wing)
 
         # ---- the slam: one flash, a burst at the door, the shockwave, smoke ----
         if ts_slam <= t < ts_slam + 4.5:
@@ -291,18 +276,20 @@ def render(G, seed=7):
                     sm += 0.3 * np.exp(-b2 / 1.1) * smoothstep(0, 0.15, b2) * np.exp(-((pdp - cpk) / (8 + 14 * b2)) ** 2)
             buf += light(SMOKE, np.clip(sm, 0, 0.4))
 
-        # ---- the blue candle at the very back of the house ----
+        # ---- the porch light comes on, and there is the cat ----
         tr = B(T_RELIGHT)
         if t >= tr:
             a = t - tr
-            lv = smoothstep(0, 0.5, a) * (1 + 0.6 * np.exp(-a / 0.3)) * (1 + 0.08 * np.sin(2 * np.pi * 2.3 * t)
-                                                                           + 0.05 * np.sin(2 * np.pi * 5.1 * t))
-            tk = B(T_LAST)
-            if t >= tk:
-                lv *= 1 - 0.4 * np.exp(-(t - tk) / 0.2)
-            buf += light(COLD, 0.85 * lv * np.exp(-((pdp - BLUE_AT) / 6) ** 2))
-            buf += light(hexc('#a8ccff'), 0.5 * lv * np.exp(-((pdp - BLUE_AT - 4) / 4) ** 2))
-            buf += light(COLD, 0.16 * lv * np.exp(-((pdp - BLUE_AT) / 80) ** 2))
+            on = smoothstep(0, 0.06, a) * (1 - 0.5 * ((a > 0.12) & (a < 0.2)))   # the bulb catches with a flicker
+            buf += light(LAMP, on * (0.34 * porch + 0.07 * wing))
+            tk, tg = B(T_LAST), B(T_GONE)
+            if t < tg + 1.6:
+                cp = lerp(CAT_AT, -40.0, smoothstep(tg, tg + 1.6, t))     # trots off the free end
+                o = smoothstep(0.3, 0.8, a) * (1 - 0.95 * ((abs(t - tk - 0.9) < 0.07) | (abs(t - tr - 2.2) < 0.07)))
+                buf += light(EYES, 0.95 * o * (np.exp(-((pdp - cp - 12) / 3.5) ** 2) + np.exp(-((pdp - cp - 12 - 2 * EYE_GAP) / 3.5) ** 2)))
+                for tt in (tr + 0.9, tk):                                   # its tail thumps the wall
+                    if tt <= t < tt + 0.6:
+                        buf += light(LAMP, 0.7 * np.exp(-(t - tt) / 0.12) * np.exp(-((pdp - cp - 2) / 10) ** 2))
 
         out[fi][G.path] = np.clip(buf * fade, 0, 1)
     return out
@@ -310,11 +297,12 @@ def render(G, seed=7):
 
 # ---------------------------------------------------------------- music ----------------------------------------------
 # A parlour waltz in D minor at the lights' 80 BPM, played on a music box, an upright piano and a glass harmonica
-# (sine partials with a slow rubbed attack, synthesized here). The music box asks each question; the waltz falls silent
+# (sine partials with a slow rubbed attack, synthesized here). The music box makes each call; the waltz falls silent
 # before every answer so the knocks (log drum, slit drum and a muted bass drum, panned to where they land) are heard
-# alone. The drafts bring a solo violin over a contrabass tremolo and wind; the planchette's letters are the first
-# question's notes turned upside down on the music box, with harp glides between them; the levitation climbs in string
-# tremolo, timpani and table legs rattling on wood until the slam (gong, bass drum, slapstick, a low piano cluster).
+# alone. The drafts bring a solo violin over a contrabass tremolo and wind; the eyes creep about on a quiet harp, each
+# stare a music-box note; the rattle climbs in string tremolo, timpani and table legs knocking on wood until the slam
+# (gong, bass drum, slapstick, a low piano cluster). Then a light switch, the cat's meow, its tail on the wall, and the
+# first call again, in D major: mystery solved.
 
 PROG = {1: 'Dm', 2: 'Gm', 3: 'A7', 4: 'Dm', 5: 'Dm', 6: None, 7: 'Dm', 8: 'Gm', 9: 'A7', 10: None, 11: 'Dm',
         12: 'Bb', 13: None, 14: 'Gm', 15: 'Eb', 16: 'A7', 17: 'A7'}
@@ -348,7 +336,6 @@ def score(M, G):
     bdm_p = M.hits('VSCO 1 Percussion/drums/bass/bdrum_muted_pp*.wav')
     bd_big = M.hits('VSCO 1 Percussion/drums/bass/bdrum_fff_*.wav')
     gong = M.hits('VSCO 1 Percussion/varMetal/Gong/gong_hit_fff.wav')
-    gong_s = M.hits('Percussion/gongHit_p.wav')
     bowcym = M.hits('Percussion/susCymb1-bow-*.wav')
     slap = M.hits('VSCO 1 Percussion/varWood/slapstick[0-9].wav')
     troll = M.hits('Percussion/Timpani/Rolls/*.wav')
@@ -421,7 +408,7 @@ def score(M, G):
         M.add('box', one(box, n(INTRO[i]), 96, BEAT * (1.8 if i == 9 else 0.9)), t, 1.0, p)
         M.add('fx', whoosh(0.25, 400, 1400, 0.25, seed=20 + i), t - 0.08, 0.35, p)
 
-    # ---- the questions ----
+    # ---- the calls into the dark ----
     for qi, q in enumerate(QUESTIONS):
         for j, (b, m) in enumerate(q):
             last = j == len(q) - 1
@@ -490,8 +477,8 @@ def score(M, G):
                 (B(60), n('G4'), 64, B(5.5)), (B(63), n('C#4'), 70, B(3)), (B(63), n('E4'), 64, B(3))]
     M.add('fx', flex.play(70, dur=3.0), B(63) + 1.8, 0.5, pan_at(DOOR))   # the two drafts meet at the table: the flames gutter
 
-    # ---- the planchette: glides (harp) and letters (the first question, upside down) ----
-    M.add('fx', chimes.play(70), B(T_PLAN) - 0.2, 0.6, pan_at(DOOR))
+    # ---- the eyes: creeping about (harp) and staring (music box) ----
+    M.add('fx', chimes.play(70), B(T_EYES) - 0.2, 0.6, pan_at(DOOR))
     bed_n += [(B(66), n('D3'), 58, B(15)), (B(66), n('A3'), 48, B(15))]
     glass_n += [(B(66), n('A4'), 62, B(6)), (B(72), n('Bb4'), 62, B(6)), (B(78), n('A4'), 62, B(3))]
     prev = DOOR
@@ -513,7 +500,7 @@ def score(M, G):
         M.add('perc', bdm_p.play(80), B(k) - 0.06, 0.8)
         M.add('perc', bdm_p.play(60), B(k) + 0.18, 0.6)
 
-    # ---- the levitation: rising tremolo, timpani, the table legs rattling ----
+    # ---- the rattle: rising tremolo, timpani, the table legs knocking ----
     for i in range(12):
         t = B(T_LIFT + i)
         m = n('D3') + i
@@ -547,17 +534,29 @@ def score(M, G):
         M.add('fx', whoosh(0.3, 900, 300, 0.35, seed=90 + k), blowout(k) - 0.05, 0.5, pan_at(CANDLES[k]))
     M.add('wind', whoosh(4.5, 500, 150, 0.4, seed=99), ts + 0.2, 0.6)
 
-    # ---- the blue candle at the back of the house, and its knock ----
-    tr = B(T_RELIGHT)
-    pb = pan_at(BLUE_AT)
-    M.add('fx', whoosh(0.4, 400, 1200, 0.3, seed=120), tr - 0.15, 0.5, pb)
-    M.add('perc', gong_s.play(60), tr - 0.1, 0.25, pb)
-    M.add('box', one(box, n('A4'), 90, BEAT * 1.5), tr, 1.0, pb)
-    glass_n += [(tr, n('D4'), 64, B(8)), (tr, n('A4'), 54, B(8))]
-    knock(T_LAST, BLUE_AT, 0.55)
-    for i, (b, m) in enumerate(((105.5, 'A4'), (106, 'A4'), (106.5, 'C5'), (107, 'D5'))):   # is anyone... there?
-        M.add('box', one(box, n(m), 80 - 6 * i, BEAT * (2.5 if i == 3 else 0.45)), B(b), 0.9, pb)
+    # ---- the porch light: a switch, the cat, its tail on the wall, and the first call again in D major ----
+    from pixelhome.audio import slide
+    click = M.hits('VSCO 1 Percussion/varWood/wood_click_f*.wav')
+    tr, tk, tg = B(T_RELIGHT), B(T_LAST), B(T_GONE)
+    pc = pan_at(CAT_AT)
+    M.add('knock', click.play(110), tr - 0.02, 0.8, pan_at(DOOR))
+    for m in ('D3', 'F#3', 'A3', 'D4'):     # the light comes up warm
+        M.add('piano', piano.play(n(m), 70, dur=3.0, release=0.8), tr + 0.1, 0.6)
+    glass_n += [(tr, n('D4'), 60, B(6)), (tr, n('F#4'), 54, B(6)), (tr, n('A4'), 50, B(6))]
+    M.add('fx', slide(0.0, 0.25, 520, 820, 0.25, 0.5) , tr + 1.2, 0.5, pc)          # mrr-
+    M.add('fx', slide(0.0, 0.45, 820, 470, 0.5, 0.45), tr + 1.45, 0.5, pc)          # -ow
+    for tt in (tr + 0.9, tk):               # the tail on the wall
+        M.add('knock', loglo_s.play(70), tt, 0.5, pc)
+        M.add('knock', bdm_p.play(60), tt - 0.08, 0.4, pc)
+    for i in range(8):                      # it trots off the end
+        u = i / 7
+        M.add('perc', click.play(60 - 3 * i), tg + 0.2 * i, 0.35, pan_at(lerp(CAT_AT, 0.0, u)) - 0.1 * u)
+    for i, (b, m) in enumerate(((105.5, 'A4'), (106, 'A4'), (106.5, 'C#5'), (107, 'D5'))):   # is anyone... there? (yes)
+        M.add('box', one(box, n(m), 80 - 6 * i, BEAT * (2.5 if i == 3 else 0.45)), B(b), 0.9, 0.0)
     M.add('bass', cbpizz.play(n('D2'), 70), B(107), 0.8)
+    M.add('harp', harp.play(n('D3'), 60), B(107), 0.6)
+    M.add('harp', harp.play(n('F#3'), 56), B(107) + 0.08, 0.6)
+    M.add('harp', harp.play(n('A3'), 52), B(107) + 0.16, 0.6)
 
     M.add('piano', piano_render(piano, piano_n), 0.0)
     M.add('glass', glass(glass_n, D), 0.0)

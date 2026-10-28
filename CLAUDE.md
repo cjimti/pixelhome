@@ -70,7 +70,7 @@ over the occasion's bed (`BEDS` in `pixelhome/intro.py`) and writes `homes/<home
 and `.json` (the voice's loudness at 40 fps). Both are committed; the build turns the JSON into a red
 out-from-centre waveform FSEQ on Left, Porch Front and Right. Takes are cached by text and voice, so a reading
 only changes when its line does; `VOICEOVER_TAKE = n` asks for a different reading of the same line.
-(`INTRO` is taken: Seance's score uses it for a tune.)
+(`INTRO` is taken: Is Anyone There?'s score uses it for a tune.)
 
 ## Checking work
 

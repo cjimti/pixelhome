@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>About · Pixelhome</title>
-<meta name="description" content="Why and how Pixelhome is made: AI writes Python scripts that compute every pixel and every note, open-source tools render them, and FPP plays them on a 12V pixel roofline.">
+<meta name="description" content="Why and how Pixelhome is made: AI writes Python scripts that compute every pixel and every note, open-source tools render them and read the spoken intros in my voice, and FPP plays them on a 12V pixel roofline.">
 <meta name="theme-color" content="#0b0a09">
 <link rel="canonical" href="https://pixelhome.app/about/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pixelhome">
 <meta property="og:title" content="About Pixelhome">
-<meta property="og:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them, and FPP plays them on a 12V pixel roofline.">
+<meta property="og:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them and read the spoken intros in my voice, and FPP plays them on a 12V pixel roofline.">
 <meta property="og:url" content="https://pixelhome.app/about/">
 <meta property="og:image" content="https://pixelhome.app/og.png">
 <meta property="og:image:width" content="1200">
@@ -18,7 +18,7 @@
 <meta property="og:image:alt" content="A single-story house at night, its roofline lit by orange and red pixel lights">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="About Pixelhome">
-<meta name="twitter:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them, and FPP plays them on a 12V pixel roofline.">
+<meta name="twitter:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them and read the spoken intros in my voice, and FPP plays them on a 12V pixel roofline.">
 <meta name="twitter:image" content="https://pixelhome.app/og.png">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -29,10 +29,13 @@
 </head>
 <body class="page">
 <header class="top">
-  <a class="brand" href="../" aria-label="Pixelhome home">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><use href="../favicon.svg#mark"/></svg>
-    <span>Pixel<b>home</b></span>
-  </a>
+  <div class="brandbox">
+    <a class="brand" href="../" aria-label="Pixelhome home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><use href="../favicon.svg#mark"/></svg>
+      <span>Pixel<b>home</b></span>
+    </a>
+    <a class="by" href="https://github.com/cjimti">by cjimti</a>
+  </div>
   <nav class="nav"><a href="../">Sequences</a><a href="./" aria-current="page">About</a></nav>
 </header>
 
@@ -41,7 +44,8 @@
     <p class="kicker">About</p>
     <h1>Scripts, not black boxes</h1>
     <p class="lede">I'm Craig Johnston. Pixelhome is the light show on my house's roofline. Every frame of light and every
-      note of music on this site is computed by a Python script that AI and I wrote together.</p>
+      note of music on this site is computed by a Python script that AI and I wrote together. Even the voice that
+      introduces each Halloween show is mine, read by an open-source model from a few seconds of me speaking.</p>
     <ul class="links">
       <li><a href="https://github.com/cjimti/">GitHub</a></li>
       <li><a href="https://imti.co">imti.co</a></li>
@@ -95,7 +99,7 @@
     <h2>How a show gets made</h2>
     <p>Each sequence is one Python file with two functions that share the same timings. <code>render()</code> computes
       the lights and <code>score()</code> writes the music, so every hit lands on its flash and is panned to where it
-      happens on the house.</p>
+      happens on the house. A <code>VOICEOVER</code> line gives it a spoken intro.</p>
     <p>The house itself comes from two exceptional open-source projects: I laid out the pixels in <a href="https://xlights.org/">xLights</a>, and modeled the
       house in <a href="https://www.blender.org/">Blender</a>. Pixelhome imports both, so every sequence knows where each pixel sits in 3D.</p>
 
@@ -126,13 +130,35 @@
             <li><b>MP3</b><span>Rendered on my Mac and committed with the script.</span></li>
           </ol>
         </div>
+        <div class="lane">
+          <p class="lanename">Voice</p>
+          <ol class="pipe">
+            <li><b>VOICEOVER</b><span>A line to set the mood, then the card's description of what happens.</span></li>
+            <li><b>Chatterbox</b><span>Reads it in my cloned voice, over a quiet bed of choir, cello and music box.</span></li>
+            <li><b>MP3 + waveform</b><span>The voice's loudness becomes a red waveform FSEQ for the house.</span></li>
+          </ol>
+        </div>
       </div>
       <ol class="pipe">
         <li class="stage2"><b>git push</b><span>GitHub Actions re-renders only the sequences that changed and builds
           this site, with a 3D preview of each one.</span></li>
-        <li class="stage2"><b>FPP</b><span>The FSEQ and MP3 go into a playlist, and the Pi plays the roofline.</span></li>
+        <li class="stage2"><b>FPP</b><span>The FSEQ and MP3 go into a playlist, the intro just before its show, and the Pi plays the roofline.</span></li>
       </ol>
     </figure>
+  </section>
+
+  <section id="intros">
+    <h2>Spoken intros</h2>
+    <p>One string of pixels is abstract. A shape moving along the roofline could be a bat, a train or a skeleton, and
+      from the street you can't always tell which. So, the way an opera is introduced with a synopsis, each Halloween
+      show can open with a short spoken intro: a line to set the mood, then what happens and where to look.</p>
+    <p>The voice is mine. I recorded a few seconds of myself reading, and
+      <a href="https://github.com/resemble-ai/chatterbox">Chatterbox</a>, Resemble AI's open-source text-to-speech
+      model, reads each intro in that voice on my Mac. It's mixed over a quiet bed of choir, cello, music box and a
+      distant bell, and while it speaks the house shows the voice as a red waveform growing out from the middle of the
+      left wing, the porch front and the right wing.</p>
+    <p>On this site, the <b>Intros</b> switch next to Sound plays a sequence's intro before the show. For FPP, each
+      intro is its own FSEQ and MP3, scheduled just before the show it introduces.</p>
   </section>
 
   <section id="license">
@@ -169,6 +195,8 @@
       <li><b><a href="https://surge-synthesizer.github.io/">Surge XT</a></b><span>Synthesizer for pads, leads, bells and basses</span></li>
       <li><b><a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a></b><span>Orchestral and percussion samples</span></li>
       <li><b><a href="https://github.com/spotify/pedalboard">pedalboard</a></b><span>Reverb, compression and limiting for the mix</span></li>
+      <li><b><a href="https://github.com/resemble-ai/chatterbox">Chatterbox</a></b><span>Text to speech in my cloned voice for the intros</span></li>
+      <li><b><a href="https://pytorch.org/">PyTorch</a></b><span>Runs Chatterbox on my Mac's GPU</span></li>
       <li><b><a href="https://ffmpeg.org/">FFmpeg</a></b><span>MP3 encoding and preview videos</span></li>
       <li><b><a href="https://www.python.org/">Python</a> and <a href="https://numpy.org/">NumPy</a></b><span>Every frame and every note</span></li>
       <li><b><a href="https://python-pillow.org/">Pillow</a> and <a href="https://github.com/facebook/zstd">Zstandard</a></b><span>Preview images and FSEQ compression</span></li>

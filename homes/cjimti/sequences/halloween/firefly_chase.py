@@ -1,19 +1,22 @@
-"""Phantom: True 3-D: a ghost flies around (and into) the house, searchlights sweep from the street,
-scanning planes reveal the depth of the roof, three spirits spiral in and burst."""
+"""Firefly Chase: True 3-D: a firefly blinks its way around (and through) the house while the kids on the
+street hunt it with flashlights, beams of light sweep the roof in every direction, and three fireflies spiral
+in together and burst into a shower of light."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, smoothstep, keys, lerp, Flicker, nframes, catmull_closed
 
 CODE = 'SC3'
-TITLE = 'Phantom'
+TITLE = 'Firefly Chase'
 KIND = 'show'
-DESCRIPTION = 'A ghost flies in and out of the porch, searchlights sweep from the street, scanning planes reveal the depth of the roof.'
-VOICEOVER = "Something drifts through the porch after dark. Sweep the lights. Search the roof. It's here somewhere."
+DESCRIPTION = ('A firefly blinks its way around and right through the house while flashlight beams sweep the roof from '
+               'the street. Then bands of light search every corner, and three fireflies spiral in together and burst '
+               'into a shower of light.')
+VOICEOVER = 'One warm night, one bright little firefly, and every kid on the street with a flashlight. Ready... go.'
 
 ORANGE = hexc('#ff3000')
 PURPLE = hexc('#5000c0')
 WHITE = hexc('#ffffff')
-GHOST = hexc('#80ffd0')
-ICE = hexc('#c0d8ff')
+FIREFLY = hexc('#c8ff20')
+BEAM = hexc('#ffe8c0')                      # the kids' flashlights
 RED = hexc('#ff0000')
 
 
@@ -30,7 +33,7 @@ def render(G, seed=3):
     trail = np.zeros(G.N)
     lights = [np.array([-350.0, 700.0]), np.array([350.0, 700.0])]
     centre = np.array([0.0, 150.0, -390.0])
-    spirits = [(GHOST, 0.0), (hexc('#b000ff'), 2 * np.pi / 3), (hexc('#ff4000'), 4 * np.pi / 3)]
+    flies = [(FIREFLY, 0.0), (hexc('#ffe040'), 2 * np.pi / 3), (hexc('#80ff30'), 4 * np.pi / 3)]
 
     for f in range(len(out)):
         t = f * DT
@@ -38,19 +41,20 @@ def render(G, seed=3):
         bg = keys(t, [(0, 0), (2, 0.1), (24, 0.1), (25, 0.04), (55, 0.04), (56, 0.1), (66, 0.1), (70, 0)])
         fr += light(PURPLE, bg * (0.7 + 0.3 * fog(t)))
 
-        if t < 25.5:                                         # the ghost
+        if t < 25.5:                                         # the firefly, blinking as it goes
             g = catmull_closed(route, t / 25.0)
             d = np.linalg.norm(P - g, axis=1)
-            cur = np.exp(-(d / 120) ** 2) * keys(t, [(0, 0), (1.5, 1), (24, 1), (25.5, 0)])
+            blink = 0.3 + 0.7 * smoothstep(0.0, 0.08, (t % 1.3)) * (1 - smoothstep(0.3, 0.55, (t % 1.3)))
+            cur = blink * np.exp(-(d / 120) ** 2) * keys(t, [(0, 0), (1.5, 1), (24, 1), (25.5, 0)])
             trail = np.maximum(trail * 0.94, cur * 0.6)
-            fr += light(GHOST, np.maximum(cur, trail))
-        elif t < 40:                                         # searchlights from the street
+            fr += light(FIREFLY, np.maximum(cur, trail))
+        elif t < 40:                                         # flashlights from the street
             k = keys(t, [(25.5, 0), (26.5, 1), (39, 1), (40, 0)])
             for j, s in enumerate(lights):
                 ang = np.arctan2(xz[:, 0] - s[0], s[1] - xz[:, 1])
                 sweep = 0.75 * np.sin(2 * np.pi * (t - 25.5) / (6.5 + j * 1.7) + j * 2.1)
-                fr += light(ICE, k * np.exp(-((ang - sweep) / 0.035) ** 2))
-        elif t < 55:                                         # scanning planes
+                fr += light(BEAM, k * np.exp(-((ang - sweep) / 0.035) ** 2))
+        elif t < 55:                                         # bands of light search every corner
             lt = t - 40
             for t0, dur, axis, a, b, col in [(0, 4, 2, -100, -680, hexc('#20ff60')), (4, 4, 2, -680, -100, RED),
                                              (8.5, 3, 0, -640, 670, hexc('#9000ff')),
@@ -61,16 +65,17 @@ def render(G, seed=3):
                     behind = (plane - P[:, axis]) * sgn
                     band = np.exp(-(behind / 22) ** 2) + np.where(behind > 0, 0.35 * np.exp(-behind / 90), 0)
                     fr += light(col, band * min(1, (t0 + dur + 0.8 - lt) / 0.8))
-        else:                                                # three spirits spiral in
+        else:                                                # three fireflies spiral in
             lt = t - 55
             if lt < 11:
                 r = lerp(750, 0, smoothstep(0, 11, lt) ** 0.8)
                 spin = 0.6 * lt + 0.06 * lt ** 2.4
-                for col, ph in spirits:
+                for j, (col, ph) in enumerate(flies):
                     a = spin * 2 * np.pi / 3 + ph
                     c = centre + np.array([r * np.sin(a), 0, r * np.cos(a)])
                     d = np.linalg.norm(P - c, axis=1)
-                    fr += light(col, 0.9 * np.exp(-(d / 100) ** 2))
+                    bl = 0.45 + 0.55 * (np.sin(2 * np.pi * (1.1 + 0.25 * j) * lt + ph) > -0.3)   # each blinks its own way
+                    fr += light(col, 0.9 * bl * np.exp(-(d / 100) ** 2))
             else:
                 tb = lt - 11
                 d = np.linalg.norm(P - centre, axis=1)
@@ -79,18 +84,18 @@ def render(G, seed=3):
 
 
 # ---------------------------------------------------------------- music ----------------------------------------------
-# A theremin ghost story in C minor on a 120 BPM grid. The ghost IS the theremin: it sings a tune whose notes sit on
-# the ghost's route waypoints and glide along the same spline, panned to where the ghost is and swelling as it
+# A theremin night chase in C minor on a 120 BPM grid. The firefly IS the theremin: it sings a tune whose notes sit on
+# the firefly's route waypoints and glide along the same spline, panned to where it is and swelling as it
 # brushes the roof. Under the searchlights the band drops to a tremolo drone and a heartbeat, and each beam whistles,
 # rising and falling with its own sweep, swelling when it lands on the house and chiming when it flares down a run.
 # The scanning planes run on a pulsing bass with a sonar tone that steps through the chord as the plane moves, and
-# a bell and zap where a plane sweeps over a whole run at once. Three spirits spiral in on a choir with a rising
+# a bell and zap where a plane sweeps over a whole run at once. Three fireflies spiral in on a choir with a rising
 # harp under them; the burst is a gong, and the theremin sighs at the end. Everything is read off render()'s
 # constants (copied below where render keeps them local) and panned to where it happens, as seen from the street.
 
 ROUTE = np.array([(-700, 150, -80), (-400, 150, -100), (-250, 150, -300), (-20, 150, -510), (110, 150, -400),
                   (230, 150, -130), (550, 150, -120), (720, 150, -230), (320, 150, -40), (-300, 150, -40),
-                  (-660, 150, -300), (-640, 150, -660), (-720, 150, -260)], float)   # render()'s ghost route
+                  (-660, 150, -300), (-640, 150, -660), (-720, 150, -260)], float)   # render()'s firefly route
 TUNE = [67, 72, 75, 79, 77, 72, 74, 77, 74, 75, 79, 84, 75]   # the theremin's note at each waypoint
 LIGHTS = [(-350.0, 700.0), (350.0, 700.0)]                   # searchlights; sweep period 6.5 + 1.7 j, phase 2.1 j
 PLANES = [(40.0, 4, 2, -100, -680, 'Cm'), (44.0, 4, 2, -680, -100, 'Ab'), (48.5, 3, 0, -640, 670, 'Fm'),
@@ -100,9 +105,9 @@ T_BURST = 66.0
 PAD = {'Cm': (48, 55, 63, 67), 'Ab': (44, 56, 60, 63), 'Fm': (41, 56, 60, 65), 'G': (43, 55, 59, 62),
        'Db': (49, 56, 61, 65)}
 ROOT = {'Cm': 36, 'Ab': 32, 'Fm': 29, 'G': 31, 'Db': 37}
-GHOST_PROG = [(0, 'Cm'), (4, 'Ab'), (8, 'Fm'), (12, 'G'), (16, 'Cm'), (20, 'Ab'), (24, 'G')]
-SPIRIT_PROG = [(55, 'Ab'), (58, 'Fm'), (61, 'Db'), (63, 'G')]
-SPIRIT_NOTES = {'Ab': (72, 68, 63), 'Fm': (72, 68, 65), 'Db': (73, 68, 65), 'G': (74, 71, 67)}  # ghost, purple, orange
+FLY_PROG = [(0, 'Cm'), (4, 'Ab'), (8, 'Fm'), (12, 'G'), (16, 'Cm'), (20, 'Ab'), (24, 'G')]
+SWARM_PROG = [(55, 'Ab'), (58, 'Fm'), (61, 'Db'), (63, 'G')]
+SWARM_NOTES = {'Ab': (72, 68, 63), 'Fm': (72, 68, 65), 'Db': (73, 68, 65), 'G': (74, 71, 67)}  # the three fireflies
 
 
 def score(M, G):
@@ -181,7 +186,7 @@ def score(M, G):
     wobble = 0.7 + 0.3 * np.sin(2 * np.pi * ts / 7.3) * np.sin(2 * np.pi * ts / 3.1)
     M.add('wind', np.vstack([band_noise(80, 500, 1), band_noise(80, 500, 2)]) * up(bg / 0.1) * wobble, 0.0)
 
-    # ---- 0-25.5: the ghost flies the route; the theremin sings one note per waypoint, gliding on its spline ----
+    # ---- 0-25.5: the firefly flies the route; the theremin sings one note per waypoint, gliding on its spline ----
     K = len(ROUTE)
     trail = np.zeros(G.N)
     for f in range(F):
@@ -191,7 +196,7 @@ def score(M, G):
         g = catmull_closed(ROUTE, t / 25.0)
         cur = np.exp(-(np.linalg.norm(P - g, axis=1) / 120) ** 2) * keys(t, [(0, 0), (1.5, 1), (24, 1), (25.5, 0)])
         trail = np.maximum(trail * 0.94, cur * 0.6)
-        lit = float(np.maximum(cur, trail).max())       # how bright the ghost is on the roof
+        lit = float(np.maximum(cur, trail).max())       # how bright the firefly is on the roof
         s = (t / 25.0 % 1) * K
         i, u = int(s), s - int(s)
         w = float(smoothstep(0.3, 0.8, u))              # hold the note round each waypoint, glide between
@@ -201,7 +206,7 @@ def score(M, G):
         th_amp[f] = keys(t, [(0, 0), (1.5, 1), (24, 1), (25.5, 0)]) * (0.2 + 0.8 * lit)
         th_pan[f] = pan_x(g[0])
         th_vib[f] = 0.1 + 0.3 * (1 - 4 * w * (1 - w))   # vibrato blooms on held notes
-    for t0, c in GHOST_PROG:
+    for t0, c in FLY_PROG:
         d = 4.0 if t0 < 24 else 1.8
         pad += [(t0, m, 62, d) for m in PAD[c]]
         sub.append((t0, ROOT[c], 80, d))
@@ -286,7 +291,7 @@ def score(M, G):
     gate = np.exp(-((ts - 40.0) % 0.125) / 0.035)       # sixteenth-note sonar pulses
     put('scan', tone(up(sc_pitch), up(sc_amp) * gate, (1.0, 0.0, 0.3, 0.0, 0.1)), sc_pan)
 
-    # ---- 55-66: three spirits spiral in; the ghost one is the theremin again, the others a choir; harp climbs ----
+    # ---- 55-66: three fireflies spiral in; the first is the theremin again, the others a choir; harp climbs ----
     lt_f = tf - 55
     voices = [np.zeros(F) for _ in range(3)]
     pans = [np.zeros(F) for _ in range(3)]
@@ -301,28 +306,28 @@ def score(M, G):
             pans[s][f] = pan_x(c[0])
     cres = np.clip((tf - 55) / 11, 0, 1)
     sel = (tf >= 55) & (tf < T_BURST)
-    th_pitch[sel] = [SPIRIT_NOTES[chord_at(t, SPIRIT_PROG)][0] for t in tf[sel]]
+    th_pitch[sel] = [SWARM_NOTES[chord_at(t, SWARM_PROG)][0] for t in tf[sel]]
     th_amp[sel] = (0.35 + 0.65 * cres[sel]) * (0.45 + 0.55 * voices[0][sel])
     th_pan[sel] = pans[0][sel]
     th_vib[sel] = 0.2 + 0.2 * cres[sel]
     ooh = M.synth('Pads/Ooh')
     for s in (1, 2):
-        notes = [(t0 - 55, SPIRIT_NOTES[c][s], 90, (SPIRIT_PROG + [(T_BURST, None)])[i + 1][0] - t0)
-                 for i, (t0, c) in enumerate(SPIRIT_PROG)]
+        notes = [(t0 - 55, SWARM_NOTES[c][s], 90, (SWARM_PROG + [(T_BURST, None)])[i + 1][0] - t0)
+                 for i, (t0, c) in enumerate(SWARM_PROG)]
         sig = mono_at(ooh.render(notes, 12.5), 55.0)
         put('choir', sig * up((0.3 + 0.7 * cres) * (0.4 + 0.6 * voices[s])), pans[s])
-    for i, (t0, c) in enumerate(SPIRIT_PROG):
-        d = (SPIRIT_PROG + [(T_BURST, None)])[i + 1][0] - t0
+    for i, (t0, c) in enumerate(SWARM_PROG):
+        d = (SWARM_PROG + [(T_BURST, None)])[i + 1][0] - t0
         pad += [(t0, m, 60 + 4 * i, d) for m in PAD[c]]
         sub.append((t0, ROOT[c], 90, d))
     prev = 0
-    for f in np.nonzero(sel)[0]:                        # a harp note each time a spirit swings past the front
+    for f in np.nonzero(sel)[0]:                        # a harp note each time a firefly swings past the front
         lt = lt_f[f]
         k = int((0.6 * lt + 0.06 * lt ** 2.4) // 1)
         if k > prev:
             r = lerp(750, 0, smoothstep(0, 11, lt) ** 0.8)
             want = 55 + 36 * (1 - r / 750)
-            tones = sorted({m + 12 * o for m in PAD[chord_at(tf[f], SPIRIT_PROG)] for o in range(-2, 4)})
+            tones = sorted({m + 12 * o for m in PAD[chord_at(tf[f], SWARM_PROG)] for o in range(-2, 4)})
             m = min((q for q in tones if q >= want), default=tones[-1])
             M.add('harp', harp.play(m, 70 + int(40 * lt / 11)), tf[f], 0.9, float(0.3 * np.sin(k * 2.1)))
         prev = k

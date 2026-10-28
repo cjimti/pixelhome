@@ -1,21 +1,23 @@
-"""Cauldron: the porch notch is a witch's pot of brew, simulated as 1-D shallow water along the roofline
+"""Dump Soup: Mom cleans out the fridge into the soup pot, as a kid sees it. The porch notch is the
+pot, its soup simulated as 1-D shallow water along the roofline
 (Rusanov fluxes with hydrostatic reconstruction over a bed with a rim at each front corner of the notch).
-Ingredients are thrown in from the free ends; each lands with a crater whose waves run out, reflect off
-the rims and slosh, and its dye is carried by the flow and diffuses through the brew. The last
+Leftovers are thrown in from the free ends; each lands with a crater whose waves run out, reflect off
+the rims and slosh, and its dye is carried by the flow and diffuses through the soup. The last
 Each ingredient is autocatalytic: its dye spreads as a reaction front (Fisher-KPP) that converts the
 whole pot to its colour, murky green to violet to amber to toxic lime, and the lime brings it to a boil.
 Foam and boiling raise the level until it spills over both rims and floods down the wings to the free
-ends. Then the brew curdles (Cahn-Hilliard phase separation) into blobs that open their eyes: frogs,
+ends. Then the soup curdles (Cahn-Hilliard phase separation) into lumps that, to the kid, open their eyes: frogs,
 which hop away off the free ends. One big frog stays behind, croaks twice and leaps off."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, smoothstep, keys, nframes
 
 CODE = 'HW03'
-TITLE = 'Hubble Bubble'
+TITLE = 'Dump Soup'
 KIND = 'show'
-DESCRIPTION = ('Ingredients fly in and splash into a sloshing cauldron in the porch, mixing their colours until '
-               'it boils over and floods the house. Then the brew curdles into glowing frogs that hop away.')
-VOICEOVER = 'Eye of newt, a pinch of moonlight, and whatever fell off the roof. The cauldron is bubbling. Stand back.'
+DESCRIPTION = ('Mom\'s dump soup, through a kid\'s eyes: leftovers fly in from both ends and splash into the pot '
+               'on the porch, and the colours get worse and worse until it boils over and floods the house. '
+               'Then the lumps open their eyes and hop away as frogs.')
+VOICEOVER = 'Monday night. Mom cleans out the fridge, and everything goes in the pot. Through the eyes of a kid... dinner is alive.'
 
 MURK = hexc('#1f9a48')
 PURPLE = hexc('#9a00ff')
@@ -197,7 +199,7 @@ def render(G, seed=13):
                     trail = np.maximum(trail, k)
                 elif t >= t0 + fl and not landed[i]:
                     landed[i] = True
-                    # splash: a crater, the displaced brew thrown up around it
+                    # splash: a crater, the displaced soup thrown up around it
                     h = np.maximum(h - 0.40 * (gauss(land, 40) - 0.5 * gauss(land, 80)) * inside, 0)
                     C[:, :] = C * (1 - gauss(land, 70))
                     C[ci] += gauss(land, 70)
@@ -206,7 +208,7 @@ def render(G, seed=13):
                     react = ci
             trail *= np.exp(-DT / 0.18)
 
-            # ---- draw the brew ----
+            # ---- draw the soup ----
             eta = h + b
             pot_level = eta[inside].mean() if inside.any() else 1.0
             depth = h
@@ -374,11 +376,11 @@ def render(G, seed=13):
 
 
 # ---------------------------------------------------------------- music ----------------------------------------------
-# A witches' waltz in E minor that boils. Its downbeats are pinned to the lights: the three ingredients land on bars
+# A kitchen waltz in E minor that boils. Its downbeats are pinned to the lights: the three ingredients land on bars
 # 0, 4 and 8, each bringing in a new colour of the tune (clarinet for violet, muted horn for amber, a squelchy synth for
 # lime), and from the lime the waltz speeds up with the heat until every other downbeat is one of the big glurps at the
 # rims. Every bubble that pops in the pot is a little upward-chirping bloop pitched from the chord of the moment, small
-# bubbles high, so the plucks thicken as it heats; when the brew spills, a harp runs down each wing with the flood
+# bubbles high, so the plucks thicken as it heats; when the soup spills, a harp runs down each wing with the flood
 # front. It curdles with a trombone fall, the frogs' eyes open on an E major chord and they hop away to the same tune in
 # the major, each landing a ribbit, the band thinning as they leave. The big frog croaks twice and leaps off on slide
 # whistles. Times come from render() itself (bubbles, hops and the flood are random or simulated, so score() runs it
@@ -671,7 +673,7 @@ def score(M, G):
         m = tones[int(round((1 - u) * (len(tones) - 1)))]
         f0 = 440 * 2 ** ((m - 69) / 12) / 1.7 * 1.25
         M.add('bubbles', bloop(f0, 0.07 + 0.08 * u, 1.7, 0.18 + 0.5 * u), tp, 1.0, float(pan_at(x)))
-    # the brew's own bubbling under it, as loud as the heat
+    # the soup's own bubbling under it, as loud as the heat
     bed = np.zeros((2, int(T_CURDLE * SR)))
     pos = int(0.5 * SR)
     while pos < bed.shape[1]:
@@ -725,7 +727,7 @@ def score(M, G):
              (T_CURDLE + 2.2, n('B3'), 60, 1.6)]
     for m in (n('E5'), n('F5')):
         M.add('pad', vln_tr.play(m, 60, dur=2.4), T_CURDLE + 1.2, 0.5)
-    for j in range(6):                       # the brew separating: slow low gloops
+    for j in range(6):                       # the soup separating: slow low gloops
         tg = T_CURDLE + 1.1 + j * 0.45
         M.add('bubbles', bloop(110 - 8 * j, 0.25, 1.5, 0.4), tg, 0.8, float(M.rng.uniform(-0.6, 0.6)))
 
@@ -812,7 +814,7 @@ def score(M, G):
     M.add('lead', M.synth('Leads/Squelch').render(lead_n, D), 0.0)
     M.add('choir', M.synth('Pads/Ooh').render(choir_n, D), 0.0)
     M.add('pad', M.synth('Pads/Ghost Pad').render(pad_n, D), 0.0)
-    # the band follows the brew: a murmur while it simmers, full when it floods the house
+    # the band follows the soup: a murmur while it simmers, full when it floods the house
     tt = np.arange(M.n) / SR
     env = np.interp(tt, *zip(*LEVEL))
     for k in ('bass', 'pah', 'tune', 'lead', 'choir', 'perc', 'fx', 'brew'):
