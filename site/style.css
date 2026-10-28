@@ -76,6 +76,10 @@ input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
 }
 .dl:hover { border-color: var(--accent); color: var(--accent); }
 .dls { display: flex; gap: 6px; justify-content: flex-end; }
+.toggles { display: flex; gap: 6px; }
+.toggles button { white-space: nowrap; }
+.intro a { color: var(--muted); }
+.intro a:hover { color: var(--accent); }
 .sound { white-space: nowrap; }
 .play {
   width: 42px; height: 42px; padding: 0; border-radius: 50%; display: grid; place-items: center;
@@ -198,9 +202,9 @@ input[type="search"]::placeholder { color: var(--muted); }
   .play { width: 38px; height: 38px; }
   .exposure { grid-column: 1 / -1; grid-row: 2; }
   .exposure input { width: 100%; }
-  .sound { grid-column: 1 / 3; grid-row: 3; justify-self: start; }
+  .toggles { grid-column: 1 / 3; grid-row: 3; justify-self: start; }
   .dls { grid-column: 3; grid-row: 3; }
-  .dl, .sound { padding: 4px 10px; font-size: 12px; }
+  .dl, .toggles button { padding: 4px 10px; font-size: 12px; }
   .dlword { display: none; }
   .time { font-size: 12px; }
   .item { padding: 10px; }

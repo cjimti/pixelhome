@@ -6,6 +6,7 @@ CODE = 'SC1'
 TITLE = 'The Watcher'
 KIND = 'show'
 DESCRIPTION = 'The house wakes up. The wing fronts are eyes that look around and blink; the porch is a toothy mouth that talks, laughs and lunges.'
+VOICEOVER = "Shh. Don't wake the house. Too late... it's already watching you."
 
 AMBER = hexc('#ffa000')
 EYE_RED = hexc('#ff0800')

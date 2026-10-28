@@ -63,7 +63,7 @@
         </button>
         <input type="range" id="scrub" min="0" max="1" step="0.0001" value="0" aria-label="Position in sequence">
         <div class="time" id="time"><b>0:00.0</b> / 0:00</div>
-        <button class="sound" id="sound" aria-pressed="false" hidden>Sound off</button>
+        <span class="toggles"><button class="sound" id="sound" aria-pressed="false" hidden>Sound off</button><button id="intros" aria-pressed="true" hidden>Intros on</button></span>
         <label class="exposure" for="exposure">Exposure <input type="range" id="exposure" min="1" max="8" step="0.1" value="1"><output id="expOut">1.0×</output></label>
         <span class="dls"><a class="dl" id="download" href="#" download hidden>Download .fseq</a><a class="dl" id="downloadAudio" href="#" download hidden>.mp3</a></span>
       </div>
@@ -72,6 +72,8 @@
     <div class="extras">
       <p class="about" id="nowDesc"></p>
       <p class="spec" id="homeSpec"></p>
+      <p class="spec intro" id="intro" hidden>Spoken intro, to schedule before it in FPP: <a id="introFseq" href="#" download>.fseq</a> ·
+        <a id="introAudio" href="#" download>.mp3</a></p>
       <div class="drop" id="drop">
         <span><strong>Play your own .fseq.</strong> Drop a file rendered for this layout, or choose one.</span>
         <label><input type="file" id="file" accept=".fseq"><button type="button" id="pick">Choose file</button></label>

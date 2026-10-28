@@ -7,6 +7,7 @@ CODE = 'NT4'
 TITLE = 'Night Watch'
 KIND = 'ambient'
 DESCRIPTION = 'The Watcher asleep. Half-closed eyes drift and blink, and three times a loop they open and look around.'
+VOICEOVER = 'The house is sleeping now... mostly. One eye is always open.'
 
 EMBER_RED = hexc('#ff0800')
 DEEP_ORANGE = hexc('#ff2800')

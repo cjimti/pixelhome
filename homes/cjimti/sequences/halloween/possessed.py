@@ -7,6 +7,7 @@ CODE = 'SC5'
 TITLE = 'Possessed'
 KIND = 'show'
 DESCRIPTION = 'Innocent warm white that browns out, glitches, desyncs, dissolves into a heartbeat, flatlines and comes back.'
+VOICEOVER = 'A quiet house, warm and bright. Nothing to worry about... nothing at all.'
 
 WHITE = hexc('#ffffff')
 WARM = hexc('#ff8a30')

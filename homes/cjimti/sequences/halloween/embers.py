@@ -7,6 +7,7 @@ CODE = 'NT2'
 TITLE = 'Embers'
 KIND = 'ambient'
 DESCRIPTION = 'A deep red bed where random pixels slowly catch orange and fade, some glitching sideways first.'
+VOICEOVER = 'The fire has burned down to embers. They glow, and they wait... and now and then, they wake.'
 
 EMBER_RED = hexc('#ff0800')
 ORANGE = hexc('#ff4a00')

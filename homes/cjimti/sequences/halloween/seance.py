@@ -24,6 +24,7 @@ KIND = 'show'
 DESCRIPTION = ('A seance at the porch table: the house answers questions with knocks where they land, '
                'blows cold drafts through the candles, spells with a planchette and lifts the table, '
                'until the spirit slams the door. One candle comes back on its own.')
+VOICEOVER = 'Late at night, the old table on the porch starts to knock. Some say the house is answering... Listen.'
 
 BEAT = 0.75                                  # 80 BPM, 3/4
 

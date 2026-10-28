@@ -24,6 +24,7 @@ KIND = 'show'
 DESCRIPTION = ('A man walks home with his lantern as the moon comes up round the house. It is full when '
                'he reaches his door: he turns into a wolf, howls, and pounces after the moon until a '
                'cloud gets in the way.')
+VOICEOVER = "A long walk home, a lantern, and the moon climbing over the roof. Hurry home, friend. It's almost full."
 
 NIGHT = hexc('#1c2c9c')
 STAR = hexc('#c8d8ff')

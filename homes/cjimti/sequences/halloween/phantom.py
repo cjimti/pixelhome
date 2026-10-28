@@ -7,6 +7,7 @@ CODE = 'SC3'
 TITLE = 'Phantom'
 KIND = 'show'
 DESCRIPTION = 'A ghost flies in and out of the porch, searchlights sweep from the street, scanning planes reveal the depth of the roof.'
+VOICEOVER = "Something drifts through the porch after dark. Sweep the lights. Search the roof. It's here somewhere."
 
 ORANGE = hexc('#ff3000')
 PURPLE = hexc('#5000c0')

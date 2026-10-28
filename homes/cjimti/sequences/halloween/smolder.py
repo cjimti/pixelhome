@@ -7,6 +7,7 @@ CODE = 'NT5'
 TITLE = 'Smolder'
 KIND = 'ambient'
 DESCRIPTION = 'Slow lava crawling through each roof section in its own direction, with the odd orange pop.'
+VOICEOVER = 'Deep in the roof, something is still burning. Slow, and red, and patient.'
 
 EMBER_RED = hexc('#ff0800')
 ORANGE = hexc('#ff4a00')
