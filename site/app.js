@@ -3,6 +3,8 @@
   const status = $('status');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const CACHE_SIZE = 4;           // decoded sequences kept in memory (night loops are ~9 MB each)
+  // Google Analytics events; a blocked or missing gtag never breaks the page
+  const track = (name, params = {}) => { try { if (window.gtag) gtag('event', name, params); } catch (e) { /* analytics blocked */ } };
 
   let CAT;
   try {
@@ -131,7 +133,7 @@
     if (reduceMotion) { Object.assign(cam, goal); goal = null; }
     viewButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
   }
-  viewButtons.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  viewButtons.forEach((b) => b.addEventListener('click', () => { setView(b.dataset.view); track('change_view', { view: b.dataset.view }); }));
 
   // Touch: horizontal drags orbit, vertical swipes scroll the page (touch-action: pan-y), pinch zooms.
   const stage = $('stage');
@@ -298,7 +300,7 @@
         if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
         r1.append(el('span', 'dur', fmt(s.seconds, false)));
         b.append(r1, el('span', 'd', s.description));
-        b.addEventListener('click', () => choose(s));
+        b.addEventListener('click', () => { choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
         b._seq = s;
         cards.set(s.id, b);
         g.append(b);
@@ -329,11 +331,32 @@
     $('count').textContent = shown === total ? `${total}` : `${shown} of ${total}`;
     $('empty').hidden = shown > 0;
   }
-  document.querySelectorAll('#kinds button').forEach((b) => b.addEventListener('click', () => { filters.kind = b.dataset.kind; applyFilters(); }));
-  $('occasions').addEventListener('change', (e) => { filters.occasion = e.target.value; applyFilters(); });
-  $('search').addEventListener('input', (e) => { filters.q = e.target.value; applyFilters(); });
+  document.querySelectorAll('#kinds button').forEach((b) => b.addEventListener('click', () => {
+    filters.kind = b.dataset.kind;
+    applyFilters();
+    track('filter', { filter_type: 'kind', value: b.dataset.kind || 'all' });
+  }));
+  $('occasions').addEventListener('change', (e) => {
+    filters.occasion = e.target.value;
+    applyFilters();
+    track('filter', { filter_type: 'occasion', value: e.target.value || 'all' });
+  });
+  let searchTimer;
+  $('search').addEventListener('input', (e) => {
+    filters.q = e.target.value;
+    applyFilters();
+    clearTimeout(searchTimer);
+    const q = filters.q.trim();
+    if (q.length >= 2) searchTimer = setTimeout(() => track('search', { search_term: q }), 1000);
+  });
 
   // ---------- choosing / playing ----------
+  // sequence events carry which one; an intro counts as its show, a dropped-in file isn't tracked
+  function trackSeq(name, meta, params = {}) {
+    const m = meta && (meta.introOf || meta);
+    if (!m || m.id === 'file') return;
+    track(name, { home: H.home.id, sequence_id: m.id, occasion: m.occasion, kind: m.kind, ...params });
+  }
   const wide = matchMedia('(min-width: 760px)');     // sidebar layout: the list scrolls on its own
   function setAccent(occ) {
     document.documentElement.style.setProperty('--accent', (occasion[occ] || CAT.occasions[0] || { accent: '#ff6a1f' }).accent);
@@ -388,6 +411,7 @@
       music.src = meta.introAudio;
       status.hidden = true;
       setPlaying(true);
+      trackSeq('intro_played', meta);
     } catch (e) {
       if (token === loadToken) status.textContent = 'The intro did not load. Check your connection and try again.';
     }
@@ -426,7 +450,12 @@
     $('playIcon').innerHTML = playing ? '<path d="M6 4.5h4.5v15H6zM13.5 4.5H18v15h-4.5z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
     syncMusic();
   }
-  $('play').addEventListener('click', () => setPlaying(!playing));
+  // play/pause from the button or the space bar
+  function togglePlay() {
+    setPlaying(!playing);
+    trackSeq(playing ? 'play' : 'pause', seq && seq.meta, { position_s: Math.round(t) });
+  }
+  $('play').addEventListener('click', togglePlay);
 
   // ---------- music: when a show has a soundtrack and sound is on, the audio clock drives the lights ----------
   const music = new Audio();
@@ -459,6 +488,7 @@
     try { localStorage.setItem('pixelhome.sound', soundOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
     showSound();
     if (soundOn && !playing) setPlaying(true); else syncMusic();
+    trackSeq('toggle_sound', seq && seq.meta, { enabled: soundOn });
   });
   showSound();
   // intros: when on, a sequence with a spoken intro plays it first whenever it starts from the top
@@ -473,17 +503,18 @@
     introsOn = !introsOn;
     try { localStorage.setItem('pixelhome.intros', introsOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
     showIntros();
+    trackSeq('toggle_intros', seq && seq.meta, { enabled: introsOn });
     const m = seq && (seq.meta.introOf || seq.meta);
     if (m && m.introData) choose(m, 0, true, introsOn);      // hear it now, or skip straight to the show
   });
   showIntros();
   document.addEventListener('keydown', (e) => {
     if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
-    if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     if (e.code === 'KeyM' && seq && seq.meta.audio) $('sound').click();
     if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
       e.preventDefault();
-      step(e.code === 'ArrowUp' ? -1 : 1);
+      step(e.code === 'ArrowUp' ? -1 : 1, 'keyboard');
     }
     if (seq && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
       const dur = seq.frames / seq.fps;
@@ -492,17 +523,20 @@
   });
 
   // the sequence above or below the current one in the list as filtered, wrapping round
-  function step(dir) {
+  function step(dir, source) {
     const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
     if (!rows.length) return false;
     const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
-    choose(rows[i < 0 ? 0 : (i + dir + rows.length) % rows.length]._seq);
+    const next = rows[i < 0 ? 0 : (i + dir + rows.length) % rows.length]._seq;
+    choose(next);
+    trackSeq('select_sequence', next, { source });
     return true;
   }
   // at the end of a sequence, play the next one; a dropped-in file just loops
   function advance() {
     if (seq.meta.introOf) { choose(seq.meta.introOf, 0, true, false); return; }
-    if (seq.meta.id === 'file' || !step(1)) { seek(0); syncMusic(); return; }
+    trackSeq('sequence_complete', seq.meta);
+    if (seq.meta.id === 'file' || !step(1, 'auto')) { seek(0); syncMusic(); return; }
     setPlaying(false);
   }
 
@@ -528,6 +562,7 @@
       t = 0;
       status.hidden = true;
       setPlaying(true);
+      track('open_local_fseq', { size_kb: Math.round(f.size / 1024) });
       dropMsg.textContent = `Playing ${f.name}: ${fmt(s.frames / s.fps)} at ${Math.round(s.fps)} fps.`;
     } catch (e) {
       dropMsg.className = 'err';
@@ -535,6 +570,13 @@
     }
   }
   file.addEventListener('change', () => file.files[0] && openFile(file.files[0]));
+
+  // downloads for FPP: the show's .fseq and .mp3, and its intro's
+  const dlFile = (a) => a.getAttribute('download');
+  $('download').addEventListener('click', (e) => trackSeq('download_fseq', seq && seq.meta, { file_name: dlFile(e.currentTarget) }));
+  $('downloadAudio').addEventListener('click', (e) => trackSeq('download_audio', seq && seq.meta, { file_name: dlFile(e.currentTarget) }));
+  $('introFseq').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'fseq' }));
+  $('introAudio').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'mp3' }));
   let dragDepth = 0;
   document.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; drop.classList.add('over'); });
   document.addEventListener('dragover', (e) => e.preventDefault());
@@ -624,7 +666,7 @@
     const list = home.sequences;
     if (!list.length) { status.textContent = 'This home has no sequences yet.'; return; }
     const pick = list.find((s) => s.id === seqId);
-    if (pick) choose(pick);
+    if (pick) { choose(pick); trackSeq('select_sequence', pick, { source: 'deep_link' }); }
     else {
       const first = CAT.occasions.map((o) => list.find((s) => s.occasion === o.id)).find(Boolean) || list[0];
       choose(first, first.seconds * 0.3);
@@ -634,7 +676,7 @@
   const sel = $('homeSelect');
   CAT.homes.forEach((h) => sel.append(new Option(h.name, h.id)));
   sel.hidden = CAT.homes.length < 2;
-  sel.addEventListener('change', () => openHome(CAT.homes.find((h) => h.id === sel.value)));
+  sel.addEventListener('change', () => { openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
 
   function fromHash() {
     const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/occasion/name
@@ -644,7 +686,7 @@
     const { home, seqId } = fromHash();
     if (!home) return;
     if (!H || home.id !== H.home.id) openHome(home, seqId);
-    else { const s = home.sequences.find((x) => x.id === seqId); if (s && (!seq || seq.meta.id !== s.id)) choose(s); }
+    else { const s = home.sequences.find((x) => x.id === seqId); if (s && (!seq || seq.meta.id !== s.id)) { choose(s); trackSeq('select_sequence', s, { source: 'deep_link' }); } }
   });
 
   if (!CAT.homes.length) { status.textContent = 'No homes yet.'; return; }
