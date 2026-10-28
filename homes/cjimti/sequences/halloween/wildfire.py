@@ -7,6 +7,7 @@ CODE = 'SC2'
 TITLE = 'Wildfire'
 KIND = 'show'
 DESCRIPTION = 'A match strikes on the porch. Fire spreads around the corners, embers jump ahead, then blue ghost-fire races in from both ends.'
+VOICEOVER = "One match. One spark on the porch. That's all it ever takes."
 
 PALE = hexc('#ffd070')
 PURPLE = hexc('#5000c0')

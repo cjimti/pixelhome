@@ -3,7 +3,7 @@ import glob, hashlib, json, os, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, share
+from . import catalog, fseq, intro, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import OCCASIONS, KINDS
 
@@ -31,11 +31,11 @@ def render(s):
 
 
 def _engine_hash():
-    """The code and locked dependencies every render goes through (not the music, share images or command line)."""
+    """The code and locked dependencies every render goes through (not music, intros, share images or command line)."""
     h = hashlib.sha256()
     pkg = os.path.join(catalog.ROOT, 'pixelhome')
     for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', 'share.py', '__main__.py'):
+        if os.path.basename(p) not in ('audio.py', 'intro.py', 'share.py', '__main__.py'):
             h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
     return h.hexdigest()
 
@@ -89,6 +89,19 @@ def _build_one(args):
         os.makedirs(os.path.join(out, 'audio', s.home, s.occasion), exist_ok=True)
         shutil.copyfile(mp3, os.path.join(out, 'audio', s.home, s.id + '.mp3'))
         meta.update(audio=f'audio/{s.home}/{s.id}.mp3', audioName=f'{s.code} {s.title}.mp3')
+    mp3, js = intro.paths(s)                # spoken intro, rendered locally by `pixelhome intro`
+    if os.path.exists(js):
+        with open(js) as f:
+            env = json.load(f)['env']
+        d = os.path.join(out, 'intros', s.home, s.occasion)
+        os.makedirs(d, exist_ok=True)
+        data = to_bytes(intro.frames(catalog.load_home(s.home), env))
+        base = os.path.join(out, 'intros', s.home, s.id)
+        fseq.write(base + '.fseq', data, int(round(DT * 1000)))
+        Image.fromarray(data.reshape(len(data), -1, 3), 'RGB').save(base + '.png', optimize=True)   # for the web player
+        shutil.copyfile(mp3, base + '.mp3')
+        meta.update(intro=f'intros/{s.home}/{s.id}.fseq', introAudio=f'intros/{s.home}/{s.id}.mp3',
+                    introData=f'intros/{s.home}/{s.id}.png', introFrames=len(data), introName=f'{s.code} {s.title} intro')
     return meta
 
 

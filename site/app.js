@@ -357,12 +357,44 @@
     da.hidden = !meta.audio;
     if (meta.audio) { da.href = meta.audio; da.download = meta.audioName; }
     $('sound').hidden = !meta.audio;
+    $('intro').hidden = !meta.intro;
+    $('intros').hidden = !H.home.sequences.some((x) => x.introData);
+    if (meta.intro) {
+      Object.assign($('introFseq'), { href: meta.intro, download: `${meta.introName}.fseq` });
+      Object.assign($('introAudio'), { href: meta.introAudio, download: `${meta.introName}.mp3` });
+    }
     setAccent(meta.occasion);
     document.title = `${meta.title} · Pixelhome`;
   }
 
   let loadToken = 0;
-  async function choose(meta, startAt = 0, autoplay = true) {
+  // the spoken intro plays as a short sequence of its own, then hands over to the show
+  async function playIntro(meta) {
+    mark(meta);
+    history.replaceState(null, '', `#${H.home.id}/${meta.id}`);
+    const token = ++loadToken;
+    status.hidden = false;
+    status.textContent = 'Loading intro…';
+    try {
+      const data = await cached(meta.introData);
+      if (token !== loadToken) return;
+      const im = { ...meta, kind: 'show', audio: meta.introAudio, introOf: meta };
+      seq = { meta: im, data, channels: H.home.channels, fps: 40, frames: meta.introFrames };
+      $('nowCode').textContent = `${meta.code} · INTRO`;
+      exposure.value = 1;
+      exposure.dispatchEvent(new Event('input'));
+      t = 0;
+      music.pause();
+      music.src = meta.introAudio;
+      status.hidden = true;
+      setPlaying(true);
+    } catch (e) {
+      if (token === loadToken) status.textContent = 'The intro did not load. Check your connection and try again.';
+    }
+  }
+
+  async function choose(meta, startAt = 0, autoplay = true, intro = true) {
+    if (intro && introsOn && meta.introData && startAt === 0 && autoplay && !reduceMotion) return playIntro(meta);
     mark(meta);
     history.replaceState(null, '', `#${H.home.id}/${meta.id}`);
     const token = ++loadToken;
@@ -429,6 +461,22 @@
     if (soundOn && !playing) setPlaying(true); else syncMusic();
   });
   showSound();
+  // intros: when on, a sequence with a spoken intro plays it first whenever it starts from the top
+  let introsOn = true;
+  try { introsOn = localStorage.getItem('pixelhome.intros') !== '0'; } catch (e) { /* storage blocked */ }
+  function showIntros() {
+    const b = $('intros');
+    b.setAttribute('aria-pressed', String(introsOn));
+    b.textContent = introsOn ? 'Intros on' : 'Intros off';
+  }
+  $('intros').addEventListener('click', () => {
+    introsOn = !introsOn;
+    try { localStorage.setItem('pixelhome.intros', introsOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
+    showIntros();
+    const m = seq && (seq.meta.introOf || seq.meta);
+    if (m && m.introData) choose(m, 0, true, introsOn);      // hear it now, or skip straight to the show
+  });
+  showIntros();
   document.addEventListener('keydown', (e) => {
     if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
     if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
@@ -453,6 +501,7 @@
   }
   // at the end of a sequence, play the next one; a dropped-in file just loops
   function advance() {
+    if (seq.meta.introOf) { choose(seq.meta.introOf, 0, true, false); return; }
     if (seq.meta.id === 'file' || !step(1)) { seek(0); syncMusic(); return; }
     setPlaying(false);
   }

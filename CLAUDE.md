@@ -1,8 +1,9 @@
 # Pixelhome: notes for agents
 
 Sequences are Python modules that render frames. The site (pixelhome.app) is built from them in CI;
-never commit `dist/`, `build/`, FSEQ or PNG output. The one generated thing that is committed is a show's
-soundtrack, `homes/<home>/audio/<occasion>/<name>.mp3`: it needs local tools CI doesn't have.
+never commit `dist/`, `build/`, FSEQ or PNG output. The generated things that are committed are a show's
+soundtrack, `homes/<home>/audio/<occasion>/<name>.mp3`, and its spoken intro, `homes/<home>/intros/...`:
+they need local tools CI doesn't have.
 
 ## Sequence contract
 
@@ -59,6 +60,17 @@ all night, also over an FM transmitter: keep them soft (rms around -22 dBFS), wi
 Render: `uv run --group audio python -m pixelhome music [--video] <CODE>` (writes the MP3, and with
 `--video` a preview MP4 with sound). If a show's timing changes, re-render its music. Never auto-play
 audio on the machine you are working on.
+
+## Spoken intros (optional)
+
+A sequence may set `VOICEOVER = "..."`: one or two spoken sentences (about 4-8 s) to play before it, written
+to be heard, not the card's DESCRIPTION. `uv run --group audio python -m pixelhome intro <CODE>` reads it with
+Chatterbox in the owner's cloned voice (`~/.cache/pixelhome/voice/<occasion>.wav`, never committed), puts it
+over the occasion's bed (`BEDS` in `pixelhome/intro.py`) and writes `homes/<home>/intros/<occasion>/<name>.mp3`
+and `.json` (the voice's loudness at 40 fps). Both are committed; the build turns the JSON into a red
+out-from-centre waveform FSEQ on Left, Porch Front and Right. Takes are cached by text and voice, so a reading
+only changes when its line does; `VOICEOVER_TAKE = n` asks for a different reading of the same line.
+(`INTRO` is taken: Seance's score uses it for a tune.)
 
 ## Checking work
 

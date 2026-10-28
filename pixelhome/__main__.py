@@ -7,6 +7,9 @@
                                                 timeline + stills PNGs (and MP4) into build/preview/
   uv run --group audio python -m pixelhome music [--occasion O] [--video] match [...]
                                                 render each matching show's score() to homes/<home>/audio/ (MP3)
+  uv run --group audio python -m pixelhome intro [--occasion O] match [...]
+                                                read each matching sequence's VOICEOVER line in its occasion's voice,
+                                                to homes/<home>/intros/ (MP3 + loudness JSON for the FSEQ)
 
 `match` is a substring of a sequence id, code or title (case-insensitive).
 """
@@ -32,6 +35,9 @@ def main():
     m.add_argument('--occasion', help='only load this occasion folder')
     m.add_argument('--video', action='store_true', help='also write the preview MP4 with the music')
     m.add_argument('match', nargs='+')
+    i = sub.add_parser('intro')
+    i.add_argument('--occasion', help='only load this occasion folder')
+    i.add_argument('match', nargs='+')
     a = ap.parse_args()
     if a.cmd == 'list':
         for h in catalog.homes():
@@ -41,6 +47,9 @@ def main():
                 print(f'  {s.code:6} {s.occasion:12} {s.kind:8} {s.id:16} {s.title}')
     elif a.cmd == 'build':
         build(os.path.abspath(a.out), a.match)
+    elif a.cmd == 'intro':
+        from .intro import intro
+        intro(a.match, a.occasion)
     elif a.cmd == 'music':
         from .audio import music
         music(a.match, a.occasion, a.video)

@@ -26,6 +26,7 @@ KIND = 'show'
 DESCRIPTION = ('Pumpkins grow on vines along the roof, get carved, and sing a barbershop number, '
                'except the runt, who can\'t keep up. Then a giant pumpkin rolls in and flattens '
                'the quartet, and the runt gets the last note.')
+VOICEOVER = 'Out in the patch, the pumpkins have practiced all year. Four voices, one little runt... and one very big finish.'
 
 BEAT = 0.625                                 # 96 BPM
 D = 82.0

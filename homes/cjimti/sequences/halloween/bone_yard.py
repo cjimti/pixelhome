@@ -19,6 +19,7 @@ KIND = 'show'
 DESCRIPTION = ('Skeletons climb out of the roof, get assembled from bones flying in off the ends of '
                'the house, dance a mirrored routine and a conga. One falls apart, gets put back '
                'together wrong, and keeps dancing anyway.')
+VOICEOVER = 'Tonight... the bone yard wakes. Five skeletons, one roof, and not a single spare bone. Watch closely.'
 
 BONE = hexc('#fff0d6')
 GLOW = hexc('#40ff70')

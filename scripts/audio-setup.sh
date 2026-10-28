@@ -1,6 +1,7 @@
 #!/bin/sh
-# One-time setup for rendering soundtracks (`python -m pixelhome music`): builds Surge XT's Python module and
-# fetches the VSCO2 Community Edition samples into ~/.cache/pixelhome (override with PIXELHOME_CACHE).
+# One-time setup for rendering soundtracks (`python -m pixelhome music`) and intros (`intro`): builds Surge XT's Python
+# module, fetches the VSCO2 Community Edition samples and installs Chatterbox into ~/.cache/pixelhome (override with
+# PIXELHOME_CACHE).
 # Needs git, cmake, a C++ toolchain (Xcode command line tools) and ffmpeg. Takes about 10 minutes and 3 GB.
 set -e
 cd "$(dirname "$0")/.."
@@ -23,4 +24,11 @@ if ! ls "$CACHE"/surge/build/src/surge-python/surgepy*.so >/dev/null 2>&1; then
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DPython_EXECUTABLE="$PY" -DPYTHON_EXECUTABLE="$PY"
   cmake --build "$CACHE/surge/build" --target surgepy --parallel
 fi
+# Chatterbox for spoken intros (`python -m pixelhome intro`), in its own venv: it pins its own torch and numpy.
+# Its watermarker still imports pkg_resources, which setuptools 81 dropped.
+if [ ! -x "$CACHE/chatterbox/bin/python" ]; then
+  uv venv --python 3.11 "$CACHE/chatterbox"
+  VIRTUAL_ENV="$CACHE/chatterbox" uv pip install chatterbox-tts "setuptools<81"
+fi
+mkdir -p "$CACHE/voice"     # reference recordings, ~10 s each: <occasion>.wav (never committed)
 echo "ready: uv run --group audio python -m pixelhome music <CODE>"

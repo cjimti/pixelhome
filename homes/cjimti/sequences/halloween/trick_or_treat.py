@@ -16,6 +16,7 @@ TITLE = 'Trick or Treat'
 KIND = 'show'
 DESCRIPTION = ('Costumed kids walk up to the front door one by one, and the house plays a gentle trick '
                'on each of them. The last kid is not scared at all, and scares the house right back.')
+VOICEOVER = 'Ring the bell, little ones. The house has a trick for every one of you... well. Almost every one.'
 
 NIGHT = hexc('#2a0070')
 LAMP = hexc('#ffa030')

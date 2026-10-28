@@ -28,6 +28,7 @@ KIND = 'show'
 DESCRIPTION = ('Ichabod Crane rides in singing, until hoofbeats come from behind and the Headless '
                'Horseman bursts out with a flaming pumpkin for a head. Ichabod races across the '
                'bridge where the rider can\'t follow, so the Horseman hurls his head after him.')
+VOICEOVER = 'A lonely road, a nervous rider, and hoofbeats where there should be none. Ride, Ichabod. Ride for the bridge.'
 
 MIST = hexc('#1f6a74')
 WOOD = hexc('#c88a4a')

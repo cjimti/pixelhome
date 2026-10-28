@@ -6,6 +6,7 @@ CODE = 'NT1'
 TITLE = 'Hearth'
 KIND = 'ambient'
 DESCRIPTION = 'Every pixel a candle. Slow gusts roll along the roof; now and then a flame nearly goes out.'
+VOICEOVER = 'The fire is lit, and the night is long. Pull up close to the hearth, and stay as long as you like.'
 
 DEEP_ORANGE = hexc('#ff2800')
 AMBER = hexc('#ff7010')

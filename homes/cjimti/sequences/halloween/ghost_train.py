@@ -24,6 +24,7 @@ KIND = 'show'
 DESCRIPTION = ('A ghost train rolls into the porch station, swaps passengers and rings its bell, then '
                'laps the house faster and faster. A late little ghost chases it until the caboose '
                'scoops him up, and the whole train dives into a fog tunnel.')
+VOICEOVER = 'All aboard the last train of the night. Mind the gap... and mind the passengers. Some of them never got off.'
 
 D = 76.5
 

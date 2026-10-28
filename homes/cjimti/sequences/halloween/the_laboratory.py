@@ -16,6 +16,7 @@ TITLE = "It's Alive"
 KIND = 'show'
 DESCRIPTION = ('The corners are coils in a mad lab: they charge, arcs leap between them and a storm rolls '
                'in until one huge strike brings something to life, and it lurches across the roof and blows the fuse.')
+VOICEOVER = 'Thunder on the hill, and the coils are humming. Tonight the doctor tries again... to bring something to life.'
 
 VIOLET = hexc('#4818ff')
 COIL = hexc('#3a8cff')

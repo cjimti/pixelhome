@@ -334,19 +334,24 @@ class Mix:
 
     def write(self, path, audio=None):
         audio = self.render() if audio is None else audio
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        pcm = (np.clip(audio.T, -1, 1) * 32767).astype('<i2')
-        import wave
-        with tempfile.TemporaryDirectory() as d:
-            w = os.path.join(d, 'mix.wav')
-            with wave.open(w, 'wb') as f:
-                f.setnchannels(2)
-                f.setsampwidth(2)
-                f.setframerate(SR)
-                f.writeframes(pcm.tobytes())
-            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', w, '-codec:a', 'libmp3lame', '-b:a', '192k',
-                            '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', path], check=True)
+        write_mp3(path, audio)
         return audio
+
+
+def write_mp3(path, audio):
+    """Stereo (2, n) float at SR -> 192k MP3, byte-reproducible."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    pcm = (np.clip(audio.T, -1, 1) * 32767).astype('<i2')
+    import wave
+    with tempfile.TemporaryDirectory() as d:
+        w = os.path.join(d, 'mix.wav')
+        with wave.open(w, 'wb') as f:
+            f.setnchannels(2)
+            f.setsampwidth(2)
+            f.setframerate(SR)
+            f.writeframes(pcm.tobytes())
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', w, '-codec:a', 'libmp3lame', '-b:a', '192k',
+                        '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', path], check=True)
 
 
 def audio_path(s):

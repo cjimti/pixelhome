@@ -7,6 +7,7 @@ CODE = 'NT3'
 TITLE = 'Lanterns'
 KIND = 'ambient'
 DESCRIPTION = 'Each roof section is a lantern breathing at its own pace. A lamplighter glow walks the roof end to end.'
+VOICEOVER = 'The lanterns are lit along the roof, and the lamplighter is making his rounds. Goodnight.'
 
 AMBER = hexc('#ff7010')
 FLOOR_COLOR = hexc('#ff4a08')

@@ -15,6 +15,7 @@ TITLE = 'Hubble Bubble'
 KIND = 'show'
 DESCRIPTION = ('Ingredients fly in and splash into a sloshing cauldron in the porch, mixing their colours until '
                'it boils over and floods the house. Then the brew curdles into glowing frogs that hop away.')
+VOICEOVER = 'Eye of newt, a pinch of moonlight, and whatever fell off the roof. The cauldron is bubbling. Stand back.'
 
 MURK = hexc('#1f9a48')
 PURPLE = hexc('#9a00ff')

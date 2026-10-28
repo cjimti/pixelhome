@@ -7,6 +7,7 @@ CODE = 'SC4'
 TITLE = 'Spiders'
 KIND = 'show'
 DESCRIPTION = 'Silhouette spiders scurry, pause and leave silk across a glowing roof. Then something much bigger walks across.'
+VOICEOVER = 'They spin all night while you sleep. Little ones, mostly... mostly.'
 
 ORANGE = hexc('#ff3000')
 RED = hexc('#ff0000')
