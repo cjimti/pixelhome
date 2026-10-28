@@ -1,13 +1,16 @@
-"""Possessed: An innocent warm-white roofline that browns out, glitches, desyncs, dissolves into a
-heartbeat, flatlines, and comes back as if nothing happened."""
+"""Bad Wiring: a thunderstorm and an old house. The warm-white roofline browns out, glitches, falls out of
+step run by run and freezes while everyone watches Dad at the fuse box, hearts racing (the heartbeat from the
+porch); it all goes dark, he flips the breaker, and the lights come back as if nothing happened."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, lerp, heartbeat, nframes
 
 CODE = 'SC5'
-TITLE = 'Possessed'
+TITLE = 'Bad Wiring'
 KIND = 'show'
-DESCRIPTION = 'Innocent warm white that browns out, glitches, desyncs, dissolves into a heartbeat, flatlines and comes back.'
-VOICEOVER = 'A quiet house, warm and bright. Nothing to worry about... nothing at all.'
+DESCRIPTION = ('A storm hits the old wiring: the warm white lights brown out, glitch and fall out of step, then freeze '
+               'while we watch Dad at the fuse box, hearts racing. Everything goes dark, until he flips the breaker '
+               'and the lights come back as if nothing happened.')
+VOICEOVER = 'A thunderstorm, an old house, and Dad heading out to the fuse box with a flashlight. Everybody hold your breath...'
 
 WHITE = hexc('#ffffff')
 WARM = hexc('#ff8a30')
@@ -102,7 +105,7 @@ def render(G, seed=5):
 
 
 # ---------------------------------------------------------------- music ----------------------------------------------
-# A music box lullaby in F major, 3/4, that the house is possessed out of. It runs down like a spring with the brownout
+# A music box lullaby in F major, 3/4, that the bad wiring chews up. It runs down like a spring with the brownout
 # (varispeed: slower and flatter, sagging at every dip), the porch-side harp drops out with the Side run and a bad
 # connection buzzes on Porch Right. The corruption cuts the tune into 0.4 s blocks that jump, stutter and change key
 # with the torn segments, under a scanner tone that follows the RGB comet and bursts of static. Then each run gets
@@ -169,7 +172,7 @@ def score(M, G):
     for name, gain, rev in (('box', 0.5, 0.3), ('harp', 0.3, 0.25), ('buzz', 0.12, 0.05), ('glitch', 0.22, 0.1),
                             ('pad', 0.7, 0.35), ('voices', 0.45, 0.18), ('choir', 0.25, 0.35), ('hits', 0.5, 0.15),
                             ('freeze', 0.8, 0.05), ('pops', 0.16, 0.12), ('heart', 0.6, 0.08),
-                            ('strings', 0.5, 0.3), ('ghost', 1.0, 0.6), ('tone', 0.05, 0.15)):
+                            ('strings', 0.5, 0.3), ('echo', 1.0, 0.6), ('tone', 0.05, 0.15)):
         M.bus(name, gain=gain, reverb=rev)
 
     order = np.argsort(G.pd)
@@ -339,8 +342,8 @@ def score(M, G):
     for t, m, d in ((43.0, 'C5', 7.0), (46.0, 'Db5', 4.0), (48.0, 'D5', 2.0)):
         M.add('strings', vtrem.play(n(m), 70 + 10 * (t > 45), dur=d), t, 0.5 + 0.1 * (t - 43) / 5, 0.25)
     tg = tline(41.0, 49.5)                  # far away, the lullaby, very slow
-    ghost = warp(box_src, 0.55 * (tg - 41.0)) * np.clip((tg - 41) / 1.5, 0, 1) * np.clip((49.5 - tg) / 1.0, 0, 1)
-    M.add('ghost', ghost, 41.0, 0.35, -0.2)
+    echo = warp(box_src, 0.55 * (tg - 41.0)) * np.clip((tg - 41) / 1.5, 0, 1) * np.clip((49.5 - tg) / 1.0, 0, 1)
+    M.add('echo', echo, 41.0, 0.35, -0.2)
 
     # ---- 50-52.6: flatline; 52.6-57 dark; someone winds the box; 57: the lullaby, as if nothing happened ----
     tt = tline(50.0, 52.6)

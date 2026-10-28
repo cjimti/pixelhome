@@ -1,8 +1,9 @@
 """Spoken intros: a short clip to schedule before a sequence, a line read in a cloned voice over the occasion's
 bed, with the house showing the voice as a red waveform out from the centre of Left, Porch Front and Right.
 
-A sequence opts in with `VOICEOVER = "the line"` (and optionally `VOICEOVER_TAKE = n` for a different reading,
-`VOICEOVER_VOICE = name` for another reference voice than the occasion's). `python -m pixelhome intro` renders it
+A sequence opts in with `VOICEOVER = "the line"`: a line to set the mood, which is followed by the card's
+DESCRIPTION so the street knows what to look for (a string of pixels is abstract). Optionally `VOICEOVER_TAKE = n`
+for a different reading, `VOICEOVER_VOICE = name` for another reference voice than the occasion's. `python -m pixelhome intro` renders it
 locally to homes/<home>/intros/<occasion>/<name>.mp3 plus <name>.json, the voice's loudness at 40 fps; both are
 committed, and the build turns the JSON into the FSEQ. Voices are ~10 s reference recordings in
 ~/.cache/pixelhome/voice/<name>.wav, never committed; Chatterbox runs in its own venv (scripts/audio-setup.sh).
@@ -17,6 +18,8 @@ EXAGGERATION, CFG = 0.5, 0.5            # Chatterbox's defaults: the reading tha
 RED = hexc('#ff0800')
 WAVE = ('Left', 'Porch Front', 'Right')
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
+VOICES = {'halloween': 'halloween-accent'}  # the owner's voice, as re-read with the slight British accent
+GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
 def _cache():
@@ -62,22 +65,50 @@ def _takes(jobs):
     if not os.path.exists(py):
         raise SystemExit(f'{py} not found: run scripts/audio-setup.sh')
     script = os.path.join(catalog.ROOT, 'scripts', 'chatterbox-say.py')
-    tmp = [dict(j, out=j['out'] + '.tmp.wav') for j in todo]
-    subprocess.run([py, script, json.dumps(tmp)], check=True, env=dict(os.environ, PYTORCH_ENABLE_MPS_FALLBACK='1'))
-    for j in tmp:
-        os.replace(j['out'], j['out'][:-len('.tmp.wav')])
+    subprocess.run([py, script, json.dumps(todo)], check=True, env=dict(os.environ, PYTORCH_ENABLE_MPS_FALLBACK='1'))
 
 
-def _job(mod, s):
-    voice = getattr(mod, 'VOICEOVER_VOICE', s.occasion)
+def _parts(text, limit=200):
+    """Sentences grouped into parts of at most ~limit characters: Chatterbox wanders on long text."""
+    out = []
+    for sent in [x.strip() for x in text.replace('. ', '.|').split('|') if x.strip()]:
+        if out and len(out[-1]) + 1 + len(sent) <= limit:
+            out[-1] += ' ' + sent
+        else:
+            out.append(sent)
+    return out
+
+
+def _jobs(mod, s):
+    """One reading per part: the mood line, then the description."""
+    voice = getattr(mod, 'VOICEOVER_VOICE', VOICES.get(s.occasion, s.occasion))
     ref = os.path.join(_cache(), 'voice', voice + '.wav')
     if not os.path.exists(ref):
         raise SystemExit(f'{s.id}: no reference voice {ref}')
     take = int(getattr(mod, 'VOICEOVER_TAKE', 0))
-    h = hashlib.sha256(json.dumps([mod.VOICEOVER, EXAGGERATION, CFG, take]).encode())
-    h.update(open(ref, 'rb').read())
-    out = os.path.join(_cache(), 'intro-voice', h.hexdigest()[:20] + '.wav')
-    return dict(text=mod.VOICEOVER, ref=ref, out=out, seed=take, exaggeration=EXAGGERATION, cfg=CFG)
+    jobs = []
+    for text in [mod.VOICEOVER] + _parts(getattr(mod, 'DESCRIPTION', '')):
+        h = hashlib.sha256(json.dumps([text, EXAGGERATION, CFG, take]).encode())
+        h.update(open(ref, 'rb').read())
+        out = os.path.join(_cache(), 'intro-voice', h.hexdigest()[:20] + '.wav')
+        jobs.append(dict(text=text, ref=ref, out=out, seed=take, exaggeration=EXAGGERATION, cfg=CFG))
+    return jobs
+
+
+def _spoken(files):
+    """The parts' readings, trimmed of their own silence, joined with a pause after the mood line."""
+    from pedalboard.io import AudioFile
+    from .audio import SR
+    out = []
+    for i, f in enumerate(files):
+        with AudioFile(f).resampled_to(SR) as a:
+            v = a.read(a.frames)[0].astype(np.float64)
+        on = np.flatnonzero(np.abs(v) > 0.02 * np.abs(v).max())
+        v = v[max(0, on[0] - int(0.03 * SR)):on[-1] + int(0.15 * SR)]
+        if i:
+            out.append(np.zeros(int((GAP if i == 1 else BREATH) * SR)))
+        out.append(v / (np.abs(v).max() + 1e-9))
+    return np.concatenate(out)
 
 
 def _envelope(v, sr):
@@ -109,10 +140,12 @@ def _bed_halloween(n, rng, s0, s1):
     from .audio import SR, Sampler, Synth, VSCO, _load, note
     t = np.arange(n) / SR
     T = n / SR
-    mid = (s0 + s1) / 2
     home = s1 + 0.5
-    chords = [(0.0, ['D3', 'F3', 'A3'], 'D2'), (s0, ['D3', 'F3', 'Bb3'], 'Bb1'), (mid, ['D3', 'G3', 'Bb3'], 'G1'),
-              (s1 - 0.6, ['C#3', 'E3', 'A3'], 'A1'), (home, ['D3', 'F3', 'A3'], 'D2')]
+    walk = [(['D3', 'F3', 'Bb3'], 'Bb1'), (['D3', 'G3', 'Bb3'], 'G1'), (['D3', 'F3', 'A3'], 'D2'), (['C3', 'E3', 'G3'], 'C2')]
+    chords = [(0.0, ['D3', 'F3', 'A3'], 'D2')]
+    for i, c0 in enumerate(np.arange(s0, s1 - 2.5, 4.0)):        # a chord every 4 s while it speaks
+        chords.append((float(c0), *walk[i % len(walk)]))
+    chords += [(s1 - 0.6, ['C#3', 'E3', 'A3'], 'A1'), (home, ['D3', 'F3', 'A3'], 'D2')]
     choir, ends = [], [c[0] for c in chords[1:]] + [T]
     for (c0, triad, _), c1 in zip(chords, ends):
         choir += [(c0, note(m), 40 + 6 * (i == 2), c1 - c0 + 0.15) for i, m in enumerate(triad)]
@@ -161,14 +194,11 @@ def _at(x, db, part=None):
     return x * 10 ** ((db - _rms(x if part is None else x[:, part])) / 20)
 
 
-def mix(take, occasion, seed):
-    """Voice file -> (stereo mix, voice loudness per frame)."""
+def mix(files, occasion, seed):
+    """Readings of the parts -> (stereo mix, voice loudness per frame)."""
     import pedalboard as pb
-    from pedalboard.io import AudioFile
     from .audio import SR
-    with AudioFile(take).resampled_to(SR) as f:
-        v = f.read(f.frames)[0].astype(np.float64)
-    v /= np.abs(v).max() + 1e-9
+    v = _spoken(files)
     n = int((PRE + len(v) / SR + POST) * SR)
     s = int(PRE * SR)
     dry = pb.Pedalboard([pb.HighpassFilter(80), pb.Compressor(threshold_db=-20, ratio=2.5, attack_ms=5,
@@ -206,14 +236,14 @@ def intro(want, occasion=None):
             if not hasattr(mod, 'VOICEOVER'):
                 print(f'{h}/{s.id}: no VOICEOVER')
                 continue
-            todo.append((s, _job(mod, s)))
+            todo.append((s, _jobs(mod, s)))
     os.makedirs(os.path.join(_cache(), 'intro-voice'), exist_ok=True)
-    _takes([j for _, j in todo])
-    for s, j in todo:
-        audio, env = mix(j['out'], s.occasion, int(hashlib.sha256(s.id.encode()).hexdigest()[:8], 16))
+    _takes([j for _, js in todo for j in js])
+    for s, js in todo:
+        audio, env = mix([j['out'] for j in js], s.occasion, int(hashlib.sha256(s.id.encode()).hexdigest()[:8], 16))
         mp3, js = paths(s)
         write_mp3(mp3, audio)
         with open(js, 'w') as f:
             json.dump(dict(seconds=round(audio.shape[1] / SR, 3), fps=round(1 / DT), env=np.round(env, 3).tolist()),
                       f, separators=(',', ':'))
-        print(f'{s.home}/{s.id}: {mp3} {audio.shape[1] / SR:.1f}s  rms {_rms(audio):.1f} dBFS  "{j["text"]}"')
+        print(f'{s.home}/{s.id}: {mp3} {audio.shape[1] / SR:.1f}s  rms {_rms(audio):.1f} dBFS')
