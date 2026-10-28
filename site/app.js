@@ -334,12 +334,12 @@
   document.querySelectorAll('#kinds button').forEach((b) => b.addEventListener('click', () => {
     filters.kind = b.dataset.kind;
     applyFilters();
-    track('filter', { filter_type: 'kind', value: b.dataset.kind || 'all' });
+    track('filter', { filter_type: 'kind', filter_value: b.dataset.kind || 'all' });
   }));
   $('occasions').addEventListener('change', (e) => {
     filters.occasion = e.target.value;
     applyFilters();
-    track('filter', { filter_type: 'occasion', value: e.target.value || 'all' });
+    track('filter', { filter_type: 'occasion', filter_value: e.target.value || 'all' });
   });
   let searchTimer;
   $('search').addEventListener('input', (e) => {
