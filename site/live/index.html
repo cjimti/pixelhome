@@ -75,6 +75,23 @@ h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: clamp(
 .sound svg { width: 26px; height: 26px; fill: currentColor; flex: none; }
 .sound[aria-pressed="true"] { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
 .note { margin: -6px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.views { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+.views button { font: 500 12px var(--body); color: var(--ink); background: rgba(21, 18, 16, 0.78); border: 1px solid var(--line);
+  border-radius: 7px; padding: 5px 9px; cursor: pointer; }
+.views button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.right { display: flex; align-items: center; gap: 14px; }
+.info { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--muted); background: transparent; color: var(--ink);
+  font: italic 600 17px Georgia, serif; cursor: pointer; display: grid; place-items: center; padding: 0; }
+dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100svh - 48px); padding: 0; border: 1px solid var(--line);
+  border-radius: 16px; background: #15120f; color: var(--ink); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.card { padding: 22px 20px 20px; display: grid; gap: 12px; }
+.card h2 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 34px; line-height: 1; text-transform: uppercase; }
+.card p { margin: 0; color: var(--muted); }
+.card p b { color: var(--ink); font-weight: 600; }
+.card a { color: var(--accent); }
+.card .close { margin-top: 6px; min-height: 52px; border: 0; border-radius: 14px; background: var(--accent); color: #140b05;
+  font: 600 17px var(--body); cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .onair i { animation: none; } }
 </style>
 </head>
@@ -82,9 +99,12 @@ h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: clamp(
 <main class="page">
   <header class="top">
     <span class="onair off" id="onair"><i></i>Live</span>
-    <a class="brand" href="../">Pixel<b>home</b></a>
+    <span class="right">
+      <button class="info" id="aboutOpen" aria-label="About this page">i</button>
+      <a class="brand" href="../">Pixel<b>home</b></a>
+    </span>
   </header>
-  <div class="stage"><canvas id="view" aria-label="The house and its lights, as they are right now"></canvas><div class="msg" id="msg">Connecting to the house…</div></div>
+  <div class="stage"><canvas id="view" aria-label="The house and its lights, as they are right now"></canvas><div class="views" role="group" aria-label="Camera"><button data-view="street" aria-pressed="true">Street</button><button data-view="corner" aria-pressed="false">Corner</button><button data-view="above" aria-pressed="false">Above</button></div><div class="msg" id="msg">Connecting to the house…</div></div>
   <div class="bar" aria-hidden="true"><span id="bar"></span></div>
   <section class="now" aria-live="polite">
     <p class="kicker" id="kicker">Live</p>
@@ -94,6 +114,16 @@ h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: clamp(
   <button class="sound" id="sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" id="soundIcon"></svg><span id="soundText">Tap to hear the music</span></button>
   <p class="note" id="note">The music plays from your phone, in time with the lights.</p>
 </main>
+<dialog id="about" aria-labelledby="aboutTitle">
+  <div class="card">
+    <h2 id="aboutTitle">What is this?</h2>
+    <p>This page shows <b>what the lights on this house are doing right now</b>, as a 3D model. Tap Street, Corner or Above to look at it from another angle.</p>
+    <p>Tap <b>Tap to hear the music</b> and the soundtrack plays from your phone, in time with the lights on the roof.</p>
+    <p>Every light show and every soundtrack here is <b>made by a computer program</b> rather than set by hand, and all of it is open source.</p>
+    <p>See every show and how they’re made at <a href="../">pixelhome.app</a>, or read <a href="../about/">the full story</a>.</p>
+    <button class="close" id="aboutClose">Back to the lights</button>
+  </div>
+</dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="live.js"></script>
 </body>
