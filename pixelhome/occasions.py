@@ -15,6 +15,8 @@ OCCASIONS = [
     dict(id='independence-day', date='07-04', label='Independence Day', accent='#4f8cff', prefix='IN'),
     dict(id='labor-day', date='09-07', label='Labor Day', accent='#f59e3b', prefix='LB'),
     dict(id='halloween', date='10-31', label='Halloween', accent='#ff6a1f', prefix='HW'),
+    dict(id='nightmare-before-christmas', date='11-01', label='The Nightmare Before Christmas', accent='#7fd13b',
+         prefix='NB'),
     dict(id='veterans-day', date='11-11', label='Veterans Day', accent='#9fb3c8', prefix='VT'),
     dict(id='thanksgiving', date='11-26', label='Thanksgiving', accent='#d98a3a', prefix='TG'),
     dict(id='christmas', date='12-25', label='Christmas', accent='#e5484d', prefix='XM'),
