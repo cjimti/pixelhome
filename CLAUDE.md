@@ -74,6 +74,11 @@ out-from-centre waveform FSEQ on Left, Porch Front and Right. Takes are cached b
 only changes when its line does; `VOICEOVER_TAKE = n` asks for a different reading of the same line.
 (`INTRO` is taken: Is Anyone There?'s score uses it for a tune.)
 
+## Live mode
+
+`live/` is the Cloudflare Worker and Pi service behind the site's Live button (see `live/README.md`). It must
+stay within the Workers Free plan: no paid-only features, nothing that sends viewers' messages inbound.
+
 ## Checking work
 
 ```sh

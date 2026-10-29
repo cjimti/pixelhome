@@ -1,0 +1,12 @@
+// Pixelhome Live (see README.md). Deploy: npx wrangler deploy; the Pi's token: npx wrangler secret put PUSH_TOKEN
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pixelhome-live",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "live.pixelhome.app", "custom_domain": true }],
+  "durable_objects": { "bindings": [{ "name": "HOUSE", "class_name": "House" }] },
+  // SQLite-backed: the only kind the Workers Free plan allows
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["House"] }]
+}
