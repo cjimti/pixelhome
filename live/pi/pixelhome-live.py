@@ -7,7 +7,7 @@ Connections go out from the Pi only; nothing on the Pi is opened to the internet
 
 Config: /home/fpp/media/config/pixelhome-live.json {"url": "https://live.pixelhome.app/push/<house>", "token": "..."}
 """
-import json, time, urllib.request
+import http.client, json, time, urllib.parse, urllib.request
 
 CONF = '/home/fpp/media/config/pixelhome-live.json'
 STATUS = 'http://127.0.0.1/api/fppd/status'
@@ -29,18 +29,49 @@ def read_status():
                 ms=int(ms) if playing else 0)
 
 
-def send(conf, s):
-    req = urllib.request.Request(conf['url'], data=json.dumps(s).encode(), method='POST',
-                                 headers={'Content-Type': 'application/json',
-                                          'Authorization': 'Bearer ' + conf['token'],
-                                          'User-Agent': 'pixelhome-live/1'})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        r.read()
+class Relay:
+    """One kept-open HTTPS connection to the relay, so a report isn't held up by a new TLS handshake.
+
+    The relay stamps a report when it arrives, so the position is moved on by the trip there: half the
+    quickest recent round trip on this connection.
+    """
+
+    def __init__(self, url, token):
+        u = urllib.parse.urlsplit(url)
+        self.host, self.path = u.netloc, u.path
+        self.headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token,
+                        'User-Agent': 'pixelhome-live/2'}
+        self.conn, self.rtts = None, []
+
+    def send(self, s):
+        if s['status'] == 'playing' and self.rtts:
+            s = dict(s, ms=s['ms'] + int(min(self.rtts) * 500))
+        body = json.dumps(s).encode()
+        for attempt in (0, 1):                 # a kept-open connection the far end closed: reconnect once
+            fresh = self.conn is None
+            try:
+                if fresh:
+                    self.conn = http.client.HTTPSConnection(self.host, timeout=10)
+                t = time.monotonic()
+                self.conn.request('POST', self.path, body, self.headers)
+                r = self.conn.getresponse()
+                r.read()
+                if r.status != 200:
+                    raise OSError(f'relay said {r.status}')
+                if not fresh:                  # a new connection's first trip includes the handshake
+                    self.rtts = (self.rtts + [time.monotonic() - t])[-10:]
+                return
+            except (http.client.HTTPException, OSError):
+                self.conn.close()
+                self.conn = None
+                if attempt or fresh:
+                    raise
 
 
 def main():
     with open(CONF) as f:
         conf = json.load(f)
+    relay = Relay(conf['url'], conf['token'])
     last, sent_at, retry_at = None, 0.0, 0.0
     while True:
         t0 = time.monotonic()
@@ -57,7 +88,7 @@ def main():
                 due = abs(s['ms'] - expected) > JUMP_MS
             if due:
                 try:
-                    send(conf, s)
+                    relay.send(s)
                     last, sent_at = (key, s['ms'], t0), t0
                 except Exception as e:
                     print('push failed:', e, flush=True)

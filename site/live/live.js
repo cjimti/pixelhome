@@ -204,7 +204,13 @@
     state = st;
     if (st.status === 'offline') return dark('Live', 'The house is offline', 'We can’t reach the lights right now. Keep this page open; it will join in when they’re back.');
     if (st.status !== 'playing') return dark('Live', 'The show is resting', 'The lights are taking a break. Keep this page open; it will join in when the show starts again.');
-    anchor = { ms: st.ms + (st.age || 0), recv: performance.now() };
+    // A report can only arrive late (the network never delivers it early), so within one sequence the report
+    // that puts the house furthest along is the truest; later, slower ones don't pull the clock back.
+    // It may drift back 20 ms a report, in case the house itself stalled.
+    const ms = st.ms + (st.age || 0), now = performance.now();
+    const ours = anchor && anchor.seq === st.seq ? livePos() * 1000 : null;
+    anchor = ours !== null && Math.abs(ms - ours) < 1500 ? { ms: Math.max(ms, ours - 20), recv: now, seq: st.seq }
+      : { ms, recv: now, seq: st.seq };
     const w = find(st.seq);
     if (!w) return dark('Now playing', 'Something special', 'This one isn’t on the website yet, so just watch the house!', true);
     setAccent(w.meta.occasion);
@@ -228,6 +234,7 @@
   // ---------- the music ----------
   const music = new Audio();
   music.preload = 'auto';
+  music.preservesPitch = true;
   let soundOn = false, seekedAt = 0, needSeek = false, wake = null;
   const audioClock = () => soundOn && cur && music.dataset.key === cur.key && !music.paused && !music.seeking && music.readyState >= 2;
   function syncAudio() {
@@ -250,12 +257,23 @@
       music.play().catch(blocked);
       return;
     }
+    trim();
     // only a real slip, and never while the last correction is still settling: each seek is a gap in the sound
     if (music.seeking || performance.now() - seekedAt < 15e3 || !isFinite(music.duration) || at >= music.duration) return;
     if (Math.abs(music.currentTime - at) > 1) {
       music.currentTime = at;
       seekedAt = performance.now();
     }
+  }
+  // Small slips (a seek on a phone resumes late; reports arrive late) are closed by playing a little faster or
+  // slower, pitch kept, instead of seeking: up to 2.5%, so 100 ms takes about four seconds and nothing is heard.
+  let err = 0;
+  function trim() {
+    if (!audioClock() || !isFinite(music.duration)) { if (music.playbackRate !== 1) music.playbackRate = 1; return; }
+    const e = livePos() - music.currentTime;      // + means the phone is behind the house
+    err = Math.abs(e - err) > 0.5 ? e : err * 0.8 + e * 0.2;   // some phones report the position coarsely
+    const rate = Math.abs(err) < 0.02 || Math.abs(err) > 1 ? 1 : 1 + Math.max(-0.025, Math.min(0.025, err * 0.25));
+    if (Math.abs(music.playbackRate - rate) > 0.002) music.playbackRate = rate;
   }
   music.addEventListener('loadedmetadata', () => {
     if (needSeek) { needSeek = false; music.currentTime = livePos(); }
@@ -337,6 +355,7 @@
     syncAudio();
   });
   // keep the music in step, and notice a Pi that has gone quiet (it reports every 30 s playing, every minute idle)
+  setInterval(trim, 250);
   setInterval(() => {
     syncAudio();
     if (!state || !recv || state.status === 'offline') return;
