@@ -81,11 +81,9 @@ input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
 .dls { display: flex; gap: 6px; justify-content: flex-end; }
 .toggles { display: flex; gap: 6px; }
 .toggles button { white-space: nowrap; }
-.live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
-.live[aria-pressed="true"] { border-color: #ff4d4d; color: #ff4d4d; }
-.live[aria-pressed="true"]::before { background: #ff4d4d; animation: livepulse 1.6s ease-in-out infinite; }
+.nav .live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: #ff4d4d; vertical-align: 1px; animation: livepulse 1.6s ease-in-out infinite; }
 @keyframes livepulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .live[aria-pressed="true"]::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .nav .live::before { animation: none; } }
 .spec.intro a { color: var(--muted); }
 .spec.intro a:hover { color: var(--accent); }
 .sound { white-space: nowrap; }
