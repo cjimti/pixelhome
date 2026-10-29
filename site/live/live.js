@@ -68,7 +68,7 @@
     hg.setIndex(layout.meshTris);
     const geo = hg.toNonIndexed();
     geo.computeVertexNormals();
-    scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x2b2521, side: THREE.DoubleSide })));
+    scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x312b26, side: THREE.DoubleSide })));
   }
   const runs = [];
   for (let k = 1, start = 0; k <= N; k++) {
