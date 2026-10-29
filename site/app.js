@@ -496,8 +496,17 @@
     if (!want || !seq) return;
     const now = seq.meta.introOf || seq.meta;
     if (now.id !== want[0].id || !!seq.meta.introOf !== want[1]) return;
-    if (status.textContent === 'Loading sequence…' || status.textContent === 'Loading intro…') status.hidden = true;
-    if (Math.abs(t - livePos()) > 0.3) seek(livePos());
+    const at = livePos();
+    if (at >= seq.frames / seq.fps) return;       // finished; the house is about to say what's next
+    // With the soundtrack playing, the audio clock drives the lights, and phones report it late and take a
+    // moment to settle after a jump: only correct a real slip, and not while the last correction settles,
+    // or every check cuts the sound.
+    const audio = !music.paused && hasMusic();
+    const settling = audio && (music.seeking || performance.now() - (live.seekedAt || 0) < 15e3);
+    if (!settling && Math.abs(t - at) > (audio ? 1 : 0.3)) {
+      seek(at);
+      live.seekedAt = performance.now();
+    }
     if (!playing) setPlaying(true);
   }
   async function liveApply(st) {
