@@ -491,9 +491,9 @@
     trackSeq('toggle_sound', seq && seq.meta, { enabled: soundOn });
   });
   showSound();
-  // intros: when on, a sequence with a spoken intro plays it first whenever it starts from the top
-  let introsOn = true;
-  try { introsOn = localStorage.getItem('pixelhome.intros') !== '0'; } catch (e) { /* storage blocked */ }
+  // intros: when on, a sequence with a spoken intro plays it first whenever it starts from the top (off by default)
+  let introsOn = false;
+  try { introsOn = localStorage.getItem('pixelhome.intros') === '1'; } catch (e) { /* storage blocked */ }
   function showIntros() {
     const b = $('intros');
     b.setAttribute('aria-pressed', String(introsOn));

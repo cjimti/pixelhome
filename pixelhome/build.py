@@ -105,16 +105,22 @@ def _build_one(args):
     return meta
 
 
+def _has_music(s):
+    return os.path.exists(os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3'))
+
+
 def build(out, want):
     site = os.path.join(catalog.ROOT, 'site')
     if os.path.exists(out):
         shutil.rmtree(out)
     shutil.copytree(site, out)
-    homes, jobs = [], []
+    homes, jobs, quiet = [], [], 0
     engine = _engine_hash()
     for h in catalog.homes():
         home = catalog.load_home(h)
         seqs = [s for s in catalog.sequences(h) if _matches(s, want)]
+        quiet += sum(not _has_music(s) for s in seqs)
+        seqs = [s for s in seqs if _has_music(s)]      # the site only carries sequences that have their soundtrack
         os.makedirs(os.path.join(out, 'fseq', h))
         os.makedirs(os.path.join(out, 'data', h))
         mv, mt = home.mesh()
@@ -146,7 +152,8 @@ def build(out, want):
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))
     share.write(out, homes)
-    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache')
+    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
+          f'{quiet} left out until they have music')
 
 
 # ---------------------------------------------------------------------------
