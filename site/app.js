@@ -213,56 +213,6 @@
     return data;
   }
 
-  async function decompressBlock(bytes, format) {
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
-  }
-
-  async function parseFseq(buf) {
-    const dv = new DataView(buf);
-    if (String.fromCharCode(...new Uint8Array(buf, 0, 4)) !== 'PSEQ') throw new Error('This is not an FSEQ file.');
-    const off = dv.getUint16(4, true), major = dv.getUint8(7);
-    if (major !== 2) throw new Error(`This is an FSEQ version ${major} file. Only version 2 is supported.`);
-    const chans = dv.getUint32(10, true), frames = dv.getUint32(14, true), step = dv.getUint8(18);
-    const ctype = dv.getUint8(20) & 15, nblk = dv.getUint8(21) | ((dv.getUint8(20) >> 4) << 8), nsparse = dv.getUint8(22);
-    let data;
-    if (ctype === 0) {
-      data = new Uint8Array(buf, off, chans * frames);
-    } else {
-      const format = ctype === 1 ? 'zstd' : 'deflate';
-      try { new DecompressionStream(format); } catch (e) {
-        throw new Error('This file is zstd-compressed, which this browser cannot unpack. Try Chrome, or save the file uncompressed.');
-      }
-      const parts = [];
-      let pos = off;
-      for (let i = 0; i < nblk; i++) {
-        const size = dv.getUint32(32 + i * 8 + 4, true);
-        if (!size) continue;
-        parts.push(await decompressBlock(new Uint8Array(buf, pos, size), format));
-        pos += size;
-      }
-      data = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-      let o = 0;
-      for (const p of parts) { data.set(p, o); o += p.length; }
-    }
-    if (nsparse) {
-      const base = 32 + nblk * 8;
-      const u24 = (at) => dv.getUint8(at) | (dv.getUint8(at + 1) << 8) | (dv.getUint8(at + 2) << 16);
-      const ranges = [];
-      for (let i = 0; i < nsparse; i++) ranges.push([u24(base + i * 6), u24(base + i * 6 + 3)]);
-      if (!(ranges.length === 1 && ranges[0][0] === 0)) {
-        const full = Math.max(...ranges.map(([s, c]) => s + c));
-        const out = new Uint8Array(full * frames);
-        for (let f = 0; f < frames; f++) {
-          let src = f * chans;
-          for (const [s, c] of ranges) { out.set(data.subarray(src, src + c), f * full + s); src += c; }
-        }
-        return { data: out, channels: full, frames, fps: 1000 / step };
-      }
-    }
-    return { data, channels: chans, frames, fps: 1000 / step };
-  }
-
   // ---------- library ----------
   const filters = { occasion: '', kind: '', q: '' };
   const cards = new Map();         // sequence id -> list row
@@ -298,6 +248,7 @@
         const r1 = el('span', 'r1');
         r1.append(el('span', 'c', s.code), el('span', 't', s.title));
         if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
+        if (s.introData) r1.append(Object.assign(el('span', 'k', 'Intro'), { title: 'Has a spoken intro' }));
         r1.append(el('span', 'dur', fmt(s.seconds, false)));
         b.append(r1, el('span', 'd', s.description));
         b.addEventListener('click', () => { choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
@@ -351,10 +302,10 @@
   });
 
   // ---------- choosing / playing ----------
-  // sequence events carry which one; an intro counts as its show, a dropped-in file isn't tracked
+  // sequence events carry which one; an intro counts as its show
   function trackSeq(name, meta, params = {}) {
     const m = meta && (meta.introOf || meta);
-    if (!m || m.id === 'file') return;
+    if (!m) return;
     track(name, { home: H.home.id, sequence_id: m.id, occasion: m.occasion, kind: m.kind, ...params });
   }
   const wide = matchMedia('(min-width: 760px)');     // sidebar layout: the list scrolls on its own
@@ -532,11 +483,11 @@
     trackSeq('select_sequence', next, { source });
     return true;
   }
-  // at the end of a sequence, play the next one; a dropped-in file just loops
+  // at the end of a sequence, play the next one
   function advance() {
     if (seq.meta.introOf) { choose(seq.meta.introOf, 0, true, false); return; }
     trackSeq('sequence_complete', seq.meta);
-    if (seq.meta.id === 'file' || !step(1, 'auto')) { seek(0); syncMusic(); return; }
+    if (!step(1, 'auto')) { seek(0); syncMusic(); return; }
     setPlaying(false);
   }
 
@@ -545,49 +496,12 @@
   scrub.addEventListener('change', () => { scrubbing = false; });
   exposure.addEventListener('input', () => { $('expOut').textContent = (+exposure.value).toFixed(1) + '×'; });
 
-  // drop / pick your own
-  const drop = $('drop'), file = $('file'), dropMsg = $('dropMsg');
-  $('pick').addEventListener('click', () => file.click());
-  async function openFile(f) {
-    dropMsg.hidden = false;
-    dropMsg.className = '';
-    dropMsg.textContent = `Reading ${f.name}…`;
-    try {
-      const s = await parseFseq(await f.arrayBuffer());
-      if (s.channels < H.home.channels) throw new Error(`This file has ${s.channels} channels; this home needs ${H.home.channels}.`);
-      const meta = { id: 'file', code: 'FILE', title: f.name.replace(/\.fseq$/i, ''), occasion: seq ? seq.meta.occasion : '' };
-      loadToken++;
-      seq = { meta, data: s.data, channels: s.channels, fps: s.fps, frames: s.frames };
-      mark(meta);
-      t = 0;
-      status.hidden = true;
-      setPlaying(true);
-      track('open_local_fseq', { size_kb: Math.round(f.size / 1024) });
-      dropMsg.textContent = `Playing ${f.name}: ${fmt(s.frames / s.fps)} at ${Math.round(s.fps)} fps.`;
-    } catch (e) {
-      dropMsg.className = 'err';
-      dropMsg.textContent = e.message || 'This file could not be read.';
-    }
-  }
-  file.addEventListener('change', () => file.files[0] && openFile(file.files[0]));
-
   // downloads for FPP: the show's .fseq and .mp3, and its intro's
   const dlFile = (a) => a.getAttribute('download');
   $('download').addEventListener('click', (e) => trackSeq('download_fseq', seq && seq.meta, { file_name: dlFile(e.currentTarget) }));
   $('downloadAudio').addEventListener('click', (e) => trackSeq('download_audio', seq && seq.meta, { file_name: dlFile(e.currentTarget) }));
   $('introFseq').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'fseq' }));
   $('introAudio').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'mp3' }));
-  let dragDepth = 0;
-  document.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; drop.classList.add('over'); });
-  document.addEventListener('dragover', (e) => e.preventDefault());
-  document.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; drop.classList.remove('over'); } });
-  document.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dragDepth = 0;
-    drop.classList.remove('over');
-    const f = e.dataTransfer.files[0];
-    if (f) openFile(f);
-  });
 
   // ---------- frame loop ----------
   const gammaLUT = new Float32Array(256 * 81);   // exposure 1.0..8.0 in 0.0875 steps x byte value

@@ -94,14 +94,6 @@ input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
 /* extras */
 .extras { display: grid; gap: 16px; }
 .about { margin: 0; color: var(--ink); max-width: 75ch; }
-.drop {
-  position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px;
-  border: 1px dashed var(--line); border-radius: 10px; padding: 14px 16px; color: var(--muted); font-size: 13px;
-}
-.drop.over { border-color: var(--accent); background: var(--accent-soft); }
-.drop strong { color: var(--ink); font-weight: 600; }
-.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.err { color: #ff8a6a; }
 footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; }
 footer p { margin: 0 0 8px; max-width: 75ch; }
 
