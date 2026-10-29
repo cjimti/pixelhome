@@ -251,7 +251,7 @@
         if (s.introData) r1.append(Object.assign(el('span', 'k', 'Intro'), { title: 'Has a spoken intro' }));
         r1.append(el('span', 'dur', fmt(s.seconds, false)));
         b.append(r1, el('span', 'd', s.description));
-        b.addEventListener('click', () => { stopLive(); choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
+        b.addEventListener('click', () => { choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
         b._seq = s;
         cards.set(s.id, b);
         g.append(b);
@@ -403,7 +403,6 @@
   }
   // play/pause from the button or the space bar
   function togglePlay() {
-    stopLive();
     setPlaying(!playing);
     trackSeq(playing ? 'play' : 'pause', seq && seq.meta, { position_s: Math.round(t) });
   }
@@ -452,7 +451,6 @@
     b.textContent = introsOn ? 'Intros on' : 'Intros off';
   }
   $('intros').addEventListener('click', () => {
-    stopLive();
     introsOn = !introsOn;
     try { localStorage.setItem('pixelhome.intros', introsOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
     showIntros();
@@ -461,129 +459,6 @@
     if (m && m.introData) choose(m, 0, true, introsOn);      // hear it now, or skip straight to the show
   });
   showIntros();
-  // ---------- live: follow what the house itself is playing ----------
-  // The Pi tells live.pixelhome.app what FPP is playing and how far in; this page already has every sequence
-  // and soundtrack, so it plays the same one from the same moment. Nothing is sent from here.
-  const LIVE = { cjimti: 'wss://live.pixelhome.app/ws/cjimti' };
-  let live = null;                // { ws, state, anchor, recv, retry, timer } while following the house
-  function showLive() {
-    const b = $('live');
-    b.hidden = !(H && LIVE[H.home.id]);
-    b.setAttribute('aria-pressed', String(!!live));
-  }
-  const livePos = () => (live && live.anchor ? (live.anchor.ms + performance.now() - live.anchor.recv) / 1000 : 0);
-  function liveSay(text) {
-    status.hidden = !text;
-    if (text) status.textContent = text;
-  }
-  // FPP's file name -> [sequence, is it the intro]
-  function liveFind(name) {
-    for (const s of H.home.sequences) {
-      if (s.fseqName === name) return [s, false];
-      if (s.introName && `${s.introName}.fseq` === name) return [s, true];
-    }
-    return [null, false];
-  }
-  // which [sequence, is it the intro] the house is on, or null when it is dark or playing something else
-  function liveTarget(st) {
-    if (!st || st.status !== 'playing') return null;
-    const [meta, intro] = liveFind(st.seq);
-    return meta ? [meta, intro] : null;
-  }
-  // line the page up with the house: right sequence loaded, right moment, playing
-  function liveSync() {
-    const want = live && liveTarget(live.state);
-    if (!want || !seq) return;
-    const now = seq.meta.introOf || seq.meta;
-    if (now.id !== want[0].id || !!seq.meta.introOf !== want[1]) return;
-    const at = livePos();
-    if (at >= seq.frames / seq.fps) return;       // finished; the house is about to say what's next
-    // With the soundtrack playing, the audio clock drives the lights, and phones report it late and take a
-    // moment to settle after a jump: only correct a real slip, and not while the last correction settles,
-    // or every check cuts the sound.
-    const audio = !music.paused && hasMusic();
-    const settling = audio && (music.seeking || performance.now() - (live.seekedAt || 0) < 15e3);
-    if (!settling && Math.abs(t - at) > (audio ? 1 : 0.3)) {
-      seek(at);
-      live.seekedAt = performance.now();
-    }
-    if (!playing) setPlaying(true);
-  }
-  async function liveApply(st) {
-    live.state = st;
-    if (st.status !== 'playing') {
-      setPlaying(false);
-      liveSay(st.status === 'offline' ? 'The house isn’t connected right now.'
-        : 'The house is dark right now. Live picks up when the show starts.');
-      return;
-    }
-    live.anchor = { ms: st.ms + (st.age || 0), recv: performance.now() };
-    const want = liveTarget(st);
-    if (!want) {
-      setPlaying(false);
-      liveSay(`The house is playing “${st.seq.replace(/\.fseq$/i, '')}”, which isn’t on this site.`);
-      return;
-    }
-    liveSay('');
-    const key = `${want[0].id}${want[1] ? ' intro' : ''}`;
-    const now = seq && (seq.meta.introOf || seq.meta);
-    if ((!now || now.id !== want[0].id || !!seq.meta.introOf !== want[1]) && live.loading !== key) {
-      live.loading = key;
-      await (want[1] ? playIntro(want[0]) : choose(want[0], livePos(), true, false));
-      if (!live) return;
-      live.loading = null;
-      history.replaceState(null, '', '#live');
-    }
-    liveSync();                    // against the newest state, whatever arrived while loading
-  }
-  function liveConnect() {
-    const ws = new WebSocket(LIVE[H.home.id]);
-    live.ws = ws;
-    ws.onopen = () => { if (live && live.ws === ws) live.retry = 5; };
-    ws.onmessage = (e) => {
-      if (!live || live.ws !== ws) return;
-      live.recv = performance.now();
-      try { liveApply(JSON.parse(e.data)); } catch (err) { /* not a state message */ }
-    };
-    ws.onclose = () => {
-      if (!live || live.ws !== ws) return;
-      liveSay('Lost the connection to the house. Trying again…');
-      live.timer = setTimeout(liveConnect, live.retry * 1000);
-      live.retry = Math.min(60, live.retry * 2);
-    };
-  }
-  function startLive() {
-    if (live || !H || !LIVE[H.home.id]) return;
-    live = { retry: 5 };
-    liveSay('Connecting to the house…');
-    liveConnect();
-    showLive();
-    track('live_start', { home: H.home.id });
-  }
-  function stopLive() {
-    if (!live) return;
-    clearTimeout(live.timer);
-    const ws = live.ws;
-    live = null;
-    if (ws) ws.close();
-    liveSay('');
-    showLive();
-    if (location.hash === '#live' && seq) history.replaceState(null, '', `#${H.home.id}/${(seq.meta.introOf || seq.meta).id}`);
-  }
-  // every few seconds: keep in step, and notice a Pi that has gone quiet (it reports every 30 s while
-  // playing and every minute while idle)
-  setInterval(() => {
-    liveSync();
-    if (!live || !live.state || !live.recv || live.state.status === 'offline') return;
-    const age = (live.state.age || 0) + performance.now() - live.recv;
-    if (age > (live.state.status === 'playing' ? 90e3 : 180e3)) liveApply({ status: 'offline' });
-  }, 5e3);
-  $('live').addEventListener('click', () => {
-    if (live) { stopLive(); track('live_stop', { home: H.home.id }); return; }
-    if (!soundOn) { soundOn = true; showSound(); }      // the point is to see and hear it; this tap allows the audio
-    startLive();
-  });
-
   document.addEventListener('keydown', (e) => {
     if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -593,7 +468,6 @@
       step(e.code === 'ArrowUp' ? -1 : 1, 'keyboard');
     }
     if (seq && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
-      stopLive();
       const dur = seq.frames / seq.fps;
       seek((t + (e.code === 'ArrowLeft' ? -5 : 5) + dur) % dur);
     }
@@ -601,7 +475,6 @@
 
   // the sequence above or below the current one in the list as filtered, wrapping round
   function step(dir, source) {
-    if (source !== 'auto') stopLive();
     const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
     if (!rows.length) return false;
     const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
@@ -612,7 +485,6 @@
   }
   // at the end of a sequence, play the next one
   function advance() {
-    if (live) { setPlaying(false); return; }          // the house says what comes next
     if (seq.meta.introOf) { choose(seq.meta.introOf, 0, true, false); return; }
     trackSeq('sequence_complete', seq.meta);
     if (!step(1, 'auto')) { seek(0); syncMusic(); return; }
@@ -620,7 +492,7 @@
   }
 
   const scrub = $('scrub');
-  scrub.addEventListener('input', () => { stopLive(); if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
+  scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
   scrub.addEventListener('change', () => { scrubbing = false; });
   exposure.addEventListener('input', () => { $('expOut').textContent = (+exposure.value).toFixed(1) + '×'; });
 
@@ -705,7 +577,6 @@
     if (c) $('ctrlNote').textContent = `${Math.round(brightness * 100)}% brightness and gamma ${c.gamma ?? 1}`;
     $('homeSelect').value = home.id;
     renderLibrary();
-    showLive();
     const list = home.sequences;
     if (!list.length) { status.textContent = 'This home has no sequences yet.'; return; }
     const pick = list.find((s) => s.id === seqId);
@@ -719,15 +590,13 @@
   const sel = $('homeSelect');
   CAT.homes.forEach((h) => sel.append(new Option(h.name, h.id)));
   sel.hidden = CAT.homes.length < 2;
-  sel.addEventListener('change', () => { stopLive(); openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
+  sel.addEventListener('change', () => { openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
 
   function fromHash() {
     const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/occasion/name
     return { home: CAT.homes.find((h) => h.id === hid), seqId: rest.join('/') };
   }
   window.addEventListener('hashchange', () => {
-    if (location.hash === '#live') { startLive(); return; }
-    stopLive();
     const { home, seqId } = fromHash();
     if (!home) return;
     if (!H || home.id !== H.home.id) openHome(home, seqId);
@@ -735,8 +604,7 @@
   });
 
   if (!CAT.homes.length) { status.textContent = 'No homes yet.'; return; }
-  const initial = fromHash(), wantLive = location.hash === '#live';
+  const initial = fromHash();
   await openHome(initial.home || CAT.homes[0], initial.seqId);
-  if (wantLive) startLive();
   requestAnimationFrame(tick);
 })();
