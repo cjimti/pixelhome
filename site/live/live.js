@@ -96,15 +96,34 @@
   offGeo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
   scene.add(new THREE.Points(offGeo, new THREE.PointsMaterial({ size: 3, color: 0x3a332c, transparent: true, opacity: 0.6, depthWrite: false })));
 
-  function placeCamera() {
+  // the same three views as the main page (a little closer, for a phone); a tap eases between them
+  const VIEWS = { street: { az: 0, el: 0.2, dist: 1.12 }, corner: { az: -0.62, el: 0.34, dist: 1.06 }, above: { az: 0, el: 1.4, dist: 1.21 } };
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cam = { ...VIEWS.street };
+  let goal = null, last = performance.now();
+  const viewButtons = document.querySelectorAll('.views button');
+  viewButtons.forEach((b) => b.addEventListener('click', () => {
+    goal = { ...VIEWS[b.dataset.view] };
+    if (reduceMotion) { Object.assign(cam, goal); goal = null; }
+    viewButtons.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+    track('live_view_change', { view: b.dataset.view });
+  }));
+  function placeCamera(now) {
     const w = canvas.clientWidth, h = canvas.clientHeight, r = renderer.getPixelRatio();
     if (canvas.width !== Math.round(w * r) || canvas.height !== Math.round(h * r)) {
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
-    const d = 1.12 * span * Math.max(1, (16 / 9) / camera.aspect), el = 0.2;
-    camera.position.set(target.x, target.y + d * Math.sin(el), target.z + d * Math.cos(el));
+    const dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    if (goal) {
+      const k = 1 - Math.exp(-dt * 4);
+      for (const key of ['az', 'el', 'dist']) cam[key] += (goal[key] - cam[key]) * k;
+      if (Math.abs(goal.az - cam.az) + Math.abs(goal.el - cam.el) + Math.abs(goal.dist - cam.dist) < 0.001) goal = null;
+    }
+    const d = cam.dist * span * Math.max(1, (16 / 9) / camera.aspect), c = Math.cos(cam.el);
+    camera.position.set(target.x + d * c * Math.sin(cam.az), target.y + d * Math.sin(cam.el), target.z + d * c * Math.cos(cam.az));
     camera.lookAt(target);
   }
 
@@ -152,6 +171,8 @@
   }
 
   // ---------- what the house is doing ----------
+  // the night loops run after the shows are over; say so before what the loop is
+  const LATE = 'You’re up late! Technically this isn’t a light show, just something to keep the house lit at night. Come back tomorrow evening for the fun sequences.';
   let state = null, anchor = null, recv = 0;   // the last report, and when it arrived here
   let cur = null;                              // what is loaded and showing: find() plus data
   let wanted = null;                           // what the house is on (may still be loading)
@@ -187,7 +208,8 @@
     const w = find(st.seq);
     if (!w) return dark('Now playing', 'Something special', 'This one isn’t on the website yet, so just watch the house!', true);
     setAccent(w.meta.occasion);
-    show('Now playing', w.intro ? `${w.meta.title} Intro` : w.meta.title, w.meta.description, true);
+    const desc = w.meta.kind === 'ambient' && !w.intro ? `${LATE} ${w.meta.description}` : w.meta.description;
+    show('Now playing', w.intro ? `${w.meta.title} Intro` : w.meta.title, desc, true);
     if (cur && cur.key === w.key) { syncAudio(); return; }
     if (wanted && wanted.key === w.key) return;   // already loading
     wanted = w;
@@ -278,6 +300,12 @@
   });
   showSound();
 
+  // ---------- about ----------
+  const about = $('about');
+  $('aboutOpen').addEventListener('click', () => { about.showModal(); track('live_about'); });
+  $('aboutClose').addEventListener('click', () => about.close());
+  about.addEventListener('click', (e) => { if (e.target === about) about.close(); });   // tap outside the card
+
   // ---------- the relay ----------
   let ws = null, retry = 2, timer = 0;
   function connect() {
@@ -333,9 +361,9 @@
     }
     $('bar').style.width = `${Math.min(100, (100 * at * cur.fps) / cur.frames).toFixed(2)}%`;
   }
-  function tick() {
+  function tick(now) {
     requestAnimationFrame(tick);
-    placeCamera();
+    placeCamera(now);
     paint();
     renderer.render(scene, camera);
   }
