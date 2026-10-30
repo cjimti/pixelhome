@@ -1,24 +1,32 @@
 """The Dragon Fight: Siegfried and Fafner across the whole house. The dragon fills the porch and spills onto Right,
-its ochre scales rippling, its red eyes swinging after him wherever he goes; the dragon's motif (Donington 57)
-races in the tubas over pounding timpani, and Siegfried's heroism (78) rings out in the horns.
+its ochre scales rippling, its red eyes swinging after him wherever he goes; every note of the orchestra's racing
+octaves and chromatic runs ripples down its body while the basses and tubas pound underneath.
 
 He leaps from the corner of the porch out along Left and back, over the dragon onto Right and back again, every
 leap an emerald streak and every landing a clash of steel: a white flash, sparks to both ends and a red wound on
 the scales where Nothung bit. The dragon lunges and breathes fire after him, a blast racing along Left, then
-along Right, each time just behind him; its tail cracks out along Right like a whip.
+along Right, each time just behind him; its tail cracks out along Right like a whip, and his heroism rings out in
+the horns as the violins shriek.
 
-Then the trumpet sings Nothung (43) and he climbs onto the dragon itself at the middle of the porch: one colossal
+Then the trumpet sings Nothung and he climbs onto the dragon itself at the middle of the porch: one colossal
 blow into the heart. The whole house goes white, and a wave of blood red pours out from the wound to both ends.
-The dragon sinks, its scales dull, its eyes go out one breath at a time; Siegfried stands over the heap with the
-sword shining while his motif (53) blazes emerald over the house.
+"Nothung trägst du im Herzen!": the dragon sinks, its scales dull, its eyes go out one breath at a time, while
+Siegfried stands over the heap with the sword shining and emerald sweeps out from him.
+
+The music is Wagner's own: Act II, bars 1051 to 1101, the whole fight from "Hab acht, Brüller!" to the dying
+dragon's first words, as Solti's 1958 Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py): the racing octaves on violins and trombones, the chromatic runs on strings
+and woodwinds, the pounding bass on tubas, basses and timpani, Siegfried's heroism on horns and trumpets, the
+sword's motif on the trumpet. The stage adds the clash of steel on every strike, the roar and rush of each blast
+of fire, the crack of the tail, the sword driven home with a ringing blow, a crash and a death-rattle of thunder,
+and the heap's last breaths; the effects lead through the fight and step back for the trumpet and the end.
 
 compose() holds every note; stage(), forest(), figure() and sparks() are Act II's forest and cave, shared word
 for word with SF11 on a clock that runs on from scene to scene; dragon(), breath(), hero() and bird() are the
 dragon fight's own, shared with SF16 to SF19."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF18'
 TITLE = 'The Dragon Fight'
@@ -29,18 +37,21 @@ VOICEOVER = ('Fire, and claws, and a tail like a whip. '
              'And Siegfried, with a sword he made himself.')
 
 K = 7                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_FIGHT = [4.0, 13.0, 22.0, 31.0, 40.0]     # the dragon's motif, racing
-T_HERO = [14.5, 32.5]                       # Siegfried's heroism in the horns
-LEAPS = [(5.5, 'Left', 0.7), (9.0, 'Porch Left', 0.45), (15.0, 'Left', 0.35), (19.5, 'Porch Left', 0.2),
-         (24.5, 'Right', 0.6), (29.5, 'Right', 0.8), (36.0, 'Right', 0.5), (41.0, 'Right', 0.7),
-         (46.0, 'Porch Left', 0.25), (50.5, 'Porch Front', 0.3)]
-T_STRIKE = [7.0, 12.0, 17.0, 27.0, 31.5, 38.0, 43.5, 48.0]
-T_BREATH = [11.0, 21.0, 33.0, 42.5]
-T_LASH = [8.0, 18.0, 27.5, 38.5, 47.0]
-T_NOTHUNG = 50.5
-T_HEART = 55.5
-T_CALL = [67.0, 71.0]                       # his motif over the heap
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1051-1101, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_FIGHT = [BAR[b] for b in (1053, 1062, 1066, 1072, 1079)]   # the racing passages
+T_HERO = [BAR[1059], BAR[1075]]             # Siegfried's heroism in the horns
+LEAPS = [(BAR[b], seg, u) for b, seg, u in ((1052, 'Left', 0.7), (1055, 'Porch Left', 0.45), (1059, 'Left', 0.35),
+                                             (1062, 'Porch Left', 0.2), (1066, 'Right', 0.6), (1069, 'Right', 0.8),
+                                             (1072, 'Right', 0.5), (1075, 'Right', 0.7), (1081, 'Porch Left', 0.25),
+                                             (1088, 'Porch Front', 0.3))]
+T_STRIKE = [BAR[b] for b in (1057, 1060, 1064, 1068, 1074, 1078, 1083, 1086)]
+T_BREATH = [BAR[b] for b in (1054, 1066, 1073, 1082)]
+T_LASH = [BAR[b] + 0.4 for b in (1056, 1063, 1070, 1077, 1085)]
+T_NOTHUNG = BAR[1088]                       # the trumpet sings Nothung
+T_HEART = BAR[1093]                         # the blow to the heart
+T_CALL = [BAR[1097], BAR[1098]]             # "Nothung trägst du im Herzen!"
 EXT, HEAP = 430.0, 300.0                    # the dragon all out; what is left of it
 
 NIGHT = hexc('#14a878')
@@ -205,39 +216,25 @@ def breath(S, flick, src, side, a, reach=1500.0, hold=1.6):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k, tremolo). The right hand is the
+    racing fight ('race', k = which passage), Siegfried's heroism in its passages ('hero'), the sword's motif
+    ('nothung') and, over the heap, his "Nothung trägst du im Herzen!" ('call'); the left hand pounds ('pulse')
+    until the blow and then sinks with the dragon ('sink')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_FIGHT[0], 'Eb2', 70, 'tense')
-    for k, t0 in enumerate(T_FIGHT):
-        for t, m, v, d in play('fafner', t0, 0.3, 0, 104 + 3 * k):
-            add(t, d, m, v, 'race', k)
-    for i, t in enumerate(np.arange(T_FIGHT[0], T_NOTHUNG, 0.3)):
-        add(t, 0.2, ('F2', 'B1')[i % 2], 84 + 18 * (i % 4 == 0), 'pulse')
-    for k, t0 in enumerate(T_HERO):
-        for t, m, v, d in play('siegfried_heroism', t0, 0.28, 12, 110):
-            add(t, d, m, v, 'hero', k)
-    for t, _, _ in LEAPS:
-        add(t - 0.15, 0.4, 'C3', 100, 'leap')
-    for t in T_STRIKE:
-        add(t, 0.3, 'C5', 116, 'strike')
-    for t in T_BREATH:
-        add(t, 3.0, 'C2', 118, 'breath')
-    for t in T_LASH:
-        add(t, 0.4, 'G1', 112, 'lash')
-    for t, m, v, d in play('nothung', T_NOTHUNG, 0.36, -12, 116):
-        add(t, d, m, v, 'nothung')
-    add(T_HEART, 0.5, 'C1', 127, 'heart')
-    for j, m in enumerate(('Gb3', 'F3', 'Eb3', 'D3', 'Db3', 'C3', 'B2', 'Bb2', 'A2', 'Ab2', 'G2', 'Gb2', 'F2', 'Eb2')):
-        add(T_HEART + 1.0 + 0.7 * j, 0.9, m, 100 - 3 * j, 'sink')
-    for k, t0 in enumerate(T_CALL):
-        for t, m, v, d in play('siegfried', t0, 0.55, -12 + 5 * k, 104 + 6 * k):
-            add(t, d, m, v, 'call', k)
-    for m in ('Bb2', 'D3', 'F3', 'Bb3'):
-        add(T_CALL[0] - 1, D - T_CALL[0] + 1, m, 64, 'warm')
+    for t, d, m, v, h, *tr in tidy(EX['notes']):
+        k = None
+        if t >= T_HEART - 0.01:
+            part = 'call' if h == 0 and T_CALL[0] - 0.01 <= t < BAR[1099] else 'sink'
+        elif h == 1:
+            part = 'pulse'
+        elif T_NOTHUNG - 0.01 <= t < BAR[1090] - 0.01:
+            part = 'nothung'
+        elif any(th - 0.01 <= t < th + dt for th, dt in ((T_HERO[0], BAR[1062] - T_HERO[0]),
+                                                          (T_HERO[1], BAR[1079] - T_HERO[1]))):
+            part = 'hero'
+        else:
+            part, k = 'race', max(0, sum(t >= x - 0.01 for x in T_FIGHT) - 1)
+        N.append((float(t), float(d), int(m), int(v), part, k, bool(tr and tr[0])))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -272,6 +269,7 @@ def render(G, seed=18):
     N = compose()
     hops_ = path(G)
     p0 = at(G, 'Porch Left', 0.3)
+    N = [e[:6] for e in N]
     race = [e for e in N if e[4] == 'race']
     calls = [e for e in N if e[4] == 'call']
     noth = [e for e in N if e[4] == 'nothung']
@@ -363,7 +361,7 @@ def render(G, seed=18):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the stage's sounds on top."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -372,90 +370,59 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.35, 0.25), ('brass', 0.33, 0.3), ('perc', 0.3, 0.26), ('fx', 0.18, 0.3),
-                            ('strings', 0.27, 0.32), ('warm', 0.3, 0.38)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/Trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    brake = M.hits('Percussion/BrakeDrum1_Hammer_v3*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_v3*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     hops_ = path(G)
     p0 = at(G, 'Porch Left', 0.3)
+    me = lambda t: pan_at(where(hops_, t, p0))
     cave = pan_at(at(G, 'Porch Front', 0.5))
-
-    def him(t):
-        return pan_at(where(hops_, t, p0))
-
-    for t, d, m, v, part, k in compose():
-        if part == 'tense':
-            hold('strings', cb, m + 12, t, t + d, v, cave, rise=1.0, fall=1.0, gain=0.6)
-        elif part == 'race':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.15), t, 0.9, cave)
-            M.add('low', bsn.play(m, v - 12, dur=d * 1.1, release=0.15), t, 0.6, cave)
+    right = pan_at(at(G, 'Right', 0.8))
+    o = Orchestra(M, level=1.8)
+    for t, d, m, v, part, k, trem in compose():
+        if part == 'race':
+            if m < 60:
+                o.play('trombones', m, t, d, v, cave, 0.55)
+                o.play('violas', m + 12, t, d, v - 8, cave, 0.4)
+            else:
+                o.play('violins', m, t, d, v, cave, 0.6)
+                if v >= 100:
+                    o.play('flutes' if m < 84 else 'piccolo', m, t, d, v - 16, cave, 0.3)
         elif part == 'pulse':
-            M.add('perc', timp.play(v, pitch=-2 if m == note('F2') else -7), t, 0.55, cave)
+            o.play('tuba', m, t, d, v, cave, 0.7)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, cave, 0.5)
+            if m < 43 and d >= 0.3:
+                o.hit('timpani', t, min(127, v), pitch=-5, gain=0.35, pan=cave)
         elif part == 'hero':
-            if d > 0.7:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.06, fall=0.5, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9)
-        elif part == 'leap':
-            M.add('fx', whoosh(0.6, 400, 3500, 0.7, seed=int(t * 10)), t, 1.0, him(t + 0.3))
-        elif part == 'strike':
-            M.add('perc', anvil.play(v), t, 0.8, him(t))
-            M.add('perc', brake.play(v), t, 0.5, him(t))
-            M.add('brass', tpt.play(note('C5'), 100, dur=0.25, release=0.1), t, 0.6, him(t))
-        elif part == 'breath':
-            side = 1 if where(hops_, t, p0) > at(G, 'Porch Front', 0.5) else -1
-            dst = pan_at(at(G, 'Right', 0.8)) if side > 0 else pan_at(at(G, 'Side', 0.5))
-            M.add('fx', whoosh(d, 400, 5000, 0.9, seed=int(t)), t, 1.0, (cave + dst) / 2)
-            M.add('perc', roll.play(v, dur=d), t, 0.6, dst)
-            hold('strings', vn, note('Db5'), t, t + d * 0.8, 92, dst, rise=0.1, fall=0.6, gain=0.45)
-        elif part == 'lash':
-            dst = pan_at(at(G, 'Right', 0.7))
-            M.add('perc', timp.play(v, pitch=-1), t, 0.8, dst)
-            M.add('fx', whoosh(0.5, 2500, 300, 0.6, seed=int(t * 10)), t - 0.15, 1.0, dst)
+            o.play('horns', m, t, d, v + 4, me(t), 0.85)
+            o.play('trumpets', m, t, d, v - 10, me(t), 0.4)
         elif part == 'nothung':
-            if d > 0.8:
-                hold('brass', tpt, m, t, t + d, v, him(t), rise=0.05, fall=0.6, gain=0.85)
-            else:
-                M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, him(t))
-        elif part == 'heart':
-            M.add('perc', crash.play(v), t, 1.0, him(t))
-            M.add('perc', gong.play(v), t, 0.9, him(t))
-            M.add('perc', timp.play(v, pitch=-8), t, 1.0, him(t))
-            M.add('perc', anvil.play(v), t, 0.8, him(t))
-            M.add('low', tuba.play(note('Eb1') + 12, 120, dur=3.0, release=1.0), t, 0.9, cave)
-        elif part == 'sink':
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.1, release=0.4), t, 0.85, cave)
-            M.add('strings', vc.play(m, v - 20, dur=d * 1.1, release=0.4), t, 0.5, cave)
+            o.play('trumpets', m, t, d, v + 6, me(t), 0.95)
+            o.play('trombones', m - 12, t, d, v - 10, me(t), 0.4)
         elif part == 'call':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.95, him(t))
-        elif part == 'warm':
-            hold('warm', vc, m, t, t + d, v, him(t) * 0.5, rise=3.0, fall=1.5, gain=0.55)
+            o.play('horns', m, t, d, v, me(t), 0.8)
+        else:                                                           # the heap: low strings and tuba, sinking
+            o.play('cellos trem' if trem else 'cellos', m, t, d, v - 4, cave, 0.6)
+            if m < 48:
+                o.play('tuba', m, t, d, v - 12, cave, 0.45)
+    # the stage: steel on scales, fire, the tail, the blow, the death
+    for th in T_STRIKE:
+        o.clash(th, me(th), 120, 0.9)
+    for tb in T_BREATH:
+        side = right if where(hops_, tb, p0) > at(G, 'Porch Front', 0.5) else pan_at(at(G, 'Left', 0.3))
+        o.fire(tb, tb + 3.2, level=lambda tt, tb=tb: np.exp(-np.maximum(tt - tb - 0.3, 0) / 1.2), pan=(cave + side) / 2,
+               crackle=25, seed=int(tb * 10))
+        o.wind(tb - 0.2, tb + 1.2, 1.0, pan=side, seed=int(tb * 10) + 1)
+        o.thunder(tb - 0.4, near=0.6, pan=cave, gain=0.5)
+    for tl in T_LASH:
+        o.hit('timpani', tl, 118, pitch=-2, gain=0.5, pan=right)
+        o.hit('brake drum', tl, 112, gain=0.3, pan=right)
+    for th, a0, b0 in hops_:
+        o.hoof(th + 0.6, pan_at(b0), 90, 0.6)                          # he lands
+    o.hit('cymbal swell', T_NOTHUNG - 2.2, 96, gain=0.35, pan=cave)
+    o.clash(T_HEART, cave, 127, 1.2)                                   # the sword driven into the heart
+    o.boom(T_HEART + 0.02, cave, 1.0)
+    o.hit('crash', T_HEART, 124, gain=0.7, pan=cave)
+    o.thunder(T_HEART + 0.8, near=0.45, pan=cave, gain=0.9)            # the dragon's death rattle
+    o.hit('gong scrape', T_HEART + 3.0, 100, gain=0.5, pan=cave)
+    o.hit('gong', BAR[1099], 90, gain=0.35, pan=cave)
+    # the effects lead through the fight, step back for the trumpet's Nothung, return for the blow, then settle
+    o.effects([(0, -2), (T_NOTHUNG - 0.3, -2), (T_NOTHUNG + 0.2, -9), (T_HEART - 0.4, -9), (T_HEART - 0.1, 0),
+               (T_HEART + 5, 0), (T_CALL[0], -10)])

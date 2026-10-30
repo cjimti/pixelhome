@@ -1,24 +1,29 @@
 """The Last Question: the storm at the foot of the rock goes on. Erda stands green at the middle of Left, the
-Wanderer in deep blue at the front of it, and he asks her how to stop the turning wheel. Her motif (Donington 3)
-answers on the clarinets and bassoons, but each phrase breathes her green a little narrower and dimmer: she has
-no answer. Each of his questions is a blue pulse thrown at her.
+Wanderer in deep blue at the front of it; she has no answer for him, so he answers himself.
 
-So he answers himself. The need of the gods (5a) beats on the brass and every chord flashes the sky violet; the
-Twilight of the Gods (4) comes up on the trombones and the whole sky drains to a deep red-violet while his blue
-grows round him: he wills the end. Then the vision: Siegfried's heroism (78) on the horns over the full
-orchestra, and the house blazes with it, an emerald front running in from the free end of Right across every
-run to the end of the Side, each phrase a gold surge after it, the world handed on to the hero.
+The music is Wagner's own: the Wanderer's "Um der Götter Ende grämt mich die Angst nicht" (bars 360 to 367), the
+Ring and the hero who will inherit the world, "Liebesfroh, ledig des Neides" (bars 392 to 401), and "dem ewig
+Jungen weicht in Wonne der Gott" to "Hinab! Hinab, zu ew'gem Schlaf!" (bars 424 to 439), as Solti's 1958 Vienna
+Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py): the right hand on violins (the world's inheritance warmed by horns), the left hand's long
+notes on horns and trombones, the bass on cellos, basses and tuba. Like a staged production it adds the storm, which
+backs well off under the vision and comes back to lead when he sends her down: wind and rain, thunder with every
+bolt, his spear thrusts as blows with a rush of air, and the earth groaning as she sinks.
 
-"Hinab!" One thrust of the spear and Erda's green collapses into the ground at the middle of Left, a dark gulp
-of earth and gone. The Wanderer's chords (17) sound again as he crosses round the rock to Right 0.6, and the
-storm closes back in on him there, waiting for the boy.
+He tells her he wills the end, each line a blue pulse thrown at her, and her green narrows and dims: she has no
+answer. On the two great chords the sky flashes violet, then drains to a deep red-violet as his blue grows round
+him. Then the vision: on "errang des Niblungen Ring" an emerald front runs in from the free end of Right over
+every run, and gold surges ride its loudest notes; through "Liebesfroh" the house glows emerald and gold, and on
+"dem ewig Jungen weicht in Wonne der Gott" it blazes. "Hinab denn, Erda!": the storm crashes back, his spear
+thrusts at her and his chords roll blue over the house while she reels; at the second "Hinab!" her green
+collapses down into the ground at the middle of Left, a dark gulp of earth and gone, and he crosses round the
+rock to Right 0.6, the storm closing back in on him there, waiting for the boy.
 
-compose() holds every note; stage(), sky(), figure() and fire() are the rock and the sky, shared word for word by
-Act III's scenes on a clock that runs on from scene to scene."""
+compose() tags every note of the excerpt; stage(), sky(), figure() and fire() are the rock and the sky, shared
+word for word by Act III's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF24'
 TITLE = 'The Last Question'
@@ -29,16 +34,22 @@ VOICEOVER = ('Even the earth mother has no answer. So the old god chooses the en
              'and gives the world to the hero.')
 
 K = 1                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_ASK = [1.0, 5.5, 10.0]                    # his questions
-T_ERDA = [2.5, 7.0, 11.5]                   # her answers, each weaker
-T_NEED = 15.5                               # the need of the gods
-T_DOWN = 23.0                               # the Twilight of the Gods
-T_HERO = 34.0                               # the vision: Siegfried's heroism
-HBEAT = 0.5
-T_SINK = 48.5                               # "Hinab!"
-T_WAND = 54.0                               # his chords as he crosses
-T_WALK = (55.0, 69.0)
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 360-368, 392-402 and 424-440, Solti 1958
+NOTES = tidy(EX['notes'])
+D = EX['seconds']
+T_ASK = [s[0] for s in EX['singing'][:3]]   # his words thrown at her
+T_NEED = accents(EX['notes'], 9.5, 13.5, vmin=110, n=2, space=1.0)    # the two great chords
+T_DOWN = T_NEED[-1]                         # the Twilight of the Gods
+T_HERO = EX['segments'][1]['start']         # "errang des Niblungen Ring": the vision
+T_JUNG = EX['segments'][2]['start'] + 2.4   # "dem ewig Jungen weicht in Wonne der Gott"
+T_PEAK = accents(EX['notes'], 54.0, 57.0, vmin=100, n=2, space=1.0)[0]
+T_HINAB = [s[0] for s in EX['singing'] if s[3].startswith('Hinab')]   # his two thrusts
+T_SINK = T_HINAB[1]
+T_WALK = (T_SINK + 5.0, D - 1.5)
+GOLDS = [t for t in accents(EX['notes'], T_HERO, T_HINAB[0] - 2, vmin=96, n=2, space=0.6)]
+MELODY = [(t, m) for t, d, m, v, h in EX['notes'] if h == 0 and d >= 0.45 and T_HERO <= t < T_HINAB[0] - 2]
+CHORDS = accents([n for n in EX['notes'] if n[1] >= 0.8 and n[4] == 1], T_HINAB[0], T_SINK + 1, vmin=60, n=1,
+                 space=1.8)
 
 STORM = hexc('#1a2ab0')
 CLOUD = hexc('#4a6aff')
@@ -127,45 +138,26 @@ def figure(fr, S, p, col, lvl, w=16.0):
     fr = fr * (1 - 0.85 * min(1.0, lvl / 0.2) * body)[:, None]
     return fr + light(col, lvl * body) + light(col, 0.35 * lvl * np.exp(-((S['d'] - p) / (3 * w)) ** 2))
 
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged (time, seconds, midi, velocity, part, tremolo): the right hand ('hi'), the
+    left hand's long notes ('chord') and its others ('bass')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_SINK + 1, 'Db2', 66, 'earth')
-    for k, t0 in enumerate(T_ASK):
-        for t, m, v, d in play('wanderer', t0, 0.5, 0, 100 - 4 * k):
-            if t < t0 + 1.0:
-                add(t, d, m, v, 'ask', k)
-    for k, t0 in enumerate(T_ERDA):
-        for t, m, v, d in play('erda', t0, 0.55, 0, 84 - 10 * k):
-            if t < t0 + 3.0:
-                add(t, d, m, v, 'erda', k)
-    for t, m, v, d in play('gotternoth', T_NEED, 0.62, 0, 104):
-        add(t, d, m, v, 'need')
-    for t, m, v, d in play('downfall', T_DOWN, 0.95, -12, 112):
-        add(t, d, m, v, 'down')
-    add(T_HERO, 0.1, 'C1', 125, 'crash')
-    for t, m, v, d in play('siegfried_heroism', T_HERO, HBEAT, 2, 118):
-        add(t, d, m, v, 'hero')
-    for m in ('Bb1', 'F2', 'Bb2', 'D3', 'F3'):
-        add(T_HERO, 12.0, m, 92, 'herobed')
-    add(T_SINK, 0.5, 'Db1', 124, 'sink')
-    for t, m, v, d in play('wanderer', T_WAND, 1.0, 0, 102):
-        add(t, d, m, v, 'wanderer')
-    for m in ('G1', 'D2', 'G2'):
-        add(T_WALK[1], D - T_WALK[1], m, 62, 'dark')
+    for t, d, m, v, h, trem in NOTES:
+        N.append((t, d, m, v, 'hi' if h == 0 else 'chord' if d >= 0.6 and m >= 48 else 'bass', trem))
     return sorted(N, key=lambda e: e[0])
 
 
 def bolts():
-    """Lightning: [(time, run, strength)]."""
+    """Lightning: [(time, run, strength, near)]: the two great chords, the storm crashing back at "Hinab", and far
+    off as it closes in again."""
     rng = np.random.default_rng(24)
     runs = ['Right', 'Side', 'Left', 'Right', 'Side', 'Left']
-    ts = [0.2, 3.4, 8.8, 13.0, 19.0, 21.4, 30.5, 49.0, 52.0, 58.0, 62.5, 66.0, 70.0, 73.5, 77.0]
-    return [(float(t), runs[i % len(runs)], float(rng.uniform(0.8, 1.0))) for i, t in enumerate(ts)]
+    ts = [(t, 0.8) for t in T_NEED]
+    ts += [(t, 1.0) for t in accents(EX["notes"], T_PEAK - 0.5, T_SINK - 1.0, vmin=94, n=2, space=2.4)]
+    ts += [(T_SINK + 0.1, 0.7), (D - 9.0, 0.35), (D - 5.5, 0.45), (D - 2.5, 0.55)]
+    return [(float(t), runs[i % len(runs)], float(rng.uniform(0.8, 1.0)) * (0.55 + 0.45 * n), n)
+            for i, (t, n) in enumerate(ts)]
 
 
 def walk(G, t):
@@ -180,108 +172,118 @@ def render(G, seed=24):
     S = stage(G)
     d = S['d']
     L = d.max()
-    N = compose()
-    asks = [e for e in N if e[4] == 'ask']
-    erda = [e for e in N if e[4] == 'erda']
-    need = np.array(sorted({e[0] for e in N if e[4] == 'need'}))
-    hero = [e for e in N if e[4] == 'hero']
-    chords = sorted({e[0] for e in N if e[4] == 'wanderer'})
     p_erda = at(G, *ERDA_AT)
-    lo_h = min(e[2] for e in hero)
-    hi_h = max(e[2] for e in hero)
+    B = bolts()
+    loud = np.zeros(F)                      # how loud the orchestra is, frame by frame, for the vision to breathe
+    for n in EX['notes']:
+        i = int(n[0] / DT)
+        loud[i:i + max(1, int(min(n[1], 1.0) / DT))] += n[3] / 127
+    loud = np.convolve(loud, np.ones(16) / 16, 'same')
+    loud = np.clip(loud / np.percentile(loud, 95), 0, 1)
+    lo_m, hi_m = min(m for _, m in MELODY), max(m for _, m in MELODY)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
         lv = dict(START)
         down = smoothstep(T_DOWN, T_DOWN + 3, t) * (1 - smoothstep(T_HERO - 1, T_HERO + 1, t))
-        vis = smoothstep(T_HERO - 0.2, T_HERO + 0.3, t) * (1 - smoothstep(T_SINK - 2, T_SINK, t))
+        vis = smoothstep(T_HERO - 0.2, T_HERO + 0.4, t) * (1 - smoothstep(T_HINAB[0] - 1.5, T_HINAB[0], t))
         lv['storm'] = START['storm'] * (1 - 0.5 * down - 0.6 * vis)
         fr = sky(S, T, lv)
         p = walk(G, t)
 
         # lightning: a whole run cracks white
-        for tb, run, s in bolts():
+        for tb, run, s, near in B:
             a = t - tb
             if 0 <= a < 1.2:
                 env = min(1.0, np.exp(-a / 0.1) + 0.8 * np.exp(-((a - 0.16) / 0.05) ** 2))
                 fr += light(BOLT, s * env * (G.seg_of == run) * (0.5 + 0.5 * S['jag']))
                 fr += light(CLOUD, 0.6 * np.exp(-a / 0.4) * (G.seg_of == run))
 
-        # Erda: green that narrows and dims with each answer she cannot give; then she collapses into the ground
-        weak = sum(smoothstep(t0 + 1.0, t0 + 3.0, t) for t0 in T_ERDA) / 3
-        breath = 0.0
-        for t0, dur, m, v, part, k in erda:
-            a = t - t0
-            if 0 <= a < dur + 1.2:
-                breath = max(breath, (1 - 0.25 * k) * np.exp(-a / (dur + 0.5)) * smoothstep(0, 0.1, a))
-        sink = smoothstep(T_SINK, T_SINK + 2.2, t)
-        g = (1 - 0.35 * weak) * (1 - sink)
-        w = (320 - 120 * weak) * (1 + 0.4 * breath) * (1 - 0.9 * sink) + 8
+        # Erda: green that narrows and dims as he talks and she has no answer; reeling at his first thrust; then
+        # she collapses into the ground at the second
+        weak = smoothstep(0.0, T_HERO, t)
+        reel = sum(np.exp(-max(0.0, t - t0) / 0.5) * (t >= t0) for t0 in T_HINAB[:1])
+        sink = smoothstep(T_SINK, T_SINK + 5.0, t)
+        g = (1 - 0.4 * weak) * (1 - sink) * (1 - 0.4 * smoothstep(T_HINAB[0], T_SINK, t))
+        w = (320 - 140 * weak) * (1 - 0.25 * reel) * (1 - 0.92 * sink) + 8
+        wav = 0.15 * np.sin(2 * np.pi * t / 2.4)
         if g > 0.005:
             fr += light(EARTH, 0.7 * g * np.exp(-((d - p_erda) / (w * 1.4)) ** 2))
-            fr += light(MOSS, (0.8 + 0.3 * breath) * g * np.exp(-((d - p_erda) / w) ** 2))
-            fr = figure(fr, S, p_erda, ERDA_HI, (0.6 + 0.3 * breath) * g, w=20)
-        if T_SINK <= t < T_SINK + 3:            # the gulp of earth where she went down
-            a = t - T_SINK
-            fr += light(EARTH, 0.9 * np.exp(-a / 0.8) * np.exp(-((d - p_erda) / 120) ** 2))
+            fr += light(MOSS, (0.8 + wav) * g * np.exp(-((d - p_erda) / w) ** 2))
+            fr = figure(fr, S, p_erda, ERDA_HI, (0.6 + wav) * g, w=20)
+        if T_SINK + 4.0 <= t < T_SINK + 8:            # the gulp of earth where she went down
+            a = t - T_SINK - 4.0
+            fr += light(EARTH, 1.0 * np.exp(-a / 0.8) * np.exp(-((d - p_erda) / 120) ** 2))
             fr += light(MOSS, 0.8 * np.exp(-a / 0.4) * np.exp(-((np.abs(d - p_erda) - 600 * a) / 60) ** 2))
 
-        # his questions: blue pulses thrown at her
-        for t0, dur, m, v, part, k in asks:
+        # his words: blue pulses thrown at her
+        for t0 in T_ASK:
+            a = t - t0
+            if 0 <= a < 1.4:
+                c = p + (p_erda - p) * min(1.0, a / 0.5)
+                fr += light(WOTAN, 0.95 * np.exp(-a / 0.7) * np.exp(-((d - c) / 45) ** 2))
+
+        # the two great chords: the sky flashes violet
+        for t0 in T_NEED:
             a = t - t0
             if 0 <= a < 1.2:
-                c = p + (p_erda - p) * min(1.0, a / 0.5)
-                fr += light(WOTAN, 0.95 * np.exp(-a / 0.6) * np.exp(-((d - c) / 45) ** 2))
-
-        # the need of the gods: each chord flashes the sky violet
-        j = int(np.searchsorted(need, t, side='right')) - 1
-        if j >= 0 and t - need[j] < 1.0 and t < T_DOWN:
-            fr += light(DUSK, 0.75 * np.exp(-(t - need[j]) / 0.3) * S['sky'])
+                fr += light(DUSK, 0.9 * np.exp(-a / 0.35) * S['sky'])
 
         # the Twilight of the Gods: the sky drains to red-violet, his blue grows round him
         fr += light(TWILIGHT, 0.85 * down * S['sky'] * (0.75 + 0.25 * np.sin(2 * np.pi * (d / 380 - 0.15 * t))))
         fr += light(WOTAN, 0.7 * down * np.exp(-((d - p) / (120 + 260 * down)) ** 2))
 
-        # the vision: an emerald front from the free end of Right over every run, a gold surge on each note
-        if T_HERO <= t < T_SINK:
+        # the vision: an emerald front from the free end of Right over every run, a gold surge on each loud note,
+        # and the blaze of "dem ewig Jungen"
+        if T_HERO <= t < T_HINAB[0]:
             a = t - T_HERO
             front = L - min(1.0, a / 3.0) * (L + 60)
-            fr += light(EMERALD, 0.85 * vis * smoothstep(front - 60, front + 60, d))
+            blaze = smoothstep(T_JUNG, T_PEAK, t) * (1 - smoothstep(T_PEAK + 1.5, T_HINAB[0], t))
+            keep = 1 - 0.8 * np.exp(-((d - p_erda) / 70) ** 2)       # Erda still there, dim, at the middle of Left
+            roll = 0.75 + 0.25 * np.sin(2 * np.pi * (d / 340 + 0.45 * t))
+            fr += light(EMERALD, (0.35 + 0.5 * loud[f] + 0.3 * blaze) * roll * keep * vis
+                        * smoothstep(front - 60, front + 60, d))
+            for t0, m in MELODY:                 # each note of the melody a gold pulse running in from Right
+                b = t - t0
+                if 0 <= b < 2.0:
+                    u = (m - lo_m) / max(1, hi_m - lo_m)
+                    x = L - (L + 100) * (b / 2.0)
+                    fr += light(GOLD, (0.5 + 0.5 * u) * np.exp(-b / 1.2) * np.exp(-((d - x) / (40 + 40 * u)) ** 2))
             fr += light(HERO_HEAD, 1.0 * np.exp(-((d - front) / 22) ** 2) * (a < 3.2))
-            for t0, dur, m, v, part, k in hero:
+            for k, t0 in enumerate(GOLDS):
                 b = t - t0
                 if 0 <= b < 1.6:
-                    u = (m - lo_h) / max(1, hi_h - lo_h)
                     r = (L + 100) * (1 - np.exp(-b / 0.5))
-                    fr += light(GOLD, (0.75 + 0.3 * u) * np.exp(-b / 0.8) * np.exp(-(((L - d) - r) / 150) ** 2))
-            fr += light(GOLD, 0.25 * vis * (0.6 + 0.4 * np.sin(2 * np.pi * (d / 300 + 0.4 * t))))
+                    src = (L - d) if k % 2 == 0 else d
+                    fr += light(GOLD, 1.2 * np.exp(-b / 0.8) * np.exp(-((src - r) / 90) ** 2))
+            fr += light(GOLD, (0.25 + 0.5 * blaze) * vis * (0.6 + 0.4 * np.sin(2 * np.pi * (d / 300 + 0.4 * t))))
+            if 0 <= t - T_PEAK < 1.5:
+                fr += light(HERO_HEAD, 0.8 * np.exp(-(t - T_PEAK) / 0.4))
 
-        # the Wanderer, and the spear thrust that sends Erda down
+        # the Wanderer, and his spear thrusts that send Erda down
         fr = figure(fr, S, p, WOTAN, 0.85)
         fr += light(SPEAR, 0.6 * np.exp(-((d - p + 14) / 6) ** 2))
-        if T_SINK <= t < T_SINK + 1.5:
-            a = t - T_SINK
-            fr += light(BOLT, min(1.0, 1.2 * np.exp(-a / 0.08)) * np.exp(-((d - p) / 50) ** 2))
-            fr += light(SPEAR, 0.9 * np.exp(-a / 0.4) * np.exp(-((d - (p + (p_erda - p) * min(1.0, a / 0.25))) / 30) ** 2))
-            fr += light(WOTAN, 0.6 * np.exp(-a / 0.3))
-        for t0 in chords:
+        for t0 in T_HINAB:
+            a = t - t0
+            if 0 <= a < 1.5:
+                fr += light(BOLT, min(1.0, 1.2 * np.exp(-a / 0.08)) * np.exp(-((d - p) / 50) ** 2))
+                fr += light(SPEAR, 0.9 * np.exp(-a / 0.4) * np.exp(-((d - (p + (p_erda - p) * min(1.0, a / 0.25))) / 30) ** 2))
+                fr += light(WOTAN, 0.6 * np.exp(-a / 0.3))
+        for t0 in CHORDS:                       # his chords roll blue over the house while she reels
             a = t - t0
             if 0 <= a < 2.5:
                 r = 1300 * (1 - np.exp(-a / 0.8))
                 fr += light(WOTAN, 1.0 * np.exp(-a / 1.1) * np.exp(-((np.abs(d - walk(G, t0)) - r) / 200) ** 2))
                 fr += light(CLOUD, 0.5 * np.exp(-a / 0.5) * S['sky'])
         if t >= T_WALK[0]:                      # his cloak trailing blue behind him round the rock, then his wait
-            fr += light(WOTAN, 0.55 * np.exp(-np.clip(d - p, 0, None) / 160) * (d >= at(G, *WAND_FROM)) * (d <= p + 20)
-                        * (1 - smoothstep(T_WALK[1], T_WALK[1] + 3, t)))
-            wait = smoothstep(T_WALK[1], T_WALK[1] + 2, t) * (1 - smoothstep(D - 4, D - 0.5, t)) * (0.5 + 0.5 * np.cos(2 * np.pi * (t - T_WALK[1]) / 3.2))
-            fr += light(WOTAN, 0.6 * wait * np.exp(-((d - p) / 260) ** 2))
+            fr += light(WOTAN, 0.55 * np.exp(-np.clip(d - p, 0, None) / 160) * (d >= at(G, *WAND_FROM)) * (d <= p + 20))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the storm ridden under the vision."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -290,97 +292,38 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.26, 0.25), ('strings', 0.2, 0.3), ('brass', 0.24, 0.3), ('perc', 0.24, 0.3),
-                            ('winds', 0.22, 0.35), ('fx', 0.08, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vcs = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     erda_p = pan_at(at(G, *ERDA_AT))
-    for t, d, m, v, part, k in compose():
-        pw = pan_at(walk(G, t))
-        if part == 'earth':
-            hold('low', cb, m, t, t + d, v, erda_p, rise=1.0, fall=2.0, gain=0.55)
-        elif part == 'ask':
-            if m >= note('Gb4'):
-                M.add('brass', horn.play(m - 12, v - 6, dur=d * 1.05, release=0.3), t, 0.7, pw)
-            elif m >= note('A3'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, pw)
-            else:
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, pw)
-        elif part == 'erda':
-            if m >= note('Db4'):
-                hold('winds', clar, m - 12, t, t + d, v, erda_p, rise=0.3, fall=1.0, gain=0.8)
-            elif m >= note('E3'):
-                hold('winds', bsn, m, t, t + d, v, erda_p, rise=0.3, fall=1.0, gain=0.8)
-            else:
-                hold('low', vcs, m, t, t + d, v - 10, erda_p, rise=0.5, fall=1.0, gain=0.6)
-        elif part == 'need':
-            if m >= note('Db4'):
-                M.add('brass', horn.play(m - 12, v - 6, dur=d * 1.1, release=0.3), t, 0.7, 0.0)
-            else:
-                M.add('brass', tbn.play(m, v - 6, dur=d * 1.1, release=0.3), t, 0.8, 0.0)
-            if m < note('B2'):
-                M.add('perc', timp.play(v - 10, pitch=-4), t, 0.6, 0.0)
-        elif part == 'down':
-            if d > 1.2:
-                hold('brass', tbn, m, t, t + d, v, 0.0, rise=0.2, fall=1.2, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, 0.0)
-            M.add('low', tuba.play(m - 12, v - 16, dur=d * 1.05, release=0.3), t, 0.6, 0.0)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9, 0.0)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, 0.0)
-            M.add('fx', whoosh(2.5, 300, 5000, 0.8, seed=24), t - 0.3, 0.9, 0.8)
-        elif part == 'hero':
-            if d > 1.2:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.12, fall=0.9, gain=0.9)
-                hold('brass', tpt, m, t, t + d, v - 18, 0.0, rise=0.12, fall=0.9, gain=0.45)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.95, 0.0)
-            M.add('low', tbn.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.6, 0.0)
-        elif part == 'herobed':
-            hold('strings', vln if m >= note('D3') else vcs, m + 12, t, t + d, v, 0.0, rise=0.5, fall=2.0, gain=0.5)
-        elif part == 'sink':
-            M.add('perc', gong.play(v), t, 0.9, erda_p)
-            M.add('perc', timp.play(v, pitch=-9), t, 1.0, erda_p)
-            M.add('low', cbs.play(m + 12, v), t, 0.8, erda_p)
-            M.add('fx', whoosh(1.2, 2500, 150, 0.8, seed=48), t, 0.9, erda_p)
-        elif part == 'wanderer':
-            if m >= note('Gb4'):
-                hold('brass', horn, m - 12, t, t + d, v - 6, pw, rise=0.2, fall=1.0, gain=0.7)
-            elif m >= note('A3'):
-                hold('brass', tbn, m, t, t + d, v, pw, rise=0.15, fall=1.0, gain=0.8)
-            else:
-                hold('low', tuba, m, t, t + d, v, pw, rise=0.15, fall=1.0, gain=0.85)
-        elif part == 'dark':
-            hold('low', vcs, m + 12, t, t + d, v, pan_at(at(G, *WAND_TO)), rise=3.0, fall=1.5, gain=0.5)
-    for tb, run, s in bolts():
-        M.add('perc', roll.play(int(70 + 30 * s), pitch=-3, dur=1.6), tb, 0.45, pan_at(at(G, run, 0.5)))
+    o = Orchestra(M, level=2.4)
+
+    def size(t):
+        if T_HINAB[0] - 4 <= t < T_SINK:
+            return 1.0
+        if T_HERO <= t < T_HERO + 6:
+            return 1.0
+        return 0.6
+
+    def role(t, d, m, v, h):
+        if T_HERO <= t < T_HINAB[0] and h == 0 and d >= 0.5:      # the world's inheritance: violins, warm horns
+            return [('violins', 0, 0, 0.6), ('horns', -12, -4, 0.5), ('violas', -12, -10, 0.3)]
+        if t >= T_SINK and h == 1 and m < 48:                     # down into the earth: bassoons and basses
+            return [('cellos', 0, 6, 0.6), ('basses', 0, 0, 0.55), ('bassoons', 12, -4, 0.4)]
+        return None
+
+    o.tutti(NOTES, size=size, role=role, pan=lambda t, m: pan_at(walk(G, t)) * 0.4 if m >= 48 else 0.0)
+
+    # the storm: a low bed under his words, well away under the vision, leading when he sends her down
+    o.effects([(0.0, -7), (T_HERO - 1, -7), (T_HERO + 1, -14), (T_HINAB[0] - 1.5, -14), (T_HINAB[0], 0),
+               (T_SINK + 1, 0), (T_SINK + 4, -5), (D, -3)])
+    o.wind(0.0, D, level=lambda tt: 0.5 + 0.4 * smoothstep(T_HINAB[0] - 1, T_HINAB[0], tt), pan=0.0, seed=29)
+    for tb, run, s, near in bolts():
+        o.thunder(tb, near=near, pan=pan_at(at(G, run, 0.5)), gain=0.8 * s, seed=int(tb * 100) + 3)
+    for t0 in T_HINAB:                     # the spear thrusts: a blow and a rush of air
+        o.boom(t0, pan_at(walk(G, t0)), 0.8)
+        o.hit('metal', t0, 110, gain=0.35, pan=pan_at(walk(G, t0)))
+    o.hit('timpani roll', T_SINK + 0.5, 100, pitch=-7, gain=0.6, pan=erda_p)   # she sinks: the earth groans
+    o.hit('gong scrape', T_SINK + 1.0, 100, gain=0.5, pan=erda_p)
+    o.thunder(T_SINK + 1.2, near=0.1, pan=erda_p, gain=0.9, seed=88)
+    o.boom(T_SINK + 4.0, erda_p, 0.6)       # the gulp of earth
+    o.hit('crash', T_HERO, 104, gain=0.4)    # the vision breaks in
+    o.hit('crash', T_PEAK, 116, gain=0.5)
+    o.hit('timpani', T_PEAK, 118, pitch=-5, gain=0.6)

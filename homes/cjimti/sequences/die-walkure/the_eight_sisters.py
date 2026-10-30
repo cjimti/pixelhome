@@ -1,28 +1,37 @@
-"""The Eight Sisters: all eight Valkyries together, and the Ride (Donington 47) at full strength, horns,
-trumpets, trombones and tubas over galloping cellos, basses and bassoons, with timpani on every phrase.
+"""The Eight Sisters: all eight Valkyries together on their rock, and the Ride at full strength, every one of
+them crying "Hojotoho!" and "Heiaha!".
 
 They leave the rock in a column, Gerhilde at its head, and gallop the length of the house: out to the free end
 of Right, wheeling there and thundering back past the rock to the far end of Side, a train of eight colours
-each trailing a comet. Then they split, the warm sisters (red, orange, yellow, pink) one way and the cool
-(green, sky, violet, purple) the other, sweeping across each other over the rock again and again, every
-crossing a burst of white, and between the crossings they toss their cries across the whole house:
-"Hojotoho!" on a trumpet from one end, a spark of her colour flying the length of the roof, and "Heiaha!" back
-from a sister at the other end. Then the Valkyries' own motif (22) in the full brass while the eight spread out
-evenly and ride in a rainbow that sweeps the entire house end to end, the descending chords (22b) pouring
-down between the strains and the trills (22a) glittering over the clouds.
+each trailing a comet, every word of their war cry a flash and a ring of her colour. Then Helmwige and Ortlinde
+cry "Hojotoho!" and the others answer "Heiaha!": the warm sisters (red, orange, yellow, pink) and the cool
+(green, sky, violet, purple) sweep across each other over the rock, every crossing a burst of white, their cries
+thrown the length of the house as sparks of their colour. The orchestra's great chords: the eight spread out
+evenly and ride in a rainbow that sweeps the entire house end to end. Then the sisters' laughter pours down from
+on high, and they wheel and whirl over the house; at every peal of laughter the laughing pair charges in from
+both ends to meet over the rock in a flash, until Grimgerde and Rossweisse ride in to "Willkommen!" and the
+whole house bursts in all their colours, twice. They gather on the rock in their places. Then Siegrune sees
+her: "Hieher! Hieher! In brünstigem Ritt jagt Brünnhilde her!" Far off at the free end of Right a silver light
+with gold glints is riding hard toward them, an amber light held close beside her, and every sister leans
+toward her and calls, "Brünnhilde, hei!"
 
-The climax: the sisters fall back to both ends of the house and charge inward, meeting over the rock in a
-flash of the whole house, fling out to the ends and charge again, and wheel together over the summit while
-lightning cracks in the clouds. They gather on the rock in their places as the Ride closes on a great B minor
-chord. And then a stillness, a tremolo, and every one of them turns: far off at the free end of Right a silver
-light with gold glints is riding hard toward them, an amber light held close beside her. "Brünnhilde!" they
-call, horns from every side, and a lone trumpet far off on the right answers with the Ride.
+The music is Wagner's own: Act III, scene 1, bars 140 to 161 (the sisters' Hojotoho and Heiaha over the Ride, and
+the orchestra's great chords), 170 to 184 (their laughter and "Willkommen!") and 208 to 215 ("Hieher! Hieher!",
+Brünnhilde sighted), spliced, as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the
+Wagner Ring Dataset's piano reduction of the score (pixelhome/ring.py): the Ride's long notes in horns, trumpets and
+trombones, its whirling figures in strings and woodwinds, the bass in cellos, basses and tuba, with timpani on the
+accents and cymbals on the great moments. The sisters' cries come from the dataset's sung lines: who sings, and
+when. Over the score, as a staging would: storm wind, the herd's hoofbeats under every gallop, thunder with every
+strike, a rush of air at every crossing and every thrown cry, a boom where each charge meets over the rock and as
+they come home, and Brünnhilde's horse coming hard from afar. The herd leads the opening gallop; the effects back
+off under the cries and further for the great chords, come up for the laughing charges, lead the Willkommen bursts,
+and recede until Brünnhilde's horse is heard.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt and every sung word, choreography() every position; render() and
+score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK21'
 TITLE = 'The Eight Sisters'
@@ -33,22 +42,18 @@ DESCRIPTION = ('All eight Valkyries together at last, galloping across the whole
 VOICEOVER = ('Eight sisters, eight colours, and one of the most famous pieces of music ever written. '
              'This is the Ride at full gallop.')
 
-RB = 0.3                                    # a quarter note of the Ride
-VB = 0.6                                    # a beat of the Valkyries' motif
-TRANS = [0, 3, 0, -2]
-ROOTS = ['B1', 'D2', 'B1', 'A1']
-# the music, section by section: (kind, start)
-PLAN = [('period', 1.0), ('period', 8.2), ('interlude', 15.4), ('period', 19.0), ('period', 26.2),
-        ('interlude', 33.4), ('valk', 37.0), ('valk', 44.2), ('interlude', 51.4), ('period', 55.0),
-        ('period', 62.2)]
-T_GATHER = 69.4                             # the cadence: home on the rock
-T_SEE = 72.4                                # they see her coming
-T_CALL = 74.4                               # "Brünnhilde!"
-T_COL, T_CROSS, T_CAROUSEL, T_CLIMAX = 1.0, 19.0, 37.0, 55.0
-BURSTS = [58.6, 64.0]                       # the charges meet over the rock
-TOSSES = [(21.0, 0, 4), (21.7, 4, 7), (25.6, 3, 2), (26.3, 2, 6), (30.0, 7, 5), (30.7, 5, 1), (34.4, 6, 0),
-          (35.1, 0, 3)]                     # cries thrown across the house: (time, from, to)
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 140-161 + 170-184 + 208-215, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+RB = 0.3                                    # about a quarter note of the Ride
+T_COL = 0.0                                 # the column
+T_CROSS = BAR[148]                          # Hojotoho and Heiaha: the crossing
+T_CAROUSEL = BAR[154]                       # the great chords: the rainbow
+T_CLIMAX = BAR[170]                         # the laughter: they whirl
+T_CHARGE = BAR[175]                         # each peal of laughter a charge
+BURSTS = [BAR[181], BAR[182]]               # "Willkommen!": the whole house bursts
+T_GATHER = BAR[184]                         # home on the rock
+T_SEE = BAR[208]                            # "Hieher! Hieher!": they see her coming
 CLOCK = 80.0 * 20
 
 NAMES = ['Gerhilde', 'Ortlinde', 'Waltraute', 'Schwertleite', 'Helmwige', 'Siegrune', 'Grimgerde', 'Rossweisse']
@@ -56,12 +61,6 @@ COLS = [hexc(h) for h in ('#ff4040', '#ff9a20', '#f0e040', '#40e070', '#40d0ff',
 SPOTS = [('Porch Left', 0.25), ('Porch Left', 0.65), ('Porch Front', 0.12), ('Porch Front', 0.37),
          ('Porch Front', 0.63), ('Porch Front', 0.88), ('Porch Right', 0.35), ('Porch Right', 0.75)]
 WARM, COOL = [0, 1, 2, 7], [3, 4, 5, 6]
-STRIKES = [(12.0, 'Side'), (24.0, 'Right'), (40.6, 'Left'), (47.8, 'Right'), (56.0, 'Side'), (58.6, 'all'),
-           (61.0, 'Right'), (64.0, 'all'), (66.2, 'Left'), (68.0, 'Right')]
-HOJO = [(0, 0.25, 'F#4'), (0.25, 0.75, 'B4'), (1, 0.5, 'B4'), (1.5, 1.5, 'D5')]      # "Ho-jo-to-ho!" (after Wagner)
-HEIA = [(0, 0.5, 'D5'), (0.5, 0.5, 'B4'), (1, 2.0, 'F#4')]                         # "Hei-a-ha!"
-BRUNN = [(0, 0.5, 'B4'), (0.5, 1.5, 'F#4'), (2, 0.5, 'A4'), (2.5, 2.0, 'D5')]      # "Brünn-hil-de!" (composed)
-CBEAT = 0.26
 SILVER = hexc('#f4f8ff')
 GOLD = hexc('#ffd060')
 AMBER = hexc('#ffa860')
@@ -79,77 +78,69 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
+def who(names):
+    """Sister indices named in a sung line's 'person' field."""
+    return [k for k, n in enumerate(NAMES) if n in names]
+
+
+def words():
+    """Every sung word, spread evenly over its line: (time, sister) for each of its singers."""
+    out = []
+    for t0, t1, person, text in EX['singing']:
+        ws = text.split()
+        for i in range(len(ws)):
+            for k in who(person):
+                out.append((t0 + i * (t1 - t0) / len(ws), k))
+    return sorted(out)
+
+
+def accents(t0, t1, vmin, n, space):
+    """Times in [t0, t1) where n or more notes louder than vmin strike together, at least `space` apart."""
+    c = {}
+    for t, d, m, v, h in EX['notes']:
+        if t0 <= t < t1 and v >= vmin:
+            c[round(t, 2)] = c.get(round(t, 2), 0) + 1
+    out = []
+    for k in sorted(k for k, v in c.items() if v >= n):
+        if not out or k - out[-1] >= space:
+            out.append(k)
+    return out
+
+
+def tosses():
+    """Cries thrown across the house in the crossing: from each Hojotoho singer to an answering Heiaha singer."""
+    ws = [(t, k) for t, k in words() if T_CROSS <= t < T_CAROUSEL]
+    out, j = [], 0
+    for t, k in ws:
+        if k in (4, 1) and (not out or t - out[-1][0] > 0.9):          # Helmwige and Ortlinde cry Hojotoho
+            to = (0, 2, 5, 3)[j % 4]                                    # Gerhilde, Waltraute, Siegrune, Schwertleite
+            out.append((t, k, to))
+            j += 1
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand): 'ride' its long notes, 'trill'
+    the short ones, 'desc' the laughter pouring down from on high; and every sung word: 'cry' (or 'name' once they
+    have seen Brünnhilde), with the sister as the last field."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    def trills(t0, beats, vel):
-        for t, m, v, d in play('valkyrie_cry', t0, RB, 0, vel):
-            if t < t0 + beats * RB:
-                add(t, d, m, v, 'trill')
-
-    def cry(t0, k, tune, vel=112, tr=0):
-        for b, dd, n in tune:
-            add(t0 + b * CBEAT, dd * CBEAT * 1.2, note(n) + tr, vel, 'cry', k)
-
-    add(0.0, 1.0, 'B1', 100, 'roll')
-    for k in range(8):                                                          # off the rock, every one of them
-        cry(0.1 + 0.11 * k, k, HOJO[:2], 100, (0, 2, 4, 5)[k % 4])
-    for kind, t0 in PLAN:
-        if kind == 'period':
-            for p, (tr, root) in enumerate(zip(TRANS, ROOTS)):
-                tp = t0 + p * 6 * RB
-                for t, m, v, d in play('ride', tp, RB, tr, 112 + 4 * (t0 >= T_CLIMAX)):
-                    add(t, d * 1.6, m, v, 'ride')
-                for bar in range(2):
-                    for b, dd in ((0, 1.0), (1.0, 0.5), (1.5, 1.0), (2.5, 0.5)):
-                        add(tp + (bar * 3 + b) * RB, dd * RB * 0.9, note(root) + (12 if b else 0), 112 - 6 * (b > 0),
-                            'gallop')
-                add(tp, 0.4, root, 104, 'timp')
-                if p == 3 and t0 < T_CLIMAX:
-                    trills(tp, 6, 84)
-        elif kind == 'interlude':
-            for t, m, v, d in play('valkyries_descent', t0 + 0.3, 0.5, 0, 110):
-                add(t, d * 1.1, m, v, 'descent')
-            trills(t0 + 0.3, 8, 90)
-            add(t0, 0.3, 'B1', 112, 'crash')
-        elif kind == 'valk':
-            tr = 0 if t0 < 40 else 3
-            for t, m, v, d in play('valkyries', t0, VB, tr, 112):
-                add(t, d * 1.05, m, v, 'valk')
-            for j in range(16):                                                 # driving triplets underneath
-                for i in range(3):
-                    add(t0 + j * 3 * VB / 4 + i * VB / 4, VB / 4 * 0.8, note('E2') + tr + (0, 7, 12)[i], 96, 'drive')
-            add(t0, 0.4, 'E2', 110, 'crash')
-    for i, (tt, a, b) in enumerate(TOSSES):                                     # cries thrown across the house
-        cry(tt, a, HOJO, 112, 2 * (i % 3))
-        cry(tt + 0.6, b, HEIA, 112, 2 * (i % 3))
-    for tb in BURSTS:
-        add(tb - 1.6, 1.6, 'B1', 110, 'surge')
-        add(tb, 3.0, 'B1', 124, 'burst')
-    for m in ('B1', 'F#2', 'B2', 'D3', 'F#3', 'B3'):                            # home: a great B minor chord
-        add(T_GATHER, T_SEE - T_GATHER + 0.6, m, 112, 'cadence')
-    add(T_GATHER, 0.4, 'B1', 124, 'crash')
-    for k in range(8):
-        cry(T_GATHER + 0.4 + 0.2 * k, k, HEIA[:2], 100, (0, 2, 4, 5)[k % 4])
-    add(T_SEE, D - T_SEE, 'B2', 70, 'sight')                                    # stillness; they turn
-    add(T_SEE, D - T_SEE, 'F#3', 64, 'sight')
-    trills(T_SEE + 0.6, 6, 70)
-    for j, k in enumerate((4, 0, 7, 2)):                                        # "Brünnhilde!"
-        for b, dd, n in BRUNN:
-            add(T_CALL + 0.8 * j + b * CBEAT, dd * CBEAT * 1.2, note(n) + (0, 2, -3, 5)[j], 104, 'name', k)
-    for t, m, v, d in play('ride', T_CALL + 1.4, RB, 0, 92):                    # far off, her answer
-        add(t, d * 1.5, m, v, 'far')
-    for t, m, v, d in play('ride', T_CALL + 1.4 + 6 * RB, RB, 3, 98):
-        add(t, d * 1.5, m, v, 'far')
-    for h in range(int((D - T_SEE - 1.0) / (1.5 * RB))):                        # her horse, coming
-        add(T_SEE + 1.0 + h * 1.5 * RB, 0.1, 'B1', 60 + 2 * h, 'hoof')
-    for ts, where in STRIKES:
-        add(ts, 2.0, 'B0', 104 if where != 'all' else 124, 'thunder', where)
+    for t, d, m, v, h in EX['notes']:
+        if T_CLIMAX <= t < T_CHARGE and h == 0 and m >= 84 and d < 0.3:
+            part = 'desc'
+        elif d >= 0.3:
+            part = 'ride'
+        else:
+            part = 'trill'
+        N.append((t, d, m, v, part, h))
+    for t, k in words():
+        N.append((t, 0.2, 0, 0, 'name' if t >= T_SEE else 'cry', k))
     return sorted(N, key=lambda e: e[0])
+
+
+STRIKES = ([(t, ('Side', 'Right', 'Left', 'Right', 'Side', 'Left')[i % 6])
+            for i, t in enumerate(accents(T_CROSS, T_GATHER, 113, 5, 4.0)) if min(abs(t - b) for b in BURSTS) > 1.0]
+           + [(b, 'all') for b in BURSTS])
+TOSSES = tosses()
 
 
 def follow(target, rate):
@@ -191,7 +182,7 @@ def choreography(G):
         rate[k][m] = r
 
     # the column: out to the free end of Right, back the whole length of the house, home over the rock
-    hts, hds = zip(*[(T_COL, c), (T_COL + 4.2, hi), (T_COL + 5.0, hi - 40), (T_COL + 12.0, lo), (T_COL + 12.8, lo + 40),
+    hts, hds = zip(*[(T_COL, c), (T_COL + 4.0, hi), (T_COL + 4.8, hi - 40), (T_COL + 11.0, lo), (T_COL + 11.8, lo + 40),
                      (T_CROSS, c)])
     for i in range(8):
         lag = 0.34 * i
@@ -200,27 +191,35 @@ def choreography(G):
     # the crossing: warm and cool sweep across each other over the rock, each group a little column
     for g, grp in ((1, WARM), (-1, COOL)):
         for j, k in enumerate(grp):
-            x = c + g * 1150 * np.sin(2 * np.pi * (t - T_CROSS - 0.34 * j) / 9.0)
+            x = c + g * 1150 * np.sin(2 * np.pi * (t - T_CROSS - 0.34 * j) / 6.0)
             put(k, T_CROSS + 0.34 * 8, T_CAROUSEL, np.clip(x, lo, hi), 10.0)
     # the carousel: all eight spread evenly, a rainbow sweeping the whole house end to end
     for k in range(8):
-        x = lo + (hi - lo) * tri(k / 4.0 + (t - T_CAROUSEL) / 7.2)
+        x = lo + (hi - lo) * tri(k / 4.0 + (t - T_CAROUSEL) / 5.2)
         put(k, T_CAROUSEL, T_CLIMAX, x, 3.5)
-    # the climax: back to both ends, charge in, meet over the rock, out, in again, wheel over the summit
+    # the laughter: they whirl over the whole house
+    for k in range(8):
+        whirl = c + (500 + 250 * (k % 2)) * np.sin(2 * np.pi * ((t - T_CLIMAX) / 4.0 + k / 8))
+        put(k, T_CLIMAX, T_CHARGE, np.clip(whirl, lo, hi), 6.0)
+    # each peal of laughter: back to both ends, the laughers charge in to meet over the rock; then Willkommen
+    peals = [ln[0] for ln in EX['singing'] if T_CHARGE - 0.1 <= ln[0] < BURSTS[0] - 1.0] + [BURSTS[0] - 1.0]
     for k in range(8):
         side = -1 if k < 4 else 1
         end = (lo + 35 * k) if side < 0 else (hi - 35 * (7 - k))
         meet = c + side * (12 + 14 * (k % 4))
-        marks = [(T_CLIMAX, end), (56.9, end), (BURSTS[0], meet), (61.3, end), (BURSTS[1], meet)]
+        marks = [(T_CHARGE, end)]
+        for a, b in zip(peals[:-1], peals[1:]):
+            marks += [(a + 0.2, end), (a + 0.2 + 0.6 * (b - a), meet), (b, end)]
+        marks += [(BURSTS[0] - 0.9, end), (BURSTS[0], meet), (BURSTS[0] + 0.9, end), (BURSTS[1], meet)]
         ts, ds = zip(*marks)
-        put(k, T_CLIMAX, BURSTS[1], np.interp(t, ts, ds), 9.0)
-        whirl = c + 300 * np.sin(2 * np.pi * ((t - BURSTS[1]) / 3.0 + k / 8))
+        put(k, T_CHARGE, BURSTS[1], np.interp(t, ts, ds), 9.0)
+        whirl = c + 300 * np.sin(2 * np.pi * ((t - BURSTS[1]) / 2.5 + k / 8))
         put(k, BURSTS[1], T_GATHER, whirl, 7.0)
         put(k, T_GATHER, D, home[k], 6.0)
     pos = np.array([follow(tgt[k], rate[k]) for k in range(8)])
     lift = smoothstep(0.0, 1.0, t) * (1 - smoothstep(T_GATHER, T_GATHER + 2.6, t))
     pos = home + (pos - home) * lift                      # exact in their places at both ends
-    bpos = at(G, 'Right', 1.0) + 40 - 120 * smoothstep(T_SEE + 1.0, D, t) ** 0.8
+    bpos = at(G, 'Right', 1.0) + 40 - 330 * smoothstep(T_SEE + 1.0, D, t) ** 0.8
     return dict(t=t, pos=pos, bpos=bpos)
 
 
@@ -248,13 +247,16 @@ def render(G, seed=21):
     jag = [0.55 + 0.45 * np.random.default_rng(100 + k).random(G.N) for k in range(8)]
     seg_d = {s: (G.pd[G.seg[s]].min(), G.pd[G.seg[s]].max()) for s in G.seg}
     c = at(G, 'Porch Front', 0.5)
-    ride = np.array([e[0] for e in N if e[4] in ('ride', 'valk')])
-    longs = np.array([e[0] for e in N if e[4] in ('ride', 'valk') and e[1] >= 0.5 * RB * 1.5])
-    desc = [e[0] for e in N if e[4] == 'descent' and e[2] >= note('B4')]
-    trill = np.array([e[0] for e in N if e[4] == 'trill' and e[2] >= note('B4')])
+    ride = np.array(sorted({e[0] for e in N if e[4] == 'ride'}))
+    longs = np.array(sorted({e[0] for e in N if e[4] == 'ride' and e[1] >= 0.5}))
+    desc = []
+    for e in N:
+        if e[4] == 'desc' and (not desc or e[0] - desc[-1] > 0.25):
+            desc.append(e[0])
+    trill = np.array(sorted({e[0] for e in N if e[4] == 'trill' and e[2] >= 71}))
     cries = [np.array([e[0] for e in N if e[4] in ('cry', 'name') and e[5] == k]) for k in range(8)]
     names = np.array([e[0] for e in N if e[4] == 'name'])
-    far = np.array([e[0] for e in N if e[4] == 'far'])
+    far = np.array(accents(T_SEE, D, 90, 3, 0.4))
     tw = Flicker(rng, G.N, 3.0, 9.0)
     sp = rng.random(G.N)
 
@@ -283,7 +285,7 @@ def render(G, seed=21):
         # the Ride: gusts through the clouds on its long notes
         g = last(longs, t, 0.35)
         gust = 0.5 + 0.5 * np.cos(2 * np.pi * (d / 520 + 0.9 * tt))
-        ridef = 1 - smoothstep(T_SEE - 0.5, T_SEE + 1.0, t)
+        ridef = 1.0
         fr += light(STORM, 0.55 * g * gust ** 2 * wing * ridef)
         tr = last(trill, t, 0.12, 0.5)
         if tr > 0:
@@ -323,7 +325,7 @@ def render(G, seed=21):
 
         # the crossings: a burst of white over the rock each time the two groups pass through each other
         for kx in range(5):
-            tx = T_CROSS + 0.34 * 8 + 0.5 + 4.5 * kx
+            tx = T_CROSS + 0.34 * 8 + 0.5 + 3.0 * kx
             if tx <= t < tx + 1.0 and tx < T_CAROUSEL:
                 age = t - tx
                 fr += light(WHITE, 0.6 * np.exp(-age / 0.2) * blob(c, 120))
@@ -383,143 +385,57 @@ def render(G, seed=21):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes: the Ride's long notes on horns, trumpets and trombones, its whirling figures on strings and
+    woodwinds, the bass on cellos, basses and tuba; timpani on the accents, cymbals on the great moments."""
+    o = Orchestra(M, level=1.5)
+
+    def role(t, d, m, v, hand):
+        if hand == 0 and d >= 0.3 and 62 <= m < 86:              # the theme's long notes up top: brass with the violins
+            return [('violins', 0, -6, 0.5), ('trumpets', 0, -10, 0.45), ('horns', -12, -4, 0.55)]
+        return None
+
+    o.tutti(EX['notes'], role=role)
+    o.effects([(0.0, -2), (T_CROSS - 0.5, -2), (T_CROSS + 0.5, -6), (T_CAROUSEL - 0.5, -6), (T_CAROUSEL + 0.5, -10),
+               (T_CLIMAX - 0.5, -10), (T_CLIMAX + 0.5, -4), (BURSTS[0] - 0.5, 0), (BURSTS[1] + 1.0, 0),
+               (T_GATHER + 1.0, -7), (T_SEE, -7), (T_SEE + 2.0, -3), (D, -2)])
+    for t in accents(0.0, D, 105, 4, 0.9):
+        o.hit('timpani', t, 110, pitch=-4, gain=0.45)
+    for t in [T_CROSS, T_CAROUSEL, T_CLIMAX, T_GATHER, T_SEE] + BURSTS:
+        o.hit('crash', t, 115, gain=0.5)
+    for t in BURSTS:
+        o.hit('bass drum', t, 120, gain=0.6)
+        o.hit('gong', t, 110, gain=0.4)
+    # the staging: storm wind, the herd's hoofbeats under every gallop, thunder with every strike, a rush of air
+    # for every crossing and thrown cry, a boom where the charges meet, Brünnhilde's horse coming from afar
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
-    x0, x1 = xs.min(), xs.max()
-
-    def pan_at(dd):
-        x = np.interp(dd, ds, xs)
-        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
-
+    pan_at = lambda dd: float(0.85 * (2 * (np.interp(dd, ds, xs) - xs.min()) / (xs.max() - xs.min()) - 1))
     C = choreography(G)
-
-    def pan_of(k, t):
-        return pan_at(np.interp(t, C['t'], C['pos'][k]))
-
-    def spread(t):
-        """The centre of the eight, for the orchestra's sound."""
-        return pan_at(float(np.mean([np.interp(t, C['t'], C['pos'][k]) for k in range(8)])))
-
-    for name, gain, rev in (('brass', 0.12, 0.28), ('low', 0.12, 0.18), ('strings', 0.11, 0.3), ('winds', 0.09, 0.3),
-                            ('cries', 0.13, 0.35), ('perc', 0.13, 0.25), ('fx', 0.06, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/stac/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    snare = M.hits('Percussion/Snare2-taps_v[1-3]*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    seg_mid = {s: float(G.pd[G.seg[s]].mean()) for s in G.seg}
-    rock = pan_at(at(G, 'Porch Front', 0.5))
-    right = pan_at(G.length)
-    for t, d, m, v, part, who in compose():
-        if part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.3), t, 0.7, rock)
-        elif part == 'trill':
-            hi = m >= note('B4')
-            M.add('winds', (pic if hi else cl).play(m if hi else m + 12, v), t, 0.7 if hi else 0.5, -0.4 if hi else 0.4)
-            if hi:
-                M.add('strings', vns.play(m - 12, v - 10), t, 0.4, 0.3)
-        elif part == 'ride':
-            sp = spread(t)
-            M.add('brass', horn.play(m, v, dur=d, release=0.15), t, 0.85, sp)
-            M.add('brass', horn.play(m, v - 8, dur=d, release=0.15), t, 0.5, -sp)
-            M.add('brass', tpt.play(m + 12, v - 18, dur=d, release=0.15), t, 0.35, sp * 0.6)
-            M.add('brass', tbn.play(m - 12, v - 6, dur=d, release=0.15), t, 0.6, 0.0)
-            M.add('low', tuba.play(m - 24, v - 10, dur=d, release=0.15), t, 0.5, 0.0)
-        elif part == 'gallop':
-            M.add('low', cbs.play(m + 12, v), t, 0.7, -0.25)
-            M.add('low', vcs.play(m + 12, v - 6), t, 0.6, 0.25)
-            M.add('low', bsn.play(m + 12, v - 12), t, 0.4, 0.0)
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=-4), t, 0.6, rock)
-        elif part == 'descent':
-            if m >= note('B4'):
-                M.add('strings', vn.play(m - 12, v, dur=d, release=0.2), t, 0.5, 0.2)
-                M.add('brass', tpt.play(m - 12, v - 20, dur=d, release=0.2), t, 0.35, -0.2)
-            elif m >= note('A3'):
-                M.add('brass', horn.play(m, v - 6, dur=d, release=0.2), t, 0.6, 0.0)
-            else:
-                M.add('brass', tbn.play(m, v - 6, dur=d, release=0.3), t, 0.7, 0.0)
-                M.add('low', tuba.play(m - 12, v - 12, dur=d, release=0.3), t, 0.5, 0.0)
-        elif part == 'valk':
-            sp = spread(t)
-            if m >= note('Eb5'):
-                M.add('brass', tpt.play(m - 12, v - 8, dur=d, release=0.2), t, 0.6, sp)
-                M.add('strings', vn.play(m - 12, v - 10, dur=d, release=0.2), t, 0.5, -sp)
-            elif m >= note('Eb4'):
-                M.add('brass', horn.play(m - 12 if m >= note('A4') else m, v, dur=d, release=0.2), t, 0.8, sp)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d, release=0.2), t, 0.7, 0.0)
-                M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.2), t, 0.5, 0.0)
-        elif part == 'drive':
-            M.add('low', vcs.play(m + 12, v), t, 0.55, -0.2)
-            M.add('low', cbs.play(m + 12, v - 6), t, 0.45, 0.2)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.7, rock)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.7, rock)
-        elif part == 'cry':
-            pa = pan_of(who, t)
-            M.add('cries', tpt.play(m, v, dur=d, release=0.2), t, 0.9, pa)
-            M.add('cries', horn.play(m, v - 14, dur=d, release=0.2), t, 0.5, pa)
-        elif part == 'surge':
-            M.add('perc', roll.play(v, dur=d), t, 0.8, rock)
-            M.add('fx', whoosh(d, 300, 4000, 0.6, seed=int(t * 10)), t, 0.8, 0.0)
-        elif part == 'burst':
-            M.add('perc', gong.play(v), t, 0.8, rock)
-            M.add('perc', crash.play(v), t, 0.9, rock)
-            M.add('perc', bd.play(v), t, 0.9, rock)
-        elif part == 'cadence':
-            s = tuba if m < note('F#2') else (tbn if m < note('D3') else horn)
-            hold('brass', s, m + (12 if s is tuba else 0), t, t + d, v, 0.0, rise=0.05, fall=1.2, gain=0.55)
-            if m >= note('B2'):
-                hold('strings', vtrem, m + 12, t, t + d, v - 10, 0.0, rise=0.05, fall=1.2, gain=0.3)
-        elif part == 'sight':
-            hold('strings', vtrem, m + 12, t, t + d, v, right * 0.5, rise=1.5, fall=1.0, gain=0.45)
-            hold('low', trem, m, t, t + d, v, 0.0, rise=1.5, fall=1.0, gain=0.4)
-        elif part == 'name':
-            pa = pan_of(who, t)
-            M.add('cries', horn.play(m, v, dur=d, release=0.25), t, 0.9, pa)
-            M.add('cries', tpt.play(m, v - 20, dur=d, release=0.25), t, 0.4, pa)
-        elif part == 'far':
-            M.add('cries', tpt.play(m, v, dur=d, release=0.2), t, 0.55, right)
-        elif part == 'hoof':
-            M.add('perc', snare.play(v), t, 0.5, right)
-        elif part == 'thunder':
-            pt = rock if where_all(who) else pan_at(seg_mid[who])
-            M.add('perc', bd.play(v), t, 0.6, pt)
-            M.add('perc', roll.play(v - 40, dur=d), t + 0.1, 0.4, pt)
-            M.add('fx', whoosh(1.0, 2500, 200, 0.5, seed=int(t * 10) + 3), t, 0.5, pt)
-
-
-def where_all(w):
-    return w == 'all'
+    c = at(G, 'Porch Front', 0.5)
+    pk = lambda k: (lambda t: pan_at(np.interp(t, C['t'], C['pos'][k])))
+    WH = {'Right': 0.8, 'Left': -0.7, 'Side': -0.9, 'all': 0.0}
+    o.wind(0.0, D, level=lambda tt: 0.6 - 0.25 * smoothstep(T_GATHER, T_GATHER + 3, tt), pan=0.0)
+    for k, v in ((0, 104), (7, 96), (4, 98)):                    # the herd: the head, the tail, and one between
+        o.gallop(0.0, T_GATHER + 1.0, beat=1.5 * RB, pan=pk(k), v=v, gain=0.55)
+    for ts, where in STRIKES:
+        o.thunder(ts, near=1.0 if where == 'all' else 0.75, pan=WH[where], gain=1.0 if where == 'all' else 0.85)
+    pc = pan_at(c)
+    for kx in range(5):                                          # the crossings over the rock
+        tx = T_CROSS + 0.34 * 8 + 0.5 + 3.0 * kx
+        if tx < T_CAROUSEL:
+            o.M.add('fx', whoosh(0.8, 600, 5000, 0.8, seed=kx + 1), tx - 0.4, 0.8, pc)
+            o.hit('crash', tx, 90, gain=0.3, pan=pc, fx=True)
+    for (t0, a, b) in TOSSES:                                    # a cry thrown from one sister to another
+        pa, pb = pk(a)(t0), pk(b)(t0 + 0.6)
+        o.M.add('fx', whoosh(0.6, 1500, 6000, 0.5, seed=int(t0 * 10)), t0, 0.5, 0.5 * (pa + pb))
+    peals = [ln[0] for ln in EX['singing'] if T_CHARGE - 0.1 <= ln[0] < BURSTS[0] - 1.0] + [BURSTS[0] - 1.0]
+    for a, b in zip(peals[:-1], peals[1:]):                      # each peal of laughter: the charge, the meeting
+        tm = a + 0.2 + 0.6 * (b - a)
+        o.M.add('fx', whoosh(tm - a, 300, 3000, 0.7, seed=int(a * 10)), a + 0.2, 0.6, 0.0)
+        o.boom(tm, pc, 0.55)
+    for t in BURSTS:
+        o.boom(t, pc, 0.9)
+    o.boom(T_GATHER, pc, 0.5)
+    pbr = lambda t: pan_at(np.interp(t, C['t'], C['bpos']))      # Brünnhilde riding hard toward them
+    o.gallop(T_SEE + 0.5, D, beat=0.4, pan=pbr, v=112, gain=0.9)

@@ -1,22 +1,29 @@
-"""Valhalla: out of the river's mist the faint circle of the Ring's beads still turns over the porch, and the
-Ring motif (Donington 8, then its undercurrent, 8a) goes on in the horns, slower each time, its notes
-smoothing out until they become something else: the Valhalla motif (63), in D flat, on trombones and tubas.
-As it sounds the beads stop turning and settle into towers, and the castle gleams across the porch: Porch
-Left, Porch Front and Porch Right lit as white-gold battlements, each chord of the brass a pulse through the
-masonry, the walls spreading out from the keep and growing brighter as the brass grows.
+"""Valhalla: out of the river's mist the faint circle of the Ring's beads still turns over the porch, slower and
+slower, until they settle into towers and the castle gleams across the porch: Porch Left, Porch Front and Porch
+Right lit as white-gold battlements, each chord of the brass a pulse through the masonry, the walls spreading out
+from the keep and growing brighter as the brass grows.
+
+The music is Wagner's own, as Solti's 1958 Vienna Philharmonic recording takes it: the last of the transformation
+after the theft (bars 758-759), the Valhalla motif as the curtain rises on the mountain top (768-774), its
+cadence and Fricka's "Wotan, Gemahl! Erwache!" (787-790), and Wotan's hail to the finished castle, "steht er zur
+Schau: hehrer, herrlicher Bau!", rising to its fortissimo (818-825). The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py): the transformation's arpeggios on clarinets, harp and violins,
+Valhalla's chords as a brass chorale (horns on top, trombones in the middle, tuba and basses below, trumpets
+joining for the hail), the hail's moving inner parts on violas and violins, Fricka's waking on oboe and
+violas; timpani on the chorale's strong chords, a cymbal swell as the castle first stands and a crash on the
+last fortissimo.
 
 Dawn comes up over a mountain meadow on the wings, the mist thinning into a blue-violet morning, and two
 sleepers show in it on Left: Wotan, deep royal blue, and Fricka, rose silver, breathing slowly. Fricka wakes
-first to her own call on oboe and violas, rises, sees the castle and goes to shake him: three nudges of rose
-against blue. Wotan stirs, still dreaming it, the motif on a muted horn; then he sees it finished, stands,
-and hails it in a full statement of Valhalla for the whole brass with timpani: every chord sends a sweep of
-white-gold from the castle out over the meadow to both ends of the house, and his blue rises to meet it.
+on the orchestra's surge, rises, sees the castle and goes to shake him on her call: three nudges of rose
+against blue. Wotan stirs, stands, and hails his castle: every strong chord of the brass sends a sweep of
+white-gold from the castle out over the meadow to both ends of the house, his blue rises to meet it, and on
+the last fortissimo the whole house flashes.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, accents, excerpt
 
 CODE = 'RG06'
 TITLE = 'Valhalla'
@@ -27,17 +34,18 @@ DESCRIPTION = ('Out of the mist the shape of the Ring becomes a castle, gleaming
 VOICEOVER = ('High on a mountain, morning comes up over a castle that was not there yesterday. '
              'Two giants built it. Nobody has paid them yet.')
 
-T_RING = 0.3                                # the Ring, going on, round D flat
-T_UNDER = 8.5                               # its undercurrent, slower, smoothing out
-T_VAL = [15.0, 22.0]                        # Valhalla, soft, then fuller
-VBEAT = 0.8
-T_FRICKA = 29.0                             # Fricka wakes
-NUDGES = [35.5, 36.5, 37.5]                 # she shakes him
-T_DREAM = 39.0                              # Wotan stirs, dreaming of it
-T_HAIL = 48.0                               # "Vollendet das ewige Werk!"
+EX = excerpt(__file__)                      # bars 758-759, 768-774, 787-790, 818-825, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [sg['start'] for sg in EX['segments']] + [EX['seconds']]
+T_VAL = [SEG[1], BAR[772]]                  # Valhalla, soft, then fuller
+T_FRICKA = BAR[788]                         # the orchestra surges: Fricka wakes
+NUDGES = [46.47, 47.35, 48.22]               # "Wotan, Gemahl! Erwache!": she shakes him
+T_DREAM = 50.0                              # Wotan stirs
+T_HAIL = SEG[3]                             # "steht er zur Schau: hehrer, herrlicher Bau!"
 HBEAT = 0.85
-T_CADENCE = T_HAIL + 16 * HBEAT
-D = 80.0
+T_CADENCE = BAR[825] - 4 * HBEAT            # so that T_CADENCE + 4 * HBEAT is the last fortissimo
+D = EX['seconds']
+LEVEL = 2.1
 
 WOTAN, FRICKA = 0, 1
 BLUE = hexc('#1a3cff')
@@ -60,64 +68,20 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
-def chords(key, t0, beat, transpose=0):
-    """The motif's chords: [(time, seconds, [midi])], one per onset."""
-    ev = {}
-    for b, d, n in MOTIFS[key]['notes']:
-        ev.setdefault(b, []).append((d, note(n) + transpose))
-    return [(t0 + b * beat, max(d for d, _ in ev[b]) * beat, sorted(m for _, m in ev[b])) for b in sorted(ev)]
-
-
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The transformation is the
+    Ring ('ring', its bass 'ringbass'); Valhalla's chords are 'val' (who = 0 soft, 1 fuller, and its cadence);
+    Fricka's waking and call are 'fricka' (her line) and 'fbass'; the hail is 'hail' (WOTAN)."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for t, m, v, d in play('ring', T_RING, 0.85, -6, 74):                      # RG05's Ring once more, slower
-        add(t, d, m, v, 'ring' if m > note('C3') else 'ringbass')
-    for t, m, v, d in play('ring_under_eb', T_UNDER, 0.8, -2, 70):              # smoothing out, in D flat
-        add(t, d * 1.1, m, v, 'ring' if m > note('C3') else 'ringbass')
-    add(0.0, T_VAL[0] + 1, 'Db2', 60, 'pedal')
-    for m in ('Ab4', 'Db5', 'F5'):
-        add(4.0, T_HAIL - 4.0, m, 50, 'dawn')
-    for k, tv in enumerate(T_VAL):                                              # Valhalla, soft, then fuller
-        for t, d, ms in chords('valhalla', tv, VBEAT):
-            for m in ms:
-                add(t, d * 1.05, m, (72, 86)[k], 'val', k)
-    for k in range(int((T_HAIL - T_FRICKA) / 1.2)):                             # the meadow at morning: harp
-        for j, m in enumerate(('Db3', 'Ab3', 'F4', 'Ab3')):
-            add(T_FRICKA - 1 + k * 1.2 + j * 0.3, 1.0, note(m) + (0, 0, 5, 7, 0, 0)[k % 6] * (j == 2), 60, 'harp')
-    call = [(0, .5, 'Ab3'), (.5, .5, 'Db4'), (1, 1.5, 'F4'), (3, .5, 'Eb4'), (3.5, 1.5, 'Db4'),
-            (5.5, .5, 'F4'), (6, .5, 'Gb4'), (6.5, 2, 'Ab4'), (9, 1, 'Bb4'), (10, 1, 'Ab4'), (11, 2, 'F4')]
-    for b, d, n in call:                                                        # "Wotan, husband, wake up!"
-        add(T_FRICKA + b * 0.5, d * 0.5, n, 92, 'fricka', FRICKA)
-    for t0, ch in ((0, ('Db3', 'F3')), (3, ('Gb2', 'Bb3')), (6, ('Db3', 'Ab3')), (9, ('Gb2', 'Db4'))):
-        for m in ch:
-            add(T_FRICKA + t0 * 0.5, 3 * 0.5 * 1.1, m, 66, 'fpad')
-    for i, tn in enumerate(NUDGES):
-        add(tn, 0.4, ('F4', 'Ab4', 'Db5')[i], 96, 'fricka', FRICKA)
-        add(tn, 0.3, 'Db2', 80, 'nudge')
-    for t, m, v, d in play('valhalla', T_DREAM, 0.95, 0, 70, line='melody'):   # dreaming of it
-        add(t, d, m, v, 'dream', WOTAN)
-    add(T_DREAM + 4, T_HAIL - T_DREAM - 4, 'Ab1', 70, 'roll')
-    for k in range(2):                                                          # the full statement, twice
-        for t, d, ms in chords('valhalla', T_HAIL + k * 8 * HBEAT, HBEAT, 0 if k == 0 else 0):
-            for m in ms:
-                add(t, d * 1.02, m, 104 + 8 * k, 'hail', WOTAN)
-            add(t, 0.6, ms[0], 100 + 8 * k, 'timp')
-    cad = [(0, 2, ('Gb2', 'Db3', 'Bb3', 'Gb4')), (2, 2, ('Ab2', 'Eb3', 'C4', 'Ab4')),
-           (4, 6, ('Db2', 'Ab2', 'F3', 'Db4', 'F4', 'Ab4'))]
-    for b, dd, ch in cad:                                                       # and a cadence that glows
-        for m in ch:
-            add(T_CADENCE + b * HBEAT, dd * HBEAT, m, 100, 'hail', WOTAN)
-            if b == 4:
-                add(T_CADENCE + b * HBEAT, D - T_CADENCE - b * HBEAT, m, 84, 'glow')
-        add(T_CADENCE + b * HBEAT, 0.6, ch[0], 96, 'timp')
-    add(T_CADENCE + 4 * HBEAT, 1.5, 'Db5', 92, 'cym')
-    for m in ('Db4', 'F4', 'Ab4', 'Db5'):
-        add(T_CADENCE + 4 * HBEAT, D - T_CADENCE - 4 * HBEAT, m, 60, 'shine')
+    for t, d, m, v, h in EX['notes']:
+        if t < SEG[1]:
+            N.append((t, d, m, v, 'ring' if h == 0 else 'ringbass', None))
+        elif t < T_FRICKA:
+            N.append((t, d, m, v, 'val', 0 if t < T_VAL[1] else 1))
+        elif t < T_HAIL:
+            N.append((t, d, m, v, 'fricka' if h == 0 else 'fbass', FRICKA))
+        else:
+            N.append((t, d, m, v, 'hail', WOTAN))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -173,8 +137,8 @@ def render(G, seed=6):
     stone = 0.88 + 0.12 * rng.uniform(-1, 1, G.N)           # masonry: every block a little different
     rings = np.array([e[0] for e in N if e[4] == 'ring'])
     far = np.clip(np.where(d < p0, p0 - d, np.where(d > p1, d - p1, 0.0)) / 520, 0, 1)   # meadow: away from the castle
-    vchords = sorted({round(e[0], 4) for e in N if e[4] == 'val'})
-    hchords = sorted({round(e[0], 4) for e in N if e[4] == 'hail'})
+    vchords = accents([e for e in N if e[4] == 'val'], n=3, space=0.5)
+    hchords = accents([e for e in N if e[4] == 'hail'], n=3, space=0.5)
     fr_notes = np.array([e[0] for e in N if e[4] == 'fricka'])
     dream = np.array([e[0] for e in N if e[4] == 'dream'])
     tw = Flicker(rng, G.N, 0.3, 1.2)
@@ -279,7 +243,7 @@ def render(G, seed=6):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes as a brass chorale over the strings, with timpani on the chorale's strong chords."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -290,97 +254,50 @@ def score(M, G):
 
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
+    pl, pr = pan_at(at(G, 'Porch Left', 0.5)), pan_at(at(G, 'Porch Right', 0.5))
+    N = compose()
+    o = Orchestra(M, level=LEVEL)
 
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C['pos'][who]))
 
-    for name, gain, rev in (('strings', 0.13, 0.35), ('low', 0.16, 0.2), ('brass', 0.16, 0.32), ('winds', 0.17, 0.35),
-                            ('perc', 0.18, 0.3), ('harp', 0.16, 0.45), ('choir', 0.08, 0.5)):
-        M.bus(name, gain=gain, reverb=rev)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
-    susc = M.hits('Percussion/susCymb1-cresc-Median*.wav')
+    def chorale(t, d, m, v, loud):
+        pan = (pl, pf, pr)[m % 3]
+        if d < 0.45:                                    # the moving inner parts: strings
+            o.play('violins' if m >= 62 else 'violas', m, t, d, v - 4, pan, 0.5)
+        elif m >= 56:
+            o.play('horns', m, t, d, v + 6, pan, 0.8)
+            if loud and m >= 61:
+                o.play('trumpets', m, t, d, v - 6, pan, 0.4)
+                o.play('violins', m + 12, t, d, v - 14, -pan, 0.3)
+        elif m >= 49:
+            o.play('trombones', m, t, d, v + 6, pan, 0.8)
+        else:
+            o.play('tuba', m + (12 if m < 37 else 0), t, d, v + 6, 0.0, 0.75)
+            o.play('basses', m, t, d, v - 4, 0.0, 0.5)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    pl, pr = pan_at(at(G, 'Porch Left', 0.5)), pan_at(at(G, 'Porch Right', 0.5))
-    for t, d, m, v, part, who in compose():
-        if part == 'ring':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.5), t, 0.85, pf)
-            M.add('winds', cl.play(m, v - 16, dur=d * 1.05, release=0.5), t, 0.5, pf + 0.2)
+    for t, d, m, v, part, who in N:
+        if part == 'ring':                              # the transformation: the arpeggios
+            o.play('clarinets', m, t, d, v, pf + 0.2, 0.5)
+            o.play('harp', m, t, d, v, pf - 0.2, 0.5)
+            o.play('violins', m, t, d, v - 10, pf, 0.3)
         elif part == 'ringbass':
-            hold('low', vc, m, t, t + d, v, 0.0, rise=1.0, fall=1.0, gain=0.7)
-        elif part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=2.0, fall=2.0, gain=0.7)
-        elif part == 'dawn':
-            hold('strings', vtrem, m, t, t + d, v, {68: -0.4, 73: 0.0, 77: 0.4}.get(m, 0.0), rise=10.0, fall=2.0,
-                 gain=0.4)
-        elif part in ('val', 'hail'):
-            loud = part == 'hail'
-            pan = (pl, pf, pr)[m % 3]
-            if m >= note('Ab3'):
-                M.add('brass', horn.play(m, v, dur=d, release=0.5), t, 0.75, pan)
-                if loud and m >= note('Db4'):
-                    M.add('brass', tpt.play(m, v - 12, dur=d, release=0.5), t, 0.45, pan)
-                    M.add('strings', vn.play(m + 12, v - 20, dur=d, release=0.5), t, 0.35, -pan)
-            elif m >= note('Db3'):
-                M.add('brass', tbn.play(m, v, dur=d, release=0.5), t, 0.8, pan)
-                if loud:
-                    M.add('strings', va.play(m + 12, v - 16, dur=d, release=0.5), t, 0.35, pan)
-            else:
-                M.add('low', tuba.play(m + (12 if m < note('Db2') else 0), v, dur=d, release=0.6), t, 0.85, 0.0)
-                M.add('low', cb.play(m, v - 10, dur=d, release=0.5), t, 0.6, 0.0)
-                if loud or who == 1:
-                    M.add('low', tbn.play(m + 12, v - 10, dur=d, release=0.5), t, 0.5, 0.0)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, pan_at(at(G, 'Left', 0.2)) + 0.5 * (m - 49) / 20)
-        elif part == 'fricka':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.25), t, 1.0, pan_of(who, t))
-            M.add('strings', va.play(m, v - 12, dur=d * 1.05, release=0.3), t, 0.6, pan_of(who, t))
-        elif part == 'fpad':
-            hold('strings', vc if m < note('C3') else va, m, t, t + d, v, -0.3, rise=0.4, fall=0.8, gain=0.5)
-        elif part == 'nudge':
-            M.add('low', cb.play(m, v, dur=d, release=0.1), t, 0.8, pan_of(WOTAN, t))
-        elif part == 'dream':
-            M.add('brass', mute.play(m, v, dur=d * 1.05, release=0.5), t, 1.0, pan_of(who, t))
-            M.add('choir', M.synth('Pads/Ooh').render([(0.0, m, v - 20, d)], d + 1.5), t, 0.6, pan_of(who, t))
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.6, pf)
-        elif part == 'glow':
-            s = horn if m >= note('Ab3') else tbn if m >= note('Db3') else tuba
-            hold('brass', s, m + (12 if m < note('Db2') else 0), t, t + d - 1.5, v, (pl, pf, pr)[m % 3], rise=1.5,
-                 fall=1.5, gain=0.5)
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=(m % 12) - 7), t, 0.8, pf)
-        elif part == 'cym':
-            M.add('perc', crash.play(v), t, 0.8, 0.0)
-        elif part == 'shine':
-            hold('strings', vtrem, m, t, t + d, v, {61: -0.4, 65: -0.1, 68: 0.1, 73: 0.4}.get(m, 0.0), rise=1.0,
-                 fall=1.0, gain=0.4)
-    M.add('perc', susc.play(90), T_HAIL - 3.2, 0.5, 0.0)
+            o.play('horns', m, t, d, v, pf, 0.5)
+            o.play('cellos', m, t, d, v - 6, 0.0, 0.5)
+        elif part == 'val':
+            chorale(t, d, m, v + 6 * who, False)
+        elif part == 'fricka':                          # Fricka wakes: her line on oboe and violas
+            o.play('oboes', m, t, d, v, pan_of(FRICKA, t), 0.7)
+            o.play('violas', m, t, d, v - 8, pan_of(FRICKA, t), 0.5)
+        elif part == 'fbass':
+            o.play('cellos', m, t, d, v, -0.2, 0.6)
+            if d > 0.5:
+                o.play('basses', m, t, d, v - 8, 0.2, 0.5)
+        elif part == 'hail':
+            chorale(t, d, m, v + 10, True)
+    for k, tc in enumerate(accents([e for e in N if e[4] == 'hail'], n=4, space=0.8)):
+        o.hit('timpani', tc, 100 + 2 * min(k, 10), pitch=-5, gain=0.45, pan=pf)
+    o.hit('cymbal swell', T_VAL[0] - 2.0, 80, gain=0.4, pan=pf)        # the castle stands
+    o.hit('cymbal swell', T_CADENCE + 4 * HBEAT - 3.2, 100, gain=0.5)  # into the last fortissimo
+    o.hit('crash', T_CADENCE + 4 * HBEAT, 118, gain=0.6)
+    o.hit('timpani roll', T_CADENCE + 4 * HBEAT, 112, pitch=-5, gain=0.5, pan=pf)

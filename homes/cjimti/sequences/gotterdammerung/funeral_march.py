@@ -1,44 +1,58 @@
 """Siegfried's Funeral March: night in the valley, the body lying in the middle of Porch Front with the torches close
-round it. The vassals lift him and the procession begins: a column of torches streams in from the free end of
-Right and marches the whole length of the house, step by step, out past the end of the Side, and keeps coming.
+round it. The vassals lift him and the procession begins: a column of torches streams in from the free end of Right
+and marches the whole length of the house, step by step, out past the end of the Side, and keeps coming.
 
-The march is his whole family's story, and each part of it takes the whole house. The death rhythm hammers on the
-timpani with the full orchestra in C minor, three strokes at a time: each a flash, then the house knocked almost
-black for a moment. The Volsungs' tragic destiny (Donington 66) rises on the Wagner tubas in waves of indigo out of
-the body. Siegmund (35) floods Left and the Side in Wälsung blue, Sieglinde (36) answers over Right and the river in
-amber, and the twins' love (37) sends blue in from one end and amber from the other to meet in a white flash over
-the body. The death rhythm again; then the Sword (45) on the trumpet, every note a white steel sweep the length of
-the house; Siegfried's own motif (53) at full strength, each note slamming a whole run emerald; his horn call
-turned into a vast slow statement for the whole brass, gold and emerald sweeping out to both ends over a crash of
-cymbals; and at the top Brünnhilde's motif (88), silver flooding every run. Then the death rhythm one last time,
-the colour sinks away, and the procession carries him on toward the hall in the dark.
+The death rhythm hammers in C minor: each stroke a flash, then the house knocked almost black for a moment. The Sword
+rises in C major, steel climbing in from both ends toward the body with white sweeps the length of the house, and
+Siegfried's own motif breaks out fortissimo: the house blazes emerald and gold, each chord slamming a whole run
+emerald, the death rhythm hammering through it. His horn call grows into a vast statement for the whole brass, gold
+and emerald sweeping out to both ends up to the B flat climax, and at the top Brünnhilde's music floods every run
+silver as the procession carries him on toward the hall.
+
+The music is Wagner's own: the Funeral March, Act III, bars 928 to 929, 955 to 958 and 968 to 975 as Solti's 1958
+Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): tuba,
+basses and cellos for the death rhythm and the bass, horns and trombones for the march's tunes, trumpets with the
+violins on top. Staged as in the theatre: timpani, bass drum and gong drive each stroke of the death rhythm home,
+cymbals crash at the climaxes, a cymbal swell rises into the B flat peak.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play, melody
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD26'
 TITLE = "Siegfried's Funeral March"
 KIND = 'show'
-DESCRIPTION = ("The vassals carry Siegfried's body through the night by torchlight, and his family's music fills "
-               'the house one part at a time: the Volsungs, his parents, the sword, the hero, his horn, his bride.')
+DESCRIPTION = ("The vassals carry Siegfried's body through the night by torchlight, to the real Funeral March: "
+               'the death rhythm, the sword, the hero, his horn grown vast, and his bride.')
 VOICEOVER = ('The vassals lift the hero onto their shields, and carry him home through the night.')
 
 K = 4                                       # this scene's place on Act III's shared clock: T = t + 80 K
-HAMMERS = [3.0, 13.5, 44.0, 71.0]           # the death rhythm: three strokes each, the third the longest
-VOLSUNG = [(5.0, 0), (15.5, 7)]             # the Volsungs' tragic destiny, the second time higher
-T_SIEGMUND = 25.0
-T_SIEGLINDE = 33.5
-T_TWINS = 37.0
-T_SWORD = 46.0
-T_SIEG = 51.0
-T_HORN = 55.5
-T_BRUNN = 62.0
-T_MARCH = (4.0, 70.0)                       # torches keep joining the column
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 928-930, 955-959 and 968-976, Solti 1958
+D = EX['seconds']
+SEG = [s_['start'] for s_ in EX['segments']] + [D]
+
+
+def when(m):
+    """Bar position m (as in the dataset) -> seconds into the excerpt."""
+    for s_ in EX['segments']:
+        a, b = s_['measures']
+        if a <= m <= b:
+            bars = [(x, y) for x, y in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bars], [y for _, y in bars]))
+    raise ValueError(m)
+
+
+VOLSUNG = []
+T_SWORD = SEG[1]                            # the Sword rising into C major
+T_SIEG = when(957)                          # Siegfried's motif, fortissimo
+T_STROKE2 = when(958)                       # the death rhythm hammers through it
+T_HORN = SEG[2]                             # his horn call grown vast, up to the B flat climax
+T_BRUNN = when(973)                         # Brünnhilde
+T_FADE = when(975.5)
+T_MARCH = (1.5, D - 6.0)                    # torches keep joining the column
 
 SIEGFRIED = hexc('#00ff40')
 GOLD = hexc('#ffaa00')
@@ -209,50 +223,47 @@ def panner(G):
     return pan_at
 
 
+def thin(ts, gap):
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
+
+
 def strokes():
-    """Every stroke of the death rhythm: (time, weight)."""
-    return [(t0 + o, w) for t0 in HAMMERS for o, w in ((0.0, 0.75), (0.4, 0.8), (0.8, 1.0))]
+    """Every stroke of the death rhythm, from the excerpt's loudest chords: (time, weight)."""
+    ts = accents(EX['notes'], 0.0, SEG[1], vmin=100, n=2, space=0.25)
+    ts += accents(EX['notes'], T_STROKE2, T_STROKE2 + 1.3, vmin=120, n=2, space=0.25)
+    bars = {round(y, 2) for _, y in EX['bars']}
+    return [(t, 1.0 if round(t, 2) in bars else 0.8) for t in ts]
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every event for the lights, from the excerpt's notes: (time, seconds, midi, velocity, part, k). The death
+    rhythm ('stroke'), the Sword's rise ('sword'), Siegfried's motif ('sieg'), the horn call's vast build ('horn')
+    and Brünnhilde ('brunn')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'C2', 60, 'trem')
+    notes = EX['notes']
     for t, w in strokes():
-        add(t, 0.6 if w < 1 else 1.6, 'C2', int(96 + 28 * w), 'stroke')
-        for m in ('C2', 'G2', 'C3', 'Eb3', 'G3'):
-            add(t, 0.35 if w < 1 else 1.4, m, int(80 + 30 * w), 'chord')
-    for k, (t0, tr) in enumerate(VOLSUNG):
-        for t, m, v, d in play('volsung_fate', t0, 0.55, tr - 12, 100 + 8 * k):
-            add(t, d, m, v, 'volsung', k)
-    for t, m, v, d in play('siegmund', T_SIEGMUND, 0.45, 0, 104):
-        add(t, d, m, v, 'siegmund')
-    for t, m, v, d in play('sieglinde', T_SIEGLINDE, 0.45, -12, 98):
-        add(t, d, m, v, 'sieglinde')
-    for t, m, v, d in play('twins_love', T_TWINS, 0.45, -12, 100):
-        add(t, d, m, v, 'twins')
-    for t, m, v, d in play('sword', T_SWORD, 0.6, 0, 118):
-        add(t, d, m, v, 'sword')
-    for t, m, v, d in play('siegfried', T_SIEG, 1.0, -12, 122):
-        add(t, d, m, v, 'sieg')
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.9, 0, 124):
-        add(t, d, m, v, 'horn')
-    add(T_HORN, 0.1, 'C1', 120, 'crash')
-    for t, m, v, d in play('brunnhilde', T_BRUNN, 0.7, -12, 112):
-        add(t, d, m, v, 'brunn')
-    for m in ('C2', 'G2', 'C3'):
-        add(HAMMERS[-1] + 2, D - HAMMERS[-1] - 2, m, 56, 'night')
+        N.append((t, 0.6, note('C2'), int(96 + 28 * w), 'stroke', w))
+    for t in thin([n[0] for n in notes if T_SWORD <= n[0] < T_SIEG and n[4] == 0], 0.35):
+        N.append((t, 0.5, note('C5'), 112, 'sword', None))
+    sieg = accents(notes, T_SIEG, T_STROKE2, vmin=100, n=2, space=0.35)
+    sieg += accents(notes, T_STROKE2 + 1.3, SEG[2], vmin=100, n=2, space=0.35)
+    for t in sieg:
+        N.append((t, 0.8, note('C4'), 120, 'sieg', None))
+    for t in accents(notes, T_HORN, T_BRUNN, vmin=100, n=2, space=0.6):
+        N.append((t, 0.8, note('Eb4'), 120, 'horn', None))
+    for t in accents(notes, T_BRUNN, D, vmin=100, n=2, space=0.6):
+        N.append((t, 0.8, note('F4'), 116, 'brunn', None))
     return sorted(N, key=lambda e: e[0])
 
 
 def body(G, t):
     """Where the body is at time t: carried a little way along the porch at the end."""
     a, b = at(G, *BODY_AT[0]), at(G, *BODY_AT[1])
-    return a + (b - a) * smoothstep(T_BRUNN, D - 3, t)
+    return a + (b - a) * smoothstep(T_BRUNN, D - 1, t)
 
 
 def marchers(S, t):
@@ -281,22 +292,20 @@ def render(G, seed=26):
     N = compose()
     runs = ['Left', 'Right', 'Porch Front', 'Side', 'Porch Left', 'Porch Right']
     st = strokes()
-    vol = [e for e in N if e[4] == 'volsung']
-    sm = melody('siegmund')
-    sl = melody('sieglinde')
-    tw = melody('twins_love')
-    sw = [(T_SWORD + b * 0.6, m) for b, _, m in melody('sword')]
-    sg = [(T_SIEG + b * 1.0, m) for b, _, m in melody('siegfried')]
-    hn = [(T_HORN + b * 0.9, m) for b, _, m in melody('siegfried_horn')]
-    br = [(T_BRUNN + b * 0.7, m) for b, _, m in melody('brunnhilde')]
+    vol, sm, sl, tw = [], [], [], []
+    T_SIEGMUND = T_SIEGLINDE = T_TWINS = 1e6
+    sw = [(e[0], e[2]) for e in N if e[4] == 'sword']
+    sg = [(e[0], e[2]) for e in N if e[4] == 'sieg']
+    hn = [(e[0], e[2]) for e in N if e[4] == 'horn']
+    br = [(e[0], e[2]) for e in N if e[4] == 'brunn']
     p_gu = at(G, *GUNTHER_AT[:2])
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        u = smoothstep(HAMMERS[-1], D - 3, t)
+        u = smoothstep(T_FADE, D, t)
         lv = {k: START[k] + (END[k] - START[k]) * u for k in START}
-        base = 1 - 0.4 * smoothstep(2, 6, t) * (1 - smoothstep(HAMMERS[-1] + 1, D - 4, t))
+        base = 1 - 0.4 * smoothstep(1, 4, t) * (1 - smoothstep(T_FADE, D, t))
         fr = scene(S, T, {k: v * base for k, v in lv.items()})
         pb = body(G, t)
 
@@ -343,6 +352,17 @@ def render(G, seed=26):
                 fr += light(STEEL, np.exp(-max(a - 0.6, 0) / 0.15) * (np.exp(-((d - x) / 110) ** 2)
                             + 0.7 * ((d < x) if j % 2 == 0 else (d > x)) * np.exp(-np.abs(d - x) / 500)))
 
+        # the Sword rising: steel climbing in from both ends toward the body
+        g = smoothstep(T_SWORD, T_SIEG, t) * (1 - smoothstep(T_SIEG, T_SIEG + 0.6, t))
+        if g > 0:
+            reach_ = (1 - g) * max(pb, L - pb)
+            fr += light(STEEL, 0.75 * g * smoothstep(reach_ - 60, reach_ + 60, np.abs(d - pb)) * (0.6 + 0.4 * np.sin(2 * np.pi * (d / 140 - 2 * t))))
+        # Siegfried's motif in C major: the house blazes emerald and gold, pulsing
+        g = (smoothstep(T_SIEG - 0.3, T_SIEG + 0.4, t) * (1 - smoothstep(T_STROKE2 - 0.1, T_STROKE2 + 0.1, t))
+             + smoothstep(T_STROKE2 + 1.3, T_STROKE2 + 1.8, t) * (1 - smoothstep(SEG[2] - 0.5, SEG[2] + 0.5, t)))
+        if g > 0:
+            fr += light(SIEGFRIED, 0.6 * g * (0.65 + 0.35 * np.sin(2 * np.pi * (d / 300 - 0.8 * t))))
+            fr += light(GLINT, 0.4 * g * np.clip(np.sin(2 * np.pi * (d / 180 + 1.1 * t)), 0, 1) ** 3)
         # Siegfried: each note slams a whole run emerald, and an emerald ring goes out
         for j, (t0, m) in enumerate(sg):
             a = t - t0
@@ -355,11 +375,11 @@ def render(G, seed=26):
             fr = ring(fr, S, t, t0, pb, GLINT, 1.0, speed=1200, width=180, tau=1.0)
             fr = ring(fr, S, t, t0 + 0.15, pb, SIEGFRIED, 0.9, speed=1000, width=120, tau=0.9)
         a = t - T_HORN
-        if 0 <= a < 5.5:
-            fr += light(GOLD, 0.7 * np.exp(-a / 1.5) * (0.7 + 0.3 * np.sin(2 * np.pi * (d / 250 - 1.2 * t))))
+        if 0 <= a < T_BRUNN - T_HORN:
+            fr += light(GOLD, 0.7 * np.exp(-a / 6.0) * (0.7 + 0.3 * np.sin(2 * np.pi * (d / 250 - 1.2 * t))))
 
         # Brünnhilde: silver flooding every run at the top
-        g = smoothstep(T_BRUNN, T_BRUNN + 2, t) * (1 - smoothstep(T_BRUNN + 5.5, HAMMERS[-1], t))
+        g = smoothstep(T_BRUNN, T_BRUNN + 2, t) * (1 - smoothstep(T_FADE, D, t))
         fr += light(SILVER, 0.7 * g * (0.65 + 0.35 * np.sin(2 * np.pi * (d / 330 - 0.5 * t))))
         for t0, m in br:
             fr = ring(fr, S, t, t0, pb, SILVER, 0.9, speed=1000, width=150, tau=1.0)
@@ -375,7 +395,7 @@ def render(G, seed=26):
 
         # the procession, and the torches round the body
         fr += light(TORCH, np.clip(marchers(S, t), 0, 1.2))
-        mid = smoothstep(4, 10, t) * (1 - smoothstep(HAMMERS[-1], D - 3, t))
+        mid = smoothstep(2, 8, t) * (1 - smoothstep(T_FADE, D, t))
         (l0, k0), (l1, k1) = TORCHES
         tl = l0 + (l1 - l0) * u - 0.25 * mid
         fr = torches(fr, S, T, tl, pull=pb, k=k0 + (k1 - k0) * u)
@@ -389,87 +409,31 @@ def render(G, seed=26):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes from the piano reduction on the full orchestra, brass-heavy as the march is, with the death
+    rhythm's strokes driven home by timpani, bass drum and gong, and cymbals at the climaxes."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.24, 0.25), ('strings', 0.21, 0.32), ('brass', 0.23, 0.3), ('perc', 0.24, 0.3),
-                            ('winds', 0.2, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    o = Orchestra(M, level=1.75)
     sf = pan_at(at(G, *BODY_AT[0]))
-    left, right = pan_at(at(G, 'Left', 0.4)), pan_at(at(G, 'Right', 0.6))
-    for t, d, m, v, part, k in compose():
-        if part == 'trem':
-            hold('low', ctrem, m, t, t + d, v, 0.0, rise=2.0, fall=2.0, gain=0.45)
-        elif part == 'stroke':
-            M.add('perc', timp.play(v, pitch=-5), t, 1.0, sf)
-            if d > 1:
-                M.add('perc', gong.play(100), t, 0.6, sf)
-                M.add('perc', roll.play(90, pitch=-5, dur=1.4), t + 0.1, 0.5, sf)
-        elif part == 'chord':
-            s = tuba if m < note('C3') else tbn if m < note('G3') else horn
-            M.add('brass', s.play(m, v, dur=d, release=0.4), t, 0.6, sf)
-        elif part == 'volsung':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, sf, rise=0.3, fall=1.0, gain=0.75)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, sf)
-            M.add('low', tuba.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.6, sf)
-        elif part == 'siegmund':
-            if d > 1.0:
-                hold('strings', vc, m, t, t + d, v, left, rise=0.3, fall=1.0, gain=0.8)
-            else:
-                M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, left)
-            M.add('brass', horn.play(m, v - 20, dur=d * 1.05, release=0.3), t, 0.4, left)
-        elif part == 'sieglinde':
-            s = oboe if m >= note('D4') else vc
-            M.add('winds' if s is oboe else 'strings', s.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, right)
-        elif part == 'twins':
-            if d > 1.0:
-                hold('strings', vla, m, t, t + d, v, 0.0, rise=0.3, fall=1.0, gain=0.7)
-            else:
-                M.add('strings', vla.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, 0.0)
-        elif part == 'sword':
-            if d > 1.0:
-                hold('brass', tpt, m - 12, t, t + d, v, 0.0, rise=0.05, fall=1.0, gain=0.8)
-            else:
-                M.add('brass', tpt.play(m - 12, v, dur=d * 1.05, release=0.3), t, 0.9, 0.0)
-        elif part == 'sieg':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, sf)
-            M.add('brass', tbn.play(m - 12, v - 8, dur=d * 1.05, release=0.3), t, 0.7, sf)
-            M.add('strings', vln.play(m, v - 16, dur=d * 1.05, release=0.3), t, 0.5, sf)
-            M.add('perc', timp.play(v - 20, pitch=-3), t, 0.4, sf)
-        elif part == 'horn':
-            if d > 0.8:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.08, fall=1.0, gain=0.85)
-                hold('brass', tbn, m - 12, t, t + d, v - 10, 0.0, rise=0.08, fall=1.0, gain=0.6)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, 0.0)
-                M.add('brass', tbn.play(m - 12, v - 10, dur=d * 1.1, release=0.3), t, 0.6, 0.0)
-            M.add('low', tuba.play(m - 24, v - 16, dur=d * 1.1, release=0.3), t, 0.6, 0.0)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9)
-        elif part == 'brunn':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, sf, rise=0.15, fall=1.0, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, sf)
-            M.add('strings', vln.play(m + 12, v - 18, dur=d * 1.05, release=0.3), t, 0.5, sf)
-        elif part == 'night':
-            hold('low', cb if m < note('G2') else vc, m, t, t + d, v, sf * 0.5, rise=3.0, fall=1.5, gain=0.5)
-    for j, t0 in enumerate(np.arange(T_MARCH[0], T_MARCH[1], 1.1)):        # the tread of the procession
-        M.add('perc', timp.play(46 + 6 * (j % 2), pitch=-10), t0, 0.35, right * (1 - (j % 30) / 15))
+
+    def role(t, d, m, v, h):
+        if h == 1 and m < 45 and d >= 0.05 and v >= 100:    # the death rhythm and the bass: tuba, basses, timpani
+            return [('tuba', 0, 0, 0.7), ('basses', 0 if m < 40 else -12, -4, 0.6), ('cellos', 12 if m < 36 else 0, -6, 0.5)]
+        if h == 1 and d >= 0.3 and m >= 45:                 # the march's tunes in the middle: horns and trombones
+            return [('horns', 0, 0, 0.85), ('trombones', 0, -4, 0.6)]
+        if h == 0 and d >= 0.3 and m >= 60:                 # on top: trumpets with the violins
+            return [('trumpets', 0, -4, 0.55), ('violins', 0, -8, 0.5)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0, role=role, pan=lambda t, m: sf * 0.4)
+    for t, w in strokes():                                  # the death rhythm, hammered
+        o.hit('timpani', t, int(100 + 24 * w), pitch=-5, gain=0.7 * w, pan=sf)
+        o.hit('bass drum', t, int(100 + 24 * w), gain=0.6 * w, pan=sf)
+        if w >= 1.0:
+            o.hit('gong', t + 0.02, 112, gain=0.5, pan=sf)
+    o.hit('timpani roll', SEG[1], 110, pitch=-5, gain=0.5, pan=sf)
+    o.hit('crash', T_SIEG, 124, gain=0.6, pan=sf)
+    o.hit('cymbal swell', when(971) - 3.0, 110, gain=0.5, pan=sf)
+    o.hit('crash', when(971), 127, gain=0.7, pan=sf)
+    o.hit('gong', when(971), 116, gain=0.5, pan=sf)
+    o.hit('crash', T_BRUNN, 116, gain=0.5, pan=sf)
+    o.effects([(0.0, -20), (D, -20)])

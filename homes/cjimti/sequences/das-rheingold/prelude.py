@@ -1,19 +1,25 @@
-"""Prelude: the opera's 136 bars of E flat major, folded into eighty seconds. Out of darkness the double
-basses' low E flat glows up from the back of the porch (the bottom of the river) until the whole roof is a dim
-indigo, and the bassoons' B flat adds a slow teal swell. Eight horns enter in canon, each with the Nature motif
-(the rising E flat arpeggio, Donington 1), and each opens a bloom of light from its own place on the house that
-widens note by note as the arpeggio climbs, so the river fills horn by horn. Then the water starts to move:
-cellos, violas and violins take up the flowing Rhine figure (Donington 2) in turn, each a train of waves along
-the roofline whose crests brighten as the figure climbs and dim as it falls; the violins' sixteenths throw foam
-and woodwinds add glints. The whole orchestra surges, all eight horns sound the motif together twice over the
-full flood, the last crest rolls out from the porch to both ends of the house, and the key turns to A flat as
-the curtain rises: sunlit water, and three silver glints where the Rhinemaidens will be.
+"""Prelude: the opening of Das Rheingold. Out of darkness the double basses' low E flat glows up from the back
+of the porch (the bottom of the river) until the whole roof is a dim indigo, and the bassoons' B flat adds a slow
+teal swell. The horns enter in canon, each with the Nature motif (the rising E flat arpeggio), and each opens a
+bloom of light from its own place on the house that widens note by note as the arpeggio climbs. Then the full
+flood: the strings' flowing Rhine figure in wave trains along the roofline, crests brightening as it climbs, foam
+off the violins and glints off the highest notes; the river runs faster as the whole orchestra surges up its last
+scales, the crest rolls out from the porch to both ends of the house, and the key turns to A flat as the curtain
+rises: sunlit water, three silver glints, and Woglinde's first "Weia! Waga!".
+
+The music is Wagner's own: bars 1-5, 17-33 and 113-138 of the prelude (the drone, the horns' canon, the flood to
+the curtain), timed bar by bar like Barenboim's 1991 Bayreuth recording (Solti's annotation has timing glitches
+here). The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the pedal on basses,
+tuba and bassoons, the canon on horns, the flood on strings with horns and woodwinds as it grows, the last chord
+held as the curtain rises. Woglinde's first bar is from the printed vocal score (Klindworth, Schott; archive.org
+dasrheingold00wagn2, p. 5) on oboe and flute. A cymbal swell carries the crest; a soft river rush under the depths
+is pulled away once the flood is in the orchestra.
 
 compose() holds every note; render() lights the house from it and score() plays the same list."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, colormap
-from pixelhome.leitmotifs import play, melody
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG01'
 TITLE = 'Prelude'
@@ -24,20 +30,24 @@ DESCRIPTION = ('The Rhine before the story begins: one long E flat chord rises o
 VOICEOVER = ('Das Rheingold. Before the gods, before the gold, before anyone wanted anything, '
              'there was only the river, and one deep note.')
 
-BAR = 2.0                                   # a bar of 6/8
-BEAT = BAR / 3                              # a quarter note: the motif tables count in these
-T_FIFTH = 6.0                               # the bassoons' B flat over the basses' E flat
-HORNS = [10.0 + 4.0 * k for k in range(8)]  # eight horns in canon, one every two bars
-T_CELLI, T_VIOLAS, T_VIOLINS, T_WINDS = 26.0, 34.0, 42.0, 50.0
-T_SURGE = 58.0                              # all the horns together, twice
-T_CREST = 74.0                              # the last surge rolls out from the porch
-T_AB = 76.0                                 # A flat: the curtain rises
-D = 80.0
+EX = excerpt(__file__)                      # bars 1-5, 17-33, 113-138, Barenboim 1991
+S2, S3 = EX['segments'][1]['start'], EX['segments'][2]['start']
+
+
+def bar_time(m):
+    """When bar m starts in the excerpt."""
+    return next(t for b, t in reversed(EX['bars']) if b == m)
+
+
+T_FIFTH = S2 - 1.5                          # the bassoons' B flat over the basses' E flat
+T_SURGE = bar_time(129)                     # the last scales: the whole orchestra surges
+T_CREST = bar_time(135)                     # the crest rolls out from the porch
+T_AB = bar_time(137)                        # A flat: the curtain rises
+D = round(EX['seconds'] + 2.5, 3)           # the last chord rings on
+WOGLINDE = [(0, 2, 'F5'), (2, 1, 'Eb5'), (3, 2, 'C5'), (5, 1, 'Bb4')]     # "Weia! Waga!", in eighths of 6/8
 
 ORIGINS = [('Porch Front', 0.5), ('Left', 0.55), ('Right', 0.45), ('Porch Left', 0.5), ('Porch Right', 0.5),
            ('Left', 0.15), ('Right', 0.85), ('Porch Front', 0.5)]
-FIG = [m for b, _, m in melody('rhine') if b < 6]      # the flowing figure: 24 sixteenths, E flat 4 to G5 and back
-WIND_TONES = ['Bb4', 'Eb5', 'G5', 'Bb5', 'G5', 'Eb5', 'Bb4', 'G4']
 
 DEEP = hexc('#0c1c8c')
 TEAL = hexc('#0a7c8a')
@@ -58,33 +68,37 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
+def bar_of(t):
+    """The bar a time falls in (the excerpt's three passages share no bar numbers)."""
+    return max(b for b, bt in EX['bars'] if bt <= t + 1e-6 and (t < S2 or b >= 17) and (t < S3 or b >= 113))
+
+
 def compose(G):
-    """Every note: (time, seconds, midi, velocity, part, k). k is the horn (0-7), the step of the figure, or for
-    the winds the path distance of the glint they make."""
+    """Every note of the excerpt: (time, seconds, midi, velocity, part, k). The pedal is 'bass'; in the canon the
+    right hand is the horns ('horn', k = which horn, by when it enters); in the flood the right hand is the violins,
+    the left hand's upper notes the violas and its lower the celli, the right hand's highest notes woodwind glints
+    ('winds', k = the path distance of the glint), and the left hand's rising scales at the end all the horns
+    together ('tutti'). Woglinde's first bar is 'voice'."""
     N = []
-    for k, t0 in enumerate(HORNS):
-        for t, m, v, d in play('nature', t0, BEAT, 12 * (k % 2), 52 + 7 * k):
-            N.append((t, d, m, v, 'horn', k))
-    for t0, v in ((T_SURGE, 100), (T_SURGE + 4 * BAR, 118)):
-        for tr in (0, 12, 24):
-            for t, m, _, d in play('nature', t0, BEAT, tr, v):
-                N.append((t, d, m, v, 'tutti', tr))
-
-    def figure(part, t0, step, tr, v0, v1, phase=0):
-        n = int(round((T_AB - t0) / step))
-        for i in range(n):
-            t = t0 + i * step
-            k = (i + phase) % 24
-            N.append((t, step, FIG[k] + tr, int(v0 + (v1 - v0) * i / n), part, k))
-
-    figure('celli', T_CELLI, BEAT / 2, -24, 48, 116)
-    figure('violas', T_VIOLAS, BEAT / 2, -12, 46, 114, 12)
-    figure('violins', T_VIOLINS, BEAT / 4, 0, 44, 112)
     rng = np.random.default_rng(7)
     front = np.concatenate([G.pd[G.seg[s]] for s in ('Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right')])
-    for i, t in enumerate(np.arange(T_WINDS, T_CREST, 1.5 * BEAT)):
-        N.append((float(t), 1.4 * BEAT, note(WIND_TONES[i % len(WIND_TONES)]), 70 + 2 * i, 'winds',
-                  float(rng.choice(front))))
+    for t, d, m, v, h in EX['notes']:
+        b = bar_of(t)
+        if t < S3 and (h == 1 or t < S2):
+            N.append((t, d, m, v, 'bass', None))
+        elif t < S3:
+            N.append((t, d, m, v, 'horn', min(7, (b - 17) // 4 if b < 29 else 3 + (b - 29))))
+        elif h == 1 and b >= 129:
+            N.append((t, d, m, v, 'tutti', 12))
+        elif h == 1:
+            N.append((t, d, m, v, 'violas' if m >= 51 else 'celli', None))
+        else:
+            N.append((t, d, m, v, 'violins', None))
+            if m >= 86:
+                N.append((t, 0.6, m, v, 'winds', float(rng.choice(front))))
+    e8 = (bar_time(138) - T_AB) / 6
+    for x, n, name in WOGLINDE:
+        N.append((T_AB + x * e8, n * e8, note(name), 72, 'voice', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -98,15 +112,16 @@ def render(G, seed=1):
     N = compose(G)
 
     horn = [[e for e in N if e[4] == 'horn' and e[5] == k] for k in range(8)]
+    horn = [ev for ev in horn if ev]
     tut = [e for e in N if e[4] == 'tutti' and e[5] == 12]
     layers = []
-    for part, lam, speed, sharp, col, lo in (('celli', 520.0, 120.0, 1.4, CELLI, 39),
+    for part, lam, speed, sharp, col, lo in (('celli', 520.0, 120.0, 1.4, CELLI, 27),
                                              ('violas', 270.0, 170.0, 2.0, VIOLAS, 51),
                                              ('violins', 120.0, 240.0, 3.0, VIOLINS, 63)):
         ev = [e for e in N if e[4] == part]       # the figure spans E flat to G an octave and a third up
         layers.append(dict(on=np.array([e[0] for e in ev]), m=np.array([e[2] for e in ev]),
                            v=np.array([e[3] for e in ev]), lam=lam, speed=speed, sharp=sharp, col=col, lo=lo,
-                           hi=lo + 28))
+                           hi=lo + 28 if part != 'violins' else lo + 36))
     winds = [e for e in N if e[4] == 'winds']
     vn_on = layers[2]['on']
 
@@ -212,8 +227,8 @@ def render(G, seed=1):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
-    n = note
+    """Wagner's notes on the orchestra: the pedal on basses, tuba and bassoons, the canon on horns, the flood in full
+    orchestra growing to the crest, the A flat chord held as the curtain rises, Woglinde's first bar on oboe."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -222,73 +237,50 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('bass', 0.16, 0.18), ('horns', 0.14, 0.38), ('strings', 0.13, 0.32),
-                            ('winds', 0.11, 0.4), ('harp', 0.2, 0.45)):
-        M.bus(name, gain=gain, reverb=rev)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    pf = at(G, 'Porch Front', 0.5)
     org = [at(G, s, u) for s, u in ORIGINS]
-    hold('bass', cb, n('Eb1'), 0.0, T_AB + 0.3, 92, 0.0, rise=9.0)
-    hold('bass', cb, n('Eb2'), 3.0, T_AB + 0.3, 70, 0.1, rise=8.0)
-    hold('bass', bsn, n('Bb1'), T_FIFTH, T_AB + 0.3, 78, -0.1, rise=3.0, gain=0.8)
-    hold('bass', tuba, n('Eb2'), T_SURGE, T_AB + 0.3, 96, 0.0, rise=6.0, gain=0.7)
-    hold('horns', tbn, n('Bb2'), T_SURGE, T_AB + 0.3, 90, -0.3, rise=6.0, gain=0.5)
-    hold('horns', tbn, n('Eb3'), T_SURGE + 4, T_AB + 0.3, 90, 0.3, rise=6.0, gain=0.5)
+    o = Orchestra(M, level=2.1)
+    N = compose(G)
+    ring_on = lambda t, d: D - 0.4 - t if t >= T_AB - 0.01 else d          # the last chord rings to the end
+    for t, d, m, v, part, k in N:
+        d = ring_on(t, d)
+        if part == 'bass':                                              # the pedal, swelling slowly in
+            if m <= 34:
+                o.play('basses', m + 12, t, d, 96, 0.0, 0.7)
+                o.play('tuba', m + 12, t, d, 70, 0.0, 0.45)
+            else:
+                o.play('bassoons', m, t, d, 84, -0.1, 0.6)
+                o.play('cellos', m, t, d, 60, -0.2, 0.35)
+        elif part == 'horn':                                            # the canon: each horn from its place
+            o.play('horns', m, t, d * 1.2, 78, pan_at(org[k]), 0.5)
+        elif part == 'voice':
+            o.play('oboes', m, t, d, 92, pan_at(at(G, 'Porch Front', 0.5)), 0.8)
+            o.play('flutes', m, t, d, 80, pan_at(at(G, 'Porch Front', 0.5)), 0.4)
+    grow = lambda t: 0.45 + 0.55 * float(np.clip((t - S3) / (T_CREST - S3), 0, 1))
+    flood = [n for n in tidy([n for n in EX['notes'] if n[0] >= S3 - 0.01])]
+    flood = [[t, ring_on(t, d), m, v, h] + n[5:] for n in flood for t, d, m, v, h in [n[:5]]]
 
-    for t, d, m, v, part, k in compose(G):
-        if part == 'horn':
-            M.add('horns', horn.play(m, v, dur=d, release=0.6), t, 1.0, pan_at(org[k]))
-        elif part == 'tutti':
-            M.add('horns', horn.play(m, v, dur=d, release=0.6), t, 0.75, {0: -0.5, 12: 0.0, 24: 0.5}[k])
-            if k == 0:
-                M.add('horns', tbn.play(m, v - 6, dur=d, release=0.5), t, 0.5, -0.2)
-        elif part == 'celli':
-            M.add('strings', vc.play(m, v, dur=d * 1.6, release=0.2), t, 1.0, -0.45)
-        elif part == 'violas':
-            M.add('strings', va.play(m, v, dur=d * 1.6, release=0.2), t, 0.9, 0.35)
-        elif part == 'violins':
-            M.add('strings', vn.play(m, v, dur=d * 1.8, release=0.15), t, 0.75, -0.6 + 1.2 * (m - 63) / 28)
-        elif part == 'winds':
-            M.add('winds', fl.play(m, v, dur=d, release=0.4), t, 0.8, pan_at(k))
-            M.add('winds', cl.play(m - 12, v - 10, dur=d, release=0.4), t, 0.6, pan_at(k))
+    def role(t, d, m, v, h):
+        g = 0.7 + 0.9 * (grow(t) - 0.45) / 0.55                        # the flood grows into the crest
+        if t >= T_AB - 0.01:                                            # A flat: horns and strings, softly
+            return [('horns', 0, 10, 0.6), ('violins' if m >= 55 else 'cellos', 0, 0, 0.5)]
+        if h == 0:                                                      # the Rhine figure: violins, flutes on top
+            parts = [('violins', 0, 6, 0.8 * g), ('violas', -12, -6, 0.35 * g)]
+            if m >= 79:
+                parts.append(('flutes', 0, -4, 0.45 * g))
+            return parts
+        if d >= 0.3:                                                    # the left hand's long notes: horns
+            parts = [('horns', 0, 8, 0.8 * g), ('cellos', 0, 0, 0.5 * g)]
+            if m < 46:
+                parts.append(('basses', 12 if m < 40 else 0, 0, 0.6 * g))
+            if t >= T_SURGE:
+                parts.append(('trombones', 0, 0, 0.5 * g))
+            return parts
+        return [('violas' if m >= 55 else 'cellos', 0, 8, 0.75 * g), ('horns', 0, -4, 0.3 * g * (t >= T_SURGE))]
 
-    # A flat: the curtain rises on the river's surface; a flute remembers how Woglinde will begin
-    for m, g, p in (('Ab1', 1.0, 0.0), ('Ab2', 0.7, 0.0)):
-        hold('bass', cb, n(m), T_AB, D, 84, p, rise=0.4, fall=1.0, gain=g)
-    hold('bass', tuba, n('Ab1'), T_AB, T_AB + 2.0, 100, 0.0, rise=0.2, fall=1.0, gain=0.6)
-    for m, p in (('Eb3', -0.4), ('Ab3', 0.0), ('C4', 0.4)):
-        hold('horns', horn, n(m), T_AB, D, 88, p, rise=0.3, fall=1.2, gain=0.7)
-    for m, p in (('Ab4', -0.5), ('C5', 0.0), ('Eb5', 0.5)):
-        hold('strings', trem, n(m), T_AB, D, 70, p, rise=0.6, fall=1.2, gain=0.6)
-    gl = [x for x in range(n('Ab2'), n('Eb6') + 1) if x % 12 in (8, 0, 3)]
-    for i, m in enumerate(gl):
-        M.add('harp', harp.play(m, 96 - i), T_AB + i * 1.5 / len(gl), 1.0, -0.8 + 1.6 * i / len(gl))
-    M.add('winds', fl.play(n('F5'), 74, dur=0.9, release=0.3), T_AB + 2.2, 0.9, pan_at(pf))
-    M.add('winds', fl.play(n('Eb5'), 70, dur=1.2, release=0.6), T_AB + 2.2 + BEAT * 1.5, 0.9, pan_at(pf))
+    o.tutti(flood, size=grow, role=role, pan=lambda t, m: float(np.clip((m - 60) / 30, -0.7, 0.7)))
+    # the stage: a soft rush of deep water under the depths, gone once the flood carries it; the crest swells
+    o.wind(0.0, S3 + 3.0, level=lambda tt: 0.35 + 0.25 * np.clip(tt / S3, 0, 1), pan=0.0)
+    o.hit('cymbal swell', T_CREST - 2.6, 96, gain=0.5)
+    o.hit('timpani roll', T_SURGE, 90, pitch=-3, gain=0.35)
+    o.hit('crash', T_CREST + 0.9, 70, gain=0.25)
+    o.effects([(0.0, -9), (S2, -12), (S3, -20), (T_CREST - 3.0, -6), (T_AB, -8), (D, -10)])

@@ -1,26 +1,36 @@
 """Hojotoho!: Act II. The empty moonlit hut fades and a wild rocky pass takes its place: dark slate ridges along
-the wings and Side, and on the heights of the porch the warm light of dawn. The prelude surges: the lovers'
-flight, rushing strings in D minor with the Sword (Donington 45) turned to the minor on a trumpet, and streaks of
-Wälsung blue and hearth amber race across the house like two people running for their lives.
+the wings and Side, and on the heights of the porch the warm light of dawn.
 
-Then the Ride (Donington 47) in the horns over the Valkyries' trilling (22a) and their chords (22): bright
-silver gallops go bounding along every run. Wotan (deep blue, his spear a steel line) rises out of Porch Left
-and calls his daughter, and Brünnhilde (silver white with glints of gold) bursts up on the summit of Porch
-Front with her war cry, "Hojotoho! Heiaha!": leaping octave cries on trumpet and horn, each one a bright leap
-of silver along the porch that showers gold sparks, while the trills glitter all over the house. Her own motif
-(Donington 88) on the horns.
+The music is Wagner's own: the climax of the Act II prelude (bars 52 to 71) and Brünnhilde's entrance (bars 92 to
+109), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py): the right hand's racing figuration on violins with flutes and piccolo, the
+left hand's Ride rhythm, rising up the chord in dotted leaps, on horns and trombones (trumpets on top as it
+breaks into C major), the bass on cellos, basses and tuba, timpani and cymbals on its downbeats. Under her war
+cry the orchestra thins to its trills and the horns' calls. Her voice is not in the reduction, so her line comes
+from the printed vocal score (Schott, archive.org diewalkre00wagn, pp. 84-85) and is played as written on
+trumpets doubled by oboes: the two Hojotohos and Heiahas, then again a step higher, the four Hojotohos leaping up
+the octave to high B and C, and the trilled "Heia-" that rises to her held high B. The stage has its sounds as
+well: wind rushing past with each streak of the lovers' flight, hoofbeats under every silver gallop, a boom on
+the white flash of C major, a gong as Wotan rises, her landing on every leap with her armour ringing, her gallop away, and far off the hooves of
+Fricka's rams. The effects lead through the prelude, back off for Wotan's call and all but vanish under her war
+cry, so her line is clear; her gallop away comes back up under her held high B.
 
-Wotan gives her his order: in the coming fight she must stand by Siegmund (a trombone phrase, then Siegmund's
-motif, 35, in the horns), and a beam of his blue reaches across the porch to her. She looks off to the right and
-laughs: a rose glimmer has appeared far off at the free end of Right. Fricka is coming, in her chariot drawn by
-rams, and Brünnhilde wants no part of that. She wishes him luck and is gone, galloping back along Porch Left,
-Left and Side to the Ride, laughing, and Wotan is left alone on Porch Left as the rose light grows.
+The prelude surges: streaks of Wälsung blue and hearth amber race across the house on every second bar, the
+lovers running for their lives; then the Ride rhythm takes over and bright silver gallops go bounding along
+every run, each hoofbeat a real note of the left hand. Wotan (deep blue, his spear a steel line) rises out of
+Porch Left, and as the music breaks into C major the whole house flashes white. "Reite zur Wal!", he calls, and
+a beam of his blue reaches across the porch, a Wälsung blue glow in it: Siegmund, in her charge. Brünnhilde
+(silver white with glints of gold) bursts up on the summit of Porch Front, and on every one of her cries she
+leaps along the porch in a shower of gold sparks while her trills glitter over the house. A rose glimmer
+appears far off at the free end of Right: Fricka is coming, in her chariot drawn by rams. On the orchestra's
+last rushing scales Brünnhilde laughs and is gone, galloping back along Porch Left, Left and Side, and Wotan
+is left alone on Porch Left as the rose light grows.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.audio import note
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK11'
 TITLE = 'Hojotoho!'
@@ -32,24 +42,32 @@ VOICEOVER = ('High on a rocky mountain pass, the king of the gods calls for his 
              'Listen for her battle cry.')
 
 K = 10                                      # this scene's place in the shared clock (t + 80 * K)
-T_CROSS = 6.0                               # the hut fades into the pass over this long
-T_FLIGHT = 0.5                              # the prelude: the lovers' flight
-FLIGHTS = [1.0, 4.0, 7.0, 10.0, 13.0]       # streaks of blue and amber, one pair per surge
-T_MINOR = 8.5                               # the Sword, in the minor
-RB = 0.36                                   # a quarter note of the Ride
-RIDE = [(16.0, 0), (18.16, 0), (20.32, 3), (22.48, 3), (24.64, -2), (26.8, 0)]
-T_WOTAN = 19.0                              # Wotan rises on Porch Left
-T_CALL = 25.0                               # he calls her
-T_BRUNN = 29.0                              # she bursts up on the summit
-CRIES = [(30.2, 0, 0.25), (33.2, 0, 0.75), (36.2, 2, 0.38), (39.2, 3, 0.62)]   # time, transposition, where she lands
-T_MOTIF = 43.0                              # her motif
-T_ORDER = 48.5                              # Wotan's order: stand by Siegmund
-T_WALSUNG = 52.5
-T_FRICKA = 60.0                             # a rose glimmer, far off
-T_LAUGH = 61.5
-RIDE2 = [(65.0, 0), (67.16, 0), (69.32, 3), (71.48, 3), (73.64, 0)]
-T_EXIT = 66.5                               # she gallops off along Side
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 52-71 and 92-109, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+BAR[72] = BAR[92] = EX['segments'][1]['start']
+D = EX['seconds']
+T_CROSS = 4.0                               # the hut fades into the pass over this long
+FLIGHTS = [BAR[b] for b in (52, 54, 56, 58, 60)]    # streaks of blue and amber, one pair per surge
+T_RIDE = BAR[58]                            # the Ride rhythm takes over
+T_WOTAN = BAR[62]                           # Wotan rises on Porch Left
+T_MAJOR = BAR[66]                           # C major: the house flashes white
+T_CALL = BAR[92]                            # "Reite zur Wal!": his order
+T_BRUNN = BAR[94]                           # she bursts up on the summit
+CRIES = [(BAR[94], 0.25), (BAR[98], 0.75), (BAR[102], 0.3), (BAR[103], 0.55), (BAR[104], 0.7),
+         (BAR[105], 0.45)]                                                  # time, where she lands
+# Her war cry, from the vocal score: (bar, start, length in eighths, note). 9/8, then 3/4 from bar 108.
+_HO = lambda b, x, low, top, n: [(b, 0, 0.5, 'G5'), (b, 0.5, 1.5, x), (b, 2, 1, low), (b, 3, n, top)]
+VOICE = (_HO(94, 'D#5', 'G4', 'B4', 5) + _HO(95, 'D#5', 'G4', 'B4', 4) + [(95, 8, 0.5, 'B4'), (95, 8.5, 0.5, 'B4'),
+         (96, 0, 7, 'E5'), (96, 8, 0.5, 'E5'), (96, 8.5, 0.5, 'E5'), (97, 0, 7, 'G5')] +
+         _HO(98, 'C5', 'A4', 'E5', 5) + _HO(99, 'C5', 'A4', 'E5', 4) + [(99, 8, 0.75, 'C5'), (99, 8.75, 0.25, 'C5'),
+         (100, 0, 7, 'F#5'), (100, 8, 0.5, 'F#5'), (100, 8.5, 0.5, 'F#5'), (101, 0, 6, 'A5')] +
+         _HO(102, 'D#5', 'G4', 'B4', 3) + [(102, 6, 1, 'B5')] + _HO(103, 'D5', 'G4', 'B4', 3) + [(103, 6, 1, 'B5')] +
+         _HO(104, 'E5', 'G4', 'C5', 3) + [(104, 6, 1, 'C6')] + _HO(105, 'E5', 'G4', 'C5', 3) + [(105, 6, 1, 'C6')] +
+         [(106, 0, 17, 'F#5 tr'), (107, 8, 0.5, 'E#5'), (107, 8.5, 0.5, 'F#5'), (108, 0, 12, 'B5')])
+T_FRICKA = BAR[102]                         # a rose glimmer, far off
+T_LAUGH = BAR[106]                          # the last rushing scales: she laughs
+T_EXIT = BAR[107]                           # she gallops off along Side
+T_END = D
 
 # Act I's moonlit hut, as WK10 leaves it
 EMBER = hexc('#ff6a10')
@@ -87,76 +105,42 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
-def hojotoho(t0, tr):
-    """The war cry: "Ho-jo-to-ho!" climbing to a leap of an octave, then "Heiaha!" -> [(t, seconds, midi)]."""
-    cry = [(0, .12, 'E4'), (.16, .3, 'A4'), (.5, .12, 'C5'), (.66, .7, 'E5'), (1.45, .14, 'A4'), (1.62, .14, 'C5'),
-           (1.8, .9, 'A5')]
-    return [(t0 + b, d, note(n) + tr - 5) for b, d, n in cry]
+def voice():
+    """Her war cry in seconds: (time, seconds, midi, trilled), cut off where the excerpt ends."""
+    bars = [(m, t) for m, t in EX['bars'] if m >= 92]
+    when = lambda pos: float(np.interp(pos, [b[0] for b in bars], [b[1] for b in bars]))
+    out = []
+    for b, x, n, name in VOICE:
+        per = 6 if b >= 108 else 9
+        a, z = b + x / per, b + (x + n) / per
+        if b >= 106 and name.endswith('tr'):
+            z = 107 + 8 / 9
+        if a < bars[-1][0]:
+            t0 = when(a)
+            out.append((t0, when(min(z, bars[-1][0])) - t0, note(name.split()[0]), name.endswith('tr')))
+    return out
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The left hand's long notes in
+    the prelude are the Ride rhythm ('ride'), its others the bass ('bass'); the right hand is the figuration
+    ('trill'). Under Wotan's call the notes are his ('wotan'), under her cries hers ('brunn'). 'cry' and 'burst'
+    mark her moments for the lights; they make no sound."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('G2', 'D3', 'G3', 'B3'):                                          # Act I's G major, dying
-        add(0.0, 1.5, m, 70, 'fade')
-    for k, tf in enumerate(FLIGHTS):                                            # the flight: rushing strings
-        root = note('D3') + (0, 0, 3, 5, 7)[k]
-        for j in range(16):
-            add(tf + j * 0.11, 0.14, root + (0, 3, 7, 12, 15, 19, 24, 19, 15, 12, 7, 3, 0, 3, 7, 12)[j] - 12,
-                84 + 2 * k, 'rush')
-        add(tf, 2.8, root - 24, 96, 'surge')
-        for b, d, n in ((0, .75, 'A4'), (.75, .25, 'Bb4'), (1, 1.5, 'D5')):
-            add(tf + 0.9 + b * 0.5, d * 0.5, note(n) - 12 + (0, 0, 3, 5, 7)[k], 92, 'flight_horn')
-    for b, d, n in MOTIFS['sword']['notes']:                                    # the Sword, turned to the minor
-        add(T_MINOR + b * 0.45, d * 0.45, note(n) + 2 - (1 if n[0] == 'E' else 0), 104, 'minor')
-
-    for k, (t0, tr) in enumerate(RIDE + RIDE2):                                 # the Ride
-        for t, m, v, d in play('ride', t0, RB, tr, 104):
-            add(t, d, m, v, 'ride')
-        for t, m, v, d in play('valkyrie_cry', t0, RB * 0.75, tr - 12, 76, line='melody'):
-            add(t, d, m, v, 'trill')
-        for j in range(4):
-            add(t0 + j * 3 * RB / 2, RB * 1.4, note('B1') + tr, 96, 'gallop')
-    for k, t0 in enumerate((RIDE[2][0], RIDE[4][0])):
-        for t, m, v, d in play('valkyries', t0, RB * 0.8, -12 + 3 * (k == 0), 88):
-            if m >= note('B2'):
-                add(t, d, m, v, 'chords')
-
-    for b, d, n in ((0, 1, 'D3'), (1, .5, 'F3'), (1.5, .5, 'A3'), (2, 2, 'D4')):   # Wotan calls her
-        add(T_CALL + b * 0.5, d * 0.5, n, 104, 'wotan', 'wotan')
-    for k, (t0, tr, _) in enumerate(CRIES):                                     # "Hojotoho! Heiaha!"
-        for t, d, m in hojotoho(t0, tr):
-            add(t, d, m, 110 + 2 * k, 'cry', 'brunn')
-        for t, m, v, d in play('valkyrie_cry', t0 + 0.6, 0.3, tr - 12, 80, line='melody'):
-            add(t, d, m, v, 'trill')
-        add(t0 + 0.66, 0.9, note('E2') + tr, 104, 'leap')
-    add(T_BRUNN, 1.2, 'E2', 112, 'burst')
-    for t, m, v, d in play('brunnhilde', T_MOTIF, 0.55, 0, 100):               # Brünnhilde
-        add(t, d, m, v, 'motif' if m >= note('Bb3') else 'motif_low', 'brunn' if m >= note('Bb3') else None)
-
-    order = [(0, 1, 'D3'), (1, .5, 'D3'), (1.5, .5, 'E3'), (2, 1, 'F3'), (3, 1, 'A3'), (4, 1.5, 'G3'),
-             (5.5, .5, 'F3'), (6, 2, 'E3')]
-    for b, d, n in order:                                                       # "stand by the Wälsung"
-        add(T_ORDER + b * 0.5, d * 0.5, n, 100, 'wotan', 'wotan')
-    for t, m, v, d in play('siegmund', T_WALSUNG, 0.3, 0, 92):
-        add(t, d, m, v, 'walsung')
-    for m in ('D2', 'A2', 'F3'):
-        add(T_ORDER, T_FRICKA - T_ORDER, m, 78, 'pad')
-
-    for m in ('G#4', 'B4', 'D5'):                                               # the rose glimmer: something coming
-        add(T_FRICKA, RIDE2[0][0] - T_FRICKA, m, 76, 'rose')
-    for j, m in enumerate(('E5', 'C5', 'D5', 'B4', 'C5', 'A4', 'B4', 'G#4', 'A4', 'E4')):   # she laughs
-        add(T_LAUGH + j * 0.17, 0.15, m, 104 - 3 * j, 'laugh', 'brunn')
-    for t, d, m in hojotoho(T_EXIT + 0.4, 0)[:4]:
-        add(t, d, m, 106, 'cry', 'brunn')
-    for m in ('B1', 'F#2', 'D3'):
-        add(RIDE2[-1][0] + 2.2, D - RIDE2[-1][0] - 2.2, m, 66, 'alone')
-    for b, d, n in ((0, 1.5, 'B2'), (1.5, .5, 'C3'), (2, 2, 'B2')):            # Wotan, left to face her
-        add(RIDE2[-1][0] + 2.6 + b * 0.6, d * 0.6, n, 84, 'wotan', 'wotan')
+    for t, d, m, v, hand in EX['notes']:
+        if hand == 0:
+            part = 'trill'
+        elif t < T_CALL and d >= 0.35 and t >= BAR[53]:
+            part = 'ride'
+        else:
+            part = 'bass'
+        who = 'wotan' if T_CALL <= t < T_BRUNN else 'brunn' if t >= T_BRUNN and hand == 0 else None
+        N.append((t, d, m, v, part, who))
+    for t, d, m, trill in voice():
+        N.append((t, d, m, 112, 'voice', 'brunn'))
+    N.append((T_BRUNN, 1.2, 40, 0, 'burst', 'brunn'))
+    for t0, _ in CRIES:
+        N.append((t0, 0.9, 40, 0, 'cry', 'brunn'))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -179,17 +163,16 @@ def choreography(G):
     wot = follow(W + 5 * np.sin(2 * np.pi * (t + 80 * K) / 6.0), np.full(F, 3.0))
     b_t = np.full(F, at(G, 'Porch Front', 0.5))
     rate = np.full(F, 3.0)
-    for t0, tr, u in CRIES:                                                     # each cry a leap along the porch
-        m = t >= t0 + 0.6
+    for t0, u in CRIES:                                                         # each cry a leap along the porch
+        m = t >= t0 + 0.15
         b_t[m] = at(G, 'Porch Front', u)
-        rate[(t >= t0 + 0.6) & (t < t0 + 1.4)] = 9.0
-    b_t[t >= T_MOTIF] = at(G, 'Porch Front', 0.5)
-    b_t[t >= T_ORDER] = at(G, 'Porch Front', 0.4)
+        rate[(t >= t0 + 0.15) & (t < t0 + 0.9)] = 9.0
+    b_t[t >= T_LAUGH] = at(G, 'Porch Front', 0.4)
     ex = t >= T_EXIT
-    b_t[ex] = at(G, 'Porch Front', 0.4) - (at(G, 'Porch Front', 0.4) + 160) * smoothstep(T_EXIT, T_EXIT + 8.5, t[ex])
+    b_t[ex] = at(G, 'Porch Front', 0.4) - (at(G, 'Porch Front', 0.4) + 160) * smoothstep(T_EXIT, T_EXIT + 5.0, t[ex])
     rate[ex] = 6.0
     br = follow(b_t, rate)
-    wv = smoothstep(T_WOTAN, T_WOTAN + 1.5, t)
+    wv = smoothstep(T_WOTAN, T_WOTAN + 1.0, t)
     bv = smoothstep(T_BRUNN, T_BRUNN + 0.4, t)
     return dict(t=t, wotan=wot, brunn=br, wv=wv, bv=bv)
 
@@ -315,10 +298,10 @@ def render(G, seed=11):
     trills = np.array([e[0] for e in N if e[4] == 'trill'])
     wsung = np.array([e[0] for e in N if e[5] == 'wotan'])
     bsung = np.array([e[0] for e in N if e[5] == 'brunn'])
-    leaps = [t0 + 0.66 for t0, _, _ in CRIES]
+    leaps = [t0 + 0.15 for t0, _ in CRIES]
+    beats = [BAR[b] for b in range(66, 72)]
     sparks = []
     sp = Flicker(rng, G.N, 4.0, 9.0)
-    PL = at(G, 'Porch Left', 0.5)
 
     for f in range(F):
         t = f * DT
@@ -336,26 +319,30 @@ def render(G, seed=11):
                 for col, off in ((SIEG, 0), (AMBER, -60)):
                     h = head + off
                     tail = smoothstep(h - 380, h, d) * smoothstep(h + 15, h - 5, d)
-                    fr += light(col, (1 - a / 3.2) * (0.75 * tail + 0.6 * np.exp(-((d - h) / 25) ** 2)))
-        if T_MINOR <= t < T_MINOR + 4:
-            a = t - T_MINOR
-            fr += light(hexc('#e8f8ff'), 0.35 * np.exp(-a / 1.2) * np.exp(-((d - pf) / 300) ** 2))
+                    fr += light(col, (1 - a / 3.2) * (0.9 * tail + 0.9 * np.exp(-((d - h) / 35) ** 2)))
+        if t >= T_MAJOR:                                                        # C major: the house flashes white
+            a = t - T_MAJOR
+            fr += light(hexc('#e8f8ff'), 1.0 * np.exp(-a / 0.9) * (0.6 + 0.4 * np.exp(-((d - pf) / 500) ** 2)))
+            k = int(np.searchsorted(beats, t, side='right')) - 1                # and pulses on every downbeat
+            if 0 < k and t < T_CALL:
+                fr += light(GOLD, 0.6 * np.exp(-(t - beats[k]) / 0.3) * (0.3 + 0.7 * np.exp(-((d - pf) / 400) ** 2)))
 
         # the Ride: silver gallops bounding along every run, the trills glittering
-        ridec = smoothstep(RIDE[0][0] - 0.3, RIDE[0][0] + 0.5, t) * (1 - smoothstep(T_MOTIF, T_MOTIF + 2, t))
-        ridec += smoothstep(RIDE2[0][0] - 0.3, RIDE2[0][0] + 0.5, t) * (1 - smoothstep(RIDE2[-1][0] + 2, RIDE2[-1][0] + 4, t))
-        if ridec > 0:
+        ridec = smoothstep(T_RIDE - 0.3, T_RIDE + 0.5, t) * (1 - smoothstep(T_CALL, T_CALL + 1.5, t))
+        ridec += 0.8 * smoothstep(T_EXIT - 0.3, T_EXIT + 0.5, t) * (1 - smoothstep(D - 2.5, D - 0.3, t))
+        glit = max(ridec, 0.9 * smoothstep(T_BRUNN, T_BRUNN + 0.5, t) * (1 - smoothstep(D - 2.5, D - 0.3, t)))
+        if glit > 0:
             i = int(np.searchsorted(ride, t, side='right')) - 1
             hoof = np.exp(-(t - ride[i]) / 0.15) if i >= 0 else 0.0
             ph = (t * 0.14) % 1.0
-            for k in range(5):
+            for k in range(5 if ridec > 0 else 0):
                 q = (ph + k / 5) * (L + 400) - 200
-                bounce = 0.6 + 0.4 * hoof
-                fr += light(BRUNN, ridec * 0.6 * bounce * np.exp(-((d - q) / 45) ** 2))
-                fr += light(GOLD, ridec * 0.4 * bounce * smoothstep(q - 260, q, d) * smoothstep(q + 10, q - 10, d))
+                bounce = 0.45 + 0.55 * hoof
+                fr += light(BRUNN, ridec * 0.95 * bounce * np.exp(-((d - q) / 70) ** 2))
+                fr += light(GOLD, ridec * 0.55 * bounce * smoothstep(q - 260, q, d) * smoothstep(q + 10, q - 10, d))
             j = int(np.searchsorted(trills, t, side='right')) - 1
             tr = np.exp(-(t - trills[j]) / 0.12) if j >= 0 and t - trills[j] < 0.5 else 0.0
-            fr += light(BRUNN, ridec * 0.3 * tr * np.clip(sp(t), 0, 1) ** 3)
+            fr += light(BRUNN, glit * 0.85 * tr * np.clip(sp(t), 0, 1) ** 2)
 
         # Wotan, risen on Porch Left
         wp, wv = C['wotan'][f], C['wv'][f]
@@ -396,17 +383,17 @@ def render(G, seed=11):
             fr += light(WHITE, 0.4 * bf * np.exp(-((d - bp) / 10) ** 2))
 
         # the order: a beam of his blue across the porch to her
-        order = smoothstep(T_ORDER, T_ORDER + 1, t) * (1 - smoothstep(T_FRICKA - 1, T_FRICKA, t))
+        order = smoothstep(T_CALL, T_CALL + 0.6, t) * (1 - smoothstep(T_FRICKA - 1, T_FRICKA, t))
         if order > 0:
             lo, hi = min(wp, bp), max(wp, bp)
             beam = smoothstep(lo - 10, lo + 10, d) * smoothstep(hi + 10, hi - 10, d)
             pulse = 0.5 + 0.5 * np.cos(2 * np.pi * ((d - wp) / 150 - 1.2 * t))
             fr += light(WOTAN, order * (0.4 + 0.25 * pulse) * beam)
-            if t >= T_WALSUNG:                                                  # the Wälsung, in her charge
-                fr += light(SIEG, 0.4 * order * smoothstep(T_WALSUNG, T_WALSUNG + 2, t) * np.exp(-((d - bp) / 70) ** 2))
+            if t >= T_CALL + 1.2:                                               # the Wälsung, in her charge
+                fr += light(SIEG, 0.4 * order * smoothstep(T_CALL + 1.2, T_CALL + 3, t) * np.exp(-((d - bp) / 70) ** 2))
 
         # far off at the free end of Right, a rose glimmer: Fricka is coming
-        rose = ROSE_END * smoothstep(T_FRICKA, T_FRICKA + 2.5, t) * (0.8 + 0.2 * smoothstep(70, D, t))
+        rose = ROSE_END * smoothstep(T_FRICKA, T_FRICKA + 2.5, t) * (0.8 + 0.2 * smoothstep(T_LAUGH, D, t))
         if rose > 0:
             fr += light(ROSE, rose * (0.85 + 0.15 * np.sin(2 * np.pi * tt / 1.3)) * np.exp(-((L - d) / 90) ** 2))
         out[f] = fr
@@ -414,7 +401,8 @@ def render(G, seed=11):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction: the full orchestra for the prelude's climax, thinner
+    under her cries, full again for the last scales; drums and cymbals on its real downbeats."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -425,102 +413,66 @@ def score(M, G):
 
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
+    o = Orchestra(M, level=1.9)
 
-    def pt(key, t):
-        return pan_at(np.interp(t, C['t'], C[key]))
+    def size(t):
+        return 1.0 if t < T_CALL or t >= T_LAUGH else 0.55
 
-    for name, gain, rev in (('strings', 0.18, 0.3), ('low', 0.2, 0.2), ('brass', 0.2, 0.3), ('winds', 0.16, 0.3),
-                            ('perc', 0.2, 0.3), ('fx', 0.1, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vas = M.sampler('Strings/Viola Section/spic/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tpts = M.sampler('Brass/Trumpet/stac/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
+    def role(t, d, m, v, hand):
+        if T_CALL <= t < T_BRUNN and hand == 1 and m >= 54:                    # Wotan's call: trombones, tuba
+            return [('trombones', 0, 0, 0.8), ('tuba', -12, -10, 0.4)]
+        if T_BRUNN <= t < T_LAUGH and hand == 1 and m >= 54 and d >= 0.35:     # under her cries: the horns call
+            return [('horns', 0, 4, 0.9), ('trumpets', 0, -12, 0.35)]
+        return None
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def pan(t, m):
+        if t < T_CALL:
+            return float(np.clip(-0.7 + 1.4 * ((t * 0.14) % 1), -0.7, 0.7))
+        return pan_at(np.interp(t, C['t'], C['brunn' if t >= T_BRUNN else 'wotan'])) * 0.7
 
-    ph = (np.arange(nframes(D)) * DT * 0.14) % 1.0
-    for t, d, m, v, part, who in compose():
-        if part == 'fade':
-            hold('strings', vtrem if m >= note('G3') else vatrem, m, t, t + d, v, 0.0, rise=0.05, fall=1.5, gain=0.4)
-        elif part == 'rush':
-            pa = pan_at(at(G, 'Left', 0.1) + 520 * max(t - max(x for x in FLIGHTS if x <= t + 1e-6), 0) ** 1.25)
-            M.add('strings', (vcs if m < note('A3') else vas).play(m, v), t, 0.8, pa)
-        elif part == 'surge':
-            M.add('low', cb.play(m + 12, v, dur=d, release=0.4), t, 0.8, -0.2)
-            M.add('fx', whoosh(d, 300, 2500, 0.5, seed=int(t * 10)), t, 0.7, 0.0)
-        elif part == 'flight_horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, 0.2)
-        elif part == 'minor':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pf)
-        elif part == 'ride':
-            q = (np.interp(t, np.arange(len(ph)) * DT, ph)) * (G.length + 400) - 200
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.2), t, 0.9, pan_at(np.clip(q, 0, G.length)) * 0.6)
-            M.add('brass', tbn.play(m - 12, v - 10, dur=d * 1.1, release=0.2), t, 0.5, 0.0)
-        elif part == 'trill':
-            M.add('winds', (fl if (t * 7) % 2 < 1 else cl).play(m, v), t, 0.7, -0.6 + 1.2 * ((t * 3.3) % 1))
-            M.add('strings', vns.play(m, v - 10), t, 0.4, 0.6 - 1.2 * ((t * 3.3) % 1))
-        elif part == 'gallop':
-            M.add('low', cbs.play(m + 12, v), t, 0.8, 0.0)
-            M.add('low', vcs.play(m + 12, v - 10), t + RB * 0.5, 0.6, 0.1)
-        elif part == 'chords':
-            M.add('brass', (tbn if m < note('G3') else horn).play(m, v, dur=d * 1.05, release=0.3), t, 0.6,
-                  -0.3 + 0.6 * ((m * 0.37) % 1))
-        elif part == 'wotan':
-            pa = pt('wotan', t)
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.5), t, 1.0, pa)
-            M.add('low', tuba.play(m, v - 14, dur=d * 1.05, release=0.5), t, 0.6, pa)
-        elif part == 'cry':
-            pa = pt('brunn', t)
-            M.add('brass', tpt.play(m, v, dur=d * 1.1, release=0.25), t, 1.0, pa)
-            M.add('brass', horn.play(m - 12, v - 8, dur=d * 1.1, release=0.25), t, 0.7, pa)
-        elif part == 'leap':
-            M.add('perc', timp.play(v, pitch=-2), t, 0.7, pt('brunn', t + 0.2))
-            M.add('fx', whoosh(0.5, 800, 5000, 0.5, seed=int(t * 10)), t - 0.1, 0.7, pt('brunn', t + 0.2))
-        elif part == 'burst':
-            M.add('perc', crash.play(v), t, 0.9, pf)
-            M.add('perc', timp.play(v, pitch=-2), t, 0.9, pf)
-        elif part == 'motif':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pt('brunn', t))
-        elif part == 'motif_low':
-            hold('strings', va if m >= note('C3') else cb, m + (12 if m < note('C3') else 0), t, t + d, v - 10, pf,
-                 rise=0.3, fall=0.8, gain=0.5)
-        elif part == 'walsung':
-            M.add('brass', horn.play(m, v - 6, dur=d * 1.05, release=0.4), t, 0.7, pt('brunn', t))
-        elif part == 'pad':
-            hold('strings', vatrem if m >= note('C3') else cb, m + (12 if m < note('C3') else 0), t, t + d, v, 0.0,
-                 rise=2.0, fall=1.0, gain=0.5)
-        elif part == 'rose':
-            hold('strings', vtrem, m, t, t + d, v, pan_at(G.length), rise=2.0, fall=1.0, gain=0.7)
-            hold('low', vatrem, m - 24, t, t + d, v, pan_at(G.length), rise=2.0, fall=1.0, gain=0.5)
-        elif part == 'laugh':
-            M.add('brass', tpts.play(m, v), t, 1.2, pt('brunn', t))
-            M.add('winds', fl.play(m + 12, v - 10), t, 0.9, pt('brunn', t))
-        elif part == 'alone':
-            hold('strings', vatrem if m >= note('C3') else cb, m + (12 if m < note('C3') else 0), t, t + d, v,
-                 pt('wotan', t), rise=1.5, fall=1.0, gain=0.6)
+    o.tutti(EX['notes'], size=size, role=role, pan=pan)
+    for t, d, m, trill in voice():                                             # her cry: trumpets, oboes
+        bp = pan(t, 60)
+        if trill:                                                               # the trill: F sharp and G
+            o.play('trumpets', m, t, d, 108, bp, 0.75)
+            k, tt = 0, t
+            while tt < t + d - 0.05:
+                o.play('oboes', m + (k % 2), tt, 0.08, 100, bp, 0.4)
+                o.play('flutes', m + (k % 2), tt, 0.08, 96, bp, 0.3)
+                k, tt = k + 1, tt + 0.075
+        else:
+            o.play('trumpets', m, t, max(d, 0.12), 114, bp, 0.9)
+            o.play('oboes', m, t, max(d, 0.12), 104, bp, 0.45)
+    for b in (66, 67, 68, 69, 70, 71):                                          # C major, then E: the downbeats
+        o.hit('timpani', BAR[b], 110, pitch=-3, gain=0.55)
+    o.hit('crash', T_MAJOR, 110, gain=0.6)
+    o.hit('crash', T_BRUNN, 100, gain=0.5, pan=pf)
+    o.hit('timpani', T_BRUNN, 110, pitch=-2, gain=0.6, pan=pf)
+    for t0, _ in CRIES[1:]:
+        o.hit('timpani', t0, 96, pitch=-2, gain=0.45, pan=pan(t0 + 0.2, 60))
+    o.hit('crash', BAR[108], 100, gain=0.45)
+
+    # the stage: what the lights show, heard
+    L = G.length
+    bpan = lambda t: pan_at(np.interp(t, C['t'], C['brunn']))
+    fxhit = lambda name, t, v, g, p: o.hit(name, t, v, gain=g, pan=p, fx=True)       # a stage hit, on the fader
+    for tf in FLIGHTS:                                                          # the lovers' flight rushing past
+        o.wind(tf, tf + 3.2, 0.9, pan=lambda t, tf=tf: pan_at(at(G, 'Left', 0.1) + 520 * max(t - tf, 0) ** 1.25))
+    ride = [e[0] for e in compose() if e[4] == 'ride']
+    for k, t in enumerate(ride):                                                # every hoofbeat of the silver gallops
+        ph = (t * 0.14) % 1.0
+        fxhit('hoof', t, 112, 0.55, pan_at((ph * (L + 400) - 200) % L))
+        fxhit('hoof soft', t + 0.09, 96, 0.45, pan_at(((ph + 0.4) * (L + 400) - 200) % L))
+    o.boom(T_MAJOR, 0.0, 0.8)                                                   # the white flash of C major
+    fxhit('gong scrape', T_WOTAN, 110, 0.7, pan_at(at(G, 'Porch Left', 0.5)))  # Wotan rises
+    o.boom(T_WOTAN + 0.4, pan_at(at(G, 'Porch Left', 0.5)), 0.5)
+    for t0, _ in CRIES:                                                         # every leap: she lands, armour ringing
+        tl = t0 + 0.15
+        o.hoof(tl, bpan(tl), 118, 1.2)
+        fxhit('metal', tl + 0.05, 92, 0.25, bpan(tl))
+    o.gallop(T_EXIT, D - 0.4, 0.4, pan=bpan, v=118, gain=1.2)                   # she gallops off along Side
+    o.gallop(T_FRICKA + 1.0, D - 0.3, 0.55, pan=0.85, v=70, gain=0.6)           # far off: Fricka's rams
+    # the effects lead through the prelude, back off for Wotan's call, and all but vanish under her war cry; her
+    # gallop away comes up under her held high B
+    o.effects([(0.0, 0), (T_CALL - 1.2, 0), (T_CALL - 0.2, -9), (T_BRUNN - 0.8, -9), (T_BRUNN - 0.1, -16),
+               (T_EXIT - 0.4, -16), (T_EXIT + 0.6, -6)])

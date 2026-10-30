@@ -1,23 +1,27 @@
-"""Weia! Waga!: the curtain is up on the bed of the Rhine, sunlit green water rocking over the whole roof to a
-harp in A flat. The three Rhinemaidens are lights in it: Woglinde (silver) surfaces on the rock at the back of
-the porch with a splash and sings her greeting to the waters, the motif Donington lists as the Rhinemaidens'
-(26), and swims with it. Wellgunde (sea green) streaks in from the free end of Right to sing it with her a
-third below; Flosshilde (violet), the eldest, pops up on Left an octave down and scolds them for guarding the
-sleeping gold so badly. Then the game: the tune is tossed between them two bars at a time, and each singer
-darts to a new run of the house with a splash, until all three sing it together in a whirlpool that spins out
-over every run and collapses, laughing, on the rock.
+"""Weia! Waga!: the curtain is up on the bed of the Rhine, sunlit green water rocking over the whole roof. The
+three Rhinemaidens are lights in it: Woglinde (silver) surfaces on the rock at the back of the porch with a
+splash and sings her greeting to the waters ("Weia! Waga! Woge, du Welle"), swimming with it. Wellgunde (sea
+green) streaks in from the free end of Right calling to her, and the two of them chase round the rock; Flosshilde
+(violet), the eldest, pops up on Left ("Heiaha weia! Wildes Geschwister!") and scolds them for guarding the
+sleeping gold so badly. Then the game: they dart from run to run of the house with a splash at every turn, until
+all three spin in a whirlpool out over every run. The water darkens at the corner of Left: Alberich, a smouldering
+red-brown thing, heaves himself up out of a chasm on the orchestra's slithering accents and calls out to them
+("Hehe! Ihr Nicker!"). They freeze, ask each other who is there, and close round the rock, where a glint of the
+sleeping gold shows under them.
 
-The water darkens at the corner of Left: Alberich, a smouldering red-brown thing, hauls himself up out of a
-chasm in four lurches and calls out to them. They freeze, ask each other who is there, and close round the
-rock (a glint of the sleeping gold shows under them) as Flosshilde warns that their father told them to guard
-it from just such a creature. He creeps along toward the porch; they laugh at him and pelt him with sparks of
-their colours, then scatter to the front runs and mock him with the first notes of the song.
+The music is Wagner's own: bars 137 to 196 of Scene 1, timed bar by bar like Barenboim's 1991 Bayreuth recording.
+The orchestra comes from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the rocking accompaniment
+on strings and harp-like violins, the bass on cellos and basses, Alberich's slithering in the low brass. The
+Rhinemaidens' lines are from the printed vocal score (Klindworth, Schott; archive.org dasrheingold00wagn2,
+pp. 5-9), each on her own instrument: Woglinde oboe, Wellgunde flute, Flosshilde clarinet. Alberich's line stays
+in the orchestra. Splashes sound when a maiden surfaces or darts; his heaves scrape and thud on the rock; the
+effects stay under the singing.
 
 Every note is in compose(); choreography() turns it into positions, and render() and score() both read it."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG02'
 TITLE = 'Weia! Waga!'
@@ -28,34 +32,71 @@ DESCRIPTION = ('Three Rhinemaidens, silver, green and violet, sing and chase eac
 VOICEOVER = ('At the bottom of the Rhine, three river daughters play over a treasure they were told to guard. '
              'They are not very good at guarding it.')
 
-BEAT = 0.5                                  # a quarter note; a bar of 6/8 is three
-BAR = 3 * BEAT
-T_WOG = 1.5                                 # Woglinde surfaces
-T_SONG = 3.0                                # and sings
-T_WELL = 9.0                                # Wellgunde streaks in from the end of Right
-T_DUET = 10.5
-T_FLO = 16.5                                # Flosshilde pops up on Left, scolding
-T_GAME = 22.5                               # the tune tossed between them, two bars each
-T_WHIRL = T_GAME + 6 * 2 * BAR              # all three, spinning
-T_LAUGH = T_WHIRL + 4 * BAR
-T_ALB = 48.0                                # the water darkens at the corner of Left
-CLIMB = [48.4, 49.4, 50.4, 51.2]
-T_HEHE = 52.0                               # "Hehe! Ihr Nicker!"
-CALLS = [53.5, 55.0, 56.5]                  # who is there?
-T_GUARD = 58.0                              # "Guard the gold!"
-CREEP = [62.0, 64.5, 67.0, 69.5]            # he creeps toward the porch...
-LAUGHS = [63.5, 66.0, 68.5, 71.0]           # ...and they laugh at him
-T_MOCK = 74.0
-D = 80.0
+EX = excerpt(__file__)                      # Scene 1, bars 137-196, Barenboim 1991
+D = EX['seconds']
+_BM = [b for b, _ in EX['bars']]
+_BT = [t for _, t in EX['bars']]
+
+
+def bt(pos):
+    """The time of a (fractional) bar position."""
+    return float(np.interp(pos, _BM, _BT))
+
+
+BAR = bt(170) - bt(169)                     # a bar of 6/8, about 1.5 s
+T_WOG = 0.0                                 # Woglinde surfaces
+T_WELL = bt(144.6)                          # Wellgunde streaks in from the end of Right
+T_DUET = bt(146.8)                          # and they chase round the rock
+T_FLO = bt(151.7)                           # Flosshilde pops up on Left, scolding
+T_GAME = bt(166)                            # the game: two bars each
+T_WHIRL = bt(178)                           # all three, spinning
+T_LAUGH = bt(182)                           # the whirlpool collapses as the water darkens
+T_ALB = bt(181.4)                           # the water darkens at the corner of Left
+CLIMB = [x - 0.47 for x in (bt(182), bt(183), bt(183) + 0.59, bt(184))]     # his heaves, on the accents
+T_HEHE = bt(184.917)                        # "Hehe! Ihr Nicker!"
+CALLS = [bt(192), bt(192.417), bt(193)]     # who is there?
+T_GUARD = bt(194)                           # they close round the rock
+CREEP, LAUGHS = [], []
+T_MOCK = D + 10.0
 
 WOG, WELL, FLO = 0, 1, 2
-GAME = [(WOG, 0), (WELL, 1), (FLO, 0), (WOG, 1), (WELL, 0), (FLO, 1)]     # (singer, which half of the tune)
+GAME = [(WOG, 0), (WELL, 1), (FLO, 0), (WOG, 1), (WELL, 0), (FLO, 1)]     # (who darts, unused)
 GAME_TO = [('Right', 0.5), ('Left', 0.45), ('Porch Right', 0.5), ('Porch Left', 0.5), ('Right', 0.92),
            ('Porch Front', 0.5)]
-
-SONG = [(b, d, note(n)) for b, d, n in MOTIFS['rhinemaidens']['notes'] if d >= 0.5]   # Woglinde's line
-ROCK = [(b, d, note(n)) for b, d, n in MOTIFS['rhinemaidens']['notes'] if d < 0.5][:6]  # one bar of the rocking
-SCALE = (8, 10, 0, 1, 3, 5, 7)              # A flat major
+# The Rhinemaidens' lines, from the vocal score: (bar, start, length in eighths of 6/8, note, who)
+LINES = [(137, 0, 2, 'F5'), (137, 2, 1, 'Eb5'), (137, 3, 2, 'C5'), (137, 5, 1, 'Bb4'),
+         (138, 0, 1, 'Ab4'), (138, 1, 1, 'Eb4'), (138, 2, 1, 'Ab4'), (138, 3, 2, 'Bb4'), (138, 5, 1, 'Ab4'),
+         (139, 0, 1, 'C5'), (139, 1, 1, 'Ab4'), (139, 2, 1, 'C5'), (139, 3, 2, 'Eb5'), (139, 5, 1, 'C5'),
+         (140, 0, 1, 'F5'), (140, 1, 1, 'Eb5'), (140, 2, 1, 'C5'), (140, 3, 2, 'Ab5'), (140, 5, 1, 'Eb5'),
+         (141, 0, 1.5, 'C5'), (141, 1.5, .5, 'Ab4'), (141, 2, 1, 'Eb4'), (141, 3, 1.5, 'Eb5'), (141, 4.5, .5, 'C5'),
+         (141, 5, 1, 'Ab4'), (142, 0, 6, 'F5'), (143, 0, 5, 'Eb5')]
+SINGERS = [[x + (WOG,) for x in LINES]]
+SINGERS.append([x + (WELL,) for x in [(145, 0, 3, 'F5'), (145, 3, 2, 'C5'), (145, 5, 1, 'Bb4'), (146, 0, 1, 'Ab4'),
+                                      (146, 1, 1, 'F4'), (146, 2, 1, 'Ab4'), (146, 3, 2, 'C5'),
+                                      (148, 2, 1, 'Bb4'), (148, 3, 2, 'Eb5'), (148, 5, .5, 'Bb4'),
+                                      (148, 5.5, .5, 'Bb4'), (149, 0, 2, 'C5'),
+                                      (154, 0, 1, 'G5'), (154, 1, 1.5, 'Eb5'), (154, 2.5, .5, 'G4'), (154, 3, 2, 'Bb4'),
+                                      (155, 0, 1, 'Eb5'), (155, 1, 1.5, 'Bb4'), (155, 2.5, .5, 'Eb4'), (155, 3, 2, 'G4'),
+                                      (156, 0, 1, 'Bb4'), (156, 1, 1, 'G4'), (156, 2, 1, 'Eb4'), (156, 3, 1.5, 'Eb5'),
+                                      (156, 4.5, .5, 'Bb4'), (156, 5, 1, 'G4'), (157, 0, 3, 'G5'), (157, 3, 1, 'G4'),
+                                      (193, 0, 1, 'D5'), (193, 1, 1, 'A4'), (193, 2, .5, 'G4'), (193, 2.5, .5, 'F#4'),
+                                      (193, 3, 2, 'C5')]])
+SINGERS.append([x + (WOG,) for x in [(146, 5, 1, 'C5'), (147, 0, 1, 'F5'), (147, 1, 1.5, 'C5'), (147, 2.5, .5, 'Ab4'),
+                                     (147, 3, 1, 'F4'), (147, 4, 1, 'Ab4'), (147, 5, 1, 'C5'), (148, 0, 2, 'Eb5'),
+                                     (149, 3, 1.5, 'F5'), (149, 4.5, .5, 'D5'), (149, 5, 1, 'Bb4'), (150, 0, 2, 'G5'),
+                                     (192, 0, 1, 'Bb4'), (192, 2, .5, 'G4'), (192, 2.5, .5, 'G4'), (192, 3, 1, 'D5')]])
+SINGERS.append([x + (FLO,) for x in [(152, 0, 1.5, 'Bb4'), (152, 1.5, .5, 'G4'), (152, 2, 1, 'Eb4'), (152, 3, 2, 'Eb5'),
+                                     (152, 5, 1, 'Bb4'), (153, 0, 1.5, 'Eb5'), (153, 1.5, .5, 'Bb4'), (153, 2, 1, 'G4'),
+                                     (153, 3, 2, 'C5'), (153, 5, 1, 'Bb4'),
+                                     (158, 2, 1, 'G4'), (158, 3, 2, 'C5'), (158, 5, 1, 'Eb5'), (159, 0, 5, 'D5'),
+                                     (160, 0, 4, 'G4'), (160, 4, 1, 'C5'), (160, 5, 1, 'Eb5'), (161, 0, 2, 'D5'),
+                                     (162, 0, 1, 'Eb5'), (162, 1, 1, 'C5'), (162, 2, 1, 'Bb4'), (162, 3, 2, 'A4'),
+                                     (162, 5, 1, 'Bb4'), (163, 0, 1.5, 'C5'), (163, 1.5, .5, 'B4'), (163, 2, 1, 'C5'),
+                                     (163, 3, 1, 'Eb5'), (163, 5, 1, 'C5'), (164, 0, 2, 'Eb5'), (164, 2, 1, 'C5'),
+                                     (164, 3, 1.5, 'G5'), (164, 4.5, .5, 'Eb5'), (164, 5, 1, 'C5'), (165, 0, 3, 'A4'),
+                                     (192, 2.5, .5, 'D4'), (192, 3, 1.5, 'D4'), (192, 4.5, .5, 'D4'), (192, 5, 1, 'D4'),
+                                     (193, 0, 2, 'A4')]])
+VOICE = sorted(x for line in SINGERS for x in line)
 
 COLOR = [hexc('#c0f4ff'), hexc('#20ff90'), hexc('#8c60ff')]
 DEEP = hexc('#065c70')
@@ -70,81 +111,15 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
-def third_below(m):
-    """A diatonic third under m in A flat."""
-    i = SCALE.index(m % 12)
-    j = (i - 2) % 7
-    return m - ((SCALE[i] - SCALE[j]) % 12)
-
-
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who). Parts: 'sing' (who: the maiden), 'rock' the harp's
-    rocking, 'pedal', 'alb' Alberich's clambering, 'hehe' his call, 'laugh', 'guard', 'trem'."""
+    """Every note: (time, seconds, midi, velocity, part, who). 'sing' is a Rhinemaiden's line (who: which one);
+    the excerpt's notes are 'rock' (the right hand's rocking accompaniment) and 'low' (the left hand)."""
     N = []
-
-    def sing(who, t0, notes, vel=96, tr=0, harm=False):
-        for b, d, m in notes:
-            m = third_below(m) if harm else m
-            N.append((t0 + b * BEAT, d * BEAT, m + tr, vel, 'sing', who))
-
-    half = [[x for x in SONG if x[0] < 6], [(b - 6, d, m) for b, d, m in SONG if b >= 6]]
-    sing(WOG, T_SONG, SONG)
-    sing(WOG, T_DUET, SONG, 90)
-    sing(WELL, T_DUET, SONG, 90, harm=True)
-    scold = [(6, .5, 'Eb4'), (6.5, .5, 'Eb4'), (7, .5, 'F4'), (7.5, .5, 'Eb4'), (8, .5, 'C4'), (8.5, .5, 'Db4'),
-             (9, 1, 'C4'), (10, .5, 'Bb3'), (10.5, 1.5, 'Ab3')]
-    sing(FLO, T_FLO, half[0], 98, tr=-12)
-    sing(FLO, T_FLO, [(b, d, note(m)) for b, d, m in scold], 100)
-    for i, (who, h) in enumerate(GAME):
-        sing(who, T_GAME + i * 2 * BAR, half[h], 100, tr=-12 if who == FLO else 0)
-    sing(WOG, T_WHIRL, SONG, 108)
-    sing(WELL, T_WHIRL, SONG, 104, harm=True)
-    sing(FLO, T_WHIRL, SONG, 104, tr=-12)
-    for i, (hi, lo) in enumerate((('Eb6', 'C6'), ('C6', 'Ab5'), ('Bb5', 'G5'), ('Ab5', 'F5'), ('G5', 'Eb5'),
-                                  ('Ab5', 'Eb5'))):
-        for m in (hi, lo):
-            N.append((T_LAUGH + i * 0.24, 0.16, note(m), 96 - 4 * i, 'laugh', i % 3))
-
-    for k in range(int(T_ALB / BAR) + 1):                   # the rocking, a bar at a time, until he comes
-        for b, d, m in ROCK:
-            t = k * BAR + b * BEAT
-            if t < T_ALB:
-                N.append((t, d * BEAT * 1.5, m, 70 + 10 * (b == 0), 'rock', None))
-    for t0, t1, m in ((0.0, T_ALB + 0.5, 'Ab1'), (0.0, T_ALB + 0.5, 'Ab2'), (2.0, T_ALB, 'Eb4'), (2.0, T_ALB, 'C4')):
-        N.append((t0, t1 - t0, note(m), 62, 'pedal', None))
-
-    # Alberich: a chromatic scramble up and a thump for every heave; then "Hehe! Ihr Nicker!"
-    for i, t0 in enumerate(CLIMB + CREEP):
-        base = note('C2') + (2 * i if i < 4 else 2 * (i - 4) + 3)
-        for j in range(5):
-            N.append((t0 + j * 0.09, 0.12, base + j, 90 + 4 * j, 'alb', i))
-        N.append((t0 + 0.47, 0.5, base - 12, 112, 'thump', i))
-    for b, d, m in ((0, .5, 'G2'), (.75, .25, 'G2'), (1, .5, 'C3'), (1.5, .5, 'Eb3'), (2, 1.5, 'D3')):
-        N.append((T_HEHE + b * BEAT, d * BEAT, note(m), 112, 'hehe', None))
-    N.append((T_ALB, D - T_ALB, note('C2'), 64, 'trem', None))
-    for who, t0, line in ((WOG, CALLS[0], ('Eb5', 'C5', 'Bb4', 'Db5')), (WELL, CALLS[1], ('C5', 'Ab4', 'F4', 'G4')),
-                          (FLO, CALLS[2], ('G4', 'Eb4', 'C4', 'D4'))):
-        for j, m in enumerate(line):
-            N.append((t0 + j * 0.3, 0.32 if j < 3 else 0.7, note(m), 92, 'sing', who))
-    guard = [(0, .75, 'C4'), (.75, .25, 'C4'), (1, .5, 'Eb4'), (1.5, 1.5, 'D4'), (3, .5, 'C4'), (3.5, .5, 'Bb3'),
-             (4, .5, 'Ab3'), (4.5, 2.5, 'G3')]
-    for b, d, m in guard:
-        N.append((T_GUARD + b * BEAT, d * BEAT, note(m), 104, 'sing', FLO))
-    for t0, t1, ms in ((T_GUARD, T_GUARD + 3 * BEAT, ('Ab3', 'C4', 'Eb4')), (T_GUARD + 3 * BEAT, CREEP[0], ('G3', 'B3', 'D4'))):
-        for m in ms:
-            N.append((t0, t1 - t0, note(m), 70, 'guard', None))
-    for i, t0 in enumerate(LAUGHS):
-        who = i % 3 if i < 3 else None
-        for j, (hi, lo) in enumerate((('C6', 'Ab5'), ('Bb5', 'G5'), ('Ab5', 'F5'), ('G5', 'Eb5'))):
-            for m in (hi, lo):
-                N.append((t0 + j * 0.2, 0.14, note(m), 100, 'laugh', who if who is not None else j % 3))
-    for b, d, m in [x for x in SONG if x[0] < 3]:
-        N.append((T_MOCK + b * BEAT, d * BEAT, m, 92, 'sing', WOG))
-    for k in range(4):
-        for b, d, m in ROCK:
-            t = T_MOCK + 1.5 + k * BAR + b * BEAT
-            if t < D - 1.0:
-                N.append((t, d * BEAT * 1.5, m, 54, 'rock', None))
+    for b, x, n, name, who in VOICE:
+        t0 = bt(b + x / 6)
+        N.append((t0, bt(b + (x + n) / 6) - t0, note(name), 96, 'sing', who))
+    for t, d, m, v, h in EX['notes']:
+        N.append((t, d, m, v, 'rock' if h == 0 else 'low', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -185,8 +160,12 @@ def choreography(G):
     tgt[WOG][m] = pf + 170 * np.sin(2 * np.pi * (t[m] - T_DUET) / (2 * BAR))
     tgt[WELL][m] = pf - 170 * np.sin(2 * np.pi * (t[m] - T_DUET) / (2 * BAR))
     tgt[FLO] = at(G, 'Left', 0.5)
-    m = span(T_FLO + 1.0, T_GAME)
+    m = span(T_FLO + 1.0, bt(154.5))
     tgt[FLO][m], rate[FLO][m] = at(G, 'Porch Left', 0.4), 1.6
+    m = span(bt(154.5), T_GAME)                             # she dives down between them; they swing wider round her
+    tgt[FLO][m], rate[FLO][m] = pf + 40 * np.sin(2 * np.pi * (t[m] - T_DUET) / BAR), 3.0
+    tgt[WOG][m] = pf + 300 * np.sin(2 * np.pi * (t[m] - T_DUET) / (2 * BAR))
+    tgt[WELL][m] = pf - 300 * np.sin(2 * np.pi * (t[m] - T_DUET) / (2 * BAR))
 
     # the game: the singer darts to her spot; the others drift where they are
     here = {WOG: pf + 100, WELL: pf - 100, FLO: at(G, 'Porch Left', 0.4)}
@@ -246,7 +225,7 @@ def render(G, seed=2):
     splash = sorted([(T_WOG, WOG), (T_WELL + 1.3, WELL), (T_FLO, FLO), (T_MOCK, WOG)] +
                     [(T_GAME + i * 2 * BAR + 0.25, who) for i, (who, _) in enumerate(GAME)] +
                     [(T_WHIRL, k) for k in range(3)] + [(T_LAUGH, k) for k in range(3)])
-    rock = np.array([e[0] for e in N if e[4] == 'rock'])
+    rock = np.array([e[0] for e in N if e[4] == 'rock' and e[0] < T_HEHE])
     heaves = CLIMB + CREEP
     smoulder = Flicker(rng, G.N, 0.6, 2.4)
     shiver = Flicker(rng, 3, 5.0, 9.0)
@@ -267,7 +246,7 @@ def render(G, seed=2):
         fr += light(MUD, 0.45 * murk * (1 + 0.15 * smoulder(t)))
 
         # the sleeping gold, glimpsed under the knot of maidens
-        g = smoothstep(T_GUARD, T_GUARD + 1.5, t) * (1 - smoothstep(CREEP[0] + 2, CREEP[0] + 5, t))
+        g = smoothstep(T_GUARD, T_GUARD + 1.5, t)
         if g > 0:
             fr += light(GOLD, 0.35 * g * (0.8 + 0.2 * np.sin(2 * np.pi * 0.4 * t)) * np.exp(-((d - pf) / 35) ** 2))
 
@@ -334,8 +313,8 @@ def render(G, seed=2):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
-    n = note
+    """Wagner's notes on the orchestra, the Rhinemaidens' lines each on her own instrument, and the stage: splashes
+    as they surface and dart, the scrape and thud of Alberich heaving himself up the rock."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -345,69 +324,41 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
+    where = lambda k, t: pan_at(np.interp(t, C['t'], C['pos'][k]))
+    o = Orchestra(M, level=3.2)
+    splash = M.hits('Miscellania Raw/Misc 1/bubbles*.wav')
 
-    def pan_of(who, t):
-        return pan_at(np.interp(t, C['t'], C['pos'][who]))
+    def role(t, d, m, v, h):
+        dark = t >= T_ALB
+        if h == 0 and not dark:                                         # the rocking: violins and violas, light
+            return [('violins' if m >= 55 else 'violas', 0, -8, 0.45), ('harp', 0, -14, 0.35)]
+        if h == 0:                                                      # his slithering chords: low brass, bassoons
+            return [('trombones', 0, 6, 0.6), ('bassoons', 0, 0, 0.5), ('violas', 0, -6, 0.35)]
+        if dark and m < 48:
+            return [('tuba', 12 if m < 36 else 0, 4, 0.55), ('basses', 12 if m < 40 else 0, 0, 0.5)]
+        return [('cellos', 0, -4, 0.55), ('basses', -12 if m >= 40 else 0, -10, 0.35)]
 
-    for name, gain, rev in (('voices', 0.2, 0.35), ('choir', 0.12, 0.45), ('harp', 0.2, 0.35), ('strings', 0.12, 0.3),
-                            ('low', 0.16, 0.15), ('brass', 0.16, 0.25), ('perc', 0.2, 0.2), ('laugh', 0.12, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    voice = [M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12), M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12),
-             M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)]
-    harp = M.sampler('Strings/Harp/*.wav')
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    flst = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.0, fall=1.2, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    choir = [[], [], []]
+    o.tutti(tidy(EX['notes']), role=role)
+    inst = {WOG: [('oboes', 0.85), ('flutes', 0.3)], WELL: [('flutes', 0.9), ('clarinets', 0.25)],
+            FLO: [('clarinets', 0.95), ('violas', 0.3)]}
     for t, d, m, v, part, who in compose():
         if part == 'sing':
-            M.add('voices', voice[who].play(m, v, dur=d * 1.05, release=0.18), t, 1.0, pan_of(who, t))
-            choir[who].append((t, m, v - 30, d))
-        elif part == 'rock':
-            M.add('harp', harp.play(m, v), t, 1.0, -0.3 + 0.6 * ((m - 51) / 12))
-        elif part == 'pedal':
-            s = cb if m < 40 else (vc if m < 55 else va)
-            hold('strings' if m >= 55 else 'low', s, m, t, t + d, v, 0.0, rise=2.0, gain=0.8)
-        elif part == 'alb':
-            M.add('low', bsn.play(m, v), t, 0.9, pan_at(C['apos'][min(int(t / DT), len(C['apos']) - 1)]))
-        elif part == 'thump':
-            p = pan_at(C['apos'][min(int(t / DT), len(C['apos']) - 1)])
-            M.add('low', pizz.play(m + 12, v), t, 1.0, p)
-            M.add('perc', timp.play(v - 10, pitch=-5), t, 0.7, p)
-        elif part == 'hehe':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.15), t, 1.0, pan_at(C['apos'][int(t / DT)]))
-        elif part == 'trem':
-            hold('low', trem, m, t, t + d - 1.0, v, -0.4, rise=1.5, gain=0.7)
-            hold('low', trem, m + 7, t + 4.0, t + d - 1.0, v - 8, 0.4, rise=2.0, gain=0.5)
-        elif part == 'guard':
-            hold('strings', vtrem, m + 12, t, t + d, v, 0.0, rise=0.4, fall=0.6, gain=0.6)
-        elif part == 'laugh':
-            M.add('laugh', (pic if m >= n('Ab5') else flst).play(m, v), t, 1.0, pan_of(who, t))
-    for who, pat in ((WOG, 'Pads/Ooh'), (WELL, 'Pads/Ooh'), (FLO, 'Pads/Ooh')):
-        if choir[who]:
-            M.add('choir', M.synth(pat).render(choir[who], D + 2), 0.0, 1.0, (0.0, 0.5, -0.5)[who])
-    M.add('perc', roll.play(60, dur=3.5), T_GUARD - 0.5, 0.5, 0.0)
+            for name, g in inst[who]:
+                o.play(name, m, t, d, 100, where(who, t), g)
+    # the stage
+    for ts, who in [(T_WOG + 0.05, WOG), (T_WELL + 1.3, WELL), (T_FLO, FLO)] + \
+            [(T_GAME + i * 2 * BAR + 0.25, who) for i, (who, _) in enumerate(GAME)]:
+        M.add('fx', splash.play(110), ts, 0.7, where(who, ts))
+        o.hit('triangle', ts, 70, gain=0.15, pan=where(who, ts))
+    for k in range(3):
+        M.add('fx', splash.play(100), T_WHIRL + 0.3 * k, 0.5, where(k, T_WHIRL + 0.3 * k))
+    corner = pan_at(at(G, 'Left', 0.98))
+    o.hit('gong scrape', T_ALB, 90, gain=0.35, pan=corner)
+    for h in CLIMB:
+        o.hit('scrape', h + 0.4, 96, gain=0.4, pan=corner)
+        o.hit('bass drum', h + 0.47, 104, gain=0.5, pan=corner)
+    o.hit('timpani', T_HEHE, 88, pitch=-5, gain=0.35, pan=corner)
+    # effects lead on the splashes and his climb, and get out of the way of the singing
+    o.effects([(0.0, -6), (1.0, -10), (T_WELL + 0.8, -4), (T_WELL + 2.0, -10), (T_FLO - 0.2, -5),
+               (T_FLO + 1.5, -11), (T_GAME - 0.5, -3), (T_LAUGH, -2), (T_HEHE + 0.4, -8), (CALLS[0], -12),
+               (T_GUARD, -10), (D, -10)])

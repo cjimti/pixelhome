@@ -1,28 +1,30 @@
-"""Freia Ransomed: the giants bring Freia back up the mountain. They stamp in from the free end of Right to
-their own motif (Donington 58) in the tubas, Freia's pink between them while her joyful theme (Donington 7)
-floats over them in the violins, and as she comes near, the grey gods on the wings get a little of their
-colour back. Wotan steps aside, Loge slips off to Porch Left, and she is set down on the hoard at the back of
-the porch. Two thuds: the giants plant their staves on either side of her, one grey, one ochre.
+"""Freia Ransomed: the giants bring Freia back up the mountain, the gods heap the gold round her until she is
+hidden, Fasolt still sees her eye through a gap, and Wotan refuses to give up the ring that would close it.
 
-Then the gold is heaped up to hide her. The Gold's call (Donington 44) sounds six times, climbing, on horns
-and then trumpets, and every note is a lump of gold that Loge, Donner or Froh flings across the house: a comet
-along the roofline that lands on the pile with a flash and a clink. The heap grows round the pink, from the
-edges in, until only flecks of her show; twice Fafner stamps up and orders it packed tighter (the giants'
-authority, Donington 59), and the pile flares as it is pressed down. Loge throws on the last thing in the
-hoard, the helmet Mime forged (the Tarnhelm, Donington 18), and a violet-grey shimmer settles on top.
+The music is Wagner's own: four passages of the last scene of Das Rheingold (bars 3226-3231, 3326-3339, 3396-3403
+and 3446-3455) as Solti's 1958 Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's piano
+reduction (pixelhome/ring.py). The giants come in over their tread, a G pounding on every beat in the tubas,
+basses and timpani, with Freia's music above it in the violins; the gold is heaped up to the falling octaves of
+the bassoons, cellos and horns, a lump for each; Fasolt's "Weh! noch blitzt ihr Blick" swells into Freia's love
+music over trembling strings; and Donner's "Spende den Ring doch!" and Wotan's "Laßt mich in Ruh': den Reif
+geb' ich nicht!" break into the full orchestra, trumpets on top and the spear's falling scale in the trombones and
+tubas. The staging's sounds go over it: the giants' footfalls, a great double thud as their staves are planted,
+gold clinking on the pile, Fafner's stamp as he orders it packed tighter, a gong scraped as the helmet lands on
+top, the boom and crash of Wotan's refusal and the giants stamping in outrage. They back off for Freia's eye.
 
-But Fasolt, coming close, can still see her eye through a gap: one pink glint inside the gold, pulsing with
-Freia's love music (Donington 6) on a solo violin. Fafner points at the only gold left to fill it, the ring on
-Wotan's hand, and the Ring motif (Donington 8) grinds out in the tubas while the small gold point on Wotan
-throbs. Wotan refuses: the ring flares red across the porch and his spear's descending scale (Donington 73)
-comes down on the trombones, a steel line striking out along Porch Left note by note. The giants stamp in
-outrage, the gods' colours shrink back toward grey, and the standoff hangs on a tremolo.
+The giants stamp in from the free end of Right on that tread, Freia's pink between them, and as she comes near
+the grey gods on the wings get a little of their colour back. She is set down on the hoard at the back of the
+porch and the staves go in on either side of her, one grey, one ochre. Then the gold flies: every falling octave
+is a lump that Loge, Donner or Froh flings across the house, a comet along the roofline landing on the pile with a
+flash; the heap grows round the pink from the edges in, Fafner twice stamps up and presses it down, and the helmet
+settles on top in a violet-grey shimmer. Through one gap a pink glint still shows, pulsing with the love music.
+Donner begs for the ring; Wotan refuses: the ring flares red across the porch, the spear's scale strikes out along
+Porch Left note by note, and the giants stamp in outrage.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags the music's moments, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG21'
 TITLE = 'Freia Ransomed'
@@ -33,21 +35,23 @@ DESCRIPTION = ('The giants bring Freia back and plant their staves around her, a
 VOICEOVER = ('Freia comes home, but only as far as the gold. '
              'Pile it high enough to hide her, the giants say, and she is yours again.')
 
-BEAT = 0.5                                  # a quarter note at 120
-GSTEP = 0.6                                 # the giants' tread
-T_WALK = 0.4
-T_FREIA = [1.0, 5.4]
-T_PLANT = [9.4, 10.6]
-GOLD_CALLS = [(13.0, 0), (17.5, 2), (22.0, 4), (30.0, 5), (34.5, 7), (39.0, 7)]
-FAF = [26.2, 43.4]                          # Fafner: pack it tighter!
-T_HELM = 48.0                               # the helmet on top
-T_EYE = 53.4                                # Fasolt sees her eye
-T_RING = 61.0                               # Fafner demands the ring
-T_REFUSE = 66.6                             # Wotan refuses: the spear
-T_RAGE = 71.6
-STAMPS_RAGE = [71.6, 72.6, 73.6, 74.4]
+EX = excerpt(__file__)                      # bars 3226-3231, 3326-3339, 3396-3403, 3446-3455, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [g['start'] for g in EX['segments']] + [EX['seconds']]
+GSTEP = 0.8                                 # the giants' tread: the G on every beat
+T_WALK = 0.0
+T_FREIA = [0.0, 6.54]
+T_PLANT = [BAR[3231], 17.72]                # the low G, then the chord: the staves go in
+FAF = [37.68, 47.3]                         # Fafner: "Nicht so leicht und locker gefügt!", "Fest und dicht"
+T_HELM = BAR[3339] + 0.1                    # the helmet on top
+T_EYE = SEG[2]                              # Fasolt sees her eye: the love music swells
+T_RING = SEG[3]                             # "Spende den Ring doch!"
+T_PLEA = 73.5                               # its fortissimo chords
+T_REFUSE = BAR[3452]                        # after "den Reif geb' ich nicht!": the full orchestra
+T_RAGE = 86.26
+STAMPS_RAGE = [86.26, 88.02, 88.45, 88.89]
 T_HANDOVER = 5.0                            # seconds to grow out of the last scene's look
-D = 80.0
+D = EX['seconds']
 T0 = 0.0                                  # the opera's clock at our start: steady motion carries across the cuts
 
 FLIGHT = 0.85                               # seconds a lump of gold flies
@@ -98,77 +102,44 @@ def faded(t):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who). who names the thrower for 'gold' notes."""
+    """The music's moments, from the excerpt's real notes: (time, seconds, midi, velocity, part, who). 'stamp' is
+    the giants' tread (the low G on every beat), 'freia' her music above it, 'plant' the staves, 'lump' each falling
+    octave of the heaping (who throws it), 'faf' Fafner's orders, 'tarn' the helmet, 'love' the love music under
+    her eye, 'ring' Donner's plea, 'spear' each step of the falling scale after Wotan's refusal."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    # the giants tread in, Freia's theme over them (in C, as the giants are)
-    for t, m, v, d in play('giants', T_WALK, GSTEP, -12, 100):
-        add(t, d, m, v, 'giants')
-    for k in range(12):
-        add(T_WALK + k * GSTEP, 0.4, 'C2' if k % 2 == 0 else 'G1', 104 if k % 2 == 0 else 92, 'stamp',
-            'fafner' if k % 2 == 0 else 'fasolt')
-    for i, t0 in enumerate(T_FREIA):
-        for t, m, v, d in play('freia', t0, 0.55, -2, 84 + 8 * i):
-            add(t, d, m, v, 'freia' if m >= note('C4') else 'freialow')
-    add(0.0, T_PLANT[0], 'C2', 62, 'pedal')
-    for i, tp in enumerate(T_PLANT):
-        add(tp, 0.8, 'C1' if i == 0 else 'G0', 124, 'plant', ('fasolt', 'fafner')[i])
-
-    # the gold heaped up: each note of its call is one lump, flung by Loge, Donner or Froh in turn
+    seen = set()
     k = 0
-    for i, (t0, tr) in enumerate(GOLD_CALLS):
-        inst = 'horn' if i < 3 else 'trumpet'
-        for t, m, v, d in play('gold', t0, BEAT, tr, 86 + 5 * i):
-            add(t, d, m + (12 if inst == 'trumpet' else 0), v, inst, THROWERS[k % 3])
-            if inst == 'trumpet':
-                add(t, d, m, v - 14, 'horn')
-            add(t, 0.3, m + 24, 60 + 4 * i, 'clink')
-            k += 1
-        root = note('G2') + tr
-        for m in (root, root + 7, root + 12, root + 16):
-            add(t0 - 0.2, 4.2, m, 64 + 4 * i, 'chord')
-        add(t0 - 0.9, 0.8, root + 12, 84, 'gliss')
-        for j in range(7):                                  # the pile's pulse: low strings in the giants' rhythm
-            add(t0 + j * BEAT, BEAT * 0.6, root - 12, 80 + 6 * (j % 2 == 0), 'pulse')
-    for t0 in FAF:
-        for t, m, v, d in play('giants_authority', t0, BEAT, -12, 108):
-            if t < t0 + 4.0:
-                add(t, d, m, v, 'faf')
-        for b in (0, 2, 4):
-            add(t0 + b * BEAT, 0.5, 'C2', 118, 'stamp', 'fafner')
-
-    # the last of the hoard: Loge tosses on the helmet
-    for t, m, v, d in play('loge_flicker', T_HELM - 1.6, 0.4, -12, 90):
-        add(t, d, m, v, 'loge')
-    for t, m, v, d in play('tarnhelm', T_HELM, 0.6, 0, 76):
-        if t < T_HELM + 4.6:
-            add(t, d, m, v, 'tarn')
-
-    # her eye through a gap: Freia's love, on a solo violin
-    for t, m, v, d in play('freia_love', T_EYE, 0.8, -2, 82):
-        add(t, d, m, v, 'love' if m >= note('C4') else 'lovelow')
-    for b, d, m in ((0, 1, 'E3'), (1, .5, 'D3'), (1.5, .5, 'C3'), (2, 2, 'G2'), (4, 1, 'A2'), (5, 3, 'C3')):
-        add(T_EYE + 5.2 + b * 0.5, d * 0.5, m, 70, 'fasolt')
-
-    # Fafner wants the ring; Wotan's refusal on the spear
-    for t, m, v, d in play('ring', T_RING, 0.55, -12, 104):
-        add(t, d, m, v, 'ring')
-    for t, m, v, d in play('spear', T_REFUSE, 0.42, 0, 116):
-        add(t, d, m, v, 'spear')
-    add(T_REFUSE, 1.5, 'Bb1', 124, 'flare')
-
-    # the giants' outrage, and the standoff
-    for t, m, v, d in play('giants', T_RAGE - 8 * 0.5, 0.5, -12, 110):
-        if t >= T_RAGE:
-            add(t, d, m, v, 'giants')
+    for t, d, m, v, h in EX['notes']:
+        if t < SEG[1]:
+            if h == 1 and m in (31, 43) and d >= 0.5 and t < T_PLANT[0] and t not in seen:
+                seen.add(t)
+                N.append((t, d, m, v, 'stamp', ('fafner', 'fasolt')[k % 2]))
+                k += 1
+            elif h == 0 and m >= 60:
+                N.append((t, d, m, v, 'freia', None))
+        elif t < SEG[2]:
+            if h == 1 and d >= 0.3 and t not in seen:
+                seen.add(t)
+                if T_HELM - 0.2 > t:
+                    N.append((t, d, m, v, 'lump', ['loge', 'donner', 'froh'][len(seen) % 3]))
+            if any(f0 <= t < f0 + 2.6 for f0 in FAF) and h == 1 and d >= 0.3:
+                N.append((t, d, m, v, 'faf', 'fafner'))
+            if t >= T_HELM - 0.2 and h == 0:
+                N.append((t, d, m, v, 'tarn', None))
+        elif t < SEG[3]:
+            if h == 1 and d >= 0.3:
+                N.append((t, d, m, v, 'love', None))
+        else:
+            if T_PLEA <= t < T_PLEA + 1.8 and h == 0:
+                N.append((t, d, m, v, 'ring', None))
+            if (h == 0 and 82.8 <= t < 85.9 or h == 1 and 86.0 <= t < 89.2) and d >= 0.2:
+                if (round(t, 2), 'spear') not in seen:
+                    seen.add((round(t, 2), 'spear'))
+                    N.append((t, d, m, v, 'spear', None))
+    for i, tp in enumerate(T_PLANT):
+        N.append((tp, 0.8, 31, 0, 'plant', ('fasolt', 'fafner')[i]))
     for i, ts in enumerate(STAMPS_RAGE):
-        add(ts, 0.5, 'C2', 120, 'stamp', ('fafner', 'fasolt')[i % 2])
-    for m in ('C3', 'Eb3', 'G3', 'C4'):
-        add(75.0, D - 75.0, m, 74, 'trem')
-    add(76.5, D - 76.5, 'C2', 86, 'roll')
+        N.append((ts, 0.5, 36, 0, 'stamp', ('fafner', 'fasolt')[i % 2]))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -246,7 +217,7 @@ def throws(G, C):
     """The lumps of gold: (landing time, launch place)."""
     out = []
     for t, d, m, v, part, who in compose():
-        if part in ('horn', 'trumpet') and who is not None:
+        if part == 'lump':
             out.append((t, float(np.interp(t - FLIGHT, C['t'], C[who]))))
     return out
 
@@ -376,7 +347,7 @@ def render(G, seed=21):
 
         # while Fasolt looks for her eye, the world holds its breath
         hush = smoothstep(T_EYE - 1.0, T_EYE + 0.5, t) * (1 - smoothstep(T_RING - 0.5, T_RING + 0.5, t))
-        fr *= 1 - 0.55 * hush
+        fr *= 1 - 0.3 * hush
 
         # the heap and Freia in it; its gold warms the whole porch as it grows
         cov = 0.12 + 0.88 * heaped ** 0.85 + 0.2 * smoothstep(T_HELM, T_HELM + 2, t)
@@ -405,6 +376,10 @@ def render(G, seed=21):
             beat = 0.75 + 0.25 * np.sin(2 * np.pi * t / 1.6)
             fr[eye] += light(FREIA, ey * (1.0 + 0.3 * lv) * beat)
             fr += light(FREIA, ey * (0.25 + 0.4 * lv) * np.exp(-((d - d[eye]) / 16) ** 2))
+            for tl in loves:                                # each note of the love music: a pink ring from her eye
+                if tl <= t < tl + 1.6:
+                    r = 10 + 520 * ((t - tl) / 1.6) ** 0.7
+                    fr += light(FREIA, ey * 0.55 * (1 - (t - tl) / 1.6) * np.exp(-((np.abs(d - d[eye]) - r) / 30) ** 2))
 
         # the helmet on top: a violet-grey shimmer settling over the pile
         if hm > 0:
@@ -473,7 +448,7 @@ def render(G, seed=21):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the staging's sounds over them."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -488,127 +463,50 @@ def score(M, G):
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C[who]))
 
-    for name, gain, rev in (('strings', 0.14, 0.32), ('solo', 0.2, 0.35), ('low', 0.16, 0.15),
-                            ('brass', 0.16, 0.28), ('winds', 0.15, 0.3), ('perc', 0.2, 0.22), ('harp', 0.17, 0.4),
-                            ('glock', 0.07, 0.4), ('fx', 0.08, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    solo = M.sampler('Strings/Solo Violin/Arco Vib/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    o = Orchestra(M, level=2.6)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        if t < SEG[1]:                                  # the giants' tread under Freia's music
+            if h == 1:
+                return [('tuba', 0, 6, 0.8), ('trombones', 12, -4, 0.45), ('basses', 0, 0, 0.5)]
+            return [('violins', 0, 10, 0.55), ('flutes', 0, -4, 0.35)] if m >= 60 else None
+        if t < SEG[2]:                                  # the heaping: falling octaves
+            if h == 1:
+                return [('cellos', 0, 34, 0.6), ('bassoons', 0, 26, 0.45), ('horns', 0, 22, 0.45 if m >= 41 else 0)]
+            return [('violins' if m >= 55 else 'violas', 0, 28, 0.45), ('clarinets', 0, 18, 0.3)]
+        if t < SEG[3]:                                  # the love music under her eye
+            if h == 1:
+                return [('cellos', 0, 26, 0.7), ('horns', 0, 16, 0.5)]
+            return [('violins', 0, 26, 0.55), ('flutes', 0, 6, 0.3 if m >= 72 else 0)]
+        if t >= T_REFUSE - 0.05 and h == 1:             # the spear's falling scale
+            return [('trombones', 0, 30, 0.8), ('tuba', 0, 26, 0.6 if m < 48 else 0), ('basses', 0, 20, 0.4)]
+        if T_PLEA <= t < T_PLEA + 1.8 and h == 0:       # Donner's plea: trumpets on top
+            return [('trumpets', 0, 0, 0.6), ('horns', -12, -4, 0.5), ('violins', 0, 0, 0.45)]
+        return None
 
-    for t, d, m, v, part, who in compose():
-        if part == 'giants':
-            pg = pan_of('fafner', t)
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.2), t, 1.2, pg)
-            M.add('brass', tbn.play(m + 12, v - 8, dur=d * 1.05, release=0.2), t, 0.8, pan_of('fasolt', t))
-        elif part == 'stamp':
-            p = pan_of(who, t)
-            M.add('perc', timp.play(v, pitch=-4 if who == 'fafner' else -1), t, 0.9, p)
-            M.add('perc', bd.play(v - 10), t, 0.6, p)
-            M.add('low', pizz.play(m + 12, v), t, 0.7, p)
-        elif part == 'freia':
-            p = pan_of('freia', t)
-            M.add('strings', vn.play(m + 12, v, dur=d * 1.05, release=0.25), t, 0.9, p)
-            M.add('winds', fl.play(m + 12, v - 16, dur=d * 1.05, release=0.25), t, 0.5, p)
-        elif part == 'freialow':
-            M.add('low', pizz.play(m + 12, v - 10), t, 0.6, pan_of('freia', t))
-        elif part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=1.5, fall=1.0, gain=0.7)
-        elif part == 'plant':
-            p = pan_of(who, t)
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, p)
-            M.add('perc', bd.play(v), t, 0.9, p)
-            M.add('brass', tuba.play(m + 12, v, dur=d, release=0.3), t, 0.9, p)
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d, release=0.35), t, 0.95, hc - 0.15)
-            if who is not None:
-                M.add('fx', whoosh(FLIGHT, 600, 3000, 0.4, seed=int(t * 10)), t - FLIGHT, 0.5,
-                      pan_of(who, t - FLIGHT))
-        elif part == 'trumpet':
-            M.add('brass', tpt.play(m, v, dur=d, release=0.35), t, 0.9, hc + 0.15)
-            M.add('fx', whoosh(FLIGHT, 600, 3000, 0.4, seed=int(t * 10)), t - FLIGHT, 0.5, pan_of(who, t - FLIGHT))
-        elif part == 'clink':
-            M.add('glock', glock.play(m, v), t, 1.0, hc)
-        elif part == 'chord':
-            s = vn if m >= note('G4') else va if m >= note('C3') else vc
-            hold('strings', s, m, t, t + d, v, 0.0, rise=0.5, fall=0.8, gain=0.6)
-        elif part == 'gliss':
-            gl = [x for x in range(m - 12, m + 13) if (x - m) % 12 in (0, 4, 7)]
-            for i, x in enumerate(gl):
-                M.add('harp', harp.play(x, 86 + i), t + i * d / len(gl), 1.0, -0.6 + 1.2 * i / len(gl))
-        elif part == 'pulse':
-            M.add('low', vcs.play(m + 12, v), t, 0.7, hc)
-            M.add('low', pizz.play(m + 12, v - 10), t, 0.6, hc)
-        elif part == 'faf':
-            p = pan_of('fafner', t)
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.2), t, 1.0, p)
-            M.add('brass', tbn.play(m + 12, v - 10, dur=d * 1.05, release=0.2), t, 0.7, p)
-        elif part == 'loge':
-            M.add('winds', pic.play(m, v), t, 0.9, pan_of('loge', t))
-        elif part == 'tarn':
-            M.add('brass', mute.play(m, v, dur=d, release=0.6), t, 0.8, hc)
-            hold('strings', vtrem, m, t, t + d, v - 10, hc, rise=0.6, fall=0.8, gain=0.4)
-        elif part == 'love':
-            M.add('solo', solo.play(m + 12, v, dur=d * 1.1, release=0.35), t, 1.0, hc + 0.1)
-            M.add('winds', fl.play(m, v - 20, dur=d * 1.1, release=0.35), t, 0.4, hc + 0.1)
-        elif part == 'lovelow':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v - 14, hc, rise=0.4, fall=0.6, gain=0.6)
-        elif part == 'fasolt':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.8, pan_of('fasolt', t))
-        elif part == 'ring':
-            p = pan_of('fafner', t)
-            if m >= note('C3'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 1.1, p)
-                M.add('brass', horn.play(m + 12, v - 10, dur=d * 1.05, release=0.3), t, 0.8, p)
-            else:
-                M.add('brass', tuba.play(m, v, dur=d, release=0.4), t, 1.2, p)
-                hold('low', cb, m + 12, t, t + d, v - 10, p, rise=0.5, fall=0.8, gain=0.9)
-        elif part == 'spear':
-            p = pan_of('wotan', t)
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.25), t, 1.4, p)
-            M.add('brass', horn.play(m + 12, v - 8, dur=d * 1.05, release=0.25), t, 0.9, p)
-            M.add('brass', tuba.play(m - 12, v - 6, dur=d * 1.05, release=0.25), t, 1.1, p)
-            M.add('low', vc.play(m, v, dur=d, release=0.2), t, 0.9, p)
-        elif part == 'flare':
-            p = pan_of('wotan', t)
-            M.add('perc', gong.play(v), t, 0.8, p)
-            M.add('perc', crash.play(v), t, 0.7, p)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, p)
-        elif part == 'trem':
-            hold('strings', vtrem if m >= note('C4') else trem, m, t, t + d, v, 0.0, rise=1.0, fall=1.2, gain=1.1)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.5), t, 0.9, 0.0)
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if t >= SEG[3] else 0.6, role=role)
+
+    N = compose()
+    o.effects([(0.0, 0.0), (SEG[2] - 1.0, 0.0), (SEG[2] + 0.5, -14.0), (SEG[3] - 0.5, -14.0), (SEG[3] + 0.5, -2.0)])
+    for t, d, m, v, part, who in N:
+        if part == 'stamp':                             # the giants' footfalls
+            big = t >= T_RAGE
+            o.hit('bass drum', t, 116 if big else 100, gain=0.5 if big else 0.32, pan=pan_of(who, t))
+            if big or who == 'fafner':
+                o.hit('timpani', t, 110, pitch=-7, gain=0.35, pan=pan_of(who, t))
+        elif part == 'plant':                           # the staves driven in
+            o.boom(t, pan_of(who, t), 0.8)
+            o.hit('brake drum', t + 0.01, 104, gain=0.25, pan=pan_of(who, t))
+        elif part == 'lump':                            # gold landing on the pile
+            o.play('glock', 84 + (int(t * 7) % 5) * 2, t, 0.1, 70, hc, 0.28)
+            o.hit('metal', t, 64, gain=0.12, pan=hc)
+    for t0 in FAF:                                      # Fafner stamps up and packs it down
+        for k in range(3):
+            o.hit('bass drum', t0 + 0.5 * k, 118, gain=0.5, pan=pan_of('fafner', t0))
+        o.hit('scrape', t0 + 1.0, 96, gain=0.25, pan=hc)
+    o.hit('gong scrape', T_HELM, 108, gain=0.5, pan=hc)      # the helmet on top
+    o.hit('triangle', T_HELM + 0.6, 80, gain=0.3, pan=hc)
+    pw = pan_of('wotan', T_REFUSE)
+    o.boom(T_REFUSE, pw, 1.0)                           # Wotan refuses
+    o.hit('crash', T_REFUSE, 122, gain=0.6, pan=pw)
+    o.clash(T_REFUSE + 0.02, pw, 110, 0.6)

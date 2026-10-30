@@ -1,24 +1,28 @@
 """The Annunciation of Death: while Sieglinde lies senseless on Left and Siegmund keeps watch over her, the
-whole pass falls silent. The slate and the dawn drain away into indigo, pale motes drift through it, and the low
-strings hold their breath. Then the Wagner tubas (tubas and horns) sound the power of fate (Donington 84), the
-two chords of the Annunciation: on the first a pale light gathers over the middle of Porch Front, on the second
-Brünnhilde is there, her silver glowing wide over the porch with her gold glints, shield and spear. Only those
-about to die can see her.
+whole pass falls silent. The slate and the dawn drain away into indigo, pale motes drift through it. Then the
+Wagner tubas sound the power of fate, the chords of the Annunciation: on the first a pale light gathers over the
+middle of Porch Front, on the next Brünnhilde is there, her silver glowing wide over the porch with her gold
+glints, shield and spear. Only those about to die can see her. The fate motif's knocking rhythm sends pale
+shocks down her gaze to him on Left; the chords come again a tone higher, each one a pulse of her silver, and
+the beam of her gaze settles on him. Then she tells him where he is going: Valhalla rises out of the depths of
+the orchestra, climbing and swelling chord by chord, and over the porch the battlements of the gods' castle
+blaze white-gold in the indigo with the fallen heroes glinting along them, brighter with every step of the
+climb, until the whole house flares at its summit and settles into the castle's glow.
 
-Fate inevitable (Donington 85), the question that hangs, answers in the horns and tubas; the fate chords come
-again a tone higher, each one a slow pulse of her silver, and a pale beam of her gaze reaches down Porch Left
-onto Left, to him. Siegmund's blue lifts toward her to his own weary motif (Donington 35a) in the cellos: who
-are you? She tells him where he is going. Valhalla (Donington 63) rises in the brass, slow and grand, and over
-the porch the battlements of the gods' castle blaze white-gold in the indigo, chord by chord, with the fallen
-heroes glinting along them; a second, softer Valhalla with harps, and the castle fades. Then fate again, low:
-he must follow her. The scene ends as it began, utterly still: indigo, her silver over the porch, the beam on
-him, and Sieglinde's amber faint beside him.
+The music is Wagner's own: Act II, scene 4, bars 1474 to 1481 (the Annunciation's fate chords, twice) and bars 1565
+to 1576 (Brünnhilde's Valhalla, from its first rising figure to its summit and cadence), spliced, as Solti's 1958
+Vienna Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano reduction of the score
+(pixelhome/ring.py): the fate chords are played by Wagner tubas (tubas, trombones and horns), the knocking rhythm by
+the timpani and cellos, and Valhalla by the full orchestra, its brass growing with the climb. Over the score, as a
+staging would: the hush is a gong scrape, a cymbal swell as she gathers out of the light, a deep gong and timpani
+roll on every fate chord, a thud reaching Siegmund with each knock, a timpani stroke on every chord of the climb
+with triangles for the sparks up the battlements, and a boom, gong and cymbals at Valhalla's summit. The effects
+stay hushed throughout, recede further under Valhalla's climb and open up only at its summit.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play, melody
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK16'
 TITLE = 'The Annunciation of Death'
@@ -28,15 +32,14 @@ DESCRIPTION = ('Brünnhilde appears to Siegmund, and only a man who is about to 
 VOICEOVER = ('Everything goes quiet. Siegmund looks up, and sees someone who should not be there. '
              'She has come to tell him he is going to die.')
 
-BEAT = 1.0                                  # a quarter note at 60: slow and grave
-T_HUSH = 0.5                                # the pass drains into indigo
-T_FATE = [6.0, 21.0, 53.0]                  # the Annunciation chords, three times
-TR_FATE = [0, 2, -2]
-T_INEV = [15.0, 30.0, 62.0]                 # fate inevitable answers
-T_WEARY = 31.5                              # Siegmund: who are you?
-T_VAL = [37.5, 45.6]                        # Valhalla, grand and then soft
-T_STILL = 68.5
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1474-1481 + 1565-1576, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_FATE = [BAR[1474], BAR[1478]]             # the Annunciation, twice
+T_HERE = BAR[1475]                          # she is there
+T_VAL = BAR[1565]                           # Valhalla begins to rise
+T_TOP = BAR[1575]                           # its summit
+T_CAD = BAR[1576]                           # the cadence
 K = 15
 GLINTS = (-24, -9, 10, 23)
 
@@ -54,6 +57,7 @@ STEEL = hexc('#e8f8ff')
 HILT = hexc('#ffcc40')
 CASTLE = hexc('#fff0c0')
 BLAZE = hexc('#ffe8a0')
+WHITE = hexc('#ffffff')
 
 
 def at(G, seg, u):
@@ -99,38 +103,16 @@ def indigo_bed(G):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Before Valhalla the long notes
+    are the fate chords ('fate', k = which statement) and the short ones their knocking rhythm ('knock'); from
+    T_VAL on everything is Valhalla ('valhalla', k = 1 for the right hand's top line from C5 up)."""
     N = []
-
-    def add(t, d, m, v, part, k=0):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    # the hush: low strings hold their breath, a soft timpani roll
-    add(0.0, T_FATE[0] + 0.5, 'D2', 84, 'trem')
-    add(0.0, T_FATE[0] + 0.5, 'D1', 76, 'pedal')
-    add(T_HUSH + 1.0, T_FATE[0] - T_HUSH - 0.5, 'A2', 58, 'trem')
-    add(T_FATE[0] - 2.5, 2.5, 'D2', 70, 'roll')
-    # the Annunciation chords, the question that answers them; three times
-    for j, (t0, tr) in enumerate(zip(T_FATE, TR_FATE)):
-        for t, m, v, d in play('fate', t0, BEAT, tr, (96, 100, 84)[j]):
-            add(t, d * 1.02, m, v, 'fate', j)
-    for j, t0 in enumerate(T_INEV):
-        for t, m, v, d in play('fate_inevitable', t0, BEAT, -12 + (0, 2, -2)[j], (80, 86, 74)[j]):
-            add(t, d * 1.02, m, v, 'inev', j)
-    add(T_FATE[0] + 4, T_INEV[0] - T_FATE[0], 'Db1', 70, 'pedal')
-    # Siegmund: who are you?
-    for t, m, v, d in play('siegmund_weary', T_WEARY, 0.75, 0, 84, 'bass'):
-        add(t, d, m, v, 'weary')
-    # Valhalla: grand, then soft with harps
-    for j, t0 in enumerate(T_VAL):
-        for t, m, v, d in play('valhalla', t0, BEAT, 0, (100, 76)[j]):
-            add(t, d * 1.02, m, v, 'valhalla', j)
-    for i, t in enumerate(np.arange(T_VAL[1], T_VAL[1] + 8.0, 0.25)):
-        add(t, 0.8, note('Db4') + (0, 5, 8, 12, 17, 12, 8, 5)[i % 8], 70, 'harp', i)
-    # the stillness: a held chord, very soft, over a pedal D
-    for m in ('D2', 'A2', 'F3'):
-        add(T_STILL - 2, D - T_STILL + 2, m, 56, 'pad')
-    add(T_STILL, D - T_STILL, 'D1', 64, 'pedal')
+    for t, d, m, v, hand in EX['notes']:
+        if t < T_VAL - 0.01:
+            part = 'fate' if d >= 1.0 else 'knock'
+            N.append((t, d, m, v, part, int(t >= T_FATE[1] - 0.01)))
+        else:
+            N.append((t, d, m, v, 'valhalla', int(hand == 0 and m >= 72)))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -156,33 +138,38 @@ def render(G, seed=16):
     b, mn, ln = C['brunn'][0], C['mund'][0], C['linde'][0]
     tw = Flicker(rng, G.N, 2.0, 6.0)
     heights = smoothstep(-200, -560, z) * porch
-
-    def ons(*parts):
-        return [e for e in N if e[4] in parts]
-
-    def chords(*parts):
-        return sorted({e[0] for e in ons(*parts)})
-
-    fate_on = chords('fate', 'inev')
-    val_on = [chords('valhalla')[i] for i in range(len(chords('valhalla')))]
-    weary_on = chords('weary')
     heroes = rng.uniform(0, 1, G.N) < 0.09
+
+    def onsets(part, k=None, vmin=0):
+        return np.array(sorted({e[0] for e in N if e[4] == part and (k is None or e[5] == k) and e[3] >= vmin}))
+
+    def last(on, t):
+        i = int(np.searchsorted(on, t, side='right')) - 1
+        return (t - on[i], i) if i >= 0 else (99.0, -1)
+
+    fate_on = onsets('fate')
+    knock_on = onsets('knock')
+    val_on = onsets('valhalla')
+    top = [(e[0], e[2]) for e in N if e[4] == 'valhalla' and e[5] == 1]
+    top_t = np.array([x[0] for x in top])
+    top_m = np.array([x[1] for x in top], float)
+    crenel = (np.cos(2 * np.pi * d / 46) > -0.1)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        hush = smoothstep(T_HUSH, T_FATE[0], t)
+        hush = smoothstep(0.0, 3.0, t)
         fr = bed(T, 1 - hush, 1 - hush) + ind(T, hush)
 
-        # her coming: the pale gathers on the first chord, she is there on the second
-        appear = smoothstep(T_FATE[0], T_FATE[0] + 3.5, t)
-        here = smoothstep(T_FATE[0] + 3.6, T_FATE[0] + 5.5, t)
-        i = int(np.searchsorted(fate_on, t, side='right')) - 1
-        pulse = np.exp(-(t - fate_on[i]) / 1.2) if i >= 0 else 0.0
-        fr += light(PALE, (0.55 * appear * (1 - 0.5 * here) + 0.2 * pulse * appear) * np.exp(-((d - b) / 150) ** 2))
-        bl = here * (0.78 + 0.18 * pulse)
+        # her coming: the pale gathers on the first chord, she is there on the next
+        appear = smoothstep(0.0, 3.0, t)
+        here = smoothstep(T_HERE - 0.5, T_HERE + 1.0, t)
+        age, _ = last(fate_on, t)
+        pulse = np.exp(-age / 0.9)
+        fr += light(PALE, (0.55 * appear * (1 - 0.5 * here) + 0.3 * pulse * appear) * np.exp(-((d - b) / 150) ** 2))
+        bl = here * (0.78 + 0.22 * pulse)
         fr += light(BRUNN, bl * np.exp(-((d - b) / 18) ** 2) + 0.3 * bl * np.exp(-((d - b) / 90) ** 2))
-        fr += light(BRUNN, 0.14 * bl * porch * (0.85 + 0.15 * np.cos(2 * np.pi * T / 8)))
+        fr += light(BRUNN, 0.16 * bl * porch * (0.85 + 0.15 * np.cos(2 * np.pi * T / 8)))
         for j, o in enumerate(GLINTS):
             g = 0.5 + 0.5 * np.sin(2 * np.pi * (0.7 + 0.23 * j) * T + 1.7 * j)
             fr += light(BGOLD, bl * 0.75 * g ** 3 * np.exp(-((d - b - o) / 6) ** 2))
@@ -190,30 +177,49 @@ def render(G, seed=16):
         line = smoothstep(b - 46, b - 40, d) * smoothstep(b - 12, b - 18, d)
         fr += light(SPEAR, 0.45 * here * line)
 
-        # her gaze: a pale beam down Porch Left onto Left, to him
-        gaze = smoothstep(T_FATE[1], T_FATE[1] + 4.0, t)
-        if gaze > 0:
-            span = smoothstep(mn - 10, mn + 20, d) * smoothstep(b + 10, b - 30, d)
+        # the knocking rhythm: pale shocks race down her gaze from her to him
+        span = smoothstep(mn - 10, mn + 20, d) * smoothstep(b + 10, b - 30, d)
+        if t < T_VAL + 1.0:
+            for tk in knock_on[(knock_on <= t) & (knock_on > t - 2.0)]:
+                u = (t - tk) / 1.4
+                q = b + (mn - b) * min(u, 1.0)
+                fr += light(PALE, 0.8 * (1 - smoothstep(0.85, 1.4, u)) * np.exp(-((d - q) / 70) ** 2))
+            # each fate chord: a ring of pale violet spreads from her over the whole house
+            for tf in fate_on[(fate_on <= t) & (fate_on > t - 3.0)]:
+                r = 700 * (t - tf)
+                ring = np.exp(-((np.abs(d - b) - r) / 120) ** 2)
+                fr += light(SPEAR, 0.55 * np.exp(-(t - tf) / 1.2) * ring)
+            gaze = smoothstep(T_FATE[1] - 1.0, T_FATE[1] + 2.0, t)
             ripple = 0.75 + 0.25 * np.cos(2 * np.pi * ((b - d) / 160 - T / 4))
-            fr += light(PALE, gaze * (0.3 + 0.15 * pulse) * span * ripple)
+            fr += light(PALE, gaze * (0.3 + 0.2 * pulse) * span * ripple)
 
-        # Valhalla: the battlements blaze over the porch in the indigo, chord by chord
-        vin = smoothstep(T_VAL[0] - 0.5, T_VAL[0] + 0.5, t) * (1 - smoothstep(T_VAL[1] + 5.0, T_FATE[2] - 0.5, t))
+        # Valhalla: the battlements rise and blaze over the porch, chord by chord, higher with the climb
+        vin = smoothstep(T_VAL - 0.3, T_VAL + 1.0, t)
         if vin > 0:
-            j = int(np.searchsorted(val_on, t, side='right')) - 1
-            chord = np.exp(-(t - val_on[j]) / 0.7) if j >= 0 else 0.0
-            soft = 1 - 0.45 * smoothstep(T_VAL[1] - 0.5, T_VAL[1] + 1.0, t)
-            crenel = (np.cos(2 * np.pi * d / 46) > -0.1)
-            rise = smoothstep(T_VAL[0], T_VAL[0] + 6.0, t)
-            fr += light(CASTLE, vin * soft * (0.45 + 0.35 * rise + 0.25 * chord) * heights * (0.55 + 0.45 * crenel))
-            fr += light(BLAZE, vin * soft * 0.4 * chord * np.exp(-((d - b) / (200 + 300 * rise)) ** 2))
-            fr += light(BLAZE, vin * soft * 0.25 * (1 - porch) * chord)
-            fr += light(BGOLD, vin * soft * 0.7 * heroes * heights * (0.4 + 0.6 * tw(t)))
+            age, _ = last(val_on, t)
+            chord = np.exp(-age / 0.35)
+            climb = smoothstep(T_VAL, T_TOP, t)
+            k = int(np.searchsorted(top_t, t, side='right')) - 1
+            hm = (top_m[k] - 72) / 32 if k >= 0 else 0.0                # the top line's height, 0..1
+            reach = 200 + 900 * climb + 500 * hm
+            wall = np.exp(-((d - b) / reach) ** 2)
+            fr += light(CASTLE, vin * (0.35 + 0.45 * climb + 0.25 * chord) * (0.45 + 0.55 * heights)
+                        * (0.5 + 0.5 * crenel) * wall)
+            fr += light(BLAZE, vin * (0.25 + 0.4 * climb) * chord * wall * (1 - porch))
+            fr += light(BGOLD, vin * 0.8 * heroes * wall * (0.4 + 0.6 * tw(t)) * (0.4 + 0.6 * climb))
+            # sparks fly up along the house from her with the top line
+            for tt, m in top[max(k - 6, 0):k + 1]:
+                a = t - tt
+                if 0 <= a < 0.9:
+                    off = (120 + 14 * (m - 72)) * (0.5 + a)
+                    for sgn in (-1, 1):
+                        fr += light(WHITE, 0.6 * np.exp(-a / 0.3) * np.exp(-((d - b - sgn * off) / 14) ** 2))
+            summit = np.exp(-max(t - T_TOP, 0) / 1.2) * (t >= T_TOP - 0.05)
+            fr += light(BLAZE, 0.5 * summit * (1 - 0.4 * porch))
+            fr += light(WHITE, 0.35 * summit * np.exp(-((d - b) / 300) ** 2))
 
         # Siegmund, looking up: his blue lifts toward her
-        k = int(np.searchsorted(weary_on, t, side='right')) - 1
-        say = np.exp(-(t - weary_on[k]) / 0.5) if k >= 0 else 0.0
-        sm = 0.66 + 0.1 * smoothstep(T_FATE[1], T_FATE[1] + 6, t) + 0.15 * say
+        sm = 0.66 + 0.12 * smoothstep(T_FATE[1], T_FATE[1] + 6, t) + 0.12 * pulse * (t < T_VAL)
         fr += light(SIEGMUND, sm * np.exp(-((d - mn) / 16) ** 2) + 0.25 * sm * np.exp(-((d - mn) / 60) ** 2))
         blade = smoothstep(mn - 32, mn - 29, d) * smoothstep(mn - 15, mn - 18, d)
         fr += light(STEEL, sm * 0.7 * blade * (0.85 + 0.15 * tw(t)))
@@ -226,73 +232,50 @@ def render(G, seed=16):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes: the fate chords on Wagner tubas, the knocking on timpani and cellos, Valhalla on the full
+    orchestra, fuller with the climb."""
+    o = Orchestra(M, level=2.7)
+
+    def role(t, d, m, v, hand):
+        if t < T_VAL - 0.01:
+            if d >= 1.0:                                    # the Wagner tubas: tubas, trombones, horns
+                if m < 48:
+                    return [('tuba', 12 if m < 40 else 0, 8, 0.9), ('basses', 0, 0, 0.4)]
+                if m < 55:
+                    return [('trombones', 0, 6, 0.7)]
+                return [('horns', 0, 10, 0.8)]
+            return [('cellos', 0, 10, 0.6)]
+        return None
+
+    o.tutti(EX['notes'], size=lambda t: 0.45 + 0.55 * smoothstep(T_VAL, T_TOP, t), role=role)
+    # the effects stay hushed under the fate chords and back right off for Valhalla's climb; only the summit opens up
+    o.effects([(0.0, -5), (T_VAL - 0.5, -5), (T_VAL + 1.0, -10), (T_TOP - 2.5, -10), (T_TOP - 0.3, -3), (D, -4)])
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
-    x0, x1 = xs.min(), xs.max()
-
-    def pan_at(dd):                         # path distance -> left/right across the facade, from the street
-        x = np.interp(dd, ds, xs)
-        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
-
+    pan_at = lambda dd: float(0.85 * (2 * (np.interp(dd, ds, xs) - xs.min()) / (xs.max() - xs.min()) - 1))
     C = choreography(G)
-    for name, gain, rev in (('low', 0.18, 0.25), ('tubas', 0.15, 0.45), ('brass', 0.17, 0.4),
-                            ('strings', 0.16, 0.35), ('harp', 0.18, 0.5), ('perc', 0.17, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    gong = M.hits('Percussion/gongHit_p*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    pb = pan_at(C['brunn'][0])
-    pm = pan_at(C['mund'][0])
-    lowest = {j: min(e[2] for e in compose() if e[4] == 'fate' and e[5] == j) for j in range(3)}
-    for t, d, m, v, part, k in compose():
-        if part == 'trem':
-            hold('low', trem, m, t, t + d, v, 0.0, rise=0.6, fall=1.5, gain=0.8)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.6, pb)
-        elif part in ('fate', 'inev'):
-            # the Wagner tubas: tubas below, horns above, warm and dark
-            if m < note('C3'):
-                hold('tubas', tuba, m + (12 if m < note('E2') else 0), t, t + d, v, pb, rise=0.25, fall=1.2, gain=0.9)
-            elif m < note('G3'):
-                hold('tubas', tbn, m, t, t + d, v - 6, pb, rise=0.25, fall=1.2, gain=0.7)
-            else:
-                hold('tubas', horn, m, t, t + d, v, pb, rise=0.25, fall=1.2, gain=0.8)
-            if part == 'fate' and t - T_FATE[k] < 0.01 and m == lowest[k]:
-                M.add('perc', gong.play(80 + 10 * (k == 1)), t, 0.6, pb)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=1.5, fall=2.0)
-        elif part == 'weary':
-            M.add('strings', vc.play(m + 12, v, dur=d * 1.05, release=0.4), t, 1.0, pm)
-        elif part == 'valhalla':
-            s = tuba if m < note('C3') else (tbn if m < note('C4') else (horn if k else tpt))
-            g = 0.75 if s is not tpt else 0.5
-            M.add('brass', s.play(m, v, dur=d * 1.05, release=0.8), t, g, pb + (0.3 if m % 2 else -0.3) * (m > note('C3')))
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 0.8, -0.6 + 1.2 * ((k * 5) % 8) / 7)
-        elif part == 'pad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, 0.0, rise=2.0, fall=1.5, gain=0.7)
+    pb, pm = pan_at(C['brunn'][0]), pan_at(C['mund'][0])
+    tri = M.hits('Percussion/Triangle3-Hit*.wav')
+    N = compose()
+    o.hit('gong scrape', 0.2, 90, gain=0.5, pan=pb)                         # the pass falls silent
+    o.hit('cymbal swell', T_HERE - 2.6, 80, gain=0.4, pan=pb)              # she gathers out of the light
+    for i, t in enumerate(T_FATE):                                          # fate: deep gongs, a roll under them
+        o.hit('gong', t, 118, gain=0.75, pan=pb, fx=True)
+        o.hit('timpani roll', t, 92, pitch=-6, gain=0.45, pan=pb)
+        o.hit('bass drum', t, 110, gain=0.5, pan=pb)
+    o.hit('scrape', T_HERE, 90, gain=0.35, pan=pb)                          # she is there
+    for t, d, m, v, part, k in N:
+        if part == 'knock':                                                 # each knock races down her gaze to him
+            o.hit('timpani', t, v + 15, pitch=(m - 51) * 0.5, gain=0.55, pan=0.5 * (pb + pm), fx=True)
+            o.M.add('fx', o.hits['bass drum'].play(min(127, v + 10)), t + 0.05, 0.11, pm)
+    o.hit('timpani roll', T_VAL - 0.4, 90, gain=0.5)                        # Valhalla rises out of the depths
+    val = sorted({round(e[0], 2) for e in N if e[4] == 'valhalla' and e[3] >= 70})
+    for t in val:                                                           # every chord of the climb a stone set
+        o.hit('timpani', t, 80 + int(40 * smoothstep(T_VAL, T_TOP, t)), pitch=-3, gain=0.35, pan=pb)
+    for t, d, m, v, part, k in N:                                           # sparks up the battlements
+        if part == 'valhalla' and k == 1 and v >= 60:
+            o.M.add('fx', tri.play(80), t, 0.135, pb + 0.4 * np.sin(7 * t))
+    o.hit('cymbal swell', T_TOP - 2.4, 100, gain=0.5)
+    o.boom(T_TOP, pb, 1.0)                                                  # its summit
+    o.hit('crash', T_TOP, 120, gain=0.65)
+    o.hit('crash', T_CAD, 100, gain=0.4)

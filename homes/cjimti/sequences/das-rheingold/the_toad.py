@@ -1,28 +1,32 @@
 """The Toad: down in Nibelheim, among the red-orange glow of the forges, Loge flickers round Alberich and
-needles him (the flickering fire, Donington 20a, on piccolo): a serpent is all very well, but could the helmet
-make him something small? Alberich, puffed up, puts the helmet Mime forged back on. The Tarnhelm's two chords
-(Donington 18) sound on muted horns, a violet-grey shimmer closes round him and his red drains into a hole of
-darkness in the cavern's glow, until, plip, a tiny dull-green light sits where he stood.
+needles him, darting in on every line he sings: a serpent is all very well, but could he make himself small?
+That would be too hard, surely. "Zu schwer dir, weil du zu dumm!", Alberich snaps, and "Pah! Nichts leichter!".
+The Tarnhelm's chords sound, a violet-grey shimmer closes round him, "Krumm und grau krieche Kröte!", his red
+drains into a hole of darkness in the cavern's glow, until, plip, a tiny dull-green light sits where he stood.
 
-The toad hops about the middle of Porch Front, over and around the glowing hoard: every hop a bassoon leap and
-a clarinet bounce that climbs as it hops right and sinks as it hops left, a little splash of green on every
-landing, and now and then a croak. Wotan creeps in from Porch Left on pizzicato tiptoe. Then his foot comes
-down: a blue slam, tubas, trombones, timpani and cymbal, a blue shockwave over the whole house. Loge darts in
-and snatches the helmet (a violet streak to his hand, where it stays), and Alberich pops back to his own shape,
-caught: the house flashes red, the Ring motif (Donington 8) blares in the brass, and Loge whirls round him as
-steel-blue bindings wind in tighter and tighter over his red, to a rising chromatic rope in the strings.
+The toad hops about the middle of Porch Front, over and around the glowing hoard, a hop on every note of the
+orchestra's little figures and a croak on its accents, while Wotan creeps in from Porch Left a step at a time.
+"Dort, die Kröte! Greife sie rasch!": the bass runs up, and Wotan's foot comes down, a blue slam and a blue
+shockwave over the whole house. Loge darts in and snatches the helmet (a violet streak to his hand, where it
+stays), and Alberich pops back to his own shape, caught, "Ohe! Verflucht! Ich bin gefangen!": the house flashes
+red, and he struggles in a red jolt through the porch on every chord. "Halt' ihn fest, bis ich ihn band": Loge
+whirls round him as steel-blue bindings wind in tighter and tighter to the strings' rising chromatic rope, the
+knot is tied, and to Loge's "Nun schnell hinauf: dort ist er unser!" they start to haul him off.
 
-He struggles six times (a red jolt through the porch each time, timpani and a trombone grunt) while Loge
-laughs, until Wotan's spear motif (Donington 73) strides down in the trombones and a steel line steps out from
-Wotan across the porch with each note. Then they haul him off. The ascent begins: the Nibelung rhythm starts up
-in the strings, stripes of forge glow run down and away from the porch, and the first anvils ring out across
-the house, hand over hand toward the climb.
+The music is Wagner's own: Scene 3, bars 2691 to 2743, as Solti's 1958 Vienna Philharmonic recording takes them.
+The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): Loge's quick figures on
+violins and flutes, the Tarnhelm's chords on muted horns over cellos, the toad's figures on clarinet and bassoon,
+the bass's run on cellos and basses, the struggle's flourishes on violins and piccolo over trombones, the rope on
+violins and cellos, the haul on cellos, basses and horns. On top, as a staged production would, and kept down
+under the dialogue: a glassy plip as the toad appears, a soft tap on its landings and a guiro croak, the slam as a
+great blow, a whoosh as the helmet is snatched, a crash as he is caught, a thud on each struggle and the rope
+creaking as it winds.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'RG17'
 TITLE = 'The Toad'
@@ -33,30 +37,32 @@ DESCRIPTION = ('Loge dares Alberich to make himself small, and the helmet turns 
 VOICEOVER = ('A giant serpent is very impressive. But could you make yourself small? '
              'Alberich, never one to turn down a chance to show off, falls right into it.')
 
-BEAT = 0.5                                  # a quarter note
-TAUNT = [2.5, 4.6]                          # Loge's flicker: could you make yourself small?
-T_BOAST = 7.0                               # Alberich: watch this!
-T_HELM = 9.5                                # the helmet on: the Tarnhelm's chords
-HB = 0.45                                   # their beat
-T_TOAD = 17.0                               # plip
-HOPS = [(18.2, 0.56), (19.3, 0.61), (20.1, 0.55), (21.6, 0.48), (22.4, 0.43), (24.0, 0.5), (25.1, 0.57),
-        (25.9, 0.63), (27.4, 0.56), (28.2, 0.5), (29.7, 0.44), (30.8, 0.49), (32.2, 0.46)]
+EX = excerpt(__file__)                      # Scene 3, bars 2691-2743, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+TAUNT = [6.506, 9.14, 11.025, 12.97, 17.626, 25.506, 28.033]  # Loge's lines: could you make yourself small?
+T_BOAST = 20.369                            # "Zu schwer dir, weil du zu dumm!"
+T_PAH = 30.441                              # "Pah! Nichts leichter!"
+BOASTS = [20.369, 23.19, 30.441, 40.46]       # Alberich's lines: a red flare out from him
+T_HELM = 32.84                              # the Tarnhelm's chords
+T_SPELL = BAR[2720]                         # "Krumm und grau krieche Kröte!"
+T_TOAD = BAR[2723]                          # plip
+HOPS = [(51.94, 0.56), (53.78, 0.61), (55.54, 0.55), (56.67, 0.48), (57.78, 0.43), (58.86, 0.5), (60.68, 0.57),
+        (62.36, 0.62), (63.36, 0.55), (64.41, 0.48), (65.99, 0.53), (66.49, 0.58), (67.43, 0.52), (67.87, 0.47)]
 HOP = 0.32                                  # seconds in the air
-CROAKS = [21.0, 23.3, 26.7, 31.5]
-T_CREEP = 18.0                              # Wotan tiptoes in
-T_SLAM = 34.0                               # his foot comes down
-T_SNATCH = 35.5                             # Loge takes the helmet
-T_POP = 37.0                                # Alberich back in his own shape, caught
-T_BOUND = 41.0                              # the last knot
-JOLTS = [42.0, 43.5, 44.8, 46.3, 47.5, 49.2]
-LAUGHS = [44.2, 48.4]
-T_SPEAR = 51.5                              # Wotan's spear: the treaty's authority
+CROAKS = [53.78, 60.68]                     # the accents
+T_CREEP = 55.0                              # Wotan tiptoes in
+T_SLAM = 70.66                              # his foot comes down, at the top of the bass's run
+T_SNATCH = 70.95                            # Loge takes the helmet
+T_POP = 71.3                                # Alberich back in his own shape, caught
+T_BOUND = 78.015                            # the last knot
+JOLTS = [71.98, 73.22, 74.435, 78.226, 79.473, 80.653]
+T_SPEAR = 1e9                               # (no spear here: its music is in the climb)
 SB = 0.55
-T_HAUL = 59.0                               # they drag him off
-T_ASCENT = 63.0                             # the Nibelung rhythm starts: up and out
-NB = 0.45                                   # a dotted-quarter beat of the 9/8
-T_ANVILS = 70.0
-D = 80.0
+T_HAUL = 79.86                              # "Nun schnell hinauf!"
+T_ASCENT = 1e9                              # the climb is the next scene
+NB = 0.45
+T_ANVILS = 1e9
+D = EX['seconds']
 
 CAVE = hexc('#b01c00')
 EMBER = hexc('#ff5a10')
@@ -71,12 +77,11 @@ SPEAR = hexc('#c8d8ff')
 LOGE1 = hexc('#ff5000')
 LOGE2 = hexc('#ffb020')
 TARN = hexc('#5a4a8a')
+TARN_HI = hexc('#9a88d0')
 TOAD = hexc('#6a8a10')
 STEEL = hexc('#5a88d0')
 WHITE = hexc('#ffffff')
 
-NIB = [('Bb3', 'A3', 'Bb3'), ('Db4', 'C4', 'Db4'), ('F4', 'E4', 'F4'),
-       ('Gb4', 'F4', 'Gb4'), ('F4', 'E4', 'F4'), ('Db4', 'C4', 'Bb3')]    # the Nibelung rhythm: two bars of 9/8
 NANVIL = 18
 
 
@@ -85,98 +90,25 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
-def nibelung(t0, t1, beat, v0, v1, tr=0):
-    """The Nibelung rhythm from t0 to t1: each dotted-quarter beat long-short-long (dotted eighth, sixteenth,
-    eighth) -> [(t, seconds, midi, velocity, beat index, j)]."""
-    out, k = [], 0
-    while t0 + k * beat < t1:
-        for j, (off, dur) in enumerate(((0, 0.5), (0.5, 1 / 6), (2 / 3, 1 / 3))):
-            t = t0 + (k + off) * beat
-            u = (t - t0) / max(t1 - t0, 1e-6)
-            out.append((t, dur * beat * 0.85, note(NIB[k % 6][j]) + tr, int(v0 + (v1 - v0) * u), k, j))
-        k += 1
-    return out
-
-
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
-    rng = np.random.default_rng(17)
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). Loge's needling ('talk'), the
+    Tarnhelm's chords ('tarnhelm'), the toad's figures ('toad'), the bass's run up to the slam ('run'), the struggle
+    ('caught'), the rope ('rope') and the haul ('haul')."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    add(0.0, T_HELM + 1.0, 'Bb1', 64, 'cave')
-    for t0 in TAUNT:
-        for t, m, v, d in play('loge_flicker', t0, 0.22, 0, 92):
-            add(t, d, m, v, 'loge')
-    for b, d, m in ((0, .5, 'Bb2'), (.5, .5, 'F3'), (1, 1, 'Bb3'), (2, .5, 'Db4'), (2.5, 1.5, 'Bb3')):
-        add(T_BOAST + b * BEAT, d * BEAT, m, 100, 'boast')
-    for t, m, v, d in play('tarnhelm', T_HELM, HB, 0, 70):
-        if t < T_HELM + 16 * HB:
-            add(t, d, m, v, 'tarnhelm')
-    add(T_HELM + 2.0, T_TOAD - T_HELM - 2.0, 'Eb6', 50, 'glass')
-    add(T_TOAD, 0.15, 'Bb6', 96, 'plip')
-    add(T_TOAD + 0.08, 0.3, 'F5', 90, 'plipm')
-
-    prev = 0.5
-    for th, u in HOPS:                                      # each hop: pitch follows where it lands
-        m = note('Bb2') + int(round((u - 0.43) * 40))
-        add(th, 0.1, m, 96, 'hop')
-        add(th + 0.12, 0.1, m + (7 if u > prev else 5) + 12, 90, 'bounce')
-        add(th + HOP, 0.12, m - 5, 88, 'land')
-        prev = u
-    for tc in CROAKS:
-        add(tc, 0.09, 'Bb1', 100, 'croak')
-        add(tc + 0.14, 0.09, 'Bb1', 92, 'croak')
-    for k in range(int((T_SLAM - 0.5 - T_CREEP) / 0.75)):   # Wotan on tiptoe
-        add(T_CREEP + 0.75 * k, 0.2, ('F2', 'Bb2', 'Db3', 'C3')[k % 4], 60 + 2 * k, 'tiptoe')
-    for m in ('Bb1', 'Bb2', 'F3', 'Bb3', 'D4', 'F4'):
-        add(T_SLAM, 1.4, m, 124, 'slam')
-    add(T_SLAM, 1.0, 'Bb1', 127, 'boom')
-    for j in range(10):
-        add(T_SNATCH - 0.15 + j * 0.03, 0.08, note('Bb5') + (0, 2, 4, 5, 7, 9, 11, 12, 14, 16)[j], 100, 'snatch')
-    add(T_SNATCH + 0.25, 0.6, 'Eb5', 80, 'snatchtarn')
-
-    add(T_POP, 1.6, 'Bb1', 127, 'pop')
-    for m in ('B2', 'Gb3', 'B3', 'Gb4'):                    # the Tarnhelm's last chord, torn open
-        add(T_POP, 1.2, m, 118, 'popchord')
-    add(T_POP + 0.1, 1.4, 'G4', 120, 'scream')
-    for t, m, v, d in play('ring', T_POP + 0.6, 0.38, 0, 116):
-        add(t, d, m, v, 'ringbrass')
-    for k in range(24):                                     # the rope, wound tighter
-        add(T_POP + 0.5 + k * (T_BOUND - T_POP - 0.5) / 24, 0.12, note('Bb2') + k, 80 + k, 'rope')
-    add(T_POP + 0.5, T_BOUND - T_POP - 0.5, 'Bb2', 80, 'snare')
-    for m in ('Bb1', 'F2', 'Bb2', 'Db3', 'F3'):
-        add(T_BOUND, 0.9, m, 112, 'knot')
-
-    for k in range(int((T_SPEAR - 0.5 - T_BOUND) / (BEAT / 2))):      # his struggling, in B flat minor
-        m = ('Bb1', 'Bb1', 'Db2', 'Bb1', 'F1', 'Bb1', 'Gb1', 'F1')[k % 8]
-        add(T_BOUND + k * BEAT / 2, BEAT / 2 * 0.8, m, 88 + 8 * (k % 4 == 0), 'drive')
-    for i, tj in enumerate(JOLTS):
-        add(tj, 0.5, ('Bb2', 'Db3', 'C3', 'Eb3', 'Db3', 'F3')[i], 108, 'grunt')
-        add(tj, 0.6, 'Bb1', 112, 'jolt')
-    for tl in LAUGHS:
-        for j, (hi, lo) in enumerate((('Db6', 'Bb5'), ('C6', 'A5'), ('Bb5', 'Gb5'), ('A5', 'F5'))):
-            for k, m in enumerate((hi, lo)):
-                add(tl + j * 0.18 + k * 0.09, 0.08, m, 98 - 4 * j, 'laugh')
-    for t, m, v, d in play('spear', T_SPEAR, SB, 0, 112):
-        add(t, d, m, v, 'spear')
-    for m in ('Bb1', 'F2', 'Bb2'):
-        add(T_SPEAR, 10 * SB, m, 80, 'spearpad')
-    for b, d, m in ((0, 1.5, 'Db3'), (1.5, 1, 'C3'), (2.5, 1.5, 'Bb2'), (4, 3, 'A2')):
-        add(T_HAUL + b * BEAT, d * BEAT, m, 90, 'woe')
-
-    for t, d, m, v, k, j in nibelung(T_ASCENT, D, NB, 64, 112):   # the climb begins
-        add(t, d, m, v, 'nib')
-        if j == 0:
-            add(t, d, m - 24, v - 6, 'nibbass')
-        if t >= T_ANVILS:
-            u = (t - T_ANVILS) / (D - T_ANVILS)
-            n = int(1 + 5 * u ** 1.3) if j != 1 else int(4 * u)
-            for a in rng.choice(NANVIL, size=n, replace=False):
-                add(t, 0.1, 0, int(70 + 40 * u), 'anvil', int(a))
-    add(T_ASCENT, D - T_ASCENT, 'Bb1', 60, 'climb')
+    for t, d, m, v, h in EX['notes']:
+        if t < T_HELM - 0.01:
+            part = 'talk'
+        elif t < T_TOAD - 0.01:
+            part = 'tarnhelm'
+        elif t < BAR[2734] - 1.3:
+            part = 'toad'
+        elif t < T_SLAM - 0.01:
+            part = 'run'
+        elif t < BAR[2739]:
+            part = 'caught' if t < 75.58 else 'rope'
+        else:
+            part = 'haul'
+        N.append((t, d, m, v, part, None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -263,6 +195,8 @@ def render(G, seed=17):
     hops = np.array([th for th, _ in HOPS])
     jolts = np.array(JOLTS)
     spear = [e[0] for e in N if e[4] == 'spear']
+    chords = np.array(sorted({e[0] for e in N if e[4] == 'tarnhelm' and e[2] >= note('E3')}))
+    quick = np.array([e[0] for e in N if e[4] == 'talk' and e[5] is None and e[1] < 0.3])
     nibs = np.array([e[0] for e in N if e[4] == 'nib' and e[5] is None])
     anvils = [(e[0], e[5], e[3]) for e in N if e[4] == 'anvil']
     spots = anvil_spots(G)
@@ -299,6 +233,31 @@ def render(G, seed=17):
             if ta <= t < ta + 0.5:
                 fr += light(HOT, (v / 110) * np.exp(-(t - ta) / 0.09) * blob(spots[a], 16))
                 fr += light(FORGE, 0.7 * (v / 110) * np.exp(-(t - ta) / 0.25) * blob(spots[a], 45))
+
+        # the Tarnhelm: a violet wave rolls out from him over the whole house on every chord, the cave darkening
+        if T_HELM <= t < T_TOAD + 1.0:
+            dim = smoothstep(T_HELM, T_SPELL, t) * (1 - smoothstep(T_TOAD, T_TOAD + 1.0, t))
+            fr *= 1 - 0.55 * dim
+            for tc in chords[(chords <= t) & (chords > t - 3.0)]:
+                a = t - tc
+                rr = 420 * a ** 0.8
+                fr += light(TARN_HI,
+                            0.9 * np.exp(-a / 1.4) * np.exp(-((np.abs(d - ap) - rr) / 150) ** 2))
+                fr += light(TARN, 0.45 * np.exp(-a / 0.6) * blob(ap, 160))
+        # Alberich's boasts: a red flare rippling out from him
+        for tb in BOASTS:
+            if tb <= t < tb + 1.6:
+                a = t - tb
+                rr = 380 * a ** 0.7
+                fr += light(ALB, 0.9 * np.exp(-a / 0.7) * np.exp(-((np.abs(d - ap) - rr) / 90) ** 2))
+                fr += light(HOT, 0.5 * np.exp(-a / 0.15) * blob(ap, 30))
+        # Loge's quick figures: sparks thrown off his flame
+        qi = int(np.searchsorted(quick, t, side='right')) - 1
+        if qi >= 0 and t - quick[qi] < 0.25:
+            a = t - quick[qi]
+            sp_at = lp + (-1) ** qi * (30 + 260 * a)
+            fr += light(LOGE2, 1.0 * np.exp(-a / 0.15) * blob(sp_at, 16))
+            fr += light(LOGE1, 0.5 * np.exp(-a / 0.15) * blob(lp, 60))
 
         # the hoard beside him
         fr += light(GOLD, 0.62 * blob(ph, 30) + 0.2 * blob(ph, 80))
@@ -406,7 +365,8 @@ def render(G, seed=17):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the scene's sounds on top."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -416,146 +376,69 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
-    spots = anvil_spots(G)
 
     def pan_of(k, t):
         return pan_at(np.interp(t, C['t'], C[k]))
 
-    for name, gain, rev in (('winds', 0.2, 0.3), ('strings', 0.13, 0.3), ('low', 0.19, 0.15), ('brass', 0.17, 0.28),
-                            ('perc', 0.2, 0.22), ('anvil', 0.18, 0.25), ('harp', 0.16, 0.4), ('fx', 0.08, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    flst = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    bsus = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/stac/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vas = M.sampler('Strings/Viola Section/spic/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
+    o = Orchestra(M, level=3.0)
     mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    mar = M.sampler('Percussion/Marimba/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[5-7]*.wav')
-    snare = M.hits('Percussion/Snare2-rollNS_v3*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_v*.wav')
+    guiro = M.hits('Percussion/Guiro-Hit*.wav')
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        part = next(e[4] for e in N if e[0] == t)
+        if part == 'talk':                                  # Loge's needling: strings and flutes, quick and light
+            if h == 0:
+                return [('violins', 0, -2, 0.55)] + ([('flutes', 0, -10, 0.4)] if m >= note('C5') else [])
+            return [('cellos', 0, -4, 0.55), ('bassoons', 0, -10, 0.35)]
+        if part == 'tarnhelm':                              # muted horns over cellos
+            if m >= note('E3'):
+                if d > 1.2:
+                    o.hold('brass', mute, m, t, t + d, v + 14, pan_of('alb', t), gain=0.7)
+                else:
+                    M.add('brass', mute.play(m, v + 14, dur=d, release=0.5), t, 0.7, pan_of('alb', t))
+                return []
+            return [('cellos', 0, 10, 0.55), ('basses', -12, 0, 0.4)]
+        if part == 'toad':                                  # its figures: clarinet and bassoon, close to it
+            if h == 0:
+                return [('clarinets', 0, 14, 0.6)] + ([('piccolo', 12, 0, 0.3)] if d < 0.2 else [])
+            return [('bassoons', 0, 20, 0.6), ('cellos', 0, 0, 0.35)]
+        if part == 'caught':                                # his struggle: violins and piccolo over trombones
+            if h == 0:
+                return [('violins', 0, 4, 0.55), ('piccolo', 0, -12, 0.3)] if m >= note('C5') else \
+                    [('violins', 0, 4, 0.55)]
+            return [('trombones', 0, 30, 0.6), ('tuba', -12, 20, 0.45), ('cellos', 0, 20, 0.5)]
+        if part == 'rope':
+            return [('violins', 0, 10, 0.5)] if h == 0 else [('cellos', 0, 20, 0.55), ('violas', 12, 10, 0.3)]
+        if part == 'haul':
+            if h == 0:
+                return [('horns', -12, 0, 0.6), ('violins', 0, -6, 0.4)]
+            return [('cellos', 0, 20, 0.6), ('basses', 0, 14, 0.5), ('tuba', 0, 6, 0.4)]
+        return None                                         # the run up: the orchestra's default
 
-    pitch = np.random.default_rng(3).uniform(-7, 5, NANVIL)
-    for t, d, m, v, part, who in compose():
-        pa = pan_of('alb', t)
-        if part == 'cave':
-            hold('low', trem, m + 12, t, t + d, v, -0.1, rise=2.0, fall=1.5, gain=0.6)
-        elif part == 'loge':
-            M.add('winds', pic.play(m, v), t, 0.9, pan_of('loge', t))
-            M.add('strings', vn.play(m - 12, v - 15), t, 0.5, pan_of('loge', t))
-        elif part == 'boast':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.15), t, 0.9, pa)
-            M.add('low', bsus.play(m - 12, v - 10, dur=d, release=0.15), t, 0.6, pa)
-        elif part == 'tarnhelm':
-            M.add('brass', mute.play(m, v, dur=d, release=0.6), t, 0.8, pa)
-        elif part == 'glass':
-            hold('strings', vtrem, m - 12, t, t + d, v, pa, rise=2.0, fall=0.4, gain=0.35)
-        elif part == 'plip':
-            M.add('winds', pic.play(m - 12, v), t, 1.0, pa)
-        elif part == 'plipm':
-            M.add('harp', mar.play(m, v), t, 1.0, pa)
-        elif part in ('hop', 'land'):
-            M.add('winds', bsn.play(m, v), t, 1.0, pa)
-            if part == 'land':
-                M.add('low', pizz.play(m + 12, v - 10), t, 0.6, pa)
-        elif part == 'bounce':
-            M.add('winds', cl.play(m, v), t, 0.9, pa)
-        elif part == 'croak':
-            M.add('winds', bsn.play(m, v), t, 1.1, pa)
-            M.add('low', cbs.play(m + 12, v - 10), t, 0.6, pa)
-        elif part == 'tiptoe':
-            M.add('low', pizz.play(m + 12, v), t, 0.9, pan_of('wot', t))
-        elif part == 'slam':
-            s = tuba if m < note('F2') else tbn if m < note('Bb3') else horn
-            M.add('brass', s.play(m, v, dur=d, release=0.4), t, 1.0, pan_of('wot', t))
-        elif part == 'boom':
-            M.add('perc', timp.play(v, pitch=-4), t, 1.0, pan_of('wot', t))
-            M.add('perc', bd.play(v), t, 0.9, pan_of('wot', t))
-            M.add('perc', crash.play(118), t, 0.8, 0.0)
-            M.add('fx', whoosh(0.5, 4000, 400, 0.6, seed=4), t - 0.4, 0.8, pan_of('wot', t))
-        elif part == 'snatch':
-            M.add('winds', pic.play(m - 12, v), t, 0.8, pan_of('loge', t))
-            M.add('harp', harp.play(m - 24, v), t, 0.8, pan_of('loge', t))
-        elif part == 'snatchtarn':
-            M.add('brass', mute.play(m - 12, v, dur=d, release=0.4), t, 0.7, pan_of('loge', t))
-        elif part == 'pop':
-            M.add('perc', timp.play(v, pitch=-2), t, 1.0, pa)
-            M.add('perc', crash.play(124), t, 1.0, pa)
-            M.add('perc', bd.play(v), t, 0.8, pa)
-        elif part == 'popchord':
-            M.add('brass', (tbn if m < note('B3') else horn).play(m, v, dur=d, release=0.3), t, 0.9, pa)
-        elif part == 'scream':
-            M.add('brass', tbn.play(m - 12, v, dur=d, release=0.3), t, 1.0, pa)
-            hold('strings', vtrem, m + 5, t, t + d, v, pa, rise=0.05, fall=0.4, gain=0.6)
-        elif part == 'ringbrass':
-            if m >= note('E4'):
-                M.add('brass', tpt.play(m, v, dur=d, release=0.3), t, 0.8, pa + 0.15)
-            elif m >= note('C3'):
-                M.add('brass', horn.play(m, v, dur=d, release=0.3), t, 0.8, pa - 0.15)
-            else:
-                M.add('low', tuba.play(m, v, dur=d, release=0.3), t, 0.9, 0.0)
-        elif part == 'rope':
-            M.add('strings', vcs.play(m, v), t, 0.8, pan_of('loge', t))
-            M.add('strings', vas.play(m + 12, v - 10), t, 0.5, pan_of('loge', t))
-        elif part == 'snare':
-            M.add('perc', snare.play(v, dur=d), t, 0.5, pa)
-        elif part == 'knot':
-            M.add('brass', (tuba if m < note('Bb2') else tbn).play(m, v, dur=d, release=0.3), t, 0.9, pa)
-            if m == note('Bb1'):
-                M.add('perc', timp.play(v, pitch=-4), t, 0.9, pa)
-        elif part == 'drive':
-            M.add('low', cbs.play(m + 12, v), t, 0.8, pa - 0.2)
-            M.add('low', vcs.play(m + 12, v - 10), t, 0.6, pa + 0.2)
-        elif part == 'grunt':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.15), t, 0.9, pa)
-        elif part == 'jolt':
-            M.add('perc', timp.play(v, pitch=-6), t, 0.9, pa)
-        elif part == 'laugh':
-            M.add('winds', (pic if m >= note('Ab5') else flst).play(m, v), t, 0.9, pan_of('loge', t))
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 1.0, pan_of('wot', t))
-            M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.3), t, 0.8, pan_of('wot', t))
-        elif part == 'spearpad':
-            hold('low', vc, m + 12, t, t + d, v, 0.0, rise=0.5, fall=1.5, gain=0.5)
-        elif part == 'woe':
-            M.add('low', bsus.play(m, v, dur=d, release=0.2), t, 1.0, pa)
-        elif part == 'nib':
-            M.add('strings', vas.play(m, v), t, 1.1, -0.3)
-            M.add('strings', vn.play(m + 12, v - 20), t, 0.7, 0.3)
-        elif part == 'nibbass':
-            M.add('low', cbs.play(m + 12, v), t, 1.0, 0.0)
-            M.add('low', vcs.play(m + 12, v - 10), t, 0.8, 0.0)
-        elif part == 'anvil':
-            M.add('anvil', anvil.play(v, pitch=pitch[who]), t, 1.0, pan_at(spots[who]))
-        elif part == 'climb':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=6.0, fall=0.3, gain=1.0)
+    N = compose()
+    o.tutti(EX['notes'], role=role, pan=lambda t, m: pan_of('alb', t) * 0.6)
+    # the stage, ridden: down under Loge's needling and the spell, up for the toad, the slam and the capture
+    o.effects([(0, -10), (T_TOAD - 0.5, -3), (T_SLAM - 0.4, 0), (T_BOUND, -3), (T_HAUL, -5)])
+    pt = pan_of('alb', T_TOAD)
+    o.play('glock', note('Bb6') - 24, T_TOAD, 0.2, 96, pt, 0.5)     # plip
+    o.hit('triangle', T_TOAD, 90, gain=0.35, pan=pt)
+    for th, u in HOPS:                                      # a soft tap as it lands
+        o.hoof(th + HOP, pan_of('alb', th + HOP), 60, 0.5)
+    for tc in CROAKS:                                       # croak
+        p = pan_of('alb', tc)
+        M.add('perc', guiro.play(100), tc + 0.1, 0.6, p)
+        M.add('perc', guiro.play(92), tc + 0.3, 0.5, p)
+    ps = pan_of('wot', T_SLAM)
+    o.boom(T_SLAM, ps, 1.0)                                 # his foot comes down
+    o.hit('crash', T_SLAM, 118, gain=0.5, pan=ps)
+    M.add('fx', whoosh(0.5, 3000, 9000, 0.5, seed=7), T_SNATCH - 0.2, 0.7, pan_of('loge', T_SNATCH))
+    pp = pan_of('alb', T_POP)
+    o.hit('crash', T_POP, 112, gain=0.45, pan=pp)           # caught
+    o.hit('timpani', T_POP, 116, pitch=-3, gain=0.6, pan=pp)
+    for tj in JOLTS:                                        # each struggle against the bindings
+        p = pan_of('alb', tj)
+        o.hit('bass drum', tj, 100, gain=0.4, pan=p)
+        o.hit('metal', tj + 0.02, 70, gain=0.2, pan=p)
+    for k in range(5):                                      # the rope creaking as it winds
+        o.hit('scrape', 75.6 + k * 0.5, 80 + 6 * k, gain=0.2, pan=pan_of('loge', 75.6 + k * 0.5))
+    o.hit('bass drum', T_BOUND, 112, gain=0.55, pan=pan_of('alb', T_BOUND))      # the knot

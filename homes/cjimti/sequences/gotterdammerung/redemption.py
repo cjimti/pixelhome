@@ -1,28 +1,38 @@
 """Redemption: the end of the Ring. The house is burning from end to end as GD29 left it, the ruin of Valhalla
 glowing in the middle of the porch.
 
-The Rhine (Donington 2) begins to flow in the strings, and the river rises and overflows: a wall of water sweeps
-in from the free end of Right, a white line of foam at its front, and runs the whole length of the house, putting
-the fire out run by run until every run is water, indigo, teal and green, streaming. On its front ride the three
-Rhinemaidens, Woglinde in silver, Wellgunde in sea green, Flosshilde in violet, singing (26), every note a ripple of
-her colour through the flood. They swim to the middle of the porch where the Ring lies. "Zurück vom Ring!"
-Hagen, ultraviolet in black, rises on Porch Left and lunges at them on his falling tritone (61a); the maidens
-seize him and drag him under, the water closing over him in a burst of white foam. Flosshilde holds the Ring up:
-the whole house flashes gold, and the maidens' joy (32) streams round the flooded house with the gold among them.
+The music is Wagner's own, the last pages of the cycle as Solti's 1958 Vienna Philharmonic recording takes them:
+Act III bars 1521 to 1524 (Hagen's last cry and the flood closing over him) spliced to bars 1590 to the end (the
+crash of Valhalla's fall, the gods' castle sounding once more in the shimmering strings, the Twilight's last
+blows, and love as redemption soaring in the violins to the final D flat major chord). The notes come from the
+Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated: the flood's chords on full strings and
+brass, the strings' tremolo on tremolo strings over the basses' F sharp, the downfall on trombones and tubas,
+redemption on the violins with the harp under it, and the last chord on the whole orchestra. Hagen's "Zurück vom
+Ring!" is his own line, from the Schott vocal score (archive.org gtterdmmerung00wagn_0, p. 337), played on
+trombones and a horn. The stage has its sounds where they help: the flood roaring in over the fire with steam
+hissing where it meets the flames, a crash of water as Hagen goes under, Valhalla's two blows crashing and
+splintering, and then nothing but the music, the effects ridden right down for redemption.
 
-The flood draws back into its bed along Right. Valhalla (63) sounds once more, softly, in the Wagner tubas, and
-the castle glows gold-white on the porch one last time, then falls on the Twilight of the Gods (4), its gold
-sinking into a red-violet ember. And then love as redemption (90b), the melody Sieglinde sang in Die Walküre,
-soars in the violins in D flat: each phrase blooms the house brighter, gold-white rising out of the porch and
-silver spreading over the wings, until on the cycle's last D flat major chord the whole house glows, radiant and
-still, over the calm river.
+The river rises and overflows: on the flood's first chords a wall of water sweeps in from the free end of Right,
+a white line of foam at its front, and runs the whole length of the house, putting the fire out until every run is
+water, indigo, teal and green, streaming. On its front ride the three Rhinemaidens, Woglinde in silver, Wellgunde
+in sea green, Flosshilde in violet. "Zurück vom Ring!" Hagen, ultraviolet in black, rises on Porch Left and lunges
+at them; the maidens seize him and drag him under, the water closing over him in a burst of white foam. On the
+crash of bar 1590 Flosshilde holds the Ring up: the whole house flashes gold, and the maidens stream round the
+flooded house with the gold among them.
+
+The flood draws back into its bed along Right while Valhalla sounds once more in the strings' shimmer, and the
+castle glows gold-white on the porch one last time, then falls on the Twilight's blows, its gold sinking into a
+red-violet ember. And then love as redemption, the melody Sieglinde sang in Die Walküre, soars in the violins:
+each phrase blooms the house brighter, gold-white rising out of the porch and silver spreading over the wings,
+until on the cycle's last D flat major chord the whole house glows, radiant and still, over the calm river.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD30'
 TITLE = 'Redemption'
@@ -33,21 +43,33 @@ VOICEOVER = ('The river rises and puts out the fire. The Ring goes home to the R
              'And out of the ruins of the old world, love remains.')
 
 K = 8                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_RHINE = [0.8, 6.2, 11.6, 17.0]            # the Rhine flowing, the strings
-RBEAT = 0.6
-T_FLOOD = (2.0, 19.0)                       # the wall of water from the free end of Right to the end of the Side
-T_MAIDS = 7.0                               # their song on the front of the flood
-T_HAGEN = 23.0                              # "Zurück vom Ring!"
-T_DROWN = 25.6                              # dragged under
-T_RING = 27.5                               # Flosshilde holds the Ring up
-T_JOY = 29.0
-T_RECEDE = (35.0, 46.0)                     # the flood draws back into the river along Right
-T_VALHALLA = 38.0                           # softly, the Wagner tubas
-T_DOWN = 47.5                               # Valhalla falls
-T_RED = [54.0, 61.5]                        # love as redemption, D flat
-REDBEAT = 0.62
-T_CHORD = 69.5                              # the last chord
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1521-1524 and 1590 to the end, Solti 1958
+D = EX['seconds']
+
+
+def when(m):
+    """Seconds into the excerpt at measure position m, in whichever spliced range holds it."""
+    for s in EX['segments']:
+        a, b = s['measures']
+        if a <= m < b:
+            bs = [(x, t) for x, t in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bs], [t for _, t in bs]))
+    return None
+
+
+T_RHINE = [0.0, 0.89, 2.38, 2.98, 3.58]     # the flood's chords
+T_FLOOD = (0.0, 5.5)                        # the wall of water from the free end of Right to the end of the Side
+T_HAGEN = when(1521.69)                     # "Zurück vom Ring!"
+T_DROWN = 7.57                              # dragged under: the basses' F sharp sinks
+T_RING = when(1590)                         # the crash: Flosshilde holds the Ring up
+T_JOY = T_RING + 1.5
+T_RECEDE = (when(1592), when(1593.9))       # the flood draws back as Valhalla shimmers
+T_VALHALLA = 19.9                           # the strings' tremolo, Valhalla once more
+T_DOWN = 32.17                              # the Twilight's blows: Valhalla falls
+T_RED = [39.2, 46.17]                       # love as redemption, the violins
+T_CHORD = 81.28                             # the last chord
+# Hagen's cry, from the vocal score: (bar, start, length in beats, note), 4/4
+HAGEN_CRY = [(1521, 2.75, 0.25, 'C4'), (1521, 3.0, 0.75, 'C4'), (1521, 3.75, 0.25, 'Ab3'), (1522, 0, 1.2, 'E4')]
 
 WOGLINDE = hexc('#c0f4ff')
 WELLGUNDE = hexc('#20ff90')
@@ -219,38 +241,32 @@ def panner(G):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The flood's chords are 'rhine',
+    the rising line under Hagen's struggle 'maids', the notes after the crash the maidens' 'joy', the strings'
+    shimmer 'valhalla', the Twilight's blows 'down', the violins' melody 'red' and the last chord 'chord'; the rest
+    is 'tutti'. Hagen's cry is 'hagen' (k = which note)."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_RHINE):
-        for t, m, v, d in play('rhine', t0, RBEAT, 0, 96 + 4 * k):
-            add(t, d, m, v, 'rhine', k)
-    add(T_FLOOD[0], T_FLOOD[1] - T_FLOOD[0], 'Eb1', 90, 'surge')
-    for t, m, v, d in play('rhinemaidens', T_MAIDS, 0.4, 0, 98):
-        add(t, d, m, v, 'maids')
-    for t, m, v, d in play('hagen', T_HAGEN, 0.7, -12, 126):
-        add(t, d, m, v, 'hagen')
-    add(T_DROWN, 0.1, 'C1', 120, 'drown')
-    for t, m, v, d in play('ring', T_RING, 0.4, 12, 100):
-        add(t, d, m, v, 'ring')
-    add(T_RING, 0.1, 'C1', 118, 'flash')
-    for t, m, v, d in play('rhinemaidens_joy', T_JOY, 0.42, 0, 100):
-        add(t, d, m, v, 'joy')
-    for t, m, v, d in play('valhalla', T_VALHALLA, 1.15, 0, 92):
-        add(t, d, m, v, 'valhalla')
-    for t, m, v, d in play('downfall', T_DOWN, 0.75, -12, 98):
-        add(t, d, m, v, 'down')
-    for k, t0 in enumerate(T_RED):
-        for t, m, v, d in play('redemption', t0, REDBEAT, -3, 104 + 6 * k):
-            add(t, d, m, v, 'red', k)
-        for j, m in enumerate(('Db3', 'F3', 'Ab3', 'Db4', 'F4', 'Ab4')):
-            add(t0 + 0.12 * j, 1.5, m, 76, 'harp', k)
-    for m in ('Db1', 'Db2', 'Ab2', 'Db3', 'F3', 'Ab3', 'Db4', 'F4'):
-        add(T_CHORD, D - T_CHORD, m, 100, 'chord')
-    add(T_CHORD, 0.1, 'C1', 96, 'gong')
+    for t, d, m, v, h in EX['notes']:
+        if t < 4.2 and h == 0:
+            part = 'rhine'
+        elif 3.5 <= t < T_RING - 0.05 and m >= 57:
+            part = 'maids'
+        elif T_RING + 0.5 <= t < T_RECEDE[0] and h == 0:
+            part = 'joy'
+        elif T_RECEDE[0] + 1.0 <= t < 30.8 and h == 0:
+            part = 'valhalla'
+        elif 30.8 <= t < T_RED[0] - 0.1 and d >= 1.0:
+            part = 'down'
+        elif T_RED[0] - 0.1 <= t < T_CHORD - 0.05 and h == 0:
+            part = 'red'
+        elif t >= T_CHORD - 0.05:
+            part = 'chord'
+        else:
+            part = 'tutti'
+        N.append((t, d, m, v, part, h))
+    for k, (b, x, n, name) in enumerate(HAGEN_CRY):
+        t0 = when(b + x / 4)
+        N.append((t0, when(b + (x + n) / 4) - t0, note(name), 122, 'hagen', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -270,7 +286,7 @@ def maids(G, S, t):
         if t < T_FLOOD[1] - 2:
             p = front + 40 + 45 * i + 20 * np.sin(2 * np.pi * (t / 1.3 + i / 3))
         elif t < T_JOY:
-            u = smoothstep(T_FLOOD[1] - 2, T_HAGEN, t)
+            u = smoothstep(T_FLOOD[1] - 2, T_DROWN, t)
             p0 = 40 + 45 * i
             p = p0 + (pf - 60 + 60 * i - p0) * u + 12 * np.sin(2 * np.pi * (t / 0.9 + i / 3))
         elif t < T_RECEDE[1]:
@@ -290,12 +306,12 @@ def render(G, seed=30):
     S = stage(G)
     d, L, pf = S['d'], S['L'], S['pf']
     N = compose()
-    rhine_on = sorted({e[0] for e in N if e[4] == 'rhine' and e[2] >= note('Eb4')})
-    maid_notes = [e for e in N if e[4] == 'maids' and e[2] >= note('C5')]
+    rhine_on = T_RHINE
+    maid_notes = [e for e in N if e[4] == 'maids']
     joy_on = sorted({e[0] for e in N if e[4] == 'joy'})
-    valh = sorted({e[0] for e in N if e[4] == 'valhalla'})
-    downs = sorted({e[0] for e in N if e[4] == 'down'})
-    red = [e for e in N if e[4] == 'red']
+    valh = [t for i, t in enumerate(sorted({e[0] for e in N if e[4] == 'valhalla'})) if i % 4 == 0]
+    downs = sorted({e[0] for e in N if e[4] == 'down' and e[5] == 0})
+    red = sorted({e[0]: e for e in N if e[4] == 'red'}.values())     # one wave per onset
     p_hagen0, p_ring = at(G, 'Porch Left', 0.3), pf - 60
 
     for f in range(F):
@@ -307,7 +323,7 @@ def render(G, seed=30):
         lv['flood'] = fl
         for k in ('pyre', 'blaze'):
             lv[k] = START[k] * (1 - quench)
-        lv['night'] = START['night'] * (1 - quench) + 0.5 * smoothstep(*T_RECEDE, t) * (1 - smoothstep(T_RED[0], T_CHORD, t))
+        lv['night'] = START['night'] * (1 - quench) + 0.5 * smoothstep(*T_RECEDE, t) * (1 - smoothstep(T_RED[0], T_RED[0] + 8, t))
         vglow = smoothstep(T_VALHALLA - 1, T_VALHALLA + 2, t) * (1 - smoothstep(T_DOWN, T_DOWN + 7, t))
         lv['valhalla'] = START['valhalla'] * (1 - quench) + 0.95 * vglow
         lv['river'] = START['river'] + (END['river'] - START['river']) * smoothstep(*T_RECEDE, t)
@@ -375,7 +391,7 @@ def render(G, seed=30):
         fr += light(AMBER, np.clip(sparks(S, hits, t, 31, n=20, reach=0.9), 0, 1))
 
         # redemption: each note blooms the house brighter, gold-white out of the porch, silver over the wings
-        bloom = BLOOM_END * smoothstep(T_RED[0], T_CHORD + 2, t) ** 1.3
+        bloom = BLOOM_END * (0.6 * smoothstep(T_RED[0] - 1, T_RED[0] + 14, t) + 0.4 * smoothstep(57.0, T_CHORD + 1, t))
         swell = 0.15 * smoothstep(T_CHORD, T_CHORD + 3, t) * (1 - smoothstep(T_CHORD + 4, D, t))
         b = bloom + swell
         if b > 0:
@@ -383,9 +399,10 @@ def render(G, seed=30):
             fr += light(GOLDWHITE, b * S['porch'] * (0.85 + 0.15 * u))
             fr += light(SILVER, 0.85 * b * (1 - S['porch']) * (0.75 + 0.25 * u))
             fr += light(GOLDWHITE, 0.4 * b * (1 - S['porch']) * np.exp(-np.abs(d - pf) / 900))
-        for t0, dur, m, v, _, k in red:
-            if dur >= 0.6:
-                fr = ring(fr, S, t, t0, pf, GOLDWHITE, 0.75, speed=700, width=300, tau=1.6)
+        for j, (t0, dur, m, v, _, k) in enumerate(red):     # every note of the melody a wave out of the porch
+            if dur >= 0.3 and k == 0:
+                fr = ring(fr, S, t, t0, pf, GOLDWHITE, 0.9, speed=700, width=300, tau=1.6)
+                fr = ring(fr, S, t, t0 + 0.15, pf, SILVER, 0.6, speed=1100, width=120, tau=1.2)
         a = t - T_CHORD
         if 0 <= a < 6:
             fr = ring(fr, S, t, T_CHORD, pf, GOLDWHITE, 1.0, speed=600, width=400, tau=2.5)
@@ -394,86 +411,61 @@ def render(G, seed=30):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes orchestrated from the piano reduction, Hagen's cry on trombones, the flood and Valhalla's fall
+    on the stage, and then the music alone."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.32, 0.28), ('strings', 0.32, 0.34), ('winds', 0.28, 0.35), ('brass', 0.3, 0.32),
-                            ('perc', 0.28, 0.32), ('fx', 0.12, 0.3), ('harp', 0.2, 0.4), ('chord', 0.3, 0.45)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_mf.wav')
-    pf = pan_at(at(G, 'Porch Front', 0.5))
-    right = pan_at(at(G, 'Right', 0.8))
-    winds = (flute, oboe, clar)
     S = stage(G)
-    for t, d, m, v, part, k in compose():
-        if part == 'rhine':
-            if m >= note('Eb4'):
-                M.add('strings', vln.play(m, v - 10, dur=d * 1.3, release=0.2), t, 0.55, right * 0.6)
-            elif m >= note('Eb3'):
-                M.add('strings', vla.play(m, v - 6, dur=d * 1.3, release=0.2), t, 0.6, right * 0.4)
-            else:
-                M.add('low', vc.play(m, v, dur=d * 1.1, release=0.3), t, 0.7, 0.0)
-                M.add('low', cb.play(m - 12, v - 10, dur=d * 1.1, release=0.3), t, 0.6, 0.0)
-        elif part == 'surge':
-            M.add('perc', roll.play(100, pitch=-5, dur=4.0), t, 0.7, right)
-            for j in range(4):
-                tt = t + j * d / 4
-                fr_p = pan_at(S['L'] - flood_at(tt + 1.0) * (S['L'] + 60))
-                M.add('fx', whoosh(d / 3, 200, 2500, 0.8, seed=60 + j), tt, 0.9, fr_p)
-        elif part == 'maids':
-            j = int(round((t - T_MAIDS) / 0.4)) % 3
-            M.add('winds', winds[j].play(m, v, dur=d * 1.1, release=0.2), t, 0.7, pan_at(maids(G, S, t)[j]))
-        elif part == 'hagen':
-            hold('low', tuba, m, t, t + d, v, pan_at(at(G, 'Porch Left', 0.3)), rise=0.05, fall=1.0, gain=1.0)
-            M.add('brass', tbn.play(m + 12, v - 6, dur=d, release=0.4), t, 0.8, pan_at(at(G, 'Porch Left', 0.3)))
-        elif part == 'drown':
-            M.add('perc', crash.play(v), t, 0.8, pf)
-            M.add('perc', timp.play(v, pitch=-7), t, 0.9, pf)
-            M.add('fx', whoosh(1.5, 4000, 200, 0.9, seed=70), t - 0.1, 1.0, pf)
-        elif part == 'ring':
-            M.add('brass', horn.play(m - 12, v, dur=d * 1.1, release=0.3), t, 0.75, pf)
-        elif part == 'flash':
-            M.add('perc', crash.play(v), t, 0.7, pf)
-        elif part == 'joy':
-            j = int(round((t - T_JOY) / 0.42)) % 3
-            M.add('winds', winds[j].play(m, v, dur=d * 1.1, release=0.2), t, 0.6, pan_at(maids(G, S, t)[j]))
-        elif part == 'valhalla':
-            if m >= note('Db4'):
-                hold('brass', horn, m - 12, t, t + d, v, pf, rise=0.2, fall=1.2, gain=0.7)
-            else:
-                hold('low', tuba, m, t, t + d, v - 6, pf, rise=0.2, fall=1.2, gain=0.65)
-        elif part == 'down':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, pf, rise=0.15, fall=1.0, gain=0.75)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, pf)
-        elif part == 'red':
-            if d > 0.8:
-                hold('strings', vln, m - 12, t, t + d, v, 0.0, rise=0.15, fall=1.2, gain=0.9)
-            else:
-                M.add('strings', vln.play(m - 12, v, dur=d * 1.15, release=0.35), t, 0.9, 0.0)
-            M.add('strings', vc.play(m - 24, v - 20, dur=d * 1.15, release=0.35), t, 0.4, 0.0)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 0.8, 0.0)
-        elif part == 'chord':
-            s = cb if m < note('Db2') else (vc if m < note('Db3') else (horn if m < note('F3') else vla))
-            hold('chord', s, m, t, t + d, v, 0.0, rise=1.0, fall=2.5, gain=0.6)
-            if m >= note('Db3'):
-                hold('chord', vln, m + 12, t, t + d, v - 20, 0.0, rise=1.5, fall=2.5, gain=0.3)
-        elif part == 'gong':
-            M.add('perc', gong.play(v), t, 0.6, 0.0)
-            M.add('perc', roll.play(70, pitch=-6, dur=5.0), t, 0.5, 0.0)
+    pf = pan_at(at(G, 'Porch Front', 0.5))
+    pl = pan_at(at(G, 'Porch Left', 0.3))
+    o = Orchestra(M, level=1.75)
+    N = compose()
+    notes = [(t, d, m, v, k) for t, d, m, v, part, k in N if part != 'hagen']
+    parts = {(round(t, 4), m, k): part for t, d, m, v, part, k in N}
+
+    def size(t):
+        return 0.35 if T_RED[0] + 18 <= t < T_CHORD - 0.1 else 1.0
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m, h))
+        if part == 'red':                                   # redemption: the violins sing it, violas under
+            return [('violins', 0, 6, 0.75), ('violas', -12, -10, 0.35)] + \
+                ([('flutes', 0, -16, 0.25)] if d >= 0.55 and t < 57 else [])
+        if part == 'down':                                  # the Twilight's blows: brass, full weight
+            if h == 1 or m < 60:
+                return [('trombones', 0, 4, 0.8), ('tuba', -12 if m >= 40 else 0, 0, 0.6), ('basses', -12, 0, 0.5)]
+            return [('horns', 0, 4, 0.8), ('trumpets', 0, -6, 0.5), ('violins', 0, 0, 0.5)]
+        if part == 'chord':                                 # the last chord, the whole orchestra
+            if h == 1:
+                return [('cellos', 0, 0, 0.7), ('basses', -12 if m >= 40 else 0, 0, 0.6), ('tuba', 0, -8, 0.5),
+                        ('trombones', 12 if m < 48 else 0, -8, 0.45)]
+            return [('violins', 0, 0, 0.6), ('horns', -12, -4, 0.55), ('trumpets', -12, -14, 0.35),
+                    ('flutes', 0, -12, 0.3)]
+        if T_RED[0] - 0.1 <= t < T_CHORD - 0.1 and h == 1:   # under redemption: the harp and the low strings
+            return [('harp', 0, -4, 0.55), ('cellos', 0, -10, 0.35)]
+        return None
+
+    o.tutti(tidy(notes), size=size, role=role, pan=lambda t, m: 0.0)
+    for t, d, m, v, part, k in N:                           # Hagen: "Zurück vom Ring!"
+        if part == 'hagen':
+            o.play('trombones', m, t, max(d, 0.15), v, pl, 0.95)
+            o.play('horns', m, t, max(d, 0.15), v - 10, pl, 0.5)
+    o.hit('timpani roll', T_CHORD - 2.5, 96, pitch=-2, gain=0.5)
+    o.hit('crash', T_CHORD + 1.0, 104, gain=0.45)
+    o.hit('timpani', T_CHORD + 1.0, 118, pitch=-1, gain=0.6)
+
+    # the stage
+    front = lambda t: pan_at(S['L'] - flood_at(t) * (S['L'] + 60))
+    o.wind(0.0, 9.0, lambda tt: 0.6 + 0.4 * (tt < 6), pan=front, seed=31)    # the flood's roar
+    o.fire(0.0, 7.0, lambda tt: np.clip(1 - tt / 6.5, 0, 1), pan=front, crackle=26, seed=33)   # steam and fire dying
+    o.thunder(0.05, near=0.8, pan=pan_at(S['L']), gain=0.8)                    # the wall of water breaks in
+    o.boom(T_DROWN, pf, 0.8)                                                    # Hagen goes under
+    o.thunder(T_DROWN + 0.05, near=0.6, pan=pf, gain=0.6)
+    o.hit('crash', T_RING, 112, gain=0.5, pan=pf)                              # the Ring held up
+    o.play('glock', note('C#6'), T_RING + 0.05, 0.1, 100, pf, 0.4)
+    o.wind(T_RECEDE[0], T_RECEDE[1] + 2, 0.35, pan=pan_at(at(G, 'Right', 0.6)), seed=35)   # the water drawing back
+    for t0 in sorted({e[0] for e in N if e[4] == 'down' and e[5] == 0})[1:]:   # Valhalla's fall
+        o.boom(t0, pf, 1.0)
+        o.shatter(t0 + 0.05, pf, 0.8)
+        o.thunder(t0 + 0.1, near=0.9, pan=pf, gain=0.9)
+    o.effects([(0.0, 0.0), (T_HAGEN - 0.4, 0.0), (T_HAGEN, -9.0), (T_HAGEN + 1.6, -9.0), (T_HAGEN + 2.4, 0.0),
+               (T_RING + 3.0, -3.0), (T_RECEDE[0], -8.0), (30.0, -6.0), (31.0, 0.0), (37.5, 0.0), (39.0, -30.0)])

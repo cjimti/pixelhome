@@ -1,24 +1,30 @@
 """Alberich: night on the shore before the hall of the Gibichungs. The porch is the hall's doors, dark wood with a
 torch glow at the seams; the wings and Side are the shore under a deep blue night and a cold moon; Hagen's spear
-stands on Porch Front, a steel glint. Hagen, ultraviolet in black, sleeps sitting against the doors, breathing on
-his own falling tritone (Donington 61a) in the tubas.
+stands on Porch Front, a steel glint. Hagen, ultraviolet in black, sleeps sitting against the doors, and every
+long swell of the prelude is his breath, a violet swell over the doors and out along the shore.
+
+The music is Wagner's own, Act II as Solti's 1958 Vienna Philharmonic recording takes it: the prelude's swells
+(bars 30-33), the moonlight surging and "Schläfst du, Hagen, mein Sohn?" (39-44), "den Ring gewinnen ... Schwörst
+du mir's, Hagen, mein Sohn?" (158-163), and the dawn on the Rhine (219-226). The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py): the swells on horns and bassoons over murmuring low strings, the
+Ring on clarinets and oboes, the three strokes before the oath on timpani and gong, the Curse on trombones and
+tuba, the dawn on horns and then trumpets with cymbals as it blazes. The stage adds the river under the moon and
+the dream rushing in and breaking apart.
 
 The moonlight surges and his father comes to him in a dream: Alberich, red in his muddy halo, creeps in from the
-free end of Right ("Schläfst du, Hagen, mein Sohn?"). Every phrase of the dwarf rolls a red wave out over the
-house from where he stands, and every answer of the sleeping son a wave of violet the other way; where they meet
-they crack white. The Ring (8) races round the whole house as a gold loop on each of its notes, and the Curse
-(13) slashes blood red from the doors out to both ends. Three times Alberich demands an oath ("Schwörst du mir,
-Hagen?"), louder each time, and three times the whole house flashes red to violet: "Mir selbst schwör' ich's."
+free end of Right. His phrases roll red waves out over the house from where he stands, the sleeping son answers in
+violet, and where they meet they crack white. On "den Ring gewinnen" the Ring races round the whole house as a
+gold loop. Three hammer strokes demand an oath, harder each time, and each time the whole house flashes red and
+the son's violet floods back over it; on the last the Curse slashes blood red from the doors out to both ends.
 
 The dream breaks: Alberich shrinks back out of the free end of Right as a red comet, and dawn comes up red over
 the shore in great surges from the river end, while Hagen rises and stands by his spear.
 
-compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
+compose() tags every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD15'
 TITLE = 'Alberich'
@@ -29,16 +35,16 @@ VOICEOVER = ('Hagen sleeps with his eyes open. In the moonlight, his father cree
              'about the Ring.')
 
 K = 0                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_HAGEN = [1.0, 6.0, 11.0]                  # the sleeper's tritone
-T_IN = 8.0                                  # Alberich creeps in
-T_THERE = 19.0
-PHRASES = [(20.0, 'a'), (24.5, 'h'), (28.0, 'a'), (32.5, 'h'), (44.0, 'a'), (47.5, 'h')]
-T_RING = 35.0
-T_CURSE = 39.5
-T_SWEAR = [51.0, 53.4, 55.8]                # "Schwörst du mir, Hagen?"
-T_GONE = 58.5                               # the dream breaks
-T_DAWN = 61.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 30-33, 39-44, 158-163 and 219-226, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SEG = [s['start'] for s in EX['segments']] + [D]
+T_IN = SEG[1]                               # the moonlight surges and Alberich creeps in
+T_THERE = BAR[43]                           # "Schläfst du, Hagen, mein Sohn?"
+PHRASES = [(BAR[43], 'a'), (BAR[44], 'h'), (SEG[2], 'a'), (BAR[162], 'a'), (BAR[162] + 2.6, 'h')]
+T_SWEAR = [BAR[159], BAR[160], BAR[161]]    # the three hammer strokes before "Schwörst du mir's, Hagen?"
+T_GONE = BAR[163]                           # the dream breaks
+T_DAWN = SEG[3]                             # dawn on the Rhine
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -149,42 +155,25 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
     return out
 
 
+def part_of(t, d, m, v, h):
+    """What a note of the excerpt is: its part, see compose()."""
+    if t < SEG[1] and d >= 2.0 and v >= 105:
+        return 'hagen'
+    if SEG[2] <= t < T_SWEAR[0] and h == 0:
+        return 'ring'
+    if T_SWEAR[2] + 1.0 <= t < T_SWEAR[2] + 1.5 and h == 1 and v >= 120:
+        return 'curse'
+    if t >= T_DAWN and h == 0 and d >= 0.3 and v >= 85:
+        return 'dawn'
+    return 'music'
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_DAWN, 'Bb1', 62, 'pedal')
-    for k, t0 in enumerate(T_HAGEN):
-        for t, m, v, d in play('hagen', t0, 1.2, -12, 86 - 4 * k):
-            add(t, d, m, v, 'hagen', k)
-    for j in range(10):                     # his creeping steps: a muttered figure in the low strings
-        add(T_IN + j * 1.1, 0.3, ('Bb1', 'B1', 'C2', 'B1')[j % 4], 70 + 2 * j, 'creep')
-    for k, (t0, who) in enumerate(PHRASES):
-        if who == 'a':
-            for j, m in enumerate(('Bb3', 'Db4', 'C4', 'Bb3', 'Ab3', 'G3')):
-                add(t0 + j * 0.45, 0.42, m, 92 + 2 * k, 'alberich', k)
-        else:
-            for t, m, v, d in play('hagen', t0, 0.9, 0, 100 + 2 * k):
-                add(t, d, m, v, 'answer', k)
-    for t, m, v, d in play('ring', T_RING, 0.5, -12, 96):
-        add(t, d, m, v, 'ring')
-    for t, m, v, d in play('curse', T_CURSE, 0.5, -12, 110):
-        add(t, d, m, v, 'curse')
-    for k, t0 in enumerate(T_SWEAR):
-        for j, m in enumerate(('Bb3', 'Eb4', 'Gb4')):
-            add(t0 + j * 0.3, 0.32, m, 100 + 8 * k, 'swear', k)
-        add(t0 + 1.0, 1.0, 'E2', 104 + 8 * k, 'oath', k)
-        add(t0 + 1.0, 1.0, 'Bb1', 104 + 8 * k, 'oath', k)
-    for t, m, v, d in play('ring', T_GONE, 0.3, 0, 70):
-        add(t, d, m, v, 'away')
-    for t, m, v, d in play('dawn', T_DAWN, 0.62, 0, 96):
-        add(t, d, m, v, 'dawn')
-    for m in ('Bb2', 'D3', 'F3'):
-        add(T_DAWN + 2.0, D - T_DAWN - 2.0, m, 60, 'morning')
-    return sorted(N, key=lambda e: e[0])
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The prelude's long swells are the
+    sleeper's tritone ('hagen'); "den Ring gewinnen" is the Ring ('ring'); the fortissimo stroke after the third
+    oath is the Curse ('curse'); the right hand's notes of the dawn are its surges ('dawn'). Everything else is
+    'music'."""
+    return [(float(t), float(d), int(m), int(v), part_of(t, d, m, v, h), None) for t, d, m, v, h, _ in tidy(EX['notes'])]
 
 
 def alberich_at(G, t):
@@ -250,8 +239,9 @@ def render(G, seed=15):
         for k, t0 in enumerate(T_SWEAR):
             a = t - t0
             if 0 <= a < 2.4:
-                s = 0.7 + 0.15 * k
-                fr += light(ALBERICH, s * smoothstep(0, 0.1, a) * np.exp(-a / 0.5))
+                s = 0.8 + 0.1 * k
+                fr = fr * (1 - 0.5 * np.exp(-a / 0.6))
+                fr += light(ALBERICH, s * smoothstep(0, 0.08, a) * np.exp(-a / 0.9))
                 b = a - 1.0
                 if b >= 0:
                     fr += light(HAGEN, s * np.exp(-b / 0.6) * smoothstep(1100 * b + 60, 1100 * b - 60, np.abs(d - p_h)))
@@ -290,7 +280,9 @@ def render(G, seed=15):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with the night shore round the sleeper and the dream
+    breaking."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -299,78 +291,46 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.36, 0.25), ('winds', 0.31, 0.35), ('brass', 0.33, 0.3), ('perc', 0.3, 0.3),
-                            ('strings', 0.28, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    o = Orchestra(M, level=2.3)
+    hp = pan_at(at(G, *HAGEN_AT))
+    river = pan_at(G.pd.max() - 40)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        part = part_of(t, d, m, v, h)
+        if part == 'hagen':                                 # the sleeper's tritone: horns and bassoons, dark
+            return [('horns', -12 if m >= 62 else 0, 0, 0.7), ('bassoons', -12, -6, 0.5)]
+        if t < SEG[1]:                                      # the prelude's murmur: low strings and tuba
+            if h == 1:
+                return [('cellos trem' if d >= 1.0 else 'cellos', 0, -4, 0.6), ('basses', -12 if m >= 40 else 0, -8, 0.4)]
+            return [('violas', 0, -6, 0.45), ('clarinets', -12 if m >= 72 else 0, -10, 0.35)]
+        if part == 'ring':
+            return [('clarinets', 0, 0, 0.7), ('oboes', 0, -8, 0.4)]
+        if part == 'curse':
+            return [('trombones', 12, 4, 0.9), ('tuba', 0, 0, 0.75)]
+        if part == 'dawn':                                  # the dawn: horns, then trumpets as it blazes
+            return [('horns', 0, 0, 0.8)] + ([('trumpets', 0, -6, 0.55)] if v >= 120 else [])
+        return None
 
-    ph = pan_at(at(G, *HAGEN_AT))
-    river = pan_at(at(G, 'Right', 0.9))
+    def pan(t, m):
+        pa = alberich_at(G, t)
+        if pa is not None and SEG[1] <= t < T_GONE:
+            return 0.5 * (pan_at(pa) + hp)
+        return hp * 0.5
 
-    def pa(t):
-        p = alberich_at(G, t)
-        return pan_at(p) if p is not None else river
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.7 if t < T_DAWN else 0.6 + 0.4 * (t - T_DAWN) / (D - T_DAWN),
+            role=role, pan=pan)
+    for k, t0 in enumerate(T_SWEAR):                        # the three strokes: timpani and gong, harder each time
+        o.hit('timpani', t0, 100 + 10 * k, pitch=-6, gain=0.6 + 0.15 * k, pan=hp)
+        o.hit('gong', t0 + 0.02, 96 + 10 * k, gain=0.35 + 0.15 * k, pan=hp)
+    o.hit('crash', T_SWEAR[2], 124, gain=0.7)
+    o.hit('cymbal swell', T_IN - 2.5, 90, gain=0.35, pan=river)
+    o.hit('crash', BAR[224], 118, gain=0.6)
+    o.hit('crash', BAR[226], 124, gain=0.8)
+    o.hit('timpani roll', BAR[223], 104, pitch=-4, gain=0.5)
 
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v, 0.0, rise=3.0, fall=3.0, gain=0.45)
-        elif part in ('hagen', 'answer'):
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.2, fall=1.0, gain=0.9)
-            if part == 'answer':
-                M.add('brass', tbn.play(m + 12, v - 10, dur=d, release=0.4), t, 0.6, ph)
-            M.add('perc', timp.play(v - 20, pitch=-6), t, 0.5, ph)
-        elif part == 'creep':
-            M.add('low', cbs.play(m, v), t, 0.8, pa(t))
-        elif part == 'alberich':
-            M.add('winds', bsn.play(m - 12, v, dur=d * 1.2, release=0.2), t, 0.9, pa(t))
-            M.add('winds', clar.play(m, v - 14, dur=d * 1.2, release=0.2), t, 0.5, pa(t))
-        elif part == 'ring':
-            M.add('winds', clar.play(m + 12, v, dur=d * 1.1, release=0.3), t, 0.8, 0.0)
-            M.add('winds', bsn.play(m, v - 10, dur=d * 1.1, release=0.3), t, 0.6, 0.0)
-        elif part == 'curse':
-            if d > 1.2:
-                hold('brass', tbn, m + 12, t, t + d, v, ph, rise=0.15, fall=1.0, gain=0.9)
-            else:
-                M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.9, ph)
-            if t == min(e[0] for e in compose() if e[4] == 'curse'):
-                M.add('perc', gong.play(100), t, 0.6, ph)
-        elif part == 'swear':
-            M.add('winds', bsn.play(m - 12, v, dur=d * 1.1, release=0.15), t, 0.9, pa(t))
-            M.add('brass', tbn.play(m - 12, v - 16, dur=d * 1.1, release=0.15), t, 0.5, pa(t))
-        elif part == 'oath':
-            M.add('low', tuba.play(m, v, dur=d, release=0.5), t, 0.9, ph)
-            if m == note('E2'):
-                M.add('perc', timp.play(v, pitch=-6), t, 0.9, ph)
-        elif part == 'away':
-            M.add('winds', clar.play(m + 12, v, dur=d, release=0.2), t, 0.5, river)
-        elif part == 'dawn':
-            hold('strings', vc, m, t, t + d, v, river * 0.6, rise=0.2, fall=1.0, gain=0.75)
-            if m >= note('D3'):
-                M.add('brass', horn.play(m, v - 16, dur=d * 1.05, release=0.4), t, 0.5, river * 0.6)
-        elif part == 'morning':
-            hold('strings', vln, m + 12, t, t + d, v, 0.0, rise=5.0, fall=1.5, gain=0.45)
+    # the stage: the river under the moon, the dream rushing in and breaking apart
+    o.wind(0.0, T_DAWN + 3.0, level=0.3, pan=river, seed=15)
+    M.add('fx', whoosh(1.2, 400, 3000, 0.6, seed=150), T_IN - 0.9, 0.8, river)
+    M.add('fx', whoosh(1.6, 3500, 300, 0.6, seed=151), T_GONE - 0.2, 0.9, river)
+    o.effects([(0, -6), (T_IN - 1.2, -6), (T_IN, 0), (T_IN + 1.5, -14), (T_GONE - 0.5, -14), (T_GONE, -2),
+               (T_GONE + 2.0, -2), (T_DAWN, -16), (D, -16)])

@@ -1,26 +1,32 @@
 """Wälse! Wälse!: night in Hunding's hut. Siegmund (Wälsung blue) sits alone by the hearth on Left, the embers
-breathing low beside him, the ash tree dark at the middle of Porch Front with a faint gold glint in its trunk,
-and the storm muttering grey-blue at the door, the free end of Right. He broods to his own weary motif
-(Donington 35a) in the cellos over a low pedal: unarmed, in his enemy's house.
+breathing beside him, the ash tree dark at the middle of Porch Front with a faint gold glint in its trunk, and the
+storm muttering grey-blue at the door, the free end of Right. He thinks of the woman who held him with her eyes and
+the man who holds her: the strings' restless figure climbs and grows louder, an amber glow pulses at the inner door
+where she went out with every note of it, and each step of the bass sends a blue ripple out from him.
 
-He remembers: a sword, his father promised him, for his hour of need. The Sword (Donington 45) sounds softly on
-a trumpet, and with each note a thread of gold runs between him and the tree and the glint stirs, as if
-answering. He thinks of the woman who held him with her eyes (Sieglinde's motif, Donington 36, on oboe and
-cello), and a warm amber glow lingers at the inner door where she went out.
+Then he cries out for his father: "Wälse! Wälse!", the orchestra holding a huge trembling chord under each cry. His
+blue swells out from him, the first time to the porch, the second time over the whole house, while the basses and
+timpani roll. Nothing answers. "Wo ist dein Schwert?": with each note a thread of gold runs between him and the tree
+and the glint stirs, as if answering, and his light rises with "bricht mir hervor aus der Brust". Then the embers
+flare, a streak of fire light runs from the hearth along the roof to the tree, and the hilt blazes up gold-white in
+the trunk, rays of it over the porch, as the Sword sounds in the orchestra and the violins shimmer high in C major;
+sparks of gold and white fly up through the leaves on every note of the shimmer. He sings of the gleam as the light
+of her eyes; it fades with the fire, the embers sink, and the night closes in.
 
-Then he cries out for his father: "Wälse! Wälse!", two huge held notes on the horns and cellos, the orchestra
-swelling under each. His blue swells out from him with the note, the first time to the porch, the second time
-over the whole house, while the timpani roll and the strings tremble. Nothing answers. But a log falls in the
-hearth: the embers flare, a streak of fire light runs from the hearth along the roof to the tree, and the hilt
-blazes up gold-white in the trunk, rays of it over the porch, as the Sword rings out on the trumpet. He sings of
-the gleam as the light of her eyes; it fades with the fire, the embers sink to almost nothing, and the night
-closes in.
+The music is Wagner's own: Act I, bars 832-864, as Solti's 1958 Vienna Philharmonic recording takes them, from the
+Wagner Ring Dataset's piano reduction (pixelhome/ring.py). The held chords under the cries are horns and trombones
+over tremolo cellos and basses; the Sword, in the left hand, is the trumpets; the shimmer above it violins and harp;
+the rest is the reduction orchestrated by hand and register. The stage adds its sounds: the embers crackling at
+the hearth and dying with it, the storm's wind gusting at the door, far-off thunder answering nothing after the
+second cry, the fire roaring up and rushing along the roof when it flares, the hilt ringing out like struck steel
+as it blazes, and sparks crackling round the tree with the shimmer. The effects keep low under the night, back right off for
+the two cries and the vow that follows so his voice and the orchestra's held chords are clear, come up for the far
+thunder, lead when the fire flares and the hilt blazes, and recede again as he sings of the gleam.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK07'
 TITLE = 'Wälse! Wälse!'
@@ -31,21 +37,19 @@ DESCRIPTION = ('Alone by the dying fire, Siegmund remembers the sword his father
 VOICEOVER = ('The house is asleep, and Siegmund has no weapon. His father once promised him a sword. '
              'Tonight, he calls for it.')
 
+EX = excerpt(__file__)                      # Act I, bars 832-864, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
 K = 6                                       # this scene's place in the shared clock (t + 80 * K)
-BEAT = 0.75
-T_BROOD = 1.0                               # Siegmund, weary
-T_BROOD2 = 9.0
-T_SWORD = 17.5                              # "Ein Schwert verhiess mir der Vater"
-SWBEAT = 0.55
-T_SWORD2 = 23.0
-T_LINDE = 28.0                              # the woman who held him with her eyes
-LBEAT = 0.5
-CRIES = [(36.5, 5.5, 'Gb3'), (45.5, 6.5, 'G3')]   # "Wälse! Wälse!": start, held seconds, the note
-T_FLARE = 55.5                              # a log falls; the embers flare
-T_HILT = 56.3                               # the hilt blazes in the tree
-T_GLEAM = 63.0                              # "Was gleisst dort hell im Glimmerschein?"
-T_DIE = 70.0                                # the fire dies
-D = 80.0
+T_LINDE = BAR[832]                          # the woman, held by the man who mocks him
+T_ROLL = BAR[839]                           # the orchestra gathers for the cry
+CRIES = [(BAR[840], BAR[841] - BAR[840] - 1.5), (BAR[841], BAR[842] - BAR[841] - 1.5)]   # "Wälse!": start, held
+T_SWORD = BAR[842]                          # "Wo ist dein Schwert? das starke Schwert"
+T_RISE = BAR[846]                           # "bricht mir hervor aus der Brust"
+T_FLARE = BAR[849]                          # the embers flare
+T_HILT = T_FLARE + 0.8                      # the hilt blazes in the tree
+T_GLEAM = BAR[852] + 1.4                    # "Was gleisst dort hell im Glimmerschein?"
+T_DIE = BAR[859]                            # the fire dies
+D = EX['seconds']
 
 BLUE = hexc('#30a8ff')
 AMBER = hexc('#ffa860')
@@ -70,67 +74,23 @@ def at(G, seg, u):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). 'linde' is the strings'
+    figure while he thinks of her, 'step' its bass; 'roll' the trembling bass under the cries and 'swell' the chord
+    held over it; 'promise' the line of "Wo ist dein Schwert?"; 'sword' the Sword in the left hand once the hilt
+    blazes, 'shimmer' the violins above it; everything else is 'note'."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    add(0.0, T_SWORD, 'D2', 66, 'pedal')
-    for t, m, v, d in play('siegmund_weary', T_BROOD, BEAT, 0, 84):           # brooding, in the cellos
-        add(t, d, m, v, 'weary')
-    for t, m, v, d in play('siegmund_weary', T_BROOD2, BEAT, -2, 78, line='bass'):
-        add(t, d, m, v, 'weary')
-    for m in ('F3', 'A3'):
-        add(T_BROOD + 1.0, T_BROOD2 - T_BROOD, m, 58, 'shade')
-    for m in ('Eb3', 'G3'):
-        add(T_BROOD2 + 1.0, T_SWORD - T_BROOD2 - 0.5, m, 58, 'shade')
-    add(T_SWORD - 0.5, T_LINDE - T_SWORD + 0.5, 'C2', 64, 'pedal')
-    for m in ('C3', 'G3', 'E4'):                                                # a C major glow under the promise
-        add(T_SWORD - 0.3, T_LINDE - T_SWORD, m, 54, 'glow')
-    for t, m, v, d in play('sword', T_SWORD, SWBEAT, 0, 82):                    # the Sword, softly, far off
-        add(t, d, m, v, 'sword_soft')
-    for t, m, v, d in play('sword', T_SWORD2, SWBEAT, -12, 78):
-        add(t, d, m, v, 'sword_horn')
-    for t, m, v, d in play('sieglinde', T_LINDE, LBEAT, 0, 80):                 # her eyes
-        add(t, d, m, v, 'linde' if m >= note('C4') else 'linde_low')
-
-    for k, (t0, hd, m) in enumerate(CRIES):                                     # "Wälse!"
-        add(t0 - 2.6, 2.6, 'Gb1' if k == 0 else 'G1', 84 + 10 * k, 'roll')
-        add(t0 - 1.0, 0.25, 'Db3' if k == 0 else 'D3', 96, 'pickup')           # "Wäl-"
-        add(t0, hd, m, 110 + 8 * k, 'cry')
-        add(t0, hd, note(m) - 12, 104 + 8 * k, 'cry_low')
-        chord = ('Gb2', 'Db3', 'Gb3', 'Bb3', 'Db4') if k == 0 else ('C2', 'G2', 'C3', 'Eb3', 'G3', 'C4')
-        for c in chord:
-            add(t0, hd + 0.6, c, 90 + 10 * k, 'swell')
-        add(t0, 0.9, 'Gb1' if k == 0 else 'C2', 110 + 8 * k, 'hit')
-        fall = (('Gb3', 'F3', 'Eb3', 'Db3') if k == 0 else ('G3', 'F3', 'Eb3', 'D3', 'C3'))
-        for j, f_ in enumerate(fall):                                           # the echo falls away
-            add(t0 + hd + 0.2 + 0.45 * j, 0.6, f_, 86 - 6 * j, 'echo')
-    add(CRIES[1][0] + CRIES[1][1] + 0.5, T_FLARE - CRIES[1][0] - CRIES[1][1] - 0.5, 'C2', 60, 'pedal')
-
-    add(T_FLARE, 0.8, 'C2', 112, 'log')                                         # the log falls
-    for j in range(10):
-        add(T_FLARE + 0.06 * j, 0.5, note('G3') + (0, 4, 7, 12, 16, 19, 24, 28, 31, 36)[j], 84 + 2 * j, 'harp')
-    add(T_HILT, 0.9, 'C5', 112, 'crash')
-    for t, m, v, d in play('sword', T_HILT + 0.2, 0.6, 0, 116):                # the Sword, blazing
-        add(t, d, m, v, 'sword')
-        add(t, d, m - 12, v - 10, 'sword_horn')
-    for m in ('C3', 'E3', 'G3', 'C4', 'E4'):
-        add(T_HILT, T_GLEAM - T_HILT + 0.5, m, 86, 'blaze')
-    add(T_HILT, T_DIE - T_HILT, 'C2', 80, 'pedal')
-    for t, m, v, d in play('sieglinde', T_GLEAM, 0.55, -12, 76, line='melody'):  # the gleam of her eyes
-        add(t, d, m, v, 'gleam')
-    for m in ('A2', 'E3', 'C4'):
-        add(T_GLEAM, 4.5, m, 62, 'shade')
-    for m in ('F2', 'C3', 'A3'):
-        add(T_GLEAM + 4.5, 4.0, m, 60, 'shade')
-    for t, m, v, d in play('sword', T_DIE + 1.5, 0.8, -12, 66):                # the fire dies: a muted memory
-        if t < D - 2.5:
-            add(t, d, m, v, 'sword_mute')
-    for m in ('C2', 'G2', 'Eb3'):
-        add(T_DIE + 1.0, D - T_DIE - 1.0, m, 62, 'dark')
-    return sorted(N, key=lambda e: e[0])
+    for t, d, m, v, h in EX['notes']:
+        part = 'note'
+        if t < T_ROLL:
+            part = 'linde' if h == 0 else 'step' if d >= 0.3 else 'note'
+        elif t < T_SWORD:
+            part = 'roll' if h == 1 and m < 48 else 'swell'
+        elif t < T_RISE:
+            part = 'promise' if h == 0 else 'note'
+        elif t >= T_FLARE:
+            part = 'shimmer' if h == 0 else 'sword' if m >= 55 and d >= 0.3 else 'note'
+        N.append((t, d, m, v, part, h))
+    return N
 
 
 def follow(target, rate):
@@ -151,7 +111,7 @@ def choreography(G):
     S = at(G, 'Left', 0.5)
     tgt = np.full(F, S)
     rate = np.full(F, 2.0)
-    for t0, hd, _ in CRIES:                                                     # he turns toward the tree
+    for t0, hd in CRIES:                                                        # he turns toward the tree
         m = (t >= t0 - 0.5) & (t < t0 + hd)
         tgt[m] = S + 30
     m = (t >= T_HILT) & (t < T_GLEAM + 6)
@@ -249,10 +209,15 @@ def render(G, seed=7):
     C = choreography(G)
     N = compose()
     door = at(G, 'Left', 0.0)
-    sw = np.array([e[0] for e in N if e[4] in ('sword_soft', 'sword_horn') and e[0] < T_LINDE])
+    sw = np.array([e[0] for e in N if e[4] == 'promise'])
     hilt = np.array([e[0] for e in N if e[4] == 'sword'])
-    linde = np.array([e[0] for e in N if e[4] in ('linde', 'gleam')])
-    weary = np.array([e[0] for e in N if e[4] == 'weary' and e[1] >= 0.3])
+    linde = np.array([e[0] for e in N if e[4] == 'linde'])
+    lvel = np.array([e[3] for e in N if e[4] == 'linde'])
+    weary = np.array([e[0] for e in N if e[4] == 'step'])
+    shim = [e for e in N if e[4] == 'shimmer']
+    shim_t = np.array([e[0] for e in shim])
+    shim_p = rng.normal(0, 1, len(shim))     # where each spark flies up through the leaves
+    rise = np.array([e[0] for e in N if T_RISE <= e[0] < T_FLARE and e[5] == 1 and e[1] >= 0.3])
     tw = Flicker(rng, G.N, 3.0, 7.0)
 
     for f in range(F):
@@ -260,17 +225,17 @@ def render(G, seed=7):
         tt = t + 80 * K
         p = C['sieg'][f]
         dying = smoothstep(T_DIE, D - 2.0, t)
-        ember = EMBER_IN * (1 - 0.25 * smoothstep(30, 50, t)) * (1 - dying) + EMBER_OUT * dying
+        ember = EMBER_IN * (1 - 0.25 * smoothstep(CRIES[0][0], T_FLARE, t)) * (1 - dying) + EMBER_OUT * dying
         ember *= 1 - 0.3 * smoothstep(T_HILT + 2, T_DIE, t) * (1 - dying)
         flare = np.exp(-(t - T_FLARE) / 1.2) if t >= T_FLARE else 0.0
         ember += 0.75 * flare
-        blaze = smoothstep(T_HILT - 0.05, T_HILT + 0.1, t) * (1 - smoothstep(T_GLEAM, T_DIE + 4, t))
-        glint = GLINT_IN + (GLINT_OUT - GLINT_IN) * smoothstep(60, D, t)
+        blaze = smoothstep(T_HILT - 0.05, T_HILT + 0.1, t) * (1 - smoothstep(T_GLEAM, D - 1.0, t))
+        glint = GLINT_IN + (GLINT_OUT - GLINT_IN) * smoothstep(T_GLEAM, D, t)
         i = int(np.searchsorted(sw, t, side='right')) - 1
         stir = np.exp(-(t - sw[i]) / 0.4) if i >= 0 and t - sw[i] < 2 else 0.0
         glint += 0.35 * stir + 0.9 * blaze
         swell = 0.0
-        for t0, hd, _ in CRIES:
+        for t0, hd in CRIES:
             swell = max(swell, smoothstep(t0 - 0.3, t0 + 1.5, t) * (1 - smoothstep(t0 + hd, t0 + hd + 2.5, t)))
         fr = draw_room(G, R, tt, BED * (1 + 0.5 * swell + 0.4 * blaze), ember, glint, STORM_L)
         x = smoothstep(0.0, T_WAKE, t)
@@ -278,22 +243,24 @@ def render(G, seed=7):
             fr = x * fr + (1 - x) * room06(S6, tt, WK06_END)
 
         # the promise: a thread of gold between him and the tree, a spark running along it with each note
-        if i >= 0 and t - sw[i] < 2 and t < T_LINDE + 1:
+        if i >= 0 and t - sw[i] < 2 and t < T_RISE + 1:
             lo, hi = min(p, pf), max(p, pf)
             line = smoothstep(lo - 10, lo + 10, d) * smoothstep(hi + 10, hi - 10, d)
             q = pf + (p - pf) * min(1.0, (t - sw[i]) / 0.9)
             fr += light(HILT, 0.3 * stir * line + 0.7 * stir * np.exp(-((d - q) / 25) ** 2))
 
         # her memory: an amber glow at the inner door, pulsing with her notes
-        mem = smoothstep(T_LINDE - 1, T_LINDE + 1.5, t) * (1 - smoothstep(T_LINDE + 7, T_LINDE + 9.5, t))
+        mem = smoothstep(T_LINDE, T_LINDE + 1.5, t) * (1 - smoothstep(T_ROLL, T_ROLL + 2.5, t))
         mem += 0.7 * smoothstep(T_GLEAM - 0.5, T_GLEAM + 1, t) * (1 - smoothstep(T_DIE - 1, T_DIE + 2, t))
         if mem > 0:
             j = int(np.searchsorted(linde, t, side='right')) - 1
-            pl = np.exp(-(t - linde[j]) / 0.35) if j >= 0 else 0.0
-            fr += light(AMBER, mem * (0.4 + 0.25 * pl) * np.exp(-((d - door) / 70) ** 2))
+            pl = np.exp(-(t - linde[j]) / 0.18) * (lvel[j] / 110) ** 2 if j >= 0 and t < T_ROLL + 2 else 0.0
+            grow = 1 + smoothstep(T_LINDE, T_ROLL, t)
+            fr += light(AMBER, mem * (0.4 + 0.5 * pl) * np.exp(-((d - door) / (70 * grow)) ** 2))
+            fr += light(AMBER, 0.45 * mem * pl * np.exp(-((d - door - 160 * grow) / 50) ** 2))
 
         # the cries: his blue swells out from him with the held note, to the porch, then over the whole house
-        for k, (t0, hd, _) in enumerate(CRIES):
+        for k, (t0, hd) in enumerate(CRIES):
             if t0 - 0.5 <= t < t0 + hd + 3.5:
                 g = smoothstep(t0 - 0.2, t0 + hd * 0.85, t)
                 r = 40 + (1100 if k == 0 else 2100) * g ** 0.8
@@ -322,18 +289,31 @@ def render(G, seed=7):
                                        0.3 * np.exp(-(dist / 650) ** 2) + 0.3 * hit * np.exp(-(dist / 400) ** 2)))
             fr += light(WHITE, blaze * (0.9 * np.exp(-(dist / 14) ** 2) + 0.5 * hit * np.exp(-(dist / 40) ** 2)))
             fr += light(WHITE, 0.55 * burst * np.exp(-(dist / 900) ** 2))
+        # the shimmer: a spark of gold or white flies up through the leaves on every note
+        k = int(np.searchsorted(shim_t, t, side='right'))
+        for j in range(max(0, k - 8), k):
+            a = t - shim_t[j]
+            if a < 0.45:
+                c = pf + 230 * shim_p[j]
+                amp = (0.5 + 0.5 * blaze) * (shim[j][3] / 100)
+                fr += light(WHITE if shim[j][2] >= 84 else HILT, amp * np.exp(-a / 0.13) * np.exp(-((d - c) / 13) ** 2))
 
         # his brooding: each weary step a slow blue ripple out from him
         j = int(np.searchsorted(weary, t, side='right')) - 1
-        if j >= 0 and t - weary[j] < 3.0 and t < T_SWORD:
+        if j >= 0 and t - weary[j] < 3.0 and t < T_ROLL + 2:
             a = t - weary[j]
             r = 30 + 260 * a ** 0.7
             fr += light(BLUE, 0.4 * np.exp(-a / 1.1) * np.exp(-((np.abs(d - p) - r) / 60) ** 2))
 
         # Siegmund
         lift = 0.0
-        for t0, hd, _ in CRIES:
+        for t0, hd in CRIES:
             lift = max(lift, smoothstep(t0 - 1.0, t0, t) * (1 - smoothstep(t0 + hd, t0 + hd + 1.5, t)))
+        lift = max(lift, 0.8 * smoothstep(T_RISE, T_FLARE, t) * (1 - smoothstep(T_FLARE, T_FLARE + 2, t)))
+        j = int(np.searchsorted(rise, t, side='right')) - 1
+        if j >= 0 and t - rise[j] < 1.5 and t < T_FLARE:     # "bricht mir hervor": each chord a pulse of blue
+            a = t - rise[j]
+            fr += light(BLUE, 0.6 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - p) - 40 - 500 * a) / 70) ** 2))
         b = SIEG_L * (1 + 0.8 * lift + 0.3 * blaze) * (0.96 + 0.04 * np.sin(2 * np.pi * tt / 4.0))
         new = fr + light(BLUE, b * np.exp(-((d - p) / 26) ** 2) + 0.3 * b * np.exp(-((d - p) / 110) ** 2))
         fr = new if x >= 1 else x * new + (1 - x) * figure06(fr, S6, p, BLUE, WK06_SIEG[0], WK06_SIEG[1])
@@ -343,7 +323,8 @@ def render(G, seed=7):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes from the piano reduction: horns and trombones holding the chords under the cries over
+    tremolo cellos and basses, the Sword on the trumpets, the shimmer on violins and harp."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -354,109 +335,61 @@ def score(M, G):
 
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
-    ph = pan_at(at(G, 'Left', 0.6))
     pd_ = pan_at(at(G, 'Left', 0.0))
+    o = Orchestra(M, level=2.6)
 
     def ps(t):
         return pan_at(np.interp(t, C['t'], C['sieg']))
 
-    for name, gain, rev in (('strings', 0.22, 0.32), ('low', 0.25, 0.2), ('brass', 0.24, 0.32), ('winds', 0.24, 0.32),
-                            ('perc', 0.24, 0.3), ('harp', 0.2, 0.45)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*_v5_*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_ff*.wav')
-    gong = M.hits('Percussion/gongHit_f.wav')
+    def size(t):
+        return 0.4 + 0.6 * smoothstep(T_LINDE, T_ROLL, t) if t < T_FLARE else 0.6
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, ph, rise=1.5, fall=1.5, gain=0.8)
-            hold('low', vctrem, m + 12, t, t + d, v - 10, ph, rise=2.0, fall=1.5, gain=0.4)
-        elif part == 'weary':
-            M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, ps(t))
-        elif part == 'shade':
-            hold('strings', va, m, t, t + d, v, 0.15 if m % 2 else -0.15, rise=1.2, fall=1.2, gain=0.5)
-        elif part == 'glow':
-            hold('strings', vtrem if m >= note('C4') else vatrem, m, t, t + d, v, pf, rise=2.0, fall=1.5, gain=0.5)
-        elif part == 'sword_soft':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.5), t, 0.7, pf)
-        elif part == 'sword_horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.5), t, 0.8, (pf + ps(t)) / 2)
-        elif part == 'linde':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pd_)
-        elif part == 'linde_low':
-            M.add('strings', vc.play(m, v - 6, dur=d * 1.05, release=0.3), t, 0.8, pd_ + 0.1)
+    for t, d, m, v, part, h in compose():
+        if part == 'linde':
+            o.play('violins' if m >= 55 else 'violas', m, t, d, v - 4, pd_, 0.5)
+            if v >= 90:
+                o.play('oboes', m + 12, t, d, v - 16, pd_, 0.3)
         elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.3), t, 0.7, ps(t))
-            hold('strings', vctrem, m + 24, t, t + d, v - 10, ps(t), rise=d, fall=0.3, gain=0.5)
-        elif part == 'pickup':
-            M.add('brass', horn.play(m, v, dur=d * 1.2, release=0.15), t, 0.9, ps(t))
-            M.add('strings', vc.play(m - 12, v, dur=d * 1.2, release=0.15), t, 0.7, ps(t))
-        elif part == 'cry':
-            hold('brass', horn, m, t, t + d, v, ps(t), rise=0.15, fall=1.2, gain=1.1)
-            hold('strings', vc, m, t, t + d, v - 4, ps(t) + 0.1, rise=0.15, fall=1.2, gain=0.9)
-        elif part == 'cry_low':
-            hold('brass', tbn, m, t, t + d, v, ps(t) - 0.05, rise=0.2, fall=1.2, gain=0.8)
+            o.play('cellos trem', m + 12 if m < 36 else m, t, max(d, 0.4), v, ps(t), 0.35)
+            o.play('basses', m, t, d, v - 10, ps(t), 0.35)
         elif part == 'swell':
-            s = vtrem if m >= note('Bb3') else vatrem if m >= note('C3') else cb
-            hold('strings', s, m + (12 if s is cb else 0), t, t + d, v, -0.5 + (m % 7) / 6, rise=d * 0.6, fall=1.5,
-                 gain=0.55)
-            if m < note('G3'):
-                hold('brass', tbn if m >= note('C2') else tuba, m + (12 if m < note('Bb1') else 0), t, t + d, v - 12,
-                     0.0, rise=d * 0.6, fall=1.5, gain=0.5)
-        elif part == 'hit':
-            M.add('perc', timp.play(v, pitch=-3), t, 1.0, ps(t))
-            M.add('perc', gong.play(v - 20), t, 0.4, 0.0)
-        elif part == 'echo':
-            M.add('strings', vc.play(m, v, dur=d, release=0.4), t, 0.7, ps(t))
-            M.add('brass', mute.play(m, v - 10, dur=d, release=0.4), t, 0.5, pf)
-        elif part == 'log':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, ph)
-            M.add('low', tuba.play(m + 12, v, dur=d, release=0.3), t, 0.7, ph)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, ph + (pf - ph) * (m - 55) / 36)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.8, pf)
+            o.play('horns', m, t, d, v, ps(t), 0.75)
+            o.play('trombones', m - 12, t, d, v - 8, ps(t), 0.5)
+            o.play('violins trem', m + 12, t, d, v - 12, pf, 0.35)
         elif part == 'sword':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.5), t, 1.0, pf)
-        elif part == 'blaze':
-            hold('strings', vtrem if m >= note('C4') else vatrem, m, t, t + d, v, pf + (m % 5 - 2) * 0.12, rise=0.2,
-                 fall=2.5, gain=0.6)
-            if m <= note('G3'):
-                hold('brass', horn, m + 12, t, t + d - 3, v - 16, pf, rise=0.3, fall=2.0, gain=0.4)
-        elif part == 'gleam':
-            M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.4), t, 0.9, ps(t))
-            M.add('winds', ob.play(m + 12, v - 14, dur=d * 1.05, release=0.4), t, 0.5, pd_)
-        elif part == 'sword_mute':
-            M.add('brass', mute.play(m, v, dur=d * 1.05, release=0.6), t, 0.9, pf)
-        elif part == 'dark':
-            hold('low', cb if m < note('C3') else vatrem, m + (12 if m < note('C3') else 0), t, t + d, v, ph, rise=2.0,
-                 fall=2.0, gain=0.6)
+            o.play('trumpets', m, t, d, v + 10, pf, 0.75)
+            o.play('horns', m - 12, t, d, v - 6, pf, 0.4)
+        elif part == 'shimmer':
+            o.play('violins', m, t, 0.1, v - 10, pf + 0.2, 0.3)
+            if m in (72, 84):
+                o.play('harp', m - 12, t, d, v - 10, pf - 0.2, 0.3)
+        else:
+            o.tutti([(t, d, m, v, h)], size=size, pan=lambda t, m: ps(t))
+    for t0, hd in CRIES:
+        o.hit('timpani roll', t0 - 0.2, 100, gain=0.5, pan=ps(t0))
+        o.hit('timpani', t0, 110, pitch=-4, gain=0.6, pan=ps(t0))
+    o.hit('timpani roll', T_ROLL, 90, gain=0.4)
+    o.hit('crash', T_FLARE, 110, gain=0.5, pan=pf)
+    o.hit('timpani', T_FLARE, 110, pitch=-6, gain=0.6)
+    # the stage: the hearth, the storm, the far thunder, the flare, the hilt, the sparks
+    from pixelhome.audio import whoosh
+    hc = pan_at(at(G, 'Left', 0.6))
+    door = pan_at(G.length)
+
+    def ember(tt):
+        base = 0.35 * (1 - 0.3 * smoothstep(CRIES[0][0], T_FLARE, tt))
+        flare = 1.1 * np.exp(-np.clip(tt - T_FLARE, 0, None) / 1.4) * (tt >= T_FLARE)
+        return (base + flare) * (1 - 0.7 * smoothstep(T_DIE, D - 2.0, tt))
+    o.fire(0.0, D, ember, pan=hc, crackle=10)
+    o.wind(0.0, D, lambda tt: 0.45 - 0.2 * smoothstep(T_DIE, D, tt), pan=door)
+    o.thunder(CRIES[1][0] + CRIES[1][1] + 1.2, near=0.25, pan=door, gain=0.9)
+    for k, pp in enumerate((hc, 0.5 * (hc + pf), pf)):                         # the fire runs along the roof
+        M.add('fx', whoosh(1.0, 300 + 400 * k, 3500, 0.7, seed=70 + k), T_FLARE + 0.25 * k, 0.8, pp)
+    o.hit('metal', T_HILT, 120, gain=0.7, pan=pf, fx=True)
+    o.hit('scrape', T_HILT, 110, gain=0.5, pan=pf, fx=True)
+    o.hit('gong scrape', T_HILT + 0.1, 100, gain=0.4, pan=pf, fx=True)
+    o.fire(T_HILT, T_GLEAM + 3.0, 0.12, pan=pf, crackle=45, seed=17)
+    t_th = CRIES[1][0] + CRIES[1][1] + 1.2
+    o.effects([(0, -3), (T_ROLL - 1.0, -3), (T_ROLL, -14), (t_th - 0.6, -14), (t_th - 0.2, 0), (t_th + 3.0, 0),
+               (t_th + 4.5, -9), (T_FLARE - 0.6, -9), (T_FLARE - 0.1, 2), (T_HILT + 2.0, 1), (T_GLEAM - 0.5, -8),
+               (D, -6)])

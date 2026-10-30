@@ -1,24 +1,31 @@
-"""The False Gunther: dusk on Brünnhilde's rock, Waltraute gone, the Ring gold on Brünnhilde's hand. The fire round
-the rock begins to stir, and on Loge's figure (Donington 20) it flares: every figure a tongue of flame leaping out
-from the porch along the roofline, until the fire is roaring round the rock and over the sky. A horn sounds
-through it, Siegfried's call (48), and her silver leaps for joy.
+"""The False Gunther: dusk on Brünnhilde's rock, Waltraute gone, the Ring gold on Brünnhilde's hand. "Was leckt
+so wütend die lodernde Welle zum Wall?": the fire round the rock flares, tongue after tongue leaping out from the
+porch along the roofline, until it is roaring round the rock and over the sky. "Siegfried!": his horn sounds
+through it, emerald streaks racing in from the east, and her silver leaps for joy.
 
-But what comes through the fire is a stranger. On the Tarnhelm (18) a grey-teal mist shimmers over the house in
-waves, everything dims under it, and out of the free end of Right a figure walks in through the flames: royal
-gold, Gunther's shape, with Siegfried's emerald flickering beneath it. She holds up the Ring (8) and its gold
-blazes from her hand. Then the struggle: gold floods the porch from his side and silver from hers, the line
-between them lurching back and forth on every blow, sparks flying from it, until he tears the Ring from her
-finger: a gold flash leaps from her hand to his, and the Curse (13) slashes blood red out to both ends of the
-house. She collapses, her silver sinking; fate (84) rolls indigo over the house. He lays Nothung between them, a
-line of white steel on the porch, the fire sinks to a red smoulder, the night closes in, and Hagen's falling
-tritone (61a) sounds far off, a black-violet pulse over everything.
+The music is Wagner's own, the end of Act I as Solti's 1958 Vienna Philharmonic recording takes it: the fire
+(bars 1572-1575), Siegfried's horn call (1585-1590), "Verrat!" (1605-1609), the struggle and the Ring torn away
+(1744-1765), "Nun, Nothung, zeuge du" (1808-1810) and the act's last bars (1840-1844), its final chord held. The
+notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the fire on violins, piccolo,
+flutes and harp, his horn call on horns, the struggle on the full orchestra with timpani on each blow, the Curse
+on trombones and tuba. The stage adds the fire's roar and a rush for each leaping tongue, a stamp and a scuffle on
+every blow, a whoosh and a blow as the Ring is wrenched away, and the sword ringing as it is laid on the stone.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
+"Verrat!": what comes through the fire is a stranger. A grey-teal mist shimmers over the house in waves on the
+Tarnhelm's chords, and out of the free end of Right a figure walks in through the flames: royal gold, Gunther's
+shape, with Siegfried's emerald flickering beneath it. She holds up the Ring and its gold blazes from her hand.
+Then the struggle: gold floods the porch from his side and silver from hers, the line between them lurching on
+every blow, sparks flying from it, until he tears the Ring from her finger: a gold flash leaps from her hand to
+his, and the Curse slashes blood red out to both ends of the house. She collapses, her silver sinking; fate rolls
+indigo over the house. He lays Nothung between them, a line of white steel on the porch, the fire sinks to a red
+smoulder, and on the act's last chords a black-violet pulse goes out over everything.
+
+compose() tags every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
 the Prologue's scenes (see GD01)."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD14'
 TITLE = 'The False Gunther'
@@ -29,21 +36,23 @@ VOICEOVER = ('Someone is coming through the fire. It looks like a stranger, '
              'but it is Siegfried, in disguise, and he has come for the Ring.')
 
 K = 7                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-T_FLICK = 1.0                               # the fire stirs
-T_LOGE = [5.0 + 1.6 * j for j in range(6)]  # Loge's figure, the fire flaring
-T_HORN = 14.5                               # Siegfried's horn through the fire
-T_TARN = 19.0                               # the Tarnhelm: the stranger comes through the flames
-TBEAT = 0.42
-T_ARRIVE = 31.0
-T_RING = 32.5                               # she holds up the Ring
-T_FIGHT = [40.0 + 1.45 * j for j in range(8)]   # the struggle
-T_TEAR = 52.0                               # he tears the Ring from her
-T_CURSE = 52.4
-T_FALL = 58.5                               # she collapses
-T_FATE = 59.0
-T_SWORD = 65.0                              # Nothung laid between them
-T_HAGEN = 74.0
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 1572-75, 1585-90, 1605-09, 1744-65, 1808-10, 1840-44, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [s['start'] for s in EX['segments']] + [EX['seconds']]
+HOLD = 3.4                                  # the act's last chord, held
+D = EX['seconds'] + HOLD - 0.4
+T_FLICK = 0.0                               # "Was leckt so wütend die lodernde Welle zum Wall?"
+T_LOGE = accents(EX['notes'], 0.0, SEG[1], 85, 2, 0.9)  # the fire flaring
+T_HORN = BAR[1585]                          # "Siegfried!": his horn through the fire
+T_TARN = BAR[1605]                          # "Verrat!": a stranger comes through the flames
+T_ARRIVE = SEG[3]
+T_RING = SEG[3] + 0.2                       # she holds up the Ring
+T_FIGHT = accents(EX['notes'], BAR[1745], BAR[1754] - 0.2, 95, 2, 1.1)    # the struggle
+T_TEAR = BAR[1754]                          # he tears the Ring from her
+T_CURSE = BAR[1757]
+T_FALL = BAR[1765]                          # she collapses
+T_SWORD = SEG[4]                            # "Nun, Nothung, zeuge du": the sword laid between them
+T_HAGEN = BAR[1841]                         # the end of the act: a black-violet pulse over everything
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -168,38 +177,32 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def part_of(t, d, m, v, h):
+    """What a note of the excerpt is: its part, see compose()."""
+    if T_HORN <= t < T_TARN and h == 0 and v >= 100 and d >= 0.2:
+        return 'horn'
+    if T_TARN <= t < T_ARRIVE and d >= 0.3:
+        return 'tarn'
+    if T_ARRIVE <= t < BAR[1745] and h == 0 and v >= 90:
+        return 'ring'
+    if T_CURSE <= t < T_FALL and h == 1 and m < note('C3'):
+        return 'curse'
+    if T_FALL <= t < T_SWORD and d >= 0.5:
+        return 'fate'
+    return 'music'
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The right hand's loud notes of
+    "Siegfried! Seinen Ruf sendet er her!" are his horn through the fire ('horn'); the chords of "Verrat!" bring
+    the Tarnhelm's mist ('tarn'); the first bar of the struggle is the Ring held up ('ring'); the bass after he
+    tears it away is the Curse ('curse'); the long notes as she falls are fate ('fate'). The act's last chord is
+    held. Everything else is 'music'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t, m, v, d in play('loge_flicker', T_FLICK, 0.25, 0, 70):
-        add(t, d, m, v, 'flicker')
-    for j, t0 in enumerate(T_LOGE):
-        for t, m, v, d in play('loge', t0, 0.2, (0, 3, 7, 12, 7, 3)[j], 84 + 4 * j):
-            add(t, d, m, v, 'loge', j)
-    add(T_LOGE[0], T_TARN - T_LOGE[0], 'E2', 66, 'firebed')
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.32, 5, 100):
-        add(t, d, m, v, 'horn')
-    for t, m, v, d in play('tarnhelm', T_TARN, TBEAT, 0, 86):
-        add(t, d, m, v, 'tarn')
-    for t, m, v, d in play('ring', T_RING, 0.55, -5, 110):
-        add(t, d, m, v, 'ring')
-    for j, t0 in enumerate(T_FIGHT):
-        add(t0, 0.3, ('Gb2', 'C3', 'Gb2', 'Db3', 'G2', 'Db3', 'Ab2', 'D3')[j], 104 + 2 * j, 'fight', j)
-    add(T_TEAR, 0.1, 'C1', 126, 'tear')
-    for t, m, v, d in play('curse', T_CURSE, 0.42, 0, 112):
-        add(t, d, m, v, 'curse')
-    for t, m, v, d in play('fate', T_FATE, 0.75, 0, 92):
-        add(t, d, m, v, 'fate')
-    for t, m, v, d in play('nothung', T_SWORD, 0.42, -12, 84):
-        add(t, d, m, v, 'sword')
-    for t, m, v, d in play('hagen', T_HAGEN, 0.9, -12, 112):
-        add(t, d, m, v, 'hagen')
-    for m in ('Gb1', 'C2'):
-        add(T_FALL, D - T_FALL, m, 58, 'dark')
+    for t, d, m, v, h, _ in tidy(EX['notes']):
+        if t >= BAR[1844] - 0.01:
+            d = HOLD
+        N.append((float(t), float(d), int(m), int(v), part_of(t, d, m, v, h), h))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -242,7 +245,6 @@ def render(G, seed=14):
     horn = sorted({e[0] for e in N if e[4] == 'horn'})
     shim = Flicker(np.random.default_rng(1418), G.N, 0.6, 2.2)
     flick = Flicker(np.random.default_rng(1419), G.N, 5.0, 12.0)
-    pf0, pf1 = at(G, 'Porch Front', 0.0), at(G, 'Porch Front', 1.0)
 
     for f in range(F):
         t = f * DT
@@ -378,7 +380,9 @@ def render(G, seed=14):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the fire roaring round the rock, the struggle,
+    and the sword laid down."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -387,101 +391,50 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.34, 0.25), ('strings', 0.3, 0.32), ('brass', 0.32, 0.3), ('perc', 0.31, 0.3),
-                            ('winds', 0.25, 0.35), ('harp', 0.22, 0.4), ('fx', 0.09, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    o = Orchestra(M, level=1.7)
+    N = compose()
+    held = {(round(e[0], 4), e[2]) for e in N if e[1] == HOLD}
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        part = part_of(t, d, m, v, h)
+        if t < T_HORN and h == 0:                           # the fire: violins, piccolo and flutes, harp
+            return [('violins', 0, 0, 0.55), ('piccolo' if m >= 79 else 'flutes', 0, -10, 0.4), ('harp', 0, -16, 0.3)]
+        if part == 'horn':                                  # his horn call, through the flames
+            return [('horns', -12 if m >= 77 else 0, 0, 0.8), ('violins', 0, -8, 0.45)]
+        if part == 'curse':                                 # the Curse in the bass: trombones and tuba
+            return [('trombones', 12, 0, 0.8), ('tuba', 0, -4, 0.7), ('basses', 0, -4, 0.5)]
+        if (round(t, 4), m) in held:                        # the last chord, held by everyone
+            return [('horns' if h else 'violins', 0, 0, 0.7), ('trombones' if h else 'trumpets', 0, -6, 0.5)]
+        return None
 
+    def pan(t, m):
+        p_b, lvl_b, p_g, bound = places(G, t)
+        return pan_at(bound if bound is not None else p_b) * 0.6
+
+    notes = [list(e[:4]) + [e[5]] for e in N]
+    o.tutti(tidy(notes), size=lambda t: 1.0, role=role, pan=pan)
+    for t0 in T_FIGHT:                                      # each blow of the struggle
+        p = pan(t0, 60)
+        o.hit('timpani', t0, 112, pitch=-3, gain=0.6, pan=p)
+    o.hit('crash', T_TARN, 120, gain=0.7)
+    o.hit('crash', T_TEAR, 124, gain=0.85)
+    o.hit('gong', T_CURSE, 116, gain=0.6)
+    o.hit('timpani roll', T_FALL - 1.0, 100, pitch=-6, gain=0.5)
+    o.hit('crash', BAR[1844], 124, gain=0.8)
+    o.hit('timpani', BAR[1844], 124, pitch=-5, gain=0.9)
+
+    # the stage: the fire roaring round the rock; scuffles of the struggle; the Ring wrenched away; steel on stone
     S = stage(G)
-    east = pan_at(S['L'] - 60)
-    summit = pan_at(S['summit'])
-
-    def pan_b(t):
-        return pan_at(places(G, t)[0])
-
-    def pan_g(t):
-        p = places(G, t)[2]
-        return pan_at(p) if p is not None else east
-
-    for t, d, m, v, part, k in compose():
-        if part == 'flicker':
-            M.add('winds', pic.play(m, v, dur=d * 1.05, release=0.15), t, 0.5, summit)
-        elif part == 'loge':
-            M.add('strings', vln.play(m + 12, v, dur=d * 1.1, release=0.15), t, 0.6, summit)
-            M.add('harp', harp.play(m + 12, v - 10), t, 0.6, summit)
-            if d <= 0.1:
-                M.add('harp', glock.play(m + 24, v - 30), t, 0.3, summit)
-        elif part == 'firebed':
-            hold('strings', vc, m + 12, t, t + d, v, summit, rise=3.0, fall=2.0, gain=0.5)
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.75, east)
-        elif part == 'tarn':
-            hold('winds', clar, m, t, t + d, v, pan_g(t), rise=0.8, fall=1.5, gain=0.7)
-            hold('low', vc, m - 12, t, t + d, v - 20, pan_g(t), rise=1.0, fall=1.5, gain=0.4)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('winds', fl, m, t, t + d, v, pan_b(t), rise=0.15, fall=0.8, gain=0.75)
-            else:
-                M.add('winds', fl.play(m, v, dur=d * 1.05, release=0.25), t, 0.8, pan_b(t))
-            M.add('brass', horn.play(m - 12, v - 14, dur=d * 1.05, release=0.25), t, 0.6, pan_b(t))
-        elif part == 'fight':
-            p = pan_at(0.5 * (places(G, t)[0] + (places(G, t)[2] or S['summit'])))
-            M.add('perc', timp.play(v, pitch=-4 - (k % 3)), t, 0.95, p)
-            M.add('brass', tbn.play(m, v, dur=0.35, release=0.1), t, 0.85, p)
-            M.add('low', tuba.play(m - 12, v - 10, dur=0.35, release=0.1), t, 0.7, p)
-            M.add('fx', whoosh(0.35, 3000, 500, 0.6, seed=140 + k), t - 0.15, 0.8, p)
-            if k % 2:
-                M.add('perc', crash.play(90), t, 0.4, p)
-        elif part == 'tear':
-            M.add('perc', crash.play(v), t, 0.9, pan_b(t))
-            M.add('perc', gong.play(115), t, 0.8, pan_b(t))
-            M.add('perc', timp.play(v, pitch=-7), t, 0.9, pan_b(t))
-        elif part == 'curse':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, pan_g(t), rise=0.15, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pan_g(t))
-            M.add('low', cb.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.7, 0.0)
-        elif part == 'fate':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, pan_b(t), rise=0.4, fall=1.2, gain=0.7)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.7, pan_b(t))
-            if m < note('Db3'):
-                hold('low', tuba, m, t, t + d, v - 6, 0.0, rise=0.4, fall=1.2, gain=0.7)
-        elif part == 'sword':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.3), t, 0.65, summit)
-        elif part == 'hagen':
-            hold('low', tuba, m, t, t + d, v, summit, rise=0.1, fall=1.5, gain=0.9)
-            M.add('perc', timp.play(v, pitch=-8), t, 0.8, summit)
-        elif part == 'dark':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.55)
+    sb = pan_at(places(G, T_TEAR)[0])
+    o.fire(0.0, T_ARRIVE + 1.0, level=lambda tt: 0.45 + 0.45 * smoothstep(0.5, 3.0, tt) - 0.3 * smoothstep(T_HORN,
+           T_HORN + 1, tt) + 0.3 * smoothstep(T_TARN, T_TARN + 1.5, tt), pan=lambda t: -0.5 + 1.0 * ((t / 9) % 1))
+    for t0 in T_LOGE:                                       # each tongue of flame leaping out
+        M.add('fx', whoosh(0.7, 300, 2500, 0.7, seed=int(t0 * 100)), t0 - 0.1, 0.8, sb)
+    for j, t0 in enumerate(T_FIGHT):
+        o.hoof(t0 + 0.05, pan(t0, 60), 96 + 3 * j, 0.8)     # a stamp, a shove
+        o.hit('scrape', t0 + 0.1, 80, gain=0.25, pan=pan(t0, 60))
+    M.add('fx', whoosh(0.4, 1800, 6000, 0.8, seed=14), T_TEAR - 0.15, 1.0, sb)
+    o.boom(T_TEAR + 0.02, sb, 0.7)
+    o.clash(T_SWORD + 1.2, pan_at(S['summit']), 90, 0.6)    # Nothung laid on the stone
+    o.effects([(0, 0), (T_HORN - 0.3, 0), (T_HORN + 0.3, -12), (T_TARN - 0.5, -12), (T_TARN, -2), (T_TEAR + 2, -2),
+               (T_TEAR + 4, -14), (T_SWORD + 0.8, -14), (T_SWORD + 1.1, -4), (T_SWORD + 3, -14), (D, -14)])

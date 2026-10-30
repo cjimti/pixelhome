@@ -16,11 +16,20 @@ It dies down to a smoulder, and in the last quarter Alberich (red) comes in from
 Mime (sickly yellow-green) along by the ear; at every yank Mime squeals on the xylophone and piccolo and flares,
 until they stop on Porch Front, right of centre, the cavern glowing round them.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+The music is Wagner's own, the entr'acte from Scene 2 to Scene 3 of Das Rheingold as Solti's 1958 Vienna
+Philharmonic recording takes it: the end of the descent and the Nibelung rhythm emerging (bars 1826-1839), the
+Ring over it and the eighteen anvils, alone at their height (1846-1877), the orchestra's return (1888-1893),
+and the start of Scene 3, Alberich hauling Mime in ("Hehe! Hehe! Hieher! Tückischer Zwerg!", 1900-1909). The
+notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the rhythm in the basses, cellos
+and bassoons, the figure in the violas and horns, the Ring blaring in the trombones and trumpets, Alberich on
+bassoons and low brass. The anvils are in Wagner's score, and here they are real anvils, three, then nine, then
+eighteen, striking the rhythm, panned to their places on the house. Like a staged production it adds sulphur
+hissing out of the fissure, a deep rush as the walls stream past, and a thud each time Alberich yanks Mime.
+
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, smooth_noise, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'RG13'
 TITLE = 'Down to Nibelheim'
@@ -31,24 +40,17 @@ DESCRIPTION = ('Wotan and Loge climb down through a crack full of sulphur smoke 
 VOICEOVER = ('Down through the smoke, deep under the earth, the hammers never stop. '
              'This is Nibelheim, and Alberich is its master now.')
 
-BEAT = 0.5                                  # a quarter note, for the descent
-NB = 0.6                                    # a dotted quarter of the Nibelung 9/8
-BAR = 3 * NB
-RHY = (0.0, 0.5, 2 / 3)                     # long-short-long in each beat: dotted eighth, sixteenth, eighth
-T_RENOUNCE = 3.0
-T_SPEAR = 10.6
-T_RHY = 15.0                                # the Nibelung rhythm begins
-NBARS = 27
-T_RING = T_RHY + 12 * BAR                   # bar 12: the Ring over the anvils, twice
-T_ALONE = T_RHY + 16 * BAR                  # bar 16: the anvils alone
-T_BACK = T_RHY + 20 * BAR                   # bar 20: the orchestra again, falling away
-T_ALB = 63.0                                # Alberich drags Mime in
-TUGS = [64.0, 66.3, 68.6, 70.9, 73.2, 75.4, 77.2]
-D = 80.0
-
+EX = excerpt(__file__)                      # bars 1826-1839, 1846-1877, 1888-1893, 1900-1909
+BARS_ = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_RHY = BARS_[1830]                         # the Nibelung rhythm begins
+T_NINE = BARS_[1846]                        # nine anvils
+T_RING = BARS_[1852]                        # the Ring over all eighteen
+T_ALONE = BARS_[1862]                       # the anvils alone
+T_BACK = BARS_[1878]                        # the orchestra again
+T_ALB = BARS_[1900] - 1.0                   # Alberich drags Mime in
+BARS = [t for m, t in sorted(BARS_.items()) if T_RHY <= t < T_ALB]   # every bar of the rhythm, for the flashes
 NANV = 18
-FIGURE = [('Bb3', 'A3', 'Bb3'), ('Db4', 'C4', 'Db4'), ('F4', 'E4', 'F4'),
-          ('Gb4', 'F4', 'Eb4'), ('Db4', 'C4', 'Bb3'), ('C4', 'A3', 'F3')]      # two bars of the Nibelung figure
 
 EMBER = hexc('#a01a00')
 FORGE = hexc('#ff4a08')
@@ -73,85 +75,59 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
-def anvils_in(bar):
-    """How many anvils play in bar `bar` of the rhythm."""
-    if bar < 4:
+def anvils_at(t):
+    """How many anvils strike at time t."""
+    if t < T_RHY + 3.0:
         return 0
-    if bar < 8:
+    if t < T_NINE:
         return 3
-    if bar < 12:
+    if t < T_RING:
         return 9
-    if bar < 20:
+    if t < T_ALONE + 16.0:
         return NANV
-    return (12, 6, 3, 0)[min(bar - 20, 3)]
+    if t < T_BACK:
+        return (12, 6, 3)[min(2, int((t - T_ALONE - 16.0) / 2.5))]
+    return 0
+
+
+def tugs():
+    """Each yank of Mime's ear: on Alberich's accents."""
+    return accents(EX['notes'], T_ALB + 1.0, D - 0.5, 60, 2, 1.2)[:7]
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who). who is an anvil for 'anvil', the beat for 'nib'."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who, tremolo). Before the rhythm the
+    right hand is the Renunciation's red throb ('renounce'), the left hand's long notes the spear's steps ('spear');
+    the rhythm's repeated F's are 'pluck', the anvils strike with them ('anvil', who = the anvil); the right hand
+    is the figure ('nib'), the Ring over the anvils 'ring', the left hand 'brassnib'; the orchestra's return is
+    'back'; Alberich's bars 'alb'. 'yank' and 'squeal' mark Mime's moments."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    add(0.0, 6.0, 'F1', 70, 'sulphur')
-    add(0.0, T_RHY + 2.0, 'Bb1', 62, 'trem')
-    for t, m, v, d in play('renunciation_broad', T_RENOUNCE, BEAT, -2, 92):
-        add(t, d, m, v, 'renounce')
-    for t, m, v, d in play('spear', T_SPEAR, BEAT * 0.9, 0, 100):
-        add(t, d, m, v, 'spear')
-
-    for bar in range(NBARS):                                # the Nibelung rhythm
-        t0 = T_RHY + bar * BAR
-        grow = min(1.0, bar / 15)
-        fade = 1 - smoothstep(T_BACK - BAR, T_RHY + NBARS * BAR, t0)
-        alone = T_ALONE <= t0 < T_BACK
-        if bar % 2 == 0:
-            add(t0, BAR * 2, 'Bb1', int(80 + 30 * grow * fade), 'pedal')
-        for b in range(3):
-            fig = FIGURE[(bar % 2) * 3 + b]
-            for k, off in enumerate(RHY):
-                t = t0 + (b + off) * NB
-                acc = (b == 0 and k == 0)
-                if not alone:
-                    add(t, NB * (0.45, 0.15, 0.3)[k], 'Bb2' if k != 1 else 'F2',
-                        int((70 + 40 * grow) * (0.5 + 0.5 * fade)) + 8 * acc, 'pluck')
-                    if bar >= 4 and fade > 0.2:
-                        add(t, NB * (0.45, 0.15, 0.3)[k], fig[k], int((64 + 44 * grow) * fade) + 8 * acc, 'nib', b)
-                    if bar >= 8 and fade > 0.4:
-                        add(t, NB * (0.5, 0.17, 0.33)[k] * 0.95, note(fig[k]) - 12, int((80 + 30 * grow) * fade),
-                            'brassnib', b)
-                for a in range(anvils_in(bar)):
-                    v = 124 if alone else (88 + 10 * acc) if bar >= 8 else 80 + 10 * acc
-                    add(t, 0.1, 'C4', min(127, v), 'anvil', a)
-        if bar >= 8 and not alone and bar < 21:
-            add(t0, 0.3, 'Bb1', 100 + 10 * (bar >= 12), 'timp')
-        if alone:
-            add(t0, 0.3, 'Bb1', 120, 'timp')
-    for k in range(2):                                      # the Ring over the anvils, raised to B flat
-        for t, m, v, d in play('ring', T_RING + k * 2 * BAR, NB * 2 / 3, 3, 116):
-            if m > note('C3'):
-                add(t, d, m, v, 'ring')
-    add(T_ALONE - 0.6, 0.6, 'C5', 120, 'crash')
-    add(T_ALONE, T_BACK - T_ALONE, 'Bb1', 112, 'roar')            # under the anvils: timpani roll, basses, tubas
-    add(T_BACK, 0.6, 'C5', 110, 'crash')
-    for t, m, v, d in play('ring', T_BACK + 0.4, NB, 3, 82):
-        if m > note('C3'):
-            add(t, d, m, v, 'mute')
-
-    add(T_ALB - 1.0, D - T_ALB + 1.0, 'Bb1', 74, 'trem')
-    for i, tg in enumerate(TUGS):                           # each yank: his grunt, a thud, Mime squealing
-        for j, m in enumerate(('Bb2', 'Db3', 'C3')[: 2 + i % 2]):
-            add(tg - 0.45 + j * 0.16, 0.18, m, 100, 'grump')
-        add(tg, 0.4, 'Bb1', 104, 'yank')
-        top = note('Bb5') + (i % 3)
-        for j in range(5):
-            add(tg + 0.12 + j * 0.06, 0.08, top - 2 * j - (j > 2) * 3, 108 - 4 * j, 'squeal')
-        add(tg + 0.12, 0.5, top - 12, 96, 'yelp')
-        add(tg + 0.8, 0.5, note('F4') - i % 2, 86, 'whine')
-        add(tg + 1.3, 0.6, note('E4') - i % 2, 80, 'whine')
-    for j, (b, d, m) in enumerate([(0, 1, 'Bb2'), (1, .5, 'Db3'), (1.5, .5, 'C3'), (2, 2, 'Bb2'), (4, 1, 'F2'),
-                                   (5, 3, 'Bb1')]):
-        add(TUGS[-1] + 0.8 + b * 0.3, d * 0.3, m, 90 - 3 * j, 'grump')
+    for t, d, m, v, h, trem in tidy(EX['notes'], least=10 ** 6):    # the rhythm's repeated notes stay notes
+        if t < T_RHY:
+            part = 'renounce' if h == 0 else ('spear' if d >= 0.4 else 'low')
+        elif t >= T_ALB:
+            part = 'alb'
+        elif t >= T_BACK:
+            part = 'back'
+        elif h == 1 and d < 0.1:
+            part = 'pluck'                                  # the low F's rolling under it all
+        elif h == 0:
+            part = 'ring' if T_RING <= t < T_ALONE and d >= 0.25 else 'nib'
+        else:
+            part = 'brassnib'
+        N.append((t, d, m, v, part, None, trem))
+    # the anvils strike the Nibelung rhythm: the right hand's onsets (in the anvils' bars it is written for them)
+    strokes = []
+    for t in sorted({round(n[0], 3) for n in EX['notes'] if n[4] == 0 and n[1] <= 0.3}):
+        if T_RHY + 3.0 <= t < T_BACK and (not strokes or t - strokes[-1] >= 0.06):
+            strokes.append(t)
+    for t in strokes:
+        alone = T_ALONE <= t < T_BACK
+        for a in range(anvils_at(t)):
+            N.append((t, 0.1, 72, 124 if alone else 96, 'anvil', a, False))
+    for tg in tugs():
+        N.append((tg, 0.4, 34, 0, 'yank', None, False))
+        N.append((tg + 0.12, 0.5, 82, 0, 'squeal', None, False))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -173,6 +149,7 @@ def choreography(G):
     L = G.length
     pf = at(G, 'Porch Front', 0.5)
     far = L + 60
+    TUGS = tugs()
     stops = np.linspace(far - 140, at(G, 'Porch Front', 0.6), len(TUGS))
     tgt = np.full((2, F), far + 60)
     rate = np.full((2, F), 4.0)
@@ -225,9 +202,9 @@ def render(G, seed=13):
     renounce = np.array([e[0] for e in N if e[4] == 'renounce'])
     spear = [e[0] for e in N if e[4] == 'spear']
     hits = [(e[0], e[5], e[3]) for e in N if e[4] == 'anvil']
-    bars = np.array([T_RHY + b * BAR for b in range(NBARS)])
-    squeals = np.array([tg + 0.12 for tg in TUGS])
-    yanks = np.array(TUGS)
+    bars = np.array(BARS)
+    squeals = np.array([tg + 0.12 for tg in tugs()])
+    yanks = np.array(tugs())
 
     # sparks: every anvil stroke throws a few, flying out from the anvil and cooling from white to orange
     births, p0, vel, life = [], [], [], []
@@ -242,9 +219,9 @@ def render(G, seed=13):
     hit_a = np.array([h[1] for h in hits])
 
     def intensity(t):
-        return keys(t, [(0, 0.0), (8, 0.12), (T_RHY, 0.32), (T_RHY + 4 * BAR, 0.42), (T_RHY + 8 * BAR, 0.56),
-                        (T_RING, 0.7), (T_ALONE, 0.88), (T_BACK, 0.92), (T_BACK + 4 * BAR, 0.58),
-                        (T_ALB, 0.46), (D, 0.44)])
+        return keys(t, [(0, 0.06), (T_RHY - 2, 0.2), (T_RHY, 0.32), (T_RHY + 8, 0.42), (T_NINE, 0.56),
+                        (T_RING, 0.7), (T_ALONE, 0.88), (T_BACK - 6, 0.92), (T_BACK, 0.7), (T_BACK + 4, 0.8),
+                        (T_ALB, 0.5), (D, 0.46)])
 
     for f in range(F):
         t = f * DT
@@ -252,7 +229,7 @@ def render(G, seed=13):
         I = intensity(t)
 
         # what is left of the mountain top: the grey mist, Valhalla dimmed on the porch, the grey gods on Left
-        top = 1 - smoothstep(0.5, 5.0, t)
+        top = 1 - smoothstep(0.2, 2.5, t)
         if top > 0:
             fr += light(MIST, top * (0.24 + 0.04 * cloud) * (1 - 0.3 * porch))
             crenel = (np.sin(d / 9.0) > -0.2) * porch
@@ -261,16 +238,16 @@ def render(G, seed=13):
                 fr += light(GREY, gb * top * np.exp(-((d - gp) / 22) ** 2))
 
         # the vapour: boils up out of the crack and fills the house, then thins as we go down
-        vap = smoothstep(0.0, 5.5, t) * (1 - smoothstep(9.0, 16.0, t))
+        vap = smoothstep(0.0, 2.5, t) * (1 - smoothstep(6.0, 12.0, t))
         if vap > 0:
-            reach = 60 + 1500 * smoothstep(0.0, 6.0, t)
+            reach = 60 + 1500 * smoothstep(0.0, 3.5, t)
             billow = 0.5 + 0.5 * np.cos(2 * np.pi * (x / 260 - 0.35 * t) + 3 * cloud)
             fr += light(VAPOUR, vap * (0.3 + 0.16 * billow) * smoothstep(reach, reach - 300, x))
 
-        fr += light(SULPHUR, 0.7 * (1 - smoothstep(0, 7, t)) * np.exp(-(x / (80 + 50 * t)) ** 2))
+        fr += light(SULPHUR, 0.7 * (1 - smoothstep(0, 5, t)) * np.exp(-(x / (80 + 70 * t)) ** 2))
 
         # the descent: strata streaming outward from the fissure, slowing as we reach the bottom
-        desc = smoothstep(3.0, 7.0, t) * (1 - smoothstep(T_RHY + 2, T_RHY + 4 * BAR, t))
+        desc = smoothstep(1.0, 3.0, t) * (1 - smoothstep(T_RHY + 2, T_RHY + 8, t))
         if desc > 0:
             ph = 0.9 * min(t, 17.0) - 0.022 * max(0.0, min(t, 17.0) - 5.0) ** 2
             band = 0.5 + 0.5 * np.cos(2 * np.pi * (x / 170 - ph) + 2 * cave2)
@@ -280,7 +257,7 @@ def render(G, seed=13):
             fr += light(ALB, 0.6 * np.exp(-(t - renounce[ri]) / 0.45) * np.exp(-(x / 110) ** 2))
         for k, ts in enumerate(spear):
             if ts <= t < ts + 2.0:
-                r = 60 + 95 * k
+                r = 60 + 95 * (k % 8)
                 g = 0.9 * np.exp(-(t - ts) / 0.5) * np.exp(-((x - r) / 9) ** 2)
                 fr += light(STEEL, g)
 
@@ -291,12 +268,12 @@ def render(G, seed=13):
             fr += light(FORGE, I * 0.9 * pk * (0.85 + 0.15 * fl(t)))
             fr += light(FORGE, 0.3 * smoothstep(T_ALONE - 1, T_ALONE, t) * (1 - smoothstep(T_BACK, T_BACK + 3, t)) * (0.7 + 0.3 * cave2))
             bi = int(np.searchsorted(bars, t, side='right')) - 1
-            if 0 <= bi < NBARS and t - bars[bi] < 1.0:
+            if 0 <= bi < len(bars) and t - bars[bi] < 1.0:
                 age = t - bars[bi]
                 if T_ALONE <= bars[bi] < T_BACK:
                     fr += light(FORGE, 0.62 * np.exp(-age / 0.16) * np.ones(G.N))
                     fr += light(HOT, 0.38 * np.exp(-age / 0.08) * np.ones(G.N))
-                elif bars[bi] >= T_RHY + 8 * BAR:
+                elif bars[bi] >= T_NINE:
                     fr += light(FORGE, 0.3 * I * np.exp(-age / 0.2) * (0.5 + 0.5 * cave))
 
         # the anvils: a white-hot point at each stroke
@@ -341,124 +318,93 @@ def render(G, seed=13):
 
 
 def score(M, G):
+    """Wagner's notes, orchestrated from the piano reduction, with real anvils striking the rhythm."""
     from pixelhome.audio import SR, whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
 
     def pan_at(dd):
-        x = np.interp(dd, ds, xs)
+        x = np.interp(min(max(dd, 0), G.length), ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
-    apan = [pan_at(p) for p in C['anvil']]
-    apitch = [(-5, 0, 4)[a % 3] + 0.3 * (a % 5) for a in range(NANV)]     # three sizes of anvil
-
-    def pan_of(key, t):
-        return pan_at(np.interp(t, C['t'], C[key]))
-
-    for name, gain, rev in (('strings', 0.17, 0.3), ('low', 0.22, 0.15), ('brass', 0.18, 0.3), ('winds', 0.17, 0.3),
-                            ('anvil', 0.085, 0.2), ('perc', 0.18, 0.25), ('fx', 0.1, 0.3), ('mime', 0.16, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    vcp = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vas = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    bst = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    bsus = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    hst = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tbst = M.sampler('Brass/Tenor Trombone/stac/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Stacc/*.wav', tune=-12)
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    swell = M.hits('Percussion/susCymb1-cresc-Long*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    gong = M.hits('Percussion/gongscrape_mf.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    jit = np.random.default_rng(5)
-    for t, d, m, v, part, who in compose():
-        if part == 'sulphur':
-            M.add('perc', swell.play(80), t, 0.7, pf)
-            M.add('perc', gong.play(90), t + 0.5, 0.8, pf)
-            hold('low', trem, m + 12, t, t + d, v, pf, rise=0.5, fall=2.0, gain=0.6)
-        elif part == 'trem':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=2.0, fall=2.0, gain=0.55)
-            hold('low', cb, m, t, t + d, v - 10, 0.0, rise=3.0, fall=2.0, gain=0.5)
+    o = Orchestra(M, level=2.6)
+    # the sulphur and the rushing walls lead the descent; the effects sit back under the rhythm and the Ring
+    o.effects([(0.0, 0.0), (T_RHY, 0.0), (T_RHY + 2.0, -6.0), (T_ALB, -6.0), (T_ALB + 0.5, -2.0), (D, -2.0)])
+    N = compose()
+    anv = [(t, a, v) for t, d, m, v, part, a, trem in N if part == 'anvil']
+    rng = np.random.default_rng(13)
+    for t, d, m, v, part, who, trem in N:
+        if v == 0 or part == 'anvil':
+            continue
+        if trem:
+            o.play('violins trem' if m >= 55 else 'violas trem' if m >= 48 else 'cellos trem', m, t, d, v, None, 0.5)
         elif part == 'renounce':
-            M.add('brass', horn.play(m, v, dur=d, release=0.5), t, 0.9, pf - 0.15)
-            M.add('low', bsus.play(m - 12, v - 10, dur=d, release=0.5), t, 0.6, pf + 0.15)
-        elif part == 'spear':
-            k = int(round((t - T_SPEAR) / (BEAT * 0.9)))
-            sp = 0.08 * k
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.9, pf - sp)
-            M.add('low', tuba.play(m - 12, v - 6, dur=d, release=0.3), t, 0.8, pf + sp)
-        elif part == 'pedal':
-            M.add('low', pizz.play(m + 12, v), t, 1.0, 0.0)
-            hold('low', cb, m, t, t + d, max(40, v - 40), 0.0, rise=0.3, fall=0.4, gain=0.45)
-        elif part == 'pluck':
-            M.add('low', pizz.play(m, v), t, 0.7, -0.15)
-            M.add('strings', vcp.play(m, v - 10), t, 0.5, 0.15)
+            o.play('horns', m, t, d, v + 4, -0.2, 0.7)
+            o.play('violas', m, t, d, v - 6, 0.2, 0.35)
+        elif part in ('spear', 'low'):
+            o.play('trombones' if m >= 45 else 'tuba', m, t, d, v + 4, 0.0, 0.7)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, 0.2, 0.45)
+        elif part == 'pluck':                                   # the Nibelung rhythm
+            if m < 48:
+                o.play('cellos', m, t, 0.1, v + 6, -0.25, 0.55)
+                o.play('basses', m if m < 40 else m - 12, t, 0.1, v, 0.25, 0.5)
+            else:
+                o.play('bassoons', m, t, 0.1, v, 0.2, 0.4)
+                o.play('violas', m, t, 0.1, v - 4, -0.2, 0.35)
         elif part == 'nib':
-            M.add('winds', bst.play(m - 12, v), t, 0.8, -0.25)
-            M.add('strings', vas.play(m, v - 6, dur=d, release=0.05), t, 0.55, 0.25)
+            o.play('violas' if m < 62 else 'violins', m, t, d, v, 0.25, 0.5)
+            if d >= 0.3 and t >= T_NINE:
+                o.play('horns', m, t, d, v - 6, -0.25, 0.45)
+        elif part == 'ring':                                    # the Ring blares over the anvils
+            o.play('trombones', m - 12 if m >= 65 else m, t, d, v + 6, 0.1, 0.75)
+            o.play('trumpets', m, t, d, v - 4, -0.15, 0.5)
         elif part == 'brassnib':
-            M.add('brass', (hst if m >= note('F3') else tbst).play(m + 12, v), t, 0.55, -0.1)
-            M.add('brass', tbst.play(m, v - 8), t, 0.5, 0.1)
-        elif part == 'anvil':
-            M.add('anvil', anvil.play(v, pitch=apitch[who]), t + jit.uniform(0, 0.012), 1.0, apan[who])
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pf)
-        elif part == 'ring':
-            M.add('brass', tbn.play(m - 12, v, dur=d, release=0.3), t, 0.8, pf - 0.2)
-            M.add('brass', horn.play(m, v, dur=d, release=0.3), t, 0.8, pf + 0.2)
-        elif part == 'mute':
-            M.add('brass', mute.play(m, v, dur=d, release=0.6), t, 0.8, pf)
-        elif part == 'roar':
-            for k in range(int(d / 1.5) + 1):
-                M.add('perc', roll.play(v, dur=1.8), t + 1.5 * k, 0.8, pf)
-            hold('low', trem, m + 12, t, t + d, v, -0.2, rise=0.4, fall=0.6, gain=0.9)
-            hold('low', tuba, m + 12, t, t + d, v - 10, 0.2, rise=0.4, fall=0.6, gain=0.8)
-            hold('low', cb, m, t, t + d, v, 0.0, rise=0.4, fall=0.6, gain=0.7)
-            M.add('perc', swell.play(100), t + d - 4.5, 0.7, 0.0)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.8, 0.0)
-        elif part == 'grump':
-            p = pan_of('apos', t)
-            M.add('low', bsus.play(m, v, dur=d, release=0.1), t, 0.9, p)
-            M.add('low', tbst.play(m + 12, v - 20), t, 0.4, p)
-        elif part == 'yank':
-            p = pan_of('apos', t)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.7, p)
-            M.add('low', pizz.play(m + 12, v), t, 0.9, p)
-            M.add('fx', whoosh(0.35, 800, 3000, 0.4, seed=int(t * 10)), t - 0.2, 0.6, p)
-        elif part == 'squeal':
-            p = pan_of('mpos', t)
-            M.add('mime', xylo.play(m - 12, v), t, 0.9, p)
-            M.add('mime', pic.play(m, v - 16), t, 0.45, p)
-        elif part == 'yelp':
-            M.add('mime', ob.play(m, v), t, 0.8, pan_of('mpos', t))
-        elif part == 'whine':
-            M.add('mime', bst.play(m - 12, v), t, 0.8, pan_of('mpos', t))
+            o.play('horns' if d >= 0.3 else 'cellos', m if m >= 45 else m + 12, t, d, v, -0.2, 0.55)
+            if m < 45 and d >= 0.3:
+                o.play('tuba', m, t, d, v - 6, 0.0, 0.5)
+        elif part == 'back':                                    # the orchestra returns, full
+            if m >= 60:
+                o.play('violins', m, t, d, v, 0.25, 0.55)
+                o.play('trumpets' if d >= 0.3 else 'flutes', m, t, d, v - 8, -0.2, 0.4)
+            elif m >= 48:
+                o.play('horns', m, t, d, v, -0.25, 0.6)
+                o.play('trombones', m, t, d, v - 6, 0.1, 0.45)
+            else:
+                o.play('tuba', m, t, d, v, 0.0, 0.6)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, 0.2, 0.5)
+        elif part == 'alb':                                     # Alberich hauling Mime
+            ap = pan_at(np.interp(t, C['t'], C['apos']))
+            if m >= 55:
+                o.play('violas' if d < 0.3 else 'clarinets', m, t, d, v, ap, 0.5)
+            else:
+                o.play('bassoons', m, t, d, v, ap, 0.55)
+                o.play('cellos', m, t, d, v - 4, ap, 0.45)
+                if d >= 0.4:
+                    o.play('trombones', m, t, d, v - 8, ap, 0.4)
+
+    # the anvils: each stroke rings from the anvils playing, panned to their places; a few samples a stroke
+    strokes = {}
+    for t, a, v in anv:
+        strokes.setdefault(round(t, 3), []).append((a, v))
+    for t, who in sorted(strokes.items()):
+        n = len(who)
+        pick = rng.choice(n, min(n, 4), replace=False)
+        for j in pick:
+            a, v = who[j]
+            o.hit('anvil', t + rng.uniform(0, 0.012), int(min(127, v)), pitch=float(rng.uniform(-1.5, 1.5)),
+                  gain=0.32 * np.sqrt(n) / np.sqrt(len(pick)) / np.sqrt(4), pan=pan_at(C['anvil'][a]))
+    # the stage: sulphur out of the fissure, the walls rushing past, the yanks
+    o._sfx(o._noise(0, 900, 6000, 131, n=int(5 * SR)) * np.sin(np.linspace(0, np.pi, int(5 * SR))) ** 2, 0.0,
+           0.35, pf)
+    o._sfx(whoosh(6.0, 200, 60, 0.9, seed=132)[0], 0.5, 0.9, pf)
+    o.hit('cymbal swell', T_ALONE - 2.2, 96, gain=0.4)
+    o.hit('crash', T_ALONE, 118, gain=0.5)
+    o.hit('timpani roll', T_ALONE, 110, pitch=-5, gain=0.5)
+    o.hit('crash', T_BACK, 112, gain=0.45)
+    for tg in tugs():
+        mp = pan_at(np.interp(tg, C['t'], C['mpos']))
+        o.hit('timpani', tg, 100, pitch=-4, gain=0.35, pan=mp)
+        o.hoof(tg + 0.02, mp, 90, 0.8)

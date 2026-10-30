@@ -1,25 +1,36 @@
 """Brünnhilde's Immolation: night in the hall by the Rhine, the vassals' torches drawn in round the porch, Siegfried
 lying dead in the middle of Porch Front, Brünnhilde standing over him, Gutrune collapsed out on Right.
 
-"Starke Scheite schichtet mir dort": she orders the pyre, and the men build it on the beat. Every stroke of the
-timpani stacks another log on the porch, a white-hot bar that drops into place and glows orange, the stacks
-climbing in from both ends of the porch toward him, each one sending an orange shock out over the house. Gutrune
-fades away. Then love as fulfilment (Donington 90) sings in the violins: every note a silver wave out from her to
-both ends of the house, his emerald stirring faintly in answer. She draws the Ring from his hand: a ring of gold
-light travels from him to her and the whole house flashes gold.
+The music is Wagner's own, Act III as Solti's 1958 Vienna Philharmonic recording takes it: bars 1236 to 1243
+("Starke Scheite schichtet mir dort", her command for the pyre, rising to "hoch und hell lod're die Glut"), 1418 to
+1425 (the orchestra's storm of rushing scales, "Fliegt heim, ihr Raben!" and "Raunt es eurem Herren") and 1442 to
+1455 ("So werf' ich den Brand in Walhall's prangende Burg", the torch, and the fire leaping up). The notes come from
+the Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated on strings, brass and woodwinds, the
+rushing scales on strings and woodwinds, the fire on violins, harp and piccolo over the brass. Brünnhilde's lines
+are her own, from the Schott vocal score (archive.org gtterdmmerung00wagn_0, pp. 318, 329-331), played on trumpet
+and oboe. On stage: a wooden thud as each log drops, the ravens' wings, a crash of gold when she takes the Ring, the
+torch whistling through the air and the pyre going up with a roar that keeps burning under the music, the effects
+held low under her singing.
 
-"Fliegt heim, ihr Raben!" Two ravens tear away to the end of the Side in white wakes while Valhalla (63) blazes in
-the Wagner tubas, every chord one whole run in gold-white over deep blue. She seizes a torch and hurls it: a
-comet of fire arcs from her to the pyre, and the pyre goes up, flames rushing out across the porch from where it
-landed, an orange shock to both ends, Loge (20) and his flickering (20a) leaping white-gold out of it. Over the
-fire the Transformation (91) rises in the brass, and the pyre roars while she stands silver before it.
+"Starke Scheite schichtet mir dort": she orders the pyre, and the men build it on the music's beat. Every stroke of
+the bass stacks another log on the porch, a white-hot bar that drops into place and glows orange, the stacks
+climbing in from both ends of the porch toward him, each one sending an orange shock out over the house. Gutrune
+fades away. "Hoch und hell lod're die Glut": every long note of her rising line a silver wave out from her to both
+ends of the house, his emerald stirring faintly in answer. She draws the Ring from his hand: a ring of gold light
+travels from him to her and the whole house flashes gold as the orchestra hurls itself into its scales.
+
+"Fliegt heim, ihr Raben!" Two ravens tear away to the end of the Side in white wakes, and every chord under her
+message is one whole run in gold-white over deep blue. "So werf' ich den Brand": she lifts the torch and on "Burg"
+hurls it, a comet of fire arcing from her to the pyre, and the pyre goes up, flames rushing out across the porch, an
+orange shock to both ends, tongues of fire leaping white-gold out of it on every stroke, and the fire surges gold on
+the brass's long notes while she stands silver before it.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD28'
 TITLE = "Brünnhilde's Immolation"
@@ -30,16 +41,51 @@ VOICEOVER = ('Brünnhilde orders the pyre built high. She takes the Ring, sends 
              'and throws the torch.')
 
 K = 6                                       # this scene's place on Act III's shared clock: T = t + 80 K
-LOGS = [1.5 + 0.9 * j for j in range(22)]   # every stroke stacks a log on the pyre
-T_LOVE = [22.5, 29.0]                       # love as fulfilment, the violins
-T_RING = 36.0                               # she takes the Ring
-T_RAVENS = 42.0
-T_VALHALLA = 43.0                           # the Wagner tubas
-T_THROW = 53.0                              # she hurls the torch
-T_IGNITE = 54.4                             # the pyre goes up
-LOGES = [55.0 + 1.6 * j for j in range(14)] # Loge's fire leaping out of the pyre
-T_TRANS = 58.0                              # the Transformation, the brass
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1236-1243, 1418-1425 and 1442-1455, Solti 1958
+D = EX['seconds']
+
+
+def when(m):
+    """Seconds into the excerpt at measure position m, in whichever spliced range holds it."""
+    for s in EX['segments']:
+        a, b = s['measures']
+        if a <= m < b:
+            bs = [(x, t) for x, t in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bs], [t for _, t in bs]))
+    return None
+
+
+def _strokes():
+    """Every stroke of the bass under her command, at least 0.6 s apart: a log each."""
+    out = []
+    for t, d, m, v, h in sorted(EX['notes']):
+        if h == 1 and m < 48 and t < when(1243.9) and (not out or t - out[-1] >= 0.6):
+            out.append(t)
+    return out
+
+
+LOGS = _strokes()                           # every stroke stacks a log on the pyre
+T_SOAR = when(1241.5)                       # "Hoch und hell lod're die Glut"
+T_RING = when(1418) - 1.5                   # she takes the Ring; the gold flash lands on the orchestra's plunge
+T_RAVENS = when(1422.25)                    # "Fliegt heim, ihr Raben!"
+T_THROW = when(1447.25)                     # she hurls the torch
+T_IGNITE = when(1448)                       # on "Burg" the pyre goes up
+LOGES = accents(EX['notes'], T_IGNITE + 0.4, D - 2.5, vmin=104, n=2, space=1.1)  # tongues of fire on every stroke
+T_TRANS = T_IGNITE + 2.0                    # the brass's long notes
+# her lines, from the vocal score: (bar, start, length in beats, note), 4/4
+VOICE = [(1236, 2, 1.5, 'C5'), (1236, 3.5, 0.5, 'C5'),
+         (1237, 0, 1, 'E5'), (1237, 1, 1, 'C5'), (1237, 2, 0.75, 'C5'), (1237, 2.75, 0.25, 'C5'), (1237, 3, 1, 'C5'),
+         (1238, 0, 2, 'Db5'), (1238, 3, 1, 'Ab4'),
+         (1239, 0, 1, 'Db5'), (1239, 1, 0.5, 'Db5'), (1239, 1.5, 0.5, 'Db5'), (1239, 2, 1.5, 'Db5'),
+         (1239, 3.5, 0.5, 'Db5'), (1240, 0, 2, 'Eb5'),
+         (1241, 2, 1.5, 'E5'), (1241, 3.5, 0.5, 'E5'),
+         (1242, 0, 2, 'F5'), (1242, 2, 1, 'F5'), (1242, 3, 0.5, 'D#5'), (1242, 3.5, 0.5, 'C#5'), (1243, 0, 2.5, 'F#5'),
+         (1422, 1, 1, 'E5'), (1422, 2, 1.5, 'A5'), (1422, 3.5, 0.5, 'C5'), (1423, 0, 1, 'Eb5'), (1423, 1, 0.5, 'Eb4'),
+         (1424, 0, 1.5, 'Eb5'), (1424, 1.5, 0.5, 'Eb5'), (1424, 2, 1.5, 'E5'), (1424, 3.5, 0.5, 'E5'),
+         (1425, 0, 1, 'F5'), (1425, 1, 0.5, 'F4'),
+         (1443, 0, 3.5, 'E5'), (1444, 1, 2, 'F5'), (1444, 3, 0.5, 'F5'), (1444, 3.5, 0.5, 'F5'), (1445, 0, 2.5, 'Bb5'),
+         (1446, 1.5, 0.5, 'Db5'), (1446, 2, 1, 'Gb5'), (1446, 3, 1, 'Eb5'),
+         (1447, 1, 2, 'C5'), (1447, 3, 0.5, 'C5'), (1447, 3.5, 0.5, 'C5'), (1448, 0, 2, 'F4')]
 
 SIEGFRIED = hexc('#00ff40')
 SILVER = hexc('#f4f8ff')
@@ -210,40 +256,26 @@ def panner(G):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). The right hand's long notes
+    under her rising line are 'love', the orchestra's plunge into its scales 'flash', the left hand's long chords
+    under her message 'valhalla', the right hand once the pyre burns 'loge', the left hand's long notes then 'trans';
+    the rest is 'tutti'. Her lines are 'voice'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    chords = [('C2', 'G2', 'Eb3'), ('Ab1', 'Eb2', 'C3'), ('F1', 'C2', 'Ab2'), ('G1', 'D2', 'B2')]
-    for j, t0 in enumerate(LOGS):
-        add(t0, 0.4, 'C2' if j % 2 == 0 else 'G1', 84 + j, 'log', j)
-        if j % 4 == 0:
-            for m in chords[(j // 4) % 4]:
-                add(t0, 3.6, m, 82 + j, 'build')
-    for k, t0 in enumerate(T_LOVE):
-        for t, m, v, d in play('love_fulfilled', t0, 0.95, 0, 94 + 6 * k):
-            add(t, d, m, v, 'love', k)
-    for t, m, v, d in play('ring', T_RING, 0.45, 0, 92):
-        add(t, d, m, v, 'ring')
-    add(T_RING + 1.5, 0.1, 'C1', 110, 'flash')
-    add(T_RAVENS, 2.4, 'C6', 100, 'ravens')
-    for t, m, v, d in play('valhalla', T_VALHALLA, 0.95, 0, 112):
-        add(t, d, m, v, 'valhalla')
-    add(T_THROW, 1.4, 'C6', 110, 'throw')
-    add(T_IGNITE, 0.1, 'C1', 127, 'ignite')
-    for j, t0 in enumerate(LOGES):
-        if t0 > D - 3:
-            break
-        for t, m, v, d in play('loge', t0, 0.2, 12 + (0, 3, 7, 12)[j % 4], 96):
-            add(t, d, m, v, 'loge', j)
-        for t, m, v, d in play('loge_flicker', t0 + 0.8, 0.12, 0, 84):
-            add(t, d, m, v, 'flicker', j)
-    for t, m, v, d in play('transformation', T_TRANS, 0.9, -12, 110):
-        add(t, d, m, v, 'trans')
-    for m in ('Db2', 'Ab2', 'F3'):
-        add(T_TRANS, D - T_TRANS, m, 72, 'firebed')
+    for t, d, m, v, h in EX['notes']:
+        if T_SOAR - 0.3 <= t < when(1243.99) - 0.05 and h == 0 and d >= 0.4:
+            part = 'love'
+        elif when(1423) - 0.05 <= t < when(1425.99) and h == 1 and d >= 0.9:
+            part = 'valhalla'
+        elif t >= T_IGNITE - 0.05 and h == 0:
+            part = 'loge'
+        elif t >= T_IGNITE + 1.5 and h == 1 and d >= 0.45:
+            part = 'trans'
+        else:
+            part = 'tutti'
+        N.append((t, d, m, v, part, h))
+    for b, x, n, name in VOICE:
+        t0 = when(b + x / 4)
+        N.append((t0, when(b + (x + n) / 4) - t0, note(name), 100 if b < 1400 else 112, 'voice', b))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -277,11 +309,13 @@ def render(G, seed=28):
     S = stage(G)
     d, L, pf = S['d'], S['L'], S['pf']
     N = compose()
-    love = [e for e in N if e[4] == 'love' and e[1] >= 0.4]
+    love = sorted({e[0]: e for e in N if e[4] == 'love'}.values())
     valh = sorted({e[0] for e in N if e[4] == 'valhalla'})
-    lstart = [t0 for t0 in LOGES if t0 <= D - 3]
-    trans = [e for e in N if e[4] == 'trans']
+    lstart = [t0 for t0 in LOGES if t0 <= D - 2]
+    trans = sorted({e[0]: e for e in N if e[4] == 'trans'}.values())
     land = stacks(G)
+    scales = [(e[0], e[2]) for e in N if e[4] == 'tutti' and e[5] == 0 and when(1418) <= e[0] < T_RAVENS - 0.3]
+    brand = sorted({e[0] for e in N if e[4] == 'voice' and e[5] >= 1443})
     p_sf, p_br, p_gu = at(G, *SIEG_AT[:2]), at(G, *BRUN_AT[:2]), at(G, *GUTRUNE_AT[:2])
     runs = ['Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right', 'Side']
     rng = np.random.default_rng(seed)
@@ -325,6 +359,22 @@ def render(G, seed=28):
             aa = a - 1.5
             fr += light(GOLD, 1.0 * np.exp(-aa / 0.7))
             fr = ring(fr, S, t, T_RING + 1.5, p_br, GOLD, 1.0, speed=1500, width=260, tau=1.2)
+
+        # the orchestra's rushing scales: a spark for every note, riding up and down the house with the pitch
+        for t0, m in scales:
+            a = t - t0
+            if 0 <= a < 0.5:
+                p = (m - 40) / 50 * L
+                fr += light(TONGUE, 0.95 * np.exp(-a / 0.15) * np.exp(-((d - p) / 45) ** 2))
+                fr += light(GOLD, 0.35 * np.exp(-a / 0.25) * np.exp(-((d - p) / 160) ** 2))
+
+        # "So werf' ich den Brand": the torch in her hand, flaring on every word
+        if when(1443) <= t < T_THROW + 0.2:
+            g = smoothstep(when(1443), when(1443) + 1.0, t)
+            fr += light(AMBER, 0.9 * g * np.exp(-((d - p_br - 12) / 8) ** 2))
+            fr += light(ORANGE, 0.35 * g * np.exp(-((d - p_br - 12) / 80) ** 2) * (0.8 + 0.2 * S['fl'](T)))
+        for t0 in brand:
+            fr = ring(fr, S, t, t0, p_br + 12, ORANGE, 0.8, speed=1000, width=130, tau=0.8)
 
         # the ravens home to Valhalla, and its chords, one whole run in gold-white over deep blue each
         fr = raven(fr, S, t, T_RAVENS, p_br, 0.0, 2.6)
@@ -392,70 +442,51 @@ def render(G, seed=28):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes orchestrated from the piano reduction, her lines on trumpet and oboe, and the stage's sounds."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.36, 0.25), ('strings', 0.34, 0.32), ('winds', 0.3, 0.35), ('brass', 0.36, 0.3),
-                            ('perc', 0.34, 0.3), ('fx', 0.14, 0.3), ('mallet', 0.16, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    picc = M.sampler('Woodwinds/Piccolo/Sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
     pf = pan_at(at(G, 'Porch Front', 0.5))
     br = pan_at(at(G, *BRUN_AT[:2]))
     stk = [pan_at(p) for p in stacks(G)]
-    for t, d, m, v, part, k in compose():
-        if part == 'log':
-            M.add('perc', timp.play(v, pitch=-5 if k % 2 == 0 else -10), t, 0.85, stk[k])
-            M.add('low', cb.play(m, v - 10, dur=0.5, release=0.2), t, 0.6, stk[k])
-        elif part == 'build':
-            hold('brass', tbn if m >= note('C3') else tuba, m, t, t + d, v, pf, rise=0.1, fall=1.0, gain=0.6)
-        elif part == 'love':
-            if d > 0.9:
-                hold('strings', vln, m, t, t + d, v, br, rise=0.2, fall=1.0, gain=0.9)
-            else:
-                M.add('strings', vln.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, br)
-            M.add('low', vc.play(m - 12, v - 18, dur=d * 1.1, release=0.3), t, 0.5, br)
-        elif part == 'ring':
-            M.add('winds', clar.play(m, v, dur=d * 1.1, release=0.3), t, 0.85, br)
-        elif part == 'flash':
-            M.add('perc', crash.play(100), t, 0.8, br)
-        elif part == 'ravens':
-            M.add('fx', whoosh(d, 900, 5000, 0.8, seed=28), t, 0.9, -0.7)
-            M.add('fx', whoosh(d, 900, 5000, 0.8, seed=29), t + 0.3, 0.9, -0.9)
-        elif part == 'valhalla':
-            if m >= note('Db4'):
-                hold('brass', horn, m - 12, t, t + d, v, 0.0, rise=0.08, fall=1.0, gain=0.8)
-            else:
-                hold('low', tuba, m, t, t + d, v, 0.0, rise=0.08, fall=1.0, gain=0.8)
-        elif part == 'throw':
-            M.add('fx', whoosh(d, 600, 4500, 0.9, seed=31), t, 1.0, br)
-        elif part == 'ignite':
-            M.add('perc', gong.play(v), t, 0.9, pf)
-            M.add('perc', crash.play(v), t, 0.9, pf)
-            M.add('perc', timp.play(v, pitch=-7), t, 1.0, pf)
-            M.add('perc', roll.play(110, pitch=-3, dur=3.0), t, 0.8, pf)
-            M.add('fx', whoosh(2.5, 300, 6000, 0.9, seed=33), t - 0.1, 1.0, pf)
-        elif part == 'loge':
-            M.add('strings', vln.play(m, v, dur=d * 1.2, release=0.1), t, 0.6, pf + (0.4 if k % 2 == 0 else -0.4))
-            M.add('mallet', harp.play(m, v - 10), t, 0.5, pf)
-        elif part == 'flicker':
-            M.add('winds', picc.play(m, v, dur=d * 1.1, release=0.1), t, 0.45, pf)
-            M.add('mallet', glock.play(m, v - 20), t, 0.4, pf)
-        elif part == 'trans':
-            hold('brass', tpt, m - 12, t, t + d, v, pf, rise=0.2, fall=1.2, gain=0.75)
-            hold('brass', tbn, m - 24, t, t + d, v - 10, pf, rise=0.2, fall=1.2, gain=0.6)
-        elif part == 'firebed':
-            hold('low', vc if m >= note('C3') else cb, m, t, t + d, v, pf, rise=3.0, fall=1.5, gain=0.5)
+    o = Orchestra(M, level=1.7)
+    N = compose()
+    parts = {(round(t, 4), m, k): part for t, d, m, v, part, k in N}
+
+    def size(t):
+        return 0.55 if t < when(1241) else 1.0
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m, h))
+        if part == 'valhalla':                              # the chords under her message: horns and tubas
+            return [('horns', 0, 4, 0.75), ('tuba', -12, -6, 0.5), ('trombones', 0, -8, 0.4)]
+        if part == 'loge' and d < 0.3:                      # Loge's fire: violins, harp, piccolo glitter
+            return [('violins', 0, -4, 0.5), ('harp', -12 if m > 84 else 0, -6, 0.4)] + \
+                ([('piccolo', 0, -12, 0.3)] if m >= 79 else [])
+        if part == 'trans':                                 # the brass's long notes over the fire
+            return [('trumpets', 0, 0, 0.6), ('trombones', -12, -4, 0.55), ('horns', 0, -6, 0.5)]
+        return None
+    o.tutti(tidy([(t, d, m, v, k) for t, d, m, v, part, k in N if part != 'voice']), size=size, role=role)
+    for t, d, m, v, part, k in N:                           # her lines
+        if part == 'voice':
+            o.play('trumpets', m, t, max(d, 0.15), v, br, 0.62 if k < 1400 else 0.8)
+            o.play('oboes', m, t, max(d, 0.15), v - 4, br, 0.5)
+
+    # the stage
+    for j, t0 in enumerate(LOGS):                           # each log drops onto the pyre
+        o.hit('hoof', t0, 96, gain=0.5, pan=stk[j])
+        o.hit('bass drum', t0, 90, gain=0.25, pan=stk[j])
+    o.hit('crash', T_RING + 1.5, 118, gain=0.55, pan=br)    # the Ring: the whole house flashes gold
+    o.play('glock', note('F#6'), T_RING + 1.5, 0.1, 100, br, 0.35)
+    from pixelhome.audio import whoosh
+    for k, (tt, seed) in enumerate(((T_RAVENS, 28), (T_RAVENS + 0.3, 29))):   # the ravens' wings
+        M.add('fx', whoosh(2.6, 900, 5000, 0.7, seed=seed), tt, 0.6, br - 0.4 * (k + 1))
+    M.add('fx', whoosh(T_IGNITE - T_THROW + 0.2, 600, 4500, 0.9, seed=31), T_THROW, 0.9, br)   # the torch
+    o.boom(T_IGNITE, pf, 1.0)                               # the pyre goes up
+    o.hit('crash', T_IGNITE, 124, gain=0.6, pan=pf)
+    M.add('fx', whoosh(2.5, 300, 6000, 0.9, seed=33), T_IGNITE - 0.1, 0.9, pf)
+    o.fire(T_IGNITE - 0.2, D, lambda tt: 0.45 + 0.55 * smoothstep(T_IGNITE, T_IGNITE + 3, tt), pan=pf,
+           crackle=22, seed=28)
+    for j, t0 in enumerate(LOGES):                          # each tongue of fire leaping out
+        M.add('fx', whoosh(1.0, 400, 3000, 0.5, seed=40 + j), t0, 0.5, pf + (0.5 if j % 2 == 0 else -0.5))
+    o.effects([(0.0, -10.0), (when(1243.9), -10.0), (when(1243.99) + 0.1, 0.0), (T_RAVENS - 0.3, -2.0),
+               (T_RAVENS + 2.0, -8.0), (T_THROW - 0.2, -8.0), (T_THROW, 0.0), (T_IGNITE + 4, 0.0),
+               (T_IGNITE + 7, -6.0)])

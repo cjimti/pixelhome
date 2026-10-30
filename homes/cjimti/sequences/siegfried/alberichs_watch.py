@@ -1,21 +1,28 @@
-"""Alberich's Watch: night outside Fafner's cave. Alberich, red in his muddy halo, keeps watch at Right 0.3, and
-his curse (Donington 13) mutters in the basses, each phrase a red pulse rolling out from him. Then the wind
-rises: a rush of blue storm-light tears in at the free end of Right and races the whole length of the house past
-him, out to the far end of Left, where it bursts in a blue-white flash. The Wanderer is there, at Left 0.7.
+"""Alberich's Watch: night outside Fafner's cave. Alberich, red in his muddy halo, keeps watch at Right 0.3.
 
-His motif (17) in the trombones and tubas: every chord rolls a wide blue wave out from him over the house.
-Alberich answers with the curse, a red wave from Right, and where the two fronts meet over the cave mouth they
-crack white. Alberich gloats over the Ring (8): gold glints flare in the cave, each one with a red throb from
-him. The Wanderer answers with his spear (73), a pale steel streak that shoots down the front of the house to
-the porch with a thump. They end in a stand-off: the left half of the house blue, the right half red, pulsing
-in turn, and the forest dark between them.
+The music is Wagner's own, from Act II as Solti's 1958 Vienna Philharmonic recording takes it: the storm that
+brings the Wanderer (bars 118 to 136), his arrival and the quarrel (162 to 177), and Alberich's gloating dream of
+the Ring (284 to 292). The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+rushing storm figures on violins and woodwinds over the basses, the Wanderer's chords (Donington 17) on
+trombones and tuba, Alberich's fury on the strings with stabbing brass, the Ring's chords on horns under the
+violins' high tremolo, and his last fortissimo ("der Welt walte dann ich!") on the full brass. A production adds
+the storm: wind that rises with each rush of light, a timpani roll and a crack of thunder as the Wanderer
+appears, and the timpani on the last two chords of the stand-off.
 
-compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
-word by Act II's scenes on a clock that runs on from scene to scene."""
+Twice the wind rises: a rush of blue storm-light tears in at the free end of Right and races along the house,
+each rising figure throwing sparks, and Alberich shrinks from it. The second time it races the whole length to
+the far end of Left and bursts in a blue-white flash: the Wanderer is there, at Left 0.7. His chords roll wide
+blue waves out over the house; Alberich answers with red waves from Right, and where the two fronts meet over
+the cave mouth they crack white, hardest on his "Fort, aus dem Weg!". Then Alberich dreams of the Ring: gold
+flares in the cave on every chord, each with a red throb from him, and on his last fortissimo red floods the
+house from Right while the blue holds at Left, the boundary crackling white. They end in a stand-off: the left
+half of the house blue, the right half red, pulsing on the final chords.
+
+compose() tags every note of the excerpt; stage(), forest(), figure() and sparks() are the forest and the cave,
+shared word for word by Act II's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'SF12'
 TITLE = "Alberich's Watch"
@@ -26,15 +33,19 @@ VOICEOVER = ('Alberich is waiting for the dragon to die, so the gold can be his 
              'Then the wind brings an old enemy.')
 
 K = 1                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_MUTTER = [1.5, 7.5]                       # Alberich's curse, low in the basses
-T_WIND = 13.0                               # the storm-light rushes in
-T_ARRIVE = 15.5                             # the Wanderer appears in a flash at Left 0.7
-T_WANDER = [18.0, 30.0]                     # his motif, trombones and tubas
-T_CURSE = [21.0, 33.0]                      # Alberich answers
-T_RING = 42.0                               # Alberich gloats over the Ring
-T_SPEAR = 52.0                              # the Wanderer's spear
-T_STANDOFF = 60.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 118-136, 162-177 and 284-292, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+RUSH = [(BAR[118], BAR[128]), (BAR[132], BAR[137])]     # the two rushes of storm-light (start, crest)
+T_NEAR = BAR[162]                           # "Wer naht dort schimmernd": the light gathers at Left
+T_ARRIVE = BAR[167]                         # the Wanderer appears in a flash at Left 0.7
+T_WANDER = BAR[168]                         # his chords
+T_FURY = BAR[171]                           # Alberich answers
+T_SLAM = BAR[177] + 0.25                    # his fortissimo descent: "Von dannen, schamloser Dieb!"
+T_RING = BAR[284]                           # he dreams of the Ring
+T_WORLD = BAR[289]                          # "der Welt walte dann ich!"
+T_STANDOFF = BAR[292]
+D_END = D
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -127,33 +138,32 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). 'storm' is the rushing music
+    (k = which rush), 'near' the gathering chords, 'wanderer' his chords, 'fury' Alberich's answer, 'ring' the
+    dream of the Ring, 'world' his fortissimo, 'stand' the final chords."""
     N = []
+    for t, d, m, v, h in sorted(EX['notes']):
+        if t < T_NEAR:
+            part, k = 'storm', 0 if t < RUSH[1][0] else 1
+        elif t < T_WANDER:
+            part, k = 'near', 0
+        elif t < T_FURY:
+            part, k = 'wanderer', 0
+        elif t < T_RING:
+            part, k = 'fury', 0
+        elif t < T_WORLD:
+            part, k = 'ring', 0
+        elif t < T_STANDOFF:
+            part, k = 'world', 0
+        else:
+            part, k = 'stand', 0
+        N.append((t, d, m, v, part, k))
+    return N
 
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
 
-    add(0.0, D, 'F1', 58, 'pedal')
-    for k, t0 in enumerate(T_MUTTER):
-        for t, m, v, d in play('curse', t0, 0.75, -12, 76 + 6 * k):
-            add(t, d, m, v, 'mutter', k)
-    add(T_WIND - 0.8, 3.2, 'C1', 110, 'wind')
-    add(T_ARRIVE, 0.1, 'C1', 118, 'arrive')
-    for k, t0 in enumerate(T_WANDER):
-        for t, m, v, d in play('wanderer', t0, 0.55, 0, 104 + 6 * k):
-            add(t, d, m, v, 'wanderer', k)
-    for k, t0 in enumerate(T_CURSE):
-        for t, m, v, d in play('curse', t0, 0.5, 0, 106 + 6 * k):
-            add(t, d, m, v, 'curse', k)
-    for t, m, v, d in play('ring', T_RING, 0.6, -12, 92):
-        add(t, d, m, v, 'ring')
-    for t, m, v, d in play('spear', T_SPEAR, 0.42, -12, 112):
-        add(t, d, m, v, 'spear')
-    for k in range(4):
-        add(T_STANDOFF + 4.5 * k, 2.0, ('F2', 'B1')[k % 2], 96 + 4 * (k % 2), 'stand', k % 2)
-    for m in ('F2', 'Ab2', 'B2'):
-        add(T_STANDOFF, D - T_STANDOFF, m, 56, 'dark')
-    return sorted(N, key=lambda e: e[0])
+def hits(N, part, n=2, space=0.35, vmin=0):
+    """The onsets where n or more notes of a part strike together."""
+    return np.array(accents([(e[0], e[1], e[2], e[3]) for e in N if e[4] == part], vmin=vmin, n=n, space=space))
 
 
 def render(G, seed=12):
@@ -164,11 +174,13 @@ def render(G, seed=12):
     L = d.max()
     N = compose()
     p_alb, p_wan = at(G, 'Right', ALB_AT), at(G, 'Left', WAN_AT)
-    mutter = sorted({e[0] for e in N if e[4] == 'mutter'})
-    wan = np.array(sorted({e[0] for e in N if e[4] == 'wanderer'}))
-    cur = np.array(sorted({e[0] for e in N if e[4] == 'curse'}))
-    ring = [e for e in N if e[4] == 'ring']
-    spear_on = np.array(sorted({e[0] for e in N if e[4] == 'spear'}))
+    storm = [e for e in N if e[4] == 'storm' and e[3] >= 90]
+    near = hits(N, 'near', 2, 0.3)
+    wan = hits(N, 'wanderer', 2, 0.5)
+    fury = hits(N, 'fury', 3, 0.5)
+    ring = hits(N, 'ring', 3, 0.5)
+    world = hits(N, 'world', 3, 0.6)
+    stand = hits(N, 'stand', 1, 1.5, vmin=110)
     glint_at = np.random.default_rng(seed).uniform(at(G, 'Porch Left', 0.2), at(G, 'Porch Right', 0.8), len(ring))
     gust = Flicker(np.random.default_rng(seed + 1), G.N, 2.0, 6.0)
 
@@ -186,70 +198,81 @@ def render(G, seed=12):
         lv = {k: keys(t, [(0, START[k]), (T_STANDOFF, START[k]), (D, END[k])]) for k in START}
         fr = forest(S, T, lv)
 
-        # Alberich's muttered curse: a red pulse rolling out from him on each note
-        for t0 in mutter:
-            a = t - t0
-            if 0 <= a < 2.0:
-                fr += light(BLOOD, 0.75 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p_alb) - 500 * a) / 90) ** 2))
+        # the storm-light: two rushes of blue from the free end of Right; the first crests at the porch and falls
+        # back, the second races the whole length of the house and gathers at Left
+        for k, (t0, t1) in enumerate(RUSH):
+            if t0 <= t < (t1 + 3.0 if k == 0 else T_ARRIVE + 1.5):
+                reach = (mid if k == 0 else p_wan) - 200
+                front = L - (L - reach) * smoothstep(t0, t1, t)
+                body = smoothstep(front - 40, front + 160, d) * smoothstep(L + 400, front, d)
+                fade = 1 - smoothstep(t1, t1 + 3.0, t) if k == 0 else 1 - smoothstep(T_ARRIVE, T_ARRIVE + 1.5, t)
+                fr += light(WANDER_SOFT, (0.75 + 0.25 * k) * fade * body * (0.8 + 0.2 * gust(T)))
+                fr += light(WANDERER, 0.5 * fade * body)
+                fr += light(SPEAR, 0.85 * fade * np.exp(-((d - front) / 40) ** 2))
+        # every loud rising figure of the storm throws a spray of blue-white sparks off the front
+        sp = [(e[0], 0.6 * e[3] / 127, L - (L - mid) * smoothstep(*RUSH[e[5]], e[0])) for e in storm]
+        fr += light(SPEAR, sparks(S, sp, t, seed, n=6, reach=0.4))
 
-        # the storm-light: a blue rush from the free end of Right the whole length of the house
-        if T_WIND <= t < T_ARRIVE + 3:
-            a = t - T_WIND
-            front = L - L * smoothstep(0, T_ARRIVE - T_WIND, a)
-            body = smoothstep(front - 40, front + 120, d) * smoothstep(L + 400, front, d)
-            fade = 1 - smoothstep(T_ARRIVE, T_ARRIVE + 3, t)
-            fr += light(WANDER_SOFT, 1.0 * fade * body * (0.8 + 0.2 * gust(T)))
-            fr += light(WANDERER, 0.5 * fade * body)
-            fr += light(SPEAR, 0.8 * fade * np.exp(-((d - front) / 40) ** 2))
+        # the light gathers at Left: each chord a blue pulse there, brighter as it builds
+        for t0 in near:
+            a = t - t0
+            if 0 <= a < 1.2:
+                g = 0.4 + 0.6 * smoothstep(T_NEAR, T_ARRIVE, t0)
+                fr += light(WANDER_SOFT, g * np.exp(-a / 0.35) * np.exp(-((d - p_wan) / 300) ** 2))
         if T_ARRIVE <= t < T_ARRIVE + 1.5:
             a = t - T_ARRIVE
-            fr += light(WHITE, 0.9 * np.exp(-a / 0.15) * np.exp(-((d - p_wan) / 260) ** 2))
-            fr += light(WANDERER, 0.6 * np.exp(-a / 0.5))
+            fr += light(WHITE, 0.95 * np.exp(-a / 0.15) * np.exp(-((d - p_wan) / 300) ** 2))
+            fr += light(WANDERER, 0.7 * np.exp(-a / 0.5))
 
-        # his chords: wide blue waves out from him; the curse: red waves out from Alberich; they crack white
-        blue = wave(wan, t, p_wan, 600, 200, 1.0)
-        red = wave(cur, t, p_alb, 650, 180, 0.9)
+        # his chords: wide blue waves out from him; Alberich's answer: red waves from Right; they crack white
+        blue = wave(wan, t, p_wan, 600, 200, 1.0) + wave(world, t, p_wan, 300, 160, 0.6) * 0.6
+        red = wave(fury, t, p_alb, 650, 180, 0.9) + wave(world, t, p_alb, 900, 220, 0.8)
+        if T_SLAM <= t < T_SLAM + 2.5:
+            a = t - T_SLAM
+            red += 1.4 * np.exp(-a / 0.8) * np.exp(-((np.abs(d - p_alb) - 1100 * a) / 260) ** 2)
         fr += light(WANDERER, 0.95 * np.clip(blue, 0, 1.2))
         fr += light(BLOOD, 0.95 * np.clip(red, 0, 1.2))
         fr += light(WHITE, np.clip(blue * red * 4, 0, 1))
 
-        # the Ring: gold flares in the cave, each with a red throb from Alberich
-        for j, (t0, dur, m, v, part, k) in enumerate(ring):
+        # the Ring: gold flares in the cave on every chord, each with a red throb from Alberich
+        for j, t0 in enumerate(ring):
             a = t - t0
-            if 0 <= a < dur + 1.2:
-                g = np.exp(-a / (dur + 0.5)) * smoothstep(0, 0.06, a)
-                fr += light(GOLD, 0.95 * g * np.exp(-((d - glint_at[j]) / (25 + 30 * a)) ** 2))
-                fr += light(ALBERICH, 0.4 * g * np.exp(-((d - p_alb) / 120) ** 2))
+            if 0 <= a < 1.8:
+                g = np.exp(-a / 0.8) * smoothstep(0, 0.06, a)
+                fr += light(GOLD, 0.95 * g * np.exp(-((d - glint_at[j]) / (35 + 40 * a)) ** 2))
+                fr += light(ALBERICH, 0.45 * g * np.exp(-((d - p_alb) / 120) ** 2))
+        if T_RING <= t < T_WORLD + 2:                       # the hoard's glow swells under his dream
+            fr += light(GOLD, 0.35 * smoothstep(T_RING, T_WORLD, t) * (1 - smoothstep(T_WORLD, T_WORLD + 2, t))
+                        * S['mouth'])
 
-        # the spear: a pale steel streak down the front of the house to the porch, one surge per note
-        if T_SPEAR <= t < T_STANDOFF:
-            j = int(np.searchsorted(spear_on, t, side='right')) - 1
-            a = t - spear_on[j]
-            reach = p_wan + (mid - p_wan) * smoothstep(T_SPEAR, T_SPEAR + 3.0, t)
-            shaft = (d >= p_wan) * (d <= reach) * 1.0
-            fr += light(SPEAR, (0.55 + 0.4 * np.exp(-a / 0.2)) * shaft * (1 - smoothstep(T_STANDOFF - 2, T_STANDOFF, t)))
-            fr += light(WHITE, 0.8 * np.exp(-a / 0.12) * np.exp(-((d - reach) / 30) ** 2))
+        # his fortissimo: red floods the house from Right, the blue holds at Left, the boundary crackles
+        if T_WORLD <= t < T_STANDOFF + 1:
+            u = smoothstep(T_WORLD, T_STANDOFF, t)
+            edge = p_alb - (p_alb - (mid - 300)) * u
+            flood = smoothstep(edge - 120, edge + 120, d)
+            fr += light(BLOOD, 0.7 * flood * (1 - smoothstep(T_STANDOFF, T_STANDOFF + 1, t)))
+            fr += light(WHITE, 0.8 * np.exp(-((d - edge) / 30) ** 2) * (0.6 + 0.4 * gust(T * 3)))
 
-        # the stand-off: left half blue, right half red, pulsing in turn
+        # the stand-off: left half blue, right half red, pulsing in turn on the last chords
         if t >= T_STANDOFF:
-            u = smoothstep(T_STANDOFF, T_STANDOFF + 2, t)
-            k = int((t - T_STANDOFF) / 4.5)
-            a = (t - T_STANDOFF) % 4.5
-            beat = np.exp(-a / 0.8)
+            u = smoothstep(T_STANDOFF, T_STANDOFF + 1, t)
             side = smoothstep(mid + 200, mid - 200, d)
-            lb = 0.5 + (0.5 * beat if k % 2 == 0 else 0.0)
-            lr = 0.5 + (0.5 * beat if k % 2 == 1 else 0.0)
-            fade = 1 - smoothstep(D - 6, D, t)
-            fr += light(WANDERER, u * fade * lb * side * np.exp(-((d - p_wan) / 900) ** 2))
-            fr += light(BLOOD, u * fade * lr * (1 - side) * np.exp(-((d - p_alb) / 900) ** 2))
+            lb, lr = 0.55, 0.55
+            for k, t0 in enumerate(stand):
+                if t >= t0:
+                    b = np.exp(-(t - t0) / 0.8)
+                    lb, lr = (lb + 0.45 * b, lr) if k % 2 else (lb, lr + 0.45 * b)
+            fr += light(WANDERER, u * lb * side * np.exp(-((d - p_wan) / 900) ** 2))
+            fr += light(BLOOD, u * lr * (1 - side) * np.exp(-((d - p_alb) / 900) ** 2))
 
-        # Alberich, and the Wanderer from his arrival
-        alvl = keys(t, [(0, 0.7), (T_WIND, 0.7), (T_WIND + 1, 0.45), (T_ARRIVE + 2, 0.7)])
-        for t0 in cur:
+        # Alberich, shrinking from the storm; the Wanderer from his arrival
+        alvl = 0.7 - 0.3 * sum(smoothstep(t0, t1, t) * (1 - smoothstep(t1, t1 + 2, t)) for t0, t1 in RUSH)
+        alvl -= 0.3 * smoothstep(T_NEAR, T_ARRIVE, t) * (1 - smoothstep(T_ARRIVE, T_FURY, t))
+        for t0 in np.concatenate([fury, world]):
             if 0 <= t - t0 < 0.6:
                 alvl += 0.3 * np.exp(-(t - t0) / 0.2)
         fr += light(MUD, 0.6 * alvl * np.exp(-((d - p_alb) / 70) ** 2))
-        fr = figure(fr, S, p_alb, ALBERICH, min(alvl, 1.0))
+        fr = figure(fr, S, p_alb, ALBERICH, float(np.clip(alvl, 0.2, 1.0)))
         if t >= T_ARRIVE:
             wl = keys(t, [(T_ARRIVE, 1.0), (T_ARRIVE + 2, 0.8)])
             for t0 in wan:
@@ -262,7 +285,7 @@ def render(G, seed=12):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes on the orchestra, each part where it happens on the house, with the storm around them."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -271,74 +294,39 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.31, 0.25), ('brass', 0.28, 0.3), ('perc', 0.28, 0.3), ('winds', 0.24, 0.32),
-                            ('dark', 0.22, 0.4), ('fx', 0.13, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     alb = pan_at(at(G, 'Right', ALB_AT))
     wan = pan_at(at(G, 'Left', WAN_AT))
-    cave = pan_at(at(G, 'Porch Front', 0.5))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v, cave, rise=3.0, fall=2.0, gain=0.45)
-        elif part == 'mutter':
-            M.add('low', vc.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, alb)
-            M.add('low', cbs.play(m - 12, v - 10), t, 0.6, alb)
-        elif part == 'wind':
-            M.add('fx', whoosh(d, 400, 4500, 0.8, seed=12), t, 1.0, 0.6)
-            M.add('fx', whoosh(d, 3000, 300, 0.6, seed=13), t + 0.6, 1.0, -0.6)
-            M.add('perc', roll.play(v, dur=d), t, 0.7, 0.0)
-        elif part == 'arrive':
-            M.add('perc', crash.play(v), t, 0.9, wan)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, wan)
-        elif part == 'wanderer':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, wan)
-            elif m < note('C4'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, wan)
-            else:
-                M.add('brass', horn.play(m - 12, v - 6, dur=d * 1.05, release=0.3), t, 0.7, wan)
-        elif part == 'curse':
-            if d > 1.2:
-                hold('brass', tbn, m, t, t + d, v, alb, rise=0.15, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, alb)
-            M.add('low', cbs.play(m - 12, v - 10), t, 0.7, alb)
-        elif part == 'ring':
-            if d > 1.2:
-                hold('winds', bsn, m, t, t + d, v, cave, rise=0.3, fall=0.8, gain=0.8)
-            else:
-                M.add('winds', bsn.play(m, v, dur=d * 1.05, release=0.25), t, 0.9, cave)
-        elif part == 'spear':
-            M.add('low', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, wan)
-            M.add('low', tuba.play(m - 12, v - 12, dur=d * 1.05, release=0.2), t, 0.6, wan)
-        elif part == 'stand':
-            M.add('perc', timp.play(v, pitch=-2 if k == 0 else -6), t, 0.9, wan if k == 0 else alb)
-        elif part == 'dark':
-            hold('dark', vc, m, t, t + d, v, 0.0, rise=4.0, fall=1.5, gain=0.5)
-    M.add('perc', timp.play(120, pitch=-3), T_SPEAR + 3.0, 0.9, cave)
+    o = Orchestra(M, level=2.35)
+    parts = {(round(t, 4), m): part for t, d, m, v, part, k in compose()}
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m))
+        if part == 'wanderer' or (part == 'near' and h == 1):
+            return ([('tuba', 0, 4, 0.7), ('trombones', 12, -4, 0.5)] if m < 48 else
+                    [('trombones', 0, 2, 0.7), ('horns', 0, -4, 0.5)])
+        if part == 'ring' and h == 1:
+            return [('horns', 0, 2, 0.75), ('trombones', -12, -6, 0.4)]
+        if part in ('world', 'stand') and h == 1 and d >= 0.3:
+            return [('trombones', 0, 4, 0.75), ('tuba', -12, 0, 0.5), ('horns', 0, 0, 0.5)]
+        if part in ('world', 'stand') and h == 0 and d >= 0.3:
+            return [('trumpets', 0, 0, 0.6), ('violins', 0, -6, 0.4)]
+        return None
+
+    def pan(t, m):
+        if t < T_ARRIVE:
+            return 0.6 - 0.9 * smoothstep(0, T_ARRIVE, t)
+        if T_FURY <= t < T_STANDOFF:
+            return alb * 0.7
+        return wan * 0.6
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.6 + 0.4 * (t < T_NEAR or t >= T_WORLD), role=role, pan=pan)
+    # the storm leads while it brings him; once he is there the quarrel and the Ring must be clear
+    o.effects([(0.0, 0), (T_ARRIVE + 1.5, 0), (T_WANDER + 0.5, -10), (T_STANDOFF, -10)])
+    # the storm that brings him, and the stand-off's blows
+    level = lambda tt: 0.2 + 0.9 * sum(np.clip((tt - a) / (b - a), 0, 1) * np.exp(-np.clip(tt - b, 0, None) / 2.5)
+                                       for a, b in RUSH + [(T_NEAR, T_ARRIVE)])
+    o.wind(0.0, T_FURY + 4, level=level, pan=lambda tt: 0.6 - 1.2 * min(1.0, tt / T_ARRIVE), seed=12)
+    o.hit('timpani roll', T_ARRIVE - 3.0, 100, gain=0.5, pan=wan)
+    o.thunder(T_ARRIVE, near=0.7, pan=wan, gain=0.9)
+    for k, t0 in enumerate(hits(compose(), 'stand', 1, 1.5, vmin=110)):
+        o.hit('timpani', t0, 118, pitch=-3 if k % 2 else -6, gain=0.7, pan=alb if k % 2 == 0 else wan)

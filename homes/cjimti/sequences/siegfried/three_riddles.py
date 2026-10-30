@@ -1,25 +1,31 @@
-"""Three Riddles: the Wanderer, deep blue on Right, wagers his head that he can answer any three questions Mime
-puts to him, and Mime, yellow at the anvil, asks. Who lives in the depths of the earth? The Nibelungs: the whole
-house drops into the red dark of Nibelheim in a wipe out from the Wanderer, and anvils ring in their dotted
-rhythm all over it, every blow a red flash and a spray of red sparks on a different part of the roofline, while
-the Ring (Donington 8) groans under it in the bassoons and tubas.
+"""Three Riddles: the Wanderer, deep blue on Right, has wagered his head that he can answer any three questions
+Mime puts to him, and Mime, yellow at the anvil, asks. Who lives in the depths of the earth? The Nibelungs: the
+whole house drops into the red dark of Nibelheim in a wipe out from the Wanderer, and anvils ring in the
+Nibelungs' dotted rhythm all over it, every blow a red flash and a spray of red sparks on a different part of the
+roofline. Who lives on the face of the earth? The giants: a wipe to stone and ochre, and every stamp of their
+motif lights one whole run of the house as a block of stone in turn. Who lives on the cloudy heights? The gods: a
+wipe to sky blue, and Valhalla rises in the brass, a chord to a bar, while gold climbs from both ends of the house
+to the castle in the middle of Porch Front; then the spear strikes the floor, a blue-white flash, and thunder.
 
-Who lives on the face of the earth? The giants: a wipe to stone and ochre, and their motif (58) stamps in on the
-tubas and timpani, every stamp lighting one whole run of the house as a block of stone in turn. Who lives on the
-cloudy heights? The gods: a wipe to sky blue, and Valhalla (63) rises in the brass while gold climbs from both
-ends of the house to the castle in the middle of Porch Front; the spear (73) strikes, a blue-white flash.
+Now the Wanderer asks. Who will forge Nothung anew? The strings tremble, the sword's motif climbs, Mime flickers
+in panic, and the Wanderer's blue swells over the whole house until the answer crashes out on the full brass:
+"Nur wer das Fürchten nie erfuhr, schmiedet Nothung neu." Mime's head is forfeit to him. The Wanderer goes, a blue
+sweep out through the cave mouth, and Mime collapses, shaking, at the anvil.
 
-Now the Wanderer asks. Who will forge Nothung anew? The sword's motif (43) sounds on a quiet trumpet, Mime
-flickers in panic, and the Wanderer's blue swells over the whole house until the answer crashes out on the full
-brass: one who has never known fear. Mime's head is forfeit to him. The Wanderer goes, a blue sweep out through
-the cave mouth, and Mime is left shaking at the anvil.
+The music is Wagner's own, six moments of Act I as Solti's 1958 Vienna Philharmonic recording takes them: bars
+1440 to 1445 (the Nibelungs), 1498 to 1501 (the giants), 1577 to 1585 (the gods and the spear), 1801 to 1807 (the
+question), 1880 to 1884 (the answer) and 1896 to 1903 (his going). The notes come from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py), orchestrated by hand and register: the Nibelungs' rhythm on cellos and
+bassoons, the giants on tubas and basses, Valhalla on trombones and horns, the answer on the full brass. On stage:
+anvils ringing on every Nibelung blow, the giants' stamping on drum and timpani, a rushing wipe into each world,
+the spear's blow and a soft roll of thunder; the effects stand back under Valhalla and the answer.
 
 compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
+from pixelhome.audio import whoosh
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF07'
 TITLE = 'Three Riddles'
@@ -31,20 +37,24 @@ VOICEOVER = ('Three riddles, and the loser forfeits his head. '
              'The Wanderer answers them all, and then asks his own.')
 
 K = 6                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_OPEN = 0.5                                # a phrase of the Wanderer's chords: the wager
-R = [(5.0, 19.0), (21.0, 36.0), (38.0, 54.0)]   # the three riddles: Nibelungs, giants, gods
-NIB_BEAT = 0.42
-T_NIB_RING = 6.0
-T_GIANTS = [22.0, 29.0]
-G_BEAT = 0.55
-T_VALHALLA = [39.0, 45.5]
-V_BEAT = 0.8
-T_STRIKE_SP = 52.0                          # the spear's first steps, then a strike
-T_Q = 56.0                                  # who will forge Nothung anew?
-T_ANSWER = 63.5                             # one who has never known fear
-T_LEAVE = 67.0                              # he goes out through the cave mouth
-T_GONE = 72.0
-D = 80.0
+EX = excerpt(__file__)                      # six moments of Act I, Solti 1958
+D = EX['seconds']
+SEG = [(g['start'], g['start'] + g['seconds']) for g in EX['segments']]
+_M = np.array([m for m, _ in EX['bars']], float)
+_T = np.array([t for _, t in EX['bars']])
+
+
+def bt(m):
+    """Seconds into the scene of measure position m (bar plus fraction)."""
+    return float(np.interp(m, _M, _T))
+
+
+R = SEG[:3]                                 # the three riddles: Nibelungs, giants, gods
+T_STRIKE = bt(1585)                         # the spear strikes the floor
+T_Q = SEG[3][0]                             # who will forge Nothung anew?
+T_ANSWER = bt(1884)                         # "schmiedet Nothung neu"
+T_LEAVE = SEG[5][0]                         # he goes out through the cave mouth
+T_GONE = T_LEAVE + 6.0
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -136,53 +146,27 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'orch' (k the hand, or 'trem');
+    the Nibelungs' hammer rhythm is 'nib', the giants' stamps 'giants', Valhalla's chords 'valhalla' (k the chord);
+    'strike', 'answer' and 'shake' mark the lights' moments."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t, m, v, d in play('wanderer', T_OPEN, 0.5, 0, 88):
-        if t < T_OPEN + 4.0:
-            add(t, min(d, T_OPEN + 4.0 - t), m, v, 'wanderer', 0)
-    # the Nibelungs: anvils in their dotted rhythm, the Ring underneath
-    b, j = R[0][0] + 0.3, 0
-    while b < R[0][1] - 1.0:
-        for o in (0, 0.75, 1.0, 1.5):
-            add(b + o * NIB_BEAT * 2, 0.1, 'C5', 96 + 20 * (o == 0), 'nib', j)
-            j += 1
-        b += 4 * NIB_BEAT
-    for t, m, v, d in play('ring', T_NIB_RING, 0.95, -17, 100):
-        add(t, d, m, v, 'ring')
-    add(R[0][0], 0.1, 'C1', 110, 'wipe', 0)
-    # the giants
-    add(R[1][0], 0.1, 'C1', 110, 'wipe', 1)
-    for k, t0 in enumerate(T_GIANTS):
-        for t, m, v, d in play('giants', t0, G_BEAT, -12, 108 + 8 * k):
-            add(t, d, m, v, 'giants', k)
-    # the gods
-    add(R[2][0], 0.1, 'C1', 110, 'wipe', 2)
-    for k, t0 in enumerate(T_VALHALLA):
-        for t, m, v, d in play('valhalla', t0, V_BEAT, -12, 100 + 10 * k):
-            add(t, d, m, v, 'valhalla', k)
-    for t, m, v, d in play('spear', T_STRIKE_SP, 0.4, 0, 112):
-        if t < T_STRIKE_SP + 1.2:
-            add(t, d * 0.8, m, v, 'spear')
-    add(T_STRIKE_SP + 1.25, 0.1, 'C1', 120, 'strike')
-    # the question, and the answer
-    for t, m, v, d in play('nothung', T_Q, 0.55, -12, 76):
-        add(t, d, m, v, 'nothung')
-    for t, m, v, d in play('wanderer', T_ANSWER, 0.5, 0, 120):
-        if t < T_ANSWER + 2.0:
-            add(t, min(d, T_ANSWER + 3.0 - t), m, v, 'wanderer', 1)
-    add(T_ANSWER, 0.1, 'C1', 125, 'answer')
-    for t, m, v, d in play('wanderer', T_LEAVE + 0.5, 0.5, 0, 74):
-        if t < T_LEAVE + 4.5:
-            add(t, min(d, T_LEAVE + 4.5 - t), m, v, 'wanderer', 2)
-    for k in range(3):
-        for t, m, v, d in play('mime_frustrated', T_GONE + 1.0 + 2.2 * k, 0.6, -12 * (k % 2), 92 - 8 * k):
-            add(t, d, m, v, 'shake', k)
-    add(T_Q, T_ANSWER - T_Q, 'Gb1', 66, 'trem')
+    for n in tidy(EX['notes']):
+        N.append((n[0], n[1], n[2], n[3], 'orch', 'trem' if n[5] else n[4]))
+    for t, d, m, v, hand in EX['notes']:
+        if R[0][0] <= t < R[0][1] and hand == 1 and m == 43:
+            N.append((t, d, m, 110 if d >= 0.03 else 90, 'nib', None))
+    last = -9.0
+    for t, d, m, v, hand in sorted(EX['notes']):
+        if R[1][0] <= t < R[1][1] and hand == 1 and d >= 0.15 and t - last > 0.4:
+            N.append((t, max(d, 0.3), m, v, 'giants', None))
+            last = t
+    chords = sorted({round(t, 3) for t, d, m, v, hand in EX['notes'] if R[2][0] <= t < T_STRIKE and d >= 0.8})
+    for k, t in enumerate(chords):
+        N.append((t, 0.5, 0, 100, 'valhalla', k))
+    N.append((T_STRIKE, 0.1, 0, 120, 'strike', None))
+    N.append((T_ANSWER, 0.1, 0, 125, 'answer', None))
+    for k, t in enumerate(accents(EX['notes'], T_GONE, D - 1, n=3, space=0.9)):
+        N.append((t, 0.6, 0, 90, 'shake', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -194,7 +178,7 @@ def where_wanderer(G, t):
 def riddle_weight(i, t):
     """How far the house has turned into riddle i's world, 0..1, before the wipe's spread."""
     t0, t1 = R[i]
-    return smoothstep(t0, t0 + 0.2, t) * (1 - smoothstep(t1 - 0.5, t1 + 1.0, t))
+    return (smoothstep(t0, t0 + 0.2, t) if i else 1.0) * (1 - smoothstep(t1 - 0.3, t1 + (0.3 if i < 2 else 1.5), t))
 
 
 def render(G, seed=7):
@@ -211,10 +195,9 @@ def render(G, seed=7):
     nib = [e for e in N if e[4] == 'nib']
     nib_at = rng.uniform(at(G, 'Side', 0.1), L - 60, len(nib))
     nib_hits = [(e[0], 0.75 + 0.25 * (e[3] > 110), p) for e, p in zip(nib, nib_at)]
-    stomps = [e for e in N if e[4] == 'giants' and e[1] >= 0.5 * G_BEAT and e[2] == max(
-        x[2] for x in N if x[4] == 'giants' and x[0] == e[0])]
+    stomps = [e for e in N if e[4] == 'giants']
     vh = sorted({e[0] for e in N if e[4] == 'valhalla'})
-    t_strike = T_STRIKE_SP + 1.25
+    t_strike = T_STRIKE
     shakes = [e for e in N if e[4] == 'shake']
     mid = at(G, 'Porch Front', 0.5)
     half = max(mid - d.min(), L - mid)
@@ -232,6 +215,8 @@ def render(G, seed=7):
             if w <= 0:
                 continue
             spread = smoothstep(0, 1, (1700 * (t - R[i][0]) - np.abs(d - stand)) / 150) if t < R[i][0] + 2 else 1.0
+            if i == 0 and t < R[0][0] + 2:          # the scene opens as Nibelheim spreads out from him
+                spread = smoothstep(0, 1, (1100 * (t + 0.3) - np.abs(d - stand)) / 150)
             worlds.append((i, w * spread))
         for i, w in worlds:
             if i == 0:
@@ -281,7 +266,8 @@ def render(G, seed=7):
         # his going: a blue sweep out through the cave mouth
         if T_LEAVE <= t < T_GONE + 3:
             trail = smoothstep(p - 700, p, d) * (d <= p + 20) * (1 - smoothstep(T_GONE, T_GONE + 3, t))
-            fr += light(WOTAN, 0.7 * trail)
+            fr += light(WOTAN, 0.95 * trail)
+            fr += light(WOTAN_SOFT, 0.5 * np.exp(-((d - p) / 40) ** 2) * (t < T_GONE))
         if T_GONE <= t < T_GONE + 2:
             fr += light(WOTAN_SOFT, 0.8 * np.exp(-(t - T_GONE) / 0.4) * S['mouth'])
 
@@ -290,8 +276,9 @@ def render(G, seed=7):
         flick = panic * (0.25 * np.sin(2 * np.pi * 9 * t) + 0.12 * np.sin(2 * np.pi * 13.7 * t))
         for t0, dur, m, v, part, k in shakes:
             a = t - t0
-            if 0 <= a < 0.8:
-                fr += light(MIME, 0.55 * np.exp(-a / 0.3) * np.exp(-((np.abs(d - p_mime) - 450 * a) / 45) ** 2))
+            if 0 <= a < 1.2:                                    # Mime collapsing: yellow bursts, the forge flaring
+                fr += light(MIME, 0.9 * np.exp(-a / 0.4) * np.exp(-((np.abs(d - p_mime) - 650 * a) / 90) ** 2))
+                fr += light(FORGE, 0.45 * np.exp(-a / 0.3) * (S['forge'] + 0.6 * S['walls']))
         mlvl = keys(t, [(0, 0.6), (T_Q, 0.6), (T_ANSWER, 0.45), (T_ANSWER + 0.3, 0.3), (T_GONE, 0.5), (D, 0.55)])
         fr = figure(fr, S, p_mime + 5 * np.sin(2 * np.pi * 6 * t) * panic, MIME, mlvl + flick * (t < D - 3))
 
@@ -305,102 +292,48 @@ def render(G, seed=7):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """The real music: the excerpt orchestrated from the piano reduction, and the staging: the Nibelungs' anvils, the
+    giants' stamping, a wipe into each world, the spear's blow and its thunder."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
 
     def pan_at(dd):                         # path distance -> left/right across the facade, from the street
-        x = np.interp(min(dd, ds.max()), ds, xs)
+        x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('winds', 0.28, 0.3), ('brass', 0.3, 0.32), ('perc', 0.3, 0.25),
-                            ('mallet', 0.2, 0.3), ('fx', 0.12, 0.3), ('harp', 0.22, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    stand = pan_at(at(G, 'Right', WAND_AT))
+    forge = pan_at(at(G, 'Porch Front', MIME_AT))
+    o = Orchestra(M, level=2.1)
+    N = compose()
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, hand):
+        if R[0][0] <= t < R[0][1] and hand == 1:                                # the Nibelungs: cellos, bassoons
+            return [('cellos', 0, 0, 0.6), ('bassoons', 0, -6, 0.45)]
+        if R[1][0] <= t < R[1][1] and hand == 1:                                # the giants: tuba and basses
+            return [('tuba', 0, 0, 0.75), ('basses', -12 if m >= 40 else 0, -6, 0.55), ('cellos', 0, -8, 0.4)]
+        if R[2][0] <= t < T_STRIKE and d >= 0.8:                                # Valhalla: trombones and horns
+            return [('trombones' if m < 60 else 'horns', 0, 0, 0.75), ('horns', -12 if m >= 60 else 0, -10, 0.4)]
+        if SEG[4][0] + 3 <= t < SEG[4][1] and d >= 0.2 and v >= 98:            # the answer: the full brass
+            return [('trumpets' if m >= 60 else 'trombones', 0, 0, 0.7), ('horns', 0, -6, 0.5)]
+        return None
 
+    o.tutti([e[:4] + (e[5] if e[5] in (0, 1) else 0, e[5] == 'trem') for e in N if e[4] == 'orch'],
+            size=lambda t: 1.0 if t >= T_Q else 0.8, role=role)
     rng = np.random.default_rng(7)
-    mime = pan_at(at(G, 'Porch Front', MIME_AT))
-    mouth = pan_at(G.pd.max())
-    for t, d, m, v, part, k in compose():
-        wp = pan_at(where_wanderer(G, t))
-        if part == 'wanderer':
-            if m >= note('E4'):
-                hold('brass', horn, m - 12, t, t + d, v, wp, rise=0.15, fall=0.8, gain=0.8)
-            elif m >= note('C3'):
-                hold('brass', tbn, m, t, t + d, v, wp, rise=0.15, fall=0.8, gain=0.72)
-            else:
-                hold('low', tuba, m + 12, t, t + d, v, wp, rise=0.15, fall=0.8, gain=0.85)
-        elif part == 'nib':
-            M.add('perc', anvil.play(v), t, 0.75, float(rng.uniform(-0.8, 0.8)))
-        elif part == 'ring':
-            M.add('winds', bsn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.85, 0.0)
-            M.add('low', tuba.play(m, v - 8, dur=d * 1.05, release=0.3), t, 0.8, 0.0)
-        elif part == 'wipe':
-            M.add('fx', whoosh(1.4, (900, 400, 300)[k], (300, 2500, 5000)[k], 0.7, seed=k), t - 0.2, 1.0, wp)
-            M.add('perc', timp.play(v, pitch=-4 - 2 * k), t, 0.7, wp)
-            if k == 2:
-                for i, mm in enumerate(('C4', 'E4', 'G4', 'C5', 'E5')):
-                    M.add('harp', harp.play(note(mm), 80), t + 0.07 * i, 0.8, wp)
-        elif part == 'giants':
-            if d >= 0.5 * G_BEAT:
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.25), t, 0.95)
-                M.add('perc', timp.play(v - 10, pitch=(m % 12) - 7), t, 0.7)
-            else:
-                M.add('brass', tbn.play(m, v - 20, dur=d * 1.1, release=0.15), t, 0.6)
-        elif part == 'valhalla':
-            if m >= note('Ab3'):
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.2, fall=0.8, gain=0.75)
-            elif m >= note('C3'):
-                hold('brass', tbn, m, t, t + d, v - 8, 0.0, rise=0.2, fall=0.8, gain=0.65)
-            else:
-                hold('low', tuba, m, t, t + d, v, 0.0, rise=0.2, fall=0.8, gain=0.8)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.25), t, 0.9, wp)
-            M.add('low', tuba.play(m, v - 6, dur=d * 1.05, release=0.25), t, 0.8, wp)
-        elif part == 'strike':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, wp)
-            M.add('perc', crash.play(v - 10), t, 0.6, wp)
-        elif part == 'nothung':
-            if m >= note('C4'):
-                M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.3), t, 0.75, 0.0)
-            else:
-                M.add('low', vc.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.7, 0.0)
-        elif part == 'trem':
-            hold('low', ctrem, m + 12, t, t + d, v, mime, rise=3.0, fall=0.5, gain=0.6)
-        elif part == 'answer':
-            M.add('perc', crash.play(v), t, 0.9, wp)
-            M.add('perc', gong.play(115), t, 0.6, wp)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, wp)
-        elif part == 'shake':
-            M.add('winds', bsn.play(m, v, dur=d * 1.1, release=0.25), t, 0.9, mime)
-            M.add('low', vc.play(m, v - 12, dur=d * 1.1, release=0.25), t, 0.6, mime)
-    M.add('fx', whoosh(T_GONE - T_LEAVE, 500, 2500, 0.5, seed=9), T_LEAVE, 1.0, (pan_at(at(G, 'Right', WAND_AT))
-                                                                              + mouth) / 2)
+    for t, d, m, v, part, k in N:
+        if part == 'nib':                                                       # anvils all over the house
+            o.hit('anvil', t, v, gain=0.4 if v > 100 else 0.25, pan=float(rng.uniform(-0.8, 0.8)))
+        elif part == 'giants':                                                  # the giants stamp
+            o.hit('bass drum', t, min(127, v + 10), gain=0.6, pan=float(rng.uniform(-0.6, 0.6)))
+            o.hit('timpani', t, min(127, v), pitch=-6, gain=0.5)
+    for i, (t0, t1) in enumerate(SEG[1:], 1):                                   # a rush into each new world
+        M.add('fx', whoosh(1.0, 2500, 300, 0.6, seed=70 + i), t0 - 0.5, 0.7, stand)
+    o.boom(T_STRIKE, stand, 0.9)                                                # the spear strikes the floor
+    o.thunder(T_STRIKE + 0.15, 0.35, stand, 0.8)
+    o.hit('crash', T_ANSWER, 118, gain=0.5)
+    o.hit('timpani', T_ANSWER, 124, pitch=-5, gain=0.7)
+    o.hit('gong scrape', T_LEAVE + 1, 100, gain=0.4, pan=pan_at(G.pd.max()))
+    o.fire(0.0, D + 0.5, 0.25, forge, crackle=6, seed=707)
+    o.effects([(0, -1), (R[0][1], -1), (R[1][1], -1), (R[2][0] + 0.5, -10), (T_STRIKE - 0.3, -1),
+               (T_STRIKE + 2.5, -1), (T_Q + 1, -8), (T_ANSWER - 0.2, -10), (T_LEAVE, -6), (D, -6)])

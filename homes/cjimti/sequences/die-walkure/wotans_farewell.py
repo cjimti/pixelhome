@@ -1,22 +1,30 @@
-"""Wotan's Farewell: "Leb wohl, du kühnes, herrliches Kind!" A great E major chord from the whole orchestra and
-the house flares blue and silver: Wotan takes his daughter in his arms for the last time.
+"""Wotan's Farewell: "Leb wohl, du kühnes, herrliches Kind!" The orchestra blazes up and the house flares blue and
+silver: Wotan takes his daughter in his arms for the last time.
 
-His grief (Donington 82) in the trombones and cellos, in E, the horns under it: every long note a wave of his
-deep blue rolling out from the two of them to both ends of the roofline, while her silver burns steady at the
-heart of it. Then love as fulfilment (Donington 90c) soars in the violins and horns, up and up to its high E
-flat: the glow builds over the whole house, and at each peak of the line the roof flashes silver-white, the
-emotional summit of the whole opera, before it settles.
+The music is Wagner's own: Act III, bars 1492 to 1530, as Solti's 1958 Vienna Philharmonic recording takes it, from
+the great orchestral climax before the farewell, through "Leb wohl", the three cries of "Leb wohl! Leb wohl! Leb
+wohl!" over the falling bass, the tender "Muß ich dich meiden" and the second surge ("noch Met beim Mahl"), to the
+hush before "du lachende Lust meines Auges". The notes come from the Wagner Ring Dataset's piano reduction of the
+score (pixelhome/ring.py), orchestrated by hand and register: the right hand's soaring octaves on violins with
+flutes and piccolo on top, the left hand's harmony on horns, trombones and, at the climaxes, trumpets, the bass on
+cellos, basses and tuba, the timpani and cymbals on the loudest bass accents. Over it the stage adds what the
+house shows: the wind on the mountain top, a cymbal swell rising into each flare and a crash, gong and drum as it
+breaks, a timpani roll under each wave of blue, and a glint of glockenspiel and triangle on each white flash. Here
+the music leads: the effects stay well back throughout, lifting a little only with the flares and the climaxes, and
+all but vanishing under "Muß ich dich meiden" and the hush.
 
-Tenderly, her love in its second form (Donington 87a) on a horn over the strings in G: Wotan moves to her and
-his blue folds round her silver until the two lights are one, the house breathing slow blue and silver around
-them. To close, love as fulfilment once more on an oboe, softly, and the glow sinks back to the two figures
-holding each other on the rock at evening.
+The lights follow the real notes. While the orchestra blazes the whole house surges with his blue and her silver,
+and every loud high note of the violins flashes the roof silver-white. "Leb wohl!" is one flare across the house.
+Through the farewell every accent of the bass rolls a wave of his deep blue out from the two of them to both ends of
+the roofline, the violins' line filling the house as far as it climbs; each "Leb wohl!" of the three is a flare.
+Tenderly ("Muß ich dich meiden") his blue folds round her silver and the house breathes slow blue and silver round
+them; then the second surge floods the house again, and it sinks back to the two figures holding each other on the
+rock at evening.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK27'
 TITLE = "Wotan's Farewell"
@@ -27,16 +35,17 @@ DESCRIPTION = ('Wotan takes his daughter in his arms for the last time and says 
 VOICEOVER = ('Farewell, you brave and glorious child. '
              'A father holds his daughter one last time.')
 
-T_LEB = 2.0                                 # "Leb wohl!"
-T_GRIEF = 4.5                               # Wotan's grief
-GBEAT = 0.8
-T_LFC = 28.0                                # love as fulfilment, soaring
-FBEAT = 0.9
-T_LOVEB = 42.0                              # her love, second form
-LBEAT = 1.0
-T_LFC2 = 63.5                               # love as fulfilment, softly
-F2BEAT = 1.05
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1492-1530, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+T_LEB = BAR[1497]                           # "Leb wohl, du kühnes, herrliches Kind!"
+T_FARE = BAR[1498]                          # the farewell theme, the violins' octaves soaring
+T_THREE = BAR[1506]                         # "Leb wohl! Leb wohl! Leb wohl!"
+LEBS = [BAR[1506], BAR[1508], BAR[1510]]
+T_TENDER = BAR[1512]                        # "Muß ich dich meiden"
+T_SURGE = BAR[1519]                         # the second surge, up to "noch Met beim Mahl"
+T_PEAK = BAR[1524]
+T_HUSH = BAR[1527]
+D = EX['seconds']
 T0 = 80.0 * 26                              # the opera's clock at our start
 
 WOTAN = hexc('#1a3cff')
@@ -74,44 +83,33 @@ def stage(d, ta, porch):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). 'bass' is the left hand below
+    C3, 'high' the right hand from C#6 up, 'line' the rest of the right hand, 'mid' the rest of the left."""
     N = []
+    for t, d, m, v, h in EX['notes']:
+        part = ('high' if m >= 85 else 'line') if h == 0 else ('bass' if m < 48 else 'mid')
+        N.append((t, d, m, v, part, h))
+    return N
 
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
 
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3', 'E4', 'Ab4'):
-        add(T_LEB, 2.8, m, 116, 'leb')
-    add(T_LEB, 2.0, 'E2', 124, 'hit')
-    for t, m, v, d in play('wotan_grief', T_GRIEF, GBEAT, 0, 104):
-        add(t, d, m, v, 'grief', 'w')
-    for b, ms, dur in ((0, ('E2', 'B2', 'G3'), 4), (4, ('B1', 'Gb2', 'Eb3'), 8), (12, ('C2', 'G2', 'E3'), 4),
-                       (16, ('D2', 'A2', 'F3'), 4), (20, ('A1', 'E2', 'C3'), 4), (24, ('E2', 'B2', 'Ab3'), 4.5)):
-        for m in ms:
-            add(T_GRIEF + b * GBEAT, dur * GBEAT, m, 74, 'griefbed')
-    for t, m, v, d in play('love_fulfilled_c', T_LFC, FBEAT, 0, 112):
-        add(t, d, m, v, 'soar')
-    for b, ms, dur in ((0, ('A1', 'E2', 'A2', 'Db3', 'E3'), 3), (3, ('D2', 'A2', 'D3', 'Gb3'), 2),
-                       (5, ('E2', 'B2', 'D3', 'Ab3'), 1), (6, ('B1', 'Gb2', 'A2', 'Eb3'), 2),
-                       (8, ('E2', 'B2', 'E3', 'Ab3'), 1), (9, ('B1', 'Gb2', 'A2', 'Eb3'), 4)):
-        for m in ms:
-            add(T_LFC + b * FBEAT, dur * FBEAT, m, 86, 'soarbed')
-    for b in (0, 3, 9):
-        add(T_LFC + b * FBEAT, 1.5, 'E2' if b < 9 else 'B1', 108 + 6 * (b == 9), 'hit')
-    add(T_LFC + 7 * FBEAT, 2 * FBEAT, 'B1', 96, 'roll')
-    for t, m, v, d in play('brunnhilde_love_b', T_LOVEB, LBEAT, 0, 96):
-        add(t, d, m, v, 'loveb', 'b')
-    for b, ms, dur in ((0, ('Eb2', 'Bb2', 'G3'), 6), (6, ('G2', 'D3', 'B3'), 5), (11, ('C2', 'G2', 'E3'), 3),
-                       (14, ('D2', 'A2', 'Gb3'), 2), (16, ('G2', 'D3', 'B3', 'G4'), 4.5)):
-        for m in ms:
-            add(T_LOVEB + b * LBEAT, dur * LBEAT, m, 66, 'lovebed')
-    for t, m, v, d in play('love_fulfilled_c', T_LFC2, F2BEAT, -12, 84):
-        add(t, d, m, v, 'soft', 'b')
-    for m in ('A1', 'E2', 'A2', 'Db3', 'E3'):
-        add(T_LFC2, 9 * F2BEAT, m, 58, 'softbed')
-    for m in ('E2', 'B2', 'E3', 'Ab3'):
-        add(T_LFC2 + 9 * F2BEAT, D - 0.6 - T_LFC2 - 9 * F2BEAT, m, 56, 'softbed')
-    return sorted(N, key=lambda e: e[0])
+def energy(N, F):
+    """Per frame: how loud and busy the orchestra is, 0..1 (velocity-weighted notes, smoothed)."""
+    e = np.zeros(F)
+    for t, d, m, v, part, h in N:
+        f0, f1 = int(t / DT), int(min(t + max(d, 0.15), D) / DT) + 1
+        e[f0:f1] += (v / 127) ** 2 / max(1, f1 - f0) ** 0.5
+    k = np.exp(-np.arange(-40, 41) ** 2 / (2 * 14 ** 2))
+    e = np.convolve(e, k / k.sum(), 'same')
+    return np.clip(e / np.percentile(e, 97), 0, 1)
+
+
+def accents(ts, gap):
+    """Onsets at least gap seconds apart."""
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
 
 
 def follow(target, rate):
@@ -138,10 +136,10 @@ def choreography(G):
         rate[k][m] = r
 
     set_('w', 0, D, at(G, 'Porch Front', 0.36), 2.0)
-    set_('w', T_LEB, T_LOVEB, at(G, 'Porch Front', 0.4), 1.0)
-    set_('w', T_LOVEB, D, at(G, 'Porch Front', 0.45), 0.45)
+    set_('w', T_LEB, T_TENDER, at(G, 'Porch Front', 0.4), 1.0)
+    set_('w', T_TENDER, D, at(G, 'Porch Front', 0.45), 0.45)
     set_('b', 0, D, at(G, 'Porch Front', 0.47), 2.0)
-    set_('b', T_LOVEB, D, at(G, 'Porch Front', 0.5), 0.45)
+    set_('b', T_TENDER, D, at(G, 'Porch Front', 0.5), 0.45)
     pos = {k: follow(tgt[k], rate[k]) for k in 'wb'}
     pos['t'] = t
     return pos
@@ -152,18 +150,18 @@ def render(G, seed=27):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     d = G.pd
-    L = G.length
     C = choreography(G)
     N = compose()
+    E = energy(N, F)
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
     tw = Flicker(np.random.default_rng(2701), G.N, 1.0, 4.0)
-    grief = [(e[0], e[1]) for e in N if e[4] == 'grief']
-    gt = np.array([g[0] for g in grief])
-    gl_long = [g[0] for g in grief if g[1] >= 2.5 * GBEAT]
-    soar = [(e[0], e[2]) for e in N if e[4] == 'soar']
-    st = np.array([s[0] for s in soar])
-    peaks = [s[0] for s in soar if s[1] >= note('A5')]
-    lb = np.array([e[0] for e in N if e[4] in ('loveb', 'soft')])
+    waves = accents([e[0] for e in N if e[4] == 'bass' and e[3] >= 80 and T_FARE - 0.5 <= e[0] < T_HUSH], 0.9)
+    peaks = accents([e[0] for e in N if e[4] == 'high' and e[3] >= 95], 0.45)
+    line = sorted((e[0], e[2]) for e in N if e[4] in ('line', 'high'))
+    lt = np.array([x[0] for x in line])
+    lm = np.array([x[1] for x in line])
+    onsets = np.array(sorted({round(e[0], 2) for e in N}))
+    flares = [T_LEB] + LEBS + [T_PEAK]
 
     def recent(ts, t, tau, span=3.0):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -172,62 +170,70 @@ def render(G, seed=27):
     for f in range(F):
         t = f * DT
         ta = t + T0
+        e = E[f]
         fr = stage(d, ta, porch)
         pw, pb = C['w'][f], C['b'][f]
         mid = 0.5 * (pw + pb)
         dm = np.abs(d - mid)
+        hit = recent(onsets, t, 0.18, 1.0)
 
-        # the embrace: his blue over the whole house, carried over from WK26 and swelling with the farewell
-        emb = (0.24 + 0.5 * smoothstep(T_LEB, T_LEB + 0.6, t) + 0.15 * smoothstep(T_LFC, T_LFC + 9, t)
-               - 0.2 * smoothstep(T_LFC + 11, T_LOVEB + 4, t) - 0.45 * smoothstep(T_LFC2, D - 2, t))
-        wide = 1800.0 - 900 * smoothstep(T_LFC2, D - 2, t)
+        # the embrace: his blue over the whole house, as wide and bright as the orchestra is loud
+        hush = smoothstep(T_HUSH - 1, D - 1, t)
+        wide = 500 + 1500 * e * (1 - 0.5 * hush)
         g = np.exp(-(dm / wide) ** 2)
-        fr *= (1 - 0.3 * emb * g)[:, None]
-        fr += light(EMBRACE, emb * 0.45 * g * (0.8 + 0.2 * np.sin(2 * np.pi * (d / 300 - 0.2 * ta))))
-        fr += light(SILVER, emb * 0.3 * np.exp(-(dm / 70) ** 2))
+        emb = (0.2 + 0.6 * e) * (1 - 0.4 * hush)
+        fr *= (1 - 0.45 * emb * g)[:, None]
+        wv = 0.6 + 0.4 * np.sin(2 * np.pi * (d / 300 - (0.2 + 0.4 * e) * ta))
+        fr += light(EMBRACE, emb * (0.5 + 0.15 * hit) * g * wv)
+        fr += light(SILVER, emb * 0.35 * np.exp(-(dm / (70 + 200 * e)) ** 2))
 
-        # "Leb wohl!": the flare
-        if T_LEB <= t < T_LEB + 3:
-            a = 0.6 * np.exp(-(t - T_LEB) / 0.35) + 0.4 * np.exp(-(t - T_LEB) / 1.2)
-            fr += light(EMBRACE, 0.85 * a * np.ones(G.N)) + light(SILVER, 0.75 * a * np.exp(-(dm / 600) ** 2))
+        # the opening blaze: silver surging out and back across the house with the chords
+        blaze = 1 - smoothstep(T_LEB - 1, T_LEB + 2, t)
+        if blaze > 0:
+            r = 1700 * (0.5 + 0.5 * np.sin(2 * np.pi * t / 4.2 - np.pi / 2))
+            fill = smoothstep(r + 250, r - 250, dm)
+            fr += light(SILVER, blaze * e * (0.35 + 0.3 * hit) * fill) + light(WOTAN, blaze * e * 0.5 * (1 - fill))
 
-        # his grief: each long note a wave of deep blue rolling out to both ends
-        for ts in gl_long:
-            if ts <= t < ts + 3.5:
+        # "Leb wohl!" (and each of the three, and the peak of the second surge): a flare across the house
+        for tf in flares:
+            if tf <= t < tf + 3:
+                a = 0.6 * np.exp(-(t - tf) / 0.35) + 0.4 * np.exp(-(t - tf) / 1.2)
+                fr += light(EMBRACE, 0.85 * a * np.ones(G.N)) + light(SILVER, 0.75 * a * np.exp(-(dm / 600) ** 2))
+
+        # the bass: each accent a wave of deep blue rolling out to both ends
+        for ts in waves:
+            if ts <= t < ts + 3.0:
                 age = t - ts
-                r = 1500 * smoothstep(0, 3.0, age)
-                band = np.exp(-((dm - r) / 200) ** 2) * (1 - age / 3.5)
-                fr += light(WOTAN, 0.75 * band) + light(WOTAN_SOFT, 0.3 * band ** 2)
-        gp = recent(gt, t, 0.5)
+                r = 1600 * smoothstep(0, 2.6, age)
+                band = np.exp(-((dm - r) / 180) ** 2) * (1 - age / 3.0)
+                fr += light(WOTAN, 0.8 * band) + light(WOTAN_SOFT, 0.3 * band ** 2)
 
-        # the soaring: the glow builds over the whole house; silver-white flashes at the peaks
-        soarl = (0.5 + 0.5 * smoothstep(T_LFC + 2, T_LFC + 9, t)) * smoothstep(T_LFC - 0.5, T_LFC + 1.5, t) * (1 - smoothstep(T_LFC + 11, T_LOVEB + 3, t))
-        if soarl > 0:
-            sp = recent(st, t, 0.4)
-            i = max(int(np.searchsorted(st, t, side='right')) - 1, 0)
-            reach = 250 + 1500 * np.clip((soar[i][1] - note('B4')) / (note('Eb6') - note('B4')), 0, 1)
+        # the violins' line: the glow fills the house as far as the line climbs
+        sing = smoothstep(T_FARE - 1, T_FARE + 1, t) * (1 - smoothstep(T_TENDER - 1, T_TENDER + 2, t)) \
+            + smoothstep(T_SURGE - 1, T_SURGE + 2, t) * (1 - smoothstep(T_HUSH - 1, T_HUSH + 2, t))
+        if sing > 0 and len(lt):
+            i = max(int(np.searchsorted(lt, t, side='right')) - 1, 0)
+            reach = 250 + 1500 * np.clip((lm[max(0, i - 6):i + 1].max() - 64) / (88 - 64), 0, 1)
             fill = smoothstep(reach + 200, reach - 200, dm)
-            wv = 0.6 + 0.4 * np.sin(2 * np.pi * (dm / 500 - 0.35 * ta))
-            fr *= (1 - 0.4 * soarl * fill)[:, None]
-            fr += light(SILVER, soarl * (0.55 + 0.3 * sp) * wv ** 2 * fill) + light(EMBRACE, soarl * 0.65 * (1 - wv ** 2) * fill)
-            fr += light(WOTAN, soarl * 0.35 * (1 - fill))
-            fr += light(GLINT, soarl * 0.5 * (rng.random(G.N) < 0.05) * fill)
+            sw = 0.6 + 0.4 * np.sin(2 * np.pi * (dm / 500 - 0.35 * ta))
+            fr *= (1 - 0.4 * sing * fill)[:, None]
+            fr += light(SILVER, sing * (0.3 + 0.35 * e) * sw ** 2 * fill) + light(EMBRACE, sing * 0.55 * (1 - sw ** 2) * fill)
+            fr += light(GLINT, sing * 0.5 * (rng.random(G.N) < 0.04 + 0.04 * e) * fill)
         for ts in peaks:
-            if ts <= t < ts + 1.5:
-                a = np.exp(-(t - ts) / 0.3)
-                fr += light(WHITE, 0.85 * a * np.ones(G.N)) + light(SILVER, 0.5 * np.exp(-(t - ts) / 0.8) * np.ones(G.N))
+            if ts <= t < ts + 1.2:
+                a = np.exp(-(t - ts) / 0.25)
+                fr += light(WHITE, 0.8 * a * np.exp(-(dm / 900) ** 2)) + light(SILVER, 0.4 * np.exp(-(t - ts) / 0.7) * np.ones(G.N))
 
         # tender: the house breathing slow blue and silver round them
-        tender = smoothstep(T_LOVEB - 2, T_LOVEB + 3, t) * (1 - 0.7 * smoothstep(T_LFC2, D - 2, t))
+        tender = smoothstep(T_TENDER - 1, T_TENDER + 2, t) * (1 - smoothstep(T_SURGE, T_SURGE + 4, t)) + 0.8 * hush
         if tender > 0:
-            lp = recent(lb, t, 0.9)
-            br = 0.5 + 0.5 * np.sin(2 * np.pi * (dm / 900 - 0.07 * ta))
-            fr += light(mix(SILVER, WARM, 0.4), tender * (0.12 + 0.1 * lp) * br ** 2 * (1 - 0.5 * porch))
-            fr += light(WOTAN, tender * 0.38 * (1 - br) * (0.6 + 0.4 * tw(ta)))
+            br = 0.5 + 0.5 * np.sin(2 * np.pi * (dm / 900 - 0.09 * ta))
+            fr += light(mix(SILVER, WARM, 0.4), tender * (0.26 + 0.15 * hit) * br ** 2 * (1 - 0.4 * porch))
+            fr += light(WOTAN, tender * 0.6 * (1 - br) * (0.6 + 0.4 * tw(ta)))
 
         # Wotan and Brünnhilde
         wc = mix(WOTAN, WOTAN_SOFT, 0.75)
-        fr += light(wc, (0.85 + 0.15 * gp) * np.exp(-((d - pw) / (24 + 10 * gp)) ** 2) + 0.375 * np.exp(-((d - pw) / 120) ** 2))
+        fr += light(wc, (0.85 + 0.15 * hit) * np.exp(-((d - pw) / (24 + 10 * hit)) ** 2) + 0.375 * np.exp(-((d - pw) / 120) ** 2))
         bc = mix(SILVER, WARM, 0.7)
         fr += light(bc, 0.85 * np.exp(-((d - pb) / 20) ** 2) + 0.32 * np.exp(-((d - pb) / 80) ** 2))
         gl = (rng.random(G.N) < 0.09) * np.exp(-((d - pb) / 40) ** 2)
@@ -236,105 +242,51 @@ def render(G, seed=27):
     return np.clip(out, 0, 1)
 
 
-def score(M, G):
-    from pixelhome.audio import SR
+def house_pan(G):
+    """Path distance -> left/right across the facade, as heard from the street."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
+    return lambda dd: float(0.85 * (2 * (np.interp(dd, ds, xs) - x0) / (x1 - x0) - 1))
 
-    def pan_at(dd):
-        x = np.interp(dd, ds, xs)
-        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
+def score(M, G):
+    """Wagner's notes, orchestrated from the piano reduction; fullest in the two climaxes. Over it, what the house
+    shows: the mountain wind round the rock, a cymbal swell rising into every flare and a crash, gong and drum as it
+    breaks, a rolling timpani under each wave of blue, and a glint of glockenspiel and triangle on each white flash."""
+    o = Orchestra(M, level=2.3)
+    pan_at = house_pan(G)
     C = choreography(G)
-    pf = pan_at(at(G, 'Porch Front', 0.5))
+    N = compose()
+    mid = lambda t: pan_at(0.5 * (np.interp(t, C['t'], C['w']) + np.interp(t, C['t'], C['b'])))
+    big = lambda t: t < T_LEB + 1 or T_THREE <= t < T_TENDER or T_PEAK - 2 <= t < T_HUSH
+    o.tutti(EX['notes'], size=lambda t: 1.0 if big(t) else 0.3 if T_TENDER <= t < T_SURGE or t >= T_HUSH else 0.65)
+    for t, d, m, v, part, h in N:
+        if part == 'bass' and v >= 110 and big(t):
+            o.hit('timpani', t, v - 10, pitch=(m - 40) * 0.5, gain=0.45)
+    for t in (BAR[1495], T_LEB, T_PEAK):
+        o.hit('crash', t, 110, gain=0.45)
+    o.hit('cymbal swell', BAR[1494] - 1.5, 90, gain=0.35)
 
-    def pan_of(who, t):
-        return pan_at(np.interp(t, C['t'], C[who]))
-
-    for name, gain, rev in (('strings', 0.17, 0.45), ('low', 0.17, 0.28), ('brass', 0.17, 0.4), ('winds', 0.2, 0.45),
-                            ('perc', 0.15, 0.38)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    cym = M.hits('Percussion/susCymb1-cresc-Median_v1.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'leb':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d, release=1.0), t, 1.0, pf)
-                hold('low', cb, m + 12 * (m < note('E2')), t, t + d, v - 10, pf, rise=0.05, fall=1.5, gain=0.7)
-            elif m < note('C4'):
-                M.add('brass', tbn.play(m, v, dur=d, release=1.0), t, 0.9, pf - 0.15)
-                M.add('brass', horn.play(m + 12, v - 6, dur=d, release=1.0), t, 0.8, pf + 0.15)
-            else:
-                M.add('strings', vn.play(m, v, dur=d, release=1.0), t, 0.9, -0.4 + 0.8 * ((m * 7) % 12) / 11)
-        elif part == 'hit':
-            M.add('perc', timp.play(v, pitch=-2), t, 1.0, pf)
-            M.add('perc', crash.play(v), t, 0.8 if v > 115 else 0.5, pf)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, pf)
-            M.add('perc', cym.play(84), t - 1.0, 0.5, pf)
-        elif part == 'grief':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pan_of('w', t))
-            M.add('low', vc.play(m, v - 8, dur=d * 1.05, release=0.6), t, 0.8, pan_of('w', t) - 0.2)
-        elif part == 'griefbed':
-            if m < note('C3'):
-                hold('low', cb, m, t, t + d, v, pf, rise=0.4, fall=1.2, gain=0.8)
-                M.add('low', tuba.play(m, v - 14, dur=d, release=0.8), t, 0.5, pf)
-            else:
-                hold('brass', horn, m, t, t + d, v - 10, pf + 0.3, rise=0.5, fall=1.2, gain=0.55)
-                hold('strings', va, m, t, t + d, v - 6, pf - 0.3, rise=0.5, fall=1.2, gain=0.6)
-        elif part == 'soar':
-            M.add('strings', vn.play(m, v, dur=d * 1.08, release=0.7), t, 1.1, -0.25)
-            M.add('strings', vn.play(m - 12, v - 10, dur=d * 1.08, release=0.7), t, 0.8, 0.25)
-            M.add('brass', horn.play(m - 12, v - 6, dur=d * 1.05, release=0.6), t, 0.9, pf)
-            if m >= note('A5'):
-                M.add('brass', tpt.play(m - 12, v - 8, dur=d, release=0.6), t, 0.7, pf + 0.2)
-        elif part == 'soarbed':
-            if m < note('C3'):
-                hold('low', cb, m + 12 * (m < note('C2')), t, t + d, v, pf, rise=0.2, fall=1.0, gain=0.8)
-                M.add('low', tuba.play(m, v - 10, dur=d, release=0.6), t, 0.6, pf)
-            else:
-                hold('strings', va if m < note('A3') else vc, m, t, t + d, v - 4, -0.3 + 0.6 * ((m * 5) % 12) / 11,
-                     rise=0.2, fall=1.0, gain=0.6)
-                M.add('brass', tbn.play(m, v - 14, dur=d, release=0.6), t, 0.5, pf)
-            if m == note('A2') or m == note('Gb2') or m == note('B2'):
-                for i, x in enumerate((m, m + 7, m + 12, m + 16, m + 19, m + 24)):
-                    M.add('strings', harp.play(x + 12, 84), t + 0.08 * i, 0.9, -0.6 + 0.24 * i)
-        elif part == 'loveb':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pan_of('b', t))
-            M.add('strings', vn.play(m, v - 22, dur=d * 1.05, release=0.6), t, 0.5, pan_of('w', t))
-        elif part == 'lovebed':
-            s = cb if m < note('C3') else va if m < note('D4') else vn
-            hold('strings', s, m, t, t + d, v, pf + 0.25 * ((m % 3) - 1), rise=1.0, fall=1.4, gain=0.75)
-        elif part == 'soft':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pan_of('b', t))
-        elif part == 'softbed':
-            s = cb if m < note('C3') else va
-            hold('strings', s, m, t, t + d, v, pf + 0.25 * ((m % 3) - 1), rise=1.5, fall=1.5, gain=0.7)
+    # the Farewell's music must be clear: the wind stays well back, lifting a little into the opening blaze and
+    # the second surge, almost gone under "Muß ich dich meiden" and in the hush
+    o.effects([(0, -8), (T_LEB + 1, -8), (T_FARE, -14), (T_TENDER, -18), (T_SURGE, -14), (T_PEAK, -10),
+               (T_HUSH, -18), (D, -20)])
+    # the wind on the mountain top, gusting harder in the climaxes, dying to a breath in the hush
+    o.wind(0, D, level=lambda tt: 0.45 + 0.35 * np.array([big(x) for x in tt]) - 0.25 * smoothstep(T_HUSH, D, tt),
+           pan=-0.3)
+    # every flare: a swell rising into it, then crash, gong and drum where the two of them stand
+    for k, tf in enumerate([T_LEB] + LEBS + [T_PEAK]):
+        o.hit('cymbal swell', tf - 2.2, 90, gain=0.3, pan=mid(tf))
+        o.hit('crash', tf, 108, gain=0.35, pan=mid(tf))
+        o.hit('gong', tf + 0.02, 96 + 4 * k, gain=0.25)
+        o.hit('bass drum', tf, 110, gain=0.4)
+    # the waves of blue rolling out to both ends: a timpani roll each
+    waves = accents([e[0] for e in N if e[4] == 'bass' and e[3] >= 80 and T_FARE - 0.5 <= e[0] < T_HUSH], 0.9)
+    for ts in waves:
+        o.hit('timpani roll', ts, 74, pitch=-3, gain=0.22, pan=mid(ts))
+    # the white flashes: a glint of glockenspiel and triangle
+    tri = M.hits('Percussion/Triangle3-Hit_v2*.wav')
+    for ts in accents([e[0] for e in N if e[4] == 'high' and e[3] >= 95], 0.45):
+        o.play('glock', 84, ts, 0.3, 90, mid(ts) + 0.3, 0.3)
+        M.add('perc', tri.play(90), ts, 0.3, mid(ts) - 0.3)

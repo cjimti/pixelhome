@@ -261,9 +261,33 @@ class Mix:
         self.buses = {}
         self.plan = plan            # octaves to drop each instrument, by creation order; None on the probe pass
         self.voices = []
+        self.ducks = []
+        self.faders = {}
 
     def bus(self, name, gain=1.0, pan=0.0, reverb=0.15):
         self.buses[name] = dict(sig=np.zeros((2, self.n)), gain=gain, pan=pan, reverb=reverb)
+
+    def duck(self, bus, keys, margin=3.0, floor=-10.0):
+        """Keep a bus (sound effects) under the music: wherever it would rise above the key buses' level less margin dB,
+        it is turned down, by floor dB at most; in the music's gaps it plays at full level."""
+        self.ducks.append((bus, keys, margin, floor))
+
+    def fader(self, bus, points):
+        """Ride a bus's level by hand: points [(t, dB), ...], eased between, held before the first and after the last."""
+        self.faders[bus] = sorted(points)
+
+    def _duck_gain(self, sig, key, margin, floor):
+        hop, win = int(0.01 * SR), int(0.3 * SR)
+        db = lambda x: 10 * np.log10(np.convolve((x ** 2).mean(axis=0), np.ones(win) / win, 'same')[::hop] + 1e-12)
+        k, f = db(key), db(sig)
+        present = np.clip((k + 55) / 15, 0, 1)                  # is the music playing at all
+        want = present * np.clip(k - margin - f, floor, 0)
+        g = np.empty_like(want)                                 # quick to duck, slow to recover
+        a, r, cur = np.exp(-1 / 3), np.exp(-1 / 40), 0.0
+        for i, w in enumerate(want):
+            cur = a * cur + (1 - a) * w if w < cur else r * cur + (1 - r) * w
+            g[i] = cur
+        return np.interp(np.arange(sig.shape[1]), np.arange(len(g)) * hop, 10 ** (g / 20))
 
     def add(self, bus, sig, t=0.0, gain=1.0, pan=None):
         b = self.buses[bus]
@@ -305,8 +329,18 @@ class Mix:
         import pedalboard as pb
         dry = np.zeros((2, self.n))
         send = np.zeros((2, self.n))
-        for b in self.buses.values():
-            s = _pan(b['sig'], b['pan']) * b['gain']
+        sigs = {k: _pan(b['sig'], b['pan']) * b['gain'] for k, b in self.buses.items()}
+        for bus, pts in self.faders.items():
+            if bus in sigs and pts:
+                tt = np.arange(self.n) / SR
+                ts, ds = np.array([p[0] for p in pts]), np.array([p[1] for p in pts])
+                sigs[bus] = sigs[bus] * 10 ** (np.interp(tt, ts, ds) / 20)
+        for bus, keys, margin, floor in self.ducks:
+            if bus in sigs:
+                key = sum(sigs[k] for k in keys if k in sigs)
+                sigs[bus] = sigs[bus] * self._duck_gain(sigs[bus], key, margin, floor)
+        for k, b in self.buses.items():
+            s = sigs[k]
             dry += s
             send += s * b['reverb']
         verb = pb.Pedalboard([pb.HighpassFilter(250), pb.Reverb(room_size=0.82, damping=0.45, wet_level=1.0,

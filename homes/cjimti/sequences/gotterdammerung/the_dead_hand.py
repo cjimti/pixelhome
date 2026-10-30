@@ -1,26 +1,39 @@
 """The Dead Hand: night, the hall on the Rhine, the procession arrived. The body lies in the middle of Porch Front
-with the torches close round it and Gunther beside it. Gutrune has been waiting up, a rose light that rises at
-Right, flickering with dread, while her motif (Donington 40) turns anxious on the oboe. Hagen bursts in from the
-free end of Right, "Hoiho! Wake up!", a violet comet, and his falling tritone (61a) knocks the house dark. She sees
-the body and screams: a flash of rose over the whole house, and her light collapses where she stands.
+with the torches close round it and Gunther beside it. Gutrune has been waiting up, a rose light at Right.
 
-Hagen claims the Ring: the Ring (8) throws gold rings out of the body, and Gunther stands between them. They fight
-across the porch, gold against violet, four clashes that light the whole house in turn and spray sparks; then
-Hagen's blow, the house drowned in violet and black, and Gunther's gold shatters into sparks flying to both ends
-and goes out. Hagen reaches for the Ring, and the dead hand rises: a terrible emerald-white flare out of the body
-over every run, the Sword (45) blazing on the trumpets, and Hagen is thrown back along Right and out into the dark
-as the Curse (13) blares after him.
+The music is Wagner's own, Act III as Solti's 1958 Vienna Philharmonic recording takes it: bars 1033 to 1047
+(Hagen's "Hoiho! Hoiho! Wacht auf!" and his summons to bring light), 1058 to 1063 (Gutrune's "Was bringen die?"
+and the orchestra's blow as the body is borne in) and 1148 to 1165 (the brothers' fight for the Ring, "Her den
+Ring!", the dead man's hand rising on the great chord and the Sword motif, and Brünnhilde's solemn approach). The
+notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated on full strings,
+brass and woodwinds, the Sword on trumpets, Brünnhilde's coming on high woodwinds and violins. Hagen's calls are
+his own line from the Schott vocal score (archive.org gtterdmmerung00wagn_0, pp. 307-308), on trombones and a
+horn. On stage: the torches crackling up when he calls for light, a blow when he knocks the house dark, steel on
+every stroke of the fight, Gunther's fall, and the whole house gasping when the hand rises, a thunderclap and a
+rushing wind as Hagen is hurled back; then the effects fall away for Brünnhilde.
 
-Brünnhilde comes: a silver sweep in from the free end of Right the whole length of the house to the end of the
-porch, silver laid behind her. Her motif (88) rolls solemn silver waves over the hall; atonement (11) sounds
-softly on the Wagner tubas, and the first glow of the pyre comes up on the porch.
+Hagen bursts in from the free end of Right, "Hoiho!", a violet comet, each call a violet blast out of the dark,
+and the torches flare up at his "Lichte!". On the blow of bar 1058 his falling darkness knocks the house dark;
+Gutrune sees the body on the orchestra's great blow and screams: a flash of rose over the whole house, and her light
+collapses where she stands.
+
+Hagen claims the Ring: gold rings out of the body, and Gunther stands between them. They fight across the porch,
+gold against violet, every clash of the orchestra lighting the house in turn and spraying sparks; then Hagen's blow,
+the house drowned in violet and black, and Gunther's gold shatters into sparks and goes out. "Her den Ring!" Hagen
+reaches for it, and on the great chord the dead hand rises: a terrible emerald-white flare out of the body over
+every run, the Sword blazing steel along the roof on each of its notes, and Hagen is thrown back along Right and
+out into the dark.
+
+Brünnhilde comes on the high, hushed chords: a silver sweep in from the free end of Right the whole length of the
+house to the end of the porch, silver laid behind her, solemn silver waves rolling over the hall, and the first glow
+of the pyre comes up on the porch.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play, melody
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD27'
 TITLE = 'The Dead Hand'
@@ -30,21 +43,40 @@ DESCRIPTION = ("Siegfried's body is brought home. Hagen kills Gunther for the Ri
 VOICEOVER = ('They bring the hero home. Hagen kills for the Ring, but the dead hand will not let it go.')
 
 K = 5                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_GUTRUNE = 1.5                             # Gutrune, waiting
-T_HOIHO = 8.0                               # Hagen bursts in
-T_HAGEN = 11.5                              # his tritone
-T_SCREAM = 14.5                             # she sees the body
-T_RING = 20.0                               # the Ring, claimed
-CLASHES = [29.0, 31.0, 33.0, 34.6]          # Gunther and Hagen fight
-T_KILL = 36.5                               # Hagen's blow
-T_REACH = (40.0, 44.5)                      # Hagen reaches for the Ring
-T_HAND = 45.0                               # the dead hand rises
-T_CURSE = 47.5
-T_THROWN = (45.0, 53.0)                     # Hagen thrown back and out
-T_BRUNN = (55.0, 60.5)                      # Brünnhilde sweeps in
-T_MOTIF = 61.5
-T_ATONE = 68.0
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1033-1047, 1058-1063 and 1148-1165, Solti 1958
+D = EX['seconds']
+
+
+def when(m):
+    """Seconds into the excerpt at measure position m, in whichever spliced range holds it."""
+    for s in EX['segments']:
+        a, b = s['measures']
+        if a <= m < b:
+            bs = [(x, t) for x, t in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bs], [t for _, t in bs]))
+    return None
+
+
+T_GUTRUNE = 0.0                             # Gutrune, waiting
+HOIHOS = [when(b + 0.25) for b in (1033, 1034, 1041, 1042)]   # his calls
+T_HOIHO = HOIHOS[0]                         # Hagen bursts in
+BLASTS = HOIHOS + [when(1035.25), when(1036.25)]   # and "Wacht auf!"
+T_LIGHT = when(1037.25)                     # "Lichte! Lichte, helle Brände!": the torches flare
+T_HAGEN = when(1058)                        # his darkness
+T_SCREAM = when(1060)                       # the orchestra's blow: she sees the body
+T_RING = when(1149.4)                       # "Des Alben Erbe fordert so sein Sohn": the Ring, claimed
+CLASHES = accents(EX['notes'], when(1151.9), 57.3, vmin=100, n=4, space=0.8)    # Gunther and Hagen fight
+T_KILL = 57.6                               # Hagen's blow
+T_REACH = (when(1156.5), 61.29)             # "Her den Ring!"
+T_HAND = 61.29                              # the great chord: the dead hand rises
+T_CURSE = T_HAND
+T_THROWN = (T_HAND, T_HAND + 8.0)           # Hagen thrown back and out
+T_BRUNN = (74.47, 80.5)                     # Brünnhilde sweeps in on the hushed chords
+T_MOTIF = 82.0
+T_ATONE = when(1165)                        # "Schweigt eures Jammers"
+# Hagen's calls, from the vocal score: (bar, start, length in beats, note), 4/4
+CALLS = [(b, x, n, nm) for b in (1033, 1034, 1041, 1042) for x, n, nm in ((1, 1, 'Db4'), (2, 2, 'C4'))] + \
+        [(b, x, n, nm) for b in (1035, 1036) for x, n, nm in ((1, 1, 'C4'), (2, 2, 'C4'))]
 
 SIEGFRIED = hexc('#00ff40')
 HEAD = hexc('#e8ffe8')
@@ -219,43 +251,30 @@ def panner(G):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). Gutrune's question is
+    'gutrune', the right hand while Hagen claims the Ring 'ring', the low chord the hand rises on 'curse', the Sword's
+    long notes 'sword', Brünnhilde's approach 'brunn' and her first words 'atone'; the rest is 'tutti'. Hagen's
+    calls are 'hagen'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_HOIHO, 'C2', 58, 'trem')
-    for t, m, v, d in play('gutrune', T_GUTRUNE, 0.45, -12, 82):
-        add(t, d, m, v, 'gutrune')
-    for j, t0 in enumerate((T_HOIHO, T_HOIHO + 1.2)):
-        add(t0, 0.9 if j == 0 else 1.6, 'C3', 116, 'hoiho')
-    for t, m, v, d in play('hagen', T_HAGEN, 0.6, -12, 122):
-        add(t, d, m, v, 'hagen')
-    add(T_HAGEN, 0.1, 'C1', 120, 'blow')
-    add(T_SCREAM, 1.8, 'Bb5', 116, 'scream')
-    for t, m, v, d in play('ring', T_RING, 0.55, -12, 104):
-        add(t, d, m, v, 'ring')
-    add(T_RING, CLASHES[0] - T_RING, 'Gb2', 70, 'tense')
-    for j, t0 in enumerate(CLASHES):
-        add(t0, 0.4, ('C3', 'Db3', 'D3', 'Eb3')[j], 110 + 4 * j, 'clash', j)
-    for t, m, v, d in play('hagen', T_KILL, 0.5, -12, 126):
-        add(t, d, m, v, 'hagen')
-    add(T_KILL, 0.1, 'C1', 127, 'kill')
-    add(T_REACH[0], T_HAND - T_REACH[0], 'B1', 60, 'reach')
-    add(T_HAND, 0.1, 'C1', 127, 'hand')
-    for m in ('C3', 'Eb3', 'Gb3', 'A3'):                    # the horror chord
-        add(T_HAND, 2.5, m, 120, 'horror')
-    for t, m, v, d in play('sword', T_HAND + 0.4, 0.42, 0, 124):
-        add(t, d, m, v, 'sword')
-    for t, m, v, d in play('curse', T_CURSE, 0.35, 0, 110):
-        add(t, d, m, v, 'curse')
-    for m in ('Eb2', 'Bb2', 'Eb3', 'G3'):
-        add(T_BRUNN[0], D - T_BRUNN[0], m, 60, 'calm')
-    for t, m, v, d in play('brunnhilde', T_MOTIF, 0.7, -12, 100):
-        add(t, d, m, v, 'brunn')
-    for t, m, v, d in play('atonement', T_ATONE, 0.75, 0, 88):
-        add(t, d, m, v, 'atone')
+    for t, d, m, v, h in EX['notes']:
+        if when(1059) <= t < T_SCREAM - 0.05 and h == 0:
+            part = 'gutrune'
+        elif T_RING <= t < CLASHES[0] - 0.2 and h == 0:
+            part = 'ring'
+        elif T_HAND - 0.01 <= t < 63.9 and h == 1 and m >= note('C3'):
+            part = 'curse'
+        elif 63.9 <= t < 74.4 and h == 0 and d >= 0.4:
+            part = 'sword'
+        elif T_BRUNN[0] - 0.01 <= t < T_ATONE and h == 0:
+            part = 'brunn'
+        elif t >= T_ATONE:
+            part = 'atone'
+        else:
+            part = 'tutti'
+        N.append((t, d, m, v, part, h))
+    for b, x, n, name in CALLS:
+        t0 = when(b + x / 4)
+        N.append((t0, when(b + (x + n) / 4) - t0, note(name), 118, 'hagen', b))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -297,9 +316,11 @@ def render(G, seed=27):
     ring_on = sorted({e[0] for e in N if e[4] == 'ring'})
     curse = [e for e in N if e[4] == 'curse' and e[2] >= note('C3')]
     sword = sorted({e[0] for e in N if e[4] == 'sword'})
-    brunn = [(T_MOTIF + b * 0.7, m) for b, _, m in melody('brunnhilde')]
-    atone = sorted({e[0] for e in N if e[4] == 'atone'})
+    brunn = sorted({e[0]: (e[0], e[2]) for e in N if e[4] == 'brunn' and e[1] >= 0.35}.values())
+    atone = sorted({e[0] for e in N if e[4] == 'atone' and e[5] == 1})
     runs = ['Left', 'Right', 'Side', 'Porch Front', 'Porch Left', 'Porch Right']
+    pulses = [a for a in accents(EX['notes'], HOIHOS[0] + 1, T_HAGEN, vmin=80, n=3, space=0.45)
+              if min(abs(a - b) for b in BLASTS) > 0.6]
 
     for f in range(F):
         t = f * DT
@@ -313,11 +334,15 @@ def render(G, seed=27):
         # Gutrune waiting: rose ripples on her anxious motif
         for t0 in gut:
             fr = ring(fr, S, t, t0, pr, GUTRUNE, 0.85, speed=900, width=140, tau=0.8)
-        dread = smoothstep(T_GUTRUNE, T_GUTRUNE + 1.5, t) * (1 - smoothstep(T_HOIHO - 0.5, T_HOIHO + 0.5, t))
+        dread = smoothstep(T_GUTRUNE, T_GUTRUNE + 1.5, t) * (1 - smoothstep(T_SCREAM - 0.5, T_SCREAM + 0.3, t))
         fr += light(GUTRUNE, 0.55 * dread * (G.seg_of == 'Right') * (0.5 + 0.5 * np.sin(2 * np.pi * t / 1.3)) ** 2)
-        for t0 in (T_HOIHO, T_HOIHO + 1.2):         # Hoiho!: a violet blast out of the dark at each call
+        for t0 in BLASTS:                           # Hoiho! Wacht auf!: a violet blast out of the dark at each call
             fr = ring(fr, S, t, t0, L, HAGEN, 1.0, speed=1500, width=220, tau=1.0)
             fr = ring(fr, S, t, t0 + 0.1, L, TORCH, 0.8, speed=1300, width=80, tau=0.8)
+
+        for t0 in pulses:                           # the orchestra's strokes as the men come in: violet from Hagen
+            fr = ring(fr, S, t, t0, ph, HAGEN, 0.6, speed=1200, width=120, tau=0.6)
+            fr = ring(fr, S, t, t0 + 0.08, ph, TORCH, 0.45, speed=900, width=60, tau=0.5)
 
         # Hoiho!: Hagen bursts in as a violet comet; his tritone knocks the house dark
         if T_HOIHO <= t < T_HOIHO + 3:
@@ -385,7 +410,9 @@ def render(G, seed=27):
             fr = ring(fr, S, t, t0, p_body, GLINT, 0.5, speed=600, width=200, tau=1.2)
 
         # the torches, and the people
-        fr = torches(fr, S, T, TORCHES[0] * (1 - 0.4 * dark), pull=p_body, k=TORCHES[1])
+        lit = 0.35 + 0.65 * smoothstep(T_LIGHT, T_LIGHT + 2.5, t)        # "Lichte!": the torches flare up
+        fr = torches(fr, S, T, TORCHES[0] * lit * (1 - 0.4 * dark), pull=p_body,
+                     k=TORCHES[1] * smoothstep(T_LIGHT, T_HAGEN, t))   # the men gather round him
         if lr > 0:
             fr = figure(fr, S, pr, GUTRUNE, lr * (0.85 + 0.15 * np.sin(2 * np.pi * t / 0.45)) if t < T_SCREAM
                         else lr)
@@ -405,99 +432,51 @@ def render(G, seed=27):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes orchestrated from the piano reduction, Hagen's calls on trombones, and the stage's sounds."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.36, 0.25), ('strings', 0.31, 0.32), ('winds', 0.31, 0.35), ('brass', 0.35, 0.3),
-                            ('perc', 0.34, 0.3), ('fx', 0.15, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
     body = pan_at(at(G, *BODY_AT[:2]))
     gut = pan_at(at(G, *GUTRUNE_AT[:2]))
-    door = pan_at(at(G, 'Right', 0.95))
-    for t, d, m, v, part, k in compose():
-        if part == 'trem':
-            hold('low', ctrem, m, t, t + d, v, body, rise=0.8, fall=1.5, gain=0.5)
-        elif part == 'gutrune':
-            if d > 1.0:
-                hold('winds', oboe, m - 12, t, t + d, v, gut, rise=0.2, fall=0.8, gain=0.75)
-            else:
-                M.add('winds', oboe.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.85, gut)
-        elif part == 'hoiho':
-            hold('brass', horn, m, t, t + d, v, door, rise=0.05, fall=0.5, gain=0.8)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.3), t, 0.6, door)
-        elif part == 'hagen':
-            hold('low', tuba, m, t, t + d, v, body, rise=0.05, fall=1.0, gain=0.95)
-            M.add('brass', tbn.play(m + 12, v - 6, dur=d, release=0.4), t, 0.8, body)
-        elif part == 'blow':
-            M.add('perc', timp.play(v, pitch=-7), t, 1.0, body)
-            M.add('perc', crash.play(100), t, 0.6, body)
-        elif part == 'scream':
-            hold('strings', vtrem, m - 12, t, t + d, v, gut, rise=0.05, fall=0.6, gain=0.6)
-            M.add('perc', crash.play(110), t, 0.7, gut)
-            M.add('fx', whoosh(1.0, 6000, 900, 0.7, seed=5), t, 0.8, gut)
-        elif part == 'ring':
-            s = clar if m >= note('C4') else bsn
-            if d > 1.0:
-                hold('winds', s, m, t, t + d, v, body, rise=0.2, fall=0.8, gain=0.75)
-            else:
-                M.add('winds', s.play(m, v, dur=d * 1.05, release=0.25), t, 0.85, body)
-        elif part == 'tense':
-            hold('low', ctrem, m, t, t + d, v, body, rise=1.0, fall=0.5, gain=0.5)
-        elif part == 'clash':
-            M.add('perc', crash.play(v - 10), t, 0.6, body)
-            M.add('perc', timp.play(v, pitch=-3 - k), t, 0.8, body)
-            M.add('brass', tbn.play(m, v, dur=0.35, release=0.2), t, 0.8, body)
-        elif part == 'kill':
-            M.add('perc', gong.play(v), t, 0.9, body)
-            M.add('perc', timp.play(v, pitch=-8), t, 1.0, body)
-            M.add('fx', whoosh(0.5, 4000, 300, 0.9, seed=9), t - 0.15, 1.0, body)
-        elif part == 'reach':
-            hold('low', cb, m, t, t + d, v, body, rise=3.0, fall=0.2, gain=0.6)
-            hold('strings', vtrem, m + 36, t, t + d, v - 10, body, rise=3.0, fall=0.2, gain=0.35)
-        elif part == 'hand':
-            M.add('perc', gong.play(v), t, 1.0, body)
-            M.add('perc', crash.play(v), t, 0.9, body)
-            M.add('perc', timp.play(v, pitch=-5), t, 1.0, body)
-        elif part == 'horror':
-            hold('brass', tbn if m < note('Eb3') else horn, m, t, t + d, v, body, rise=0.03, fall=1.0, gain=0.7)
-            hold('strings', vtrem, m + 12, t, t + d, v - 10, body, rise=0.03, fall=1.0, gain=0.4)
-        elif part == 'sword':
-            if d > 1.0:
-                hold('brass', tpt, m - 12, t, t + d, v, body, rise=0.03, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', tpt.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.9, body)
-        elif part == 'curse':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, door, rise=0.1, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, door)
-            M.add('low', tuba.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.6, door)
-        elif part == 'calm':
-            hold('strings', vc if m >= note('Bb2') else cb, m, t, t + d, v, 0.0, rise=4.0, fall=1.5, gain=0.5)
-        elif part == 'brunn':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, -0.2, rise=0.2, fall=1.0, gain=0.75)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, -0.2)
-            M.add('strings', vln.play(m + 12, v - 18, dur=d * 1.05, release=0.3), t, 0.5, -0.2)
-        elif part == 'atone':
-            if m >= note('E3'):
-                hold('brass', horn, m - 12, t, t + d, v, body, rise=0.4, fall=1.0, gain=0.6)
-            else:
-                hold('low', tuba, m, t, t + d, v, body, rise=0.4, fall=1.0, gain=0.6)
-    M.add('fx', whoosh(5.5, 400, 3000, 0.6, seed=11), T_BRUNN[0], 0.6, 0.2)
+    door = pan_at(float(G.pd.max()))
+    o = Orchestra(M, level=2.0)
+    N = compose()
+    parts = {(round(t, 4), m, k): part for t, d, m, v, part, k in N}
+
+    def size(t):
+        return 0.4 if t >= T_BRUNN[0] else 0.75 if t < T_HAGEN else 1.0
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m, h))
+        if part == 'sword':                                 # the Sword, on trumpets over the horns
+            return [('trumpets', 0, 8, 0.9), ('horns', -12, 0, 0.6)]
+        if part == 'curse':                                 # the great chord the hand rises on
+            return [('trombones', 0, 4, 0.8), ('tuba', -12, 0, 0.6), ('cellos trem', 0, 0, 0.5)]
+        if part in ('brunn', 'atone') and h == 0:           # Brünnhilde's coming: high woodwinds, hushed violins
+            return [('flutes', -12 if m > 88 else 0, 4, 0.5), ('clarinets', -12, -4, 0.4), ('violins', -12, -8, 0.4)]
+        if part == 'gutrune':
+            return [('oboes', 0, 4, 0.6), ('violins', 0, -8, 0.4)]
+        return None
+
+    def pan(t, m):
+        return body if t >= T_HAGEN else door * 0.5
+    o.tutti(tidy([(t, d, m, v, k) for t, d, m, v, part, k in N if part != 'hagen']), size=size, role=role, pan=pan)
+    for t, d, m, v, part, k in N:                           # Hagen's calls
+        if part == 'hagen':
+            p = pan_at(where(G, t)[1][0])
+            o.play('trombones', m, t, d, v, p, 0.95)
+            o.play('horns', m, t, d, v - 12, p, 0.45)
+
+    # the stage
+    o.fire(T_LIGHT - 0.3, T_BRUNN[1], lambda tt: 0.25 + 0.2 * (tt < T_HAND), pan=body, crackle=10, seed=27)
+    o.boom(T_HAGEN, body, 0.7)                              # his darkness falls on the house
+    o.hit('crash', T_SCREAM, 118, gain=0.5, pan=gut)        # she sees the body
+    o.hit('scrape', T_SCREAM + 0.1, 110, gain=0.5, pan=gut)
+    for j, t0 in enumerate(CLASHES):                        # the fight
+        o.clash(t0, body + (0.15 if j % 2 else -0.15), 112 + 2 * j, 0.9)
+    o.boom(T_KILL, body, 0.9)                               # Gunther falls
+    o.hit('cymbal swell', T_HAND - 3.0, 100, gain=0.4, pan=body)
+    o.thunder(T_HAND, near=1.0, pan=body, gain=1.0)         # the hand rises: the whole house gasps
+    o.hit('gong', T_HAND + 0.02, 124, gain=0.6, pan=body)
+    o.wind(T_HAND, T_THROWN[1], lambda tt: np.exp(-(tt - T_HAND) / 3.0), pan=lambda tt: body + (door - body)
+           * smoothstep(T_HAND, T_THROWN[1], tt), seed=29)  # Hagen hurled back and out
+    o.effects([(0.0, -6.0), (T_HAGEN - 1, -6.0), (T_HAGEN, 0.0), (T_HAND + 6, 0.0), (T_BRUNN[0], -12.0),
+               (T_ATONE, -20.0)])

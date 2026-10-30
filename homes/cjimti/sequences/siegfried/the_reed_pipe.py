@@ -1,23 +1,31 @@
 """The Reed Pipe: broad day in the forest outside Fafner's cave, gold shafts of sun moving through the green.
 Siegfried lies under the lime tree at the middle of Left; the Woodbird, a hot magenta point, sits on Right and
-sings its motif (Donington 27), hopping on every note and throwing magenta ripples out over the house.
+its song flutters in the woodwinds, the bird hopping on every note and throwing magenta ripples over the house.
 
-He cuts a reed with his sword (a white flick of steel) to answer it. Three times he tries: a feeble sputter of
-pale green leaks out of him toward the bird and fizzles halfway, the oboe squawking off key, and each time the
-bird hops further off and answers with its own clear call (27a) in a bright magenta ring. He laughs and gives up,
-and blows his horn instead: Siegfried's horn call (48), three times, louder each time, every note an emerald
-sweep from him to both ends of the house, the last a full emerald blaze. The bird flies away out of the free end
-of Right.
+He cuts a reed with his sword (a white flick of steel) to answer it. Three times he tries, and the cor anglais
+squawks out his attempts just as Wagner wrote them, lost and off the mark: each note a feeble sputter of pale
+green that leaks out of him toward the bird and fizzles halfway, the last one a strangled high squawk, while the
+bird hops further off in the silences. He gives up and blows his horn instead: Siegfried's horn call rings out,
+faster and louder, every note an emerald sweep from him to both ends of the house and echoing back off the far
+end, the third phrase a full emerald blaze. The bird flies away out of the free end of Right.
 
-The horn has woken something. The dragon's motif (57) stirs in the tubas, slow, and the cave mouth smoulders
-redder with each note; the ground heaves ochre, and two red eyes open in the dark of the porch.
+The horn has woken something. The dragon's motif climbs out of the depths in the tubas and basses, and the cave
+mouth smoulders redder with each note; the ground heaves ochre, and two red eyes open in the dark of the porch.
+
+The music is Wagner's own: Act II, the woodwinds' birdsong in bars 897 to 899, the reed-pipe scene in bars 904
+to 914 and the end of the horn call to the dragon's waking in bars 989 to 1015, as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+birdsong on flutes and oboes over murmuring strings, the reed on the oboe, the horn call on a solo horn with its
+echo thrown back off the free end of Right, the dragon on tubas, trombones and basses over a timpani roll. The
+stage adds the sword's flick, a low growl in the earth as the dragon stirs and a gong and thunder of breath as
+its eyes open; the effects stay down under the bird and the horn and come up for the dragon.
 
 compose() holds every note; stage(), forest(), figure() and sparks() are Act II's forest and cave, shared word
 for word with SF11 on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF16'
 TITLE = 'The Reed Pipe'
@@ -28,15 +36,19 @@ VOICEOVER = ('A little bird sings to Siegfried. He tries to answer it on a reed 
              'So he blows his horn instead, and wakes the dragon.')
 
 K = 5                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_SONG = [1.5, 6.0]                         # the Woodbird sings
-T_CUT = 11.0                                # he cuts the reed
-T_TRY = [13.5, 22.5, 31.5]                  # three feeble tries on the reed
-T_LAUGH = 40.0
-T_HORN = [43.0, 49.0, 55.0]                 # the horn call, three times, louder each time
-T_FLY = 50.0                                # the bird flies off
-T_STIR = 61.0                               # the dragon's motif stirs
-T_EYES = 72.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 897-899, 904-914 and 989-1015, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_REED = BAR[904]                           # the reed-pipe scene starts where the birdsong breaks off
+T_CUT = T_REED - 0.55                       # he cuts the reed
+T_TRY = [BAR[904], BAR[907], BAR[911]]      # three tries on the reed
+T_LAUGH = BAR[914] + 2.4                    # the last squawk dies: he laughs and gives up
+T_HORN = [BAR[989], BAR[993], BAR[998]]     # the horn call's three phrases, faster and louder
+T_BLAZE = BAR[1002]                         # its last long notes: a full emerald blaze
+T_FLY = BAR[995]                            # the bird flies off
+T_WAKE = BAR[1004]                          # the depths answer
+T_STIR = BAR[1010]                          # the dragon's motif climbs
+T_EYES = BAR[1015]                          # two red eyes open
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -202,31 +214,24 @@ def breath(S, flick, src, side, a, reach=1500.0, hold=1.6):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Before the reed the right hand is
+    the woodwinds' birdsong ('song'), the left the murmur ('murmur'); the cor anglais's tries are the reed ('reed',
+    k = which try); then the horn call ('horn', k = its phrase); from the waking the high notes still answer on the
+    horn and everything below middle C is the dragon ('dragon'). 'rumble', 'growl' and 'eyes' are the stage."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_SONG):
-        for t, m, v, d in play('woodbird', t0, 0.42, 0, 92):
-            add(t, d, m, v, 'song', k)
-    add(T_CUT, 0.3, 'E6', 90, 'cut')
-    tries = [('F5', 'E5', 'Gb5', 'Eb5'), ('B4', 'Db5', 'C5', 'Bb4', 'C5'), ('Ab5', 'G5', 'A5', 'Gb5', 'G5', 'F5')]
-    for k, t0 in enumerate(T_TRY):
-        for j, m in enumerate(tries[k]):
-            add(t0 + j * 0.42 + 0.06 * (j % 2), 0.36, m, 70 + 6 * (j % 3), 'reed', k)
-        for t, m, v, d in play('woodbird_call', t0 + 4.2, 0.42, 0, 100):
-            add(t, d, m, v, 'call', k)
-    for j, m in enumerate(('G4', 'B4', 'D5', 'B4', 'G4')):
-        add(T_LAUGH + j * 0.22, 0.2, m, 84, 'laugh')
-    for k, t0 in enumerate(T_HORN):
-        for t, m, v, d in play('siegfried_horn', t0, 0.5, 5 + 7 * (k == 2), 96 + 10 * k):
-            add(t, d, m, v, 'horn', k)
-    for t, m, v, d in play('fafner', T_STIR, 0.75, 0, 84):
-        add(t, d, m, v, 'dragon')
-    add(T_STIR, D - T_STIR, 'Eb1', 70, 'rumble')
-    add(T_EYES, 0.5, 'C2', 110, 'eyes')
+    for t, d, m, v, h, *tr in tidy(EX['notes']):
+        if t < T_REED - 0.01:
+            part, k = ('song' if h == 0 else 'murmur'), None
+        elif t < T_HORN[0] - 0.01:
+            part, k = 'reed', sum(t >= x - 0.01 for x in T_TRY) - 1
+        elif t < T_WAKE - 0.01 or (m >= 60 and t < T_STIR - 0.01):
+            part, k = 'horn', min(2, sum(t >= x - 0.01 for x in T_HORN) - 1)
+        else:
+            part, k = 'dragon', None
+        N.append((float(t), float(d), int(m), int(v), part, k))
+    N.append((T_CUT, 0.3, note('E6'), 90, 'cut', None))
+    N.append((T_WAKE, D - T_WAKE, note('Eb1'), 70, 'rumble', None))
+    N.append((T_EYES, 0.5, note('C2'), 110, 'eyes', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -259,13 +264,17 @@ def render(G, seed=16):
     moves, perch = birdpath(G)
     me = at(G, 'Left', 0.5)
     notes = {p: [e for e in N if e[4] == p] for p in ('song', 'reed', 'call', 'horn', 'dragon', 'laugh')}
+    notes['laugh'] = [(T_LAUGH + 0.22 * j, 0.2, 60, 84, 'laugh', None) for j in range(5)]
+    # in the silences between his tries the bird mocks him: rings of magenta, no sound
+    notes['call'] = [(BAR[b] + 0.45 * j + 0.2, 0.3, note('E6'), 100, 'call', None)
+                     for b in (906, 908, 910) for j in range(int((BAR[b + 1] - BAR[b]) / 0.45) - 1)]
     flick = Flicker(rng, G.N, 3.0, 9.0)
-    lo, hi = note('Eb2'), note('Gb3')
+    lo, hi = note('F#1'), note('F3')
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        lv = {k: keys(t, [(0, LIT[k]), (T_STIR, LIT[k]), (D - 2, END[k])]) for k in LIT}
+        lv = {k: keys(t, [(0, LIT[k]), (T_WAKE, LIT[k]), (D - 2, END[k])]) for k in LIT}
         eyes = keys(t, [(T_EYES - 0.1, 0.0), (T_EYES + 0.15, 1.0), (T_EYES + 1.5, END['eyes'])])
         lv['eyes'] = eyes * (0.0 if T_EYES + 3.0 < t < T_EYES + 3.25 else 1.0)
         fr = forest(S, T, lv)
@@ -276,17 +285,21 @@ def render(G, seed=16):
             for t0, dur, m, v, _, k in notes[part]:
                 a = t - t0
                 if 0 <= a < 1.2 and m >= note('B4'):
-                    g = (0.75 if part == 'song' else 1.0) * np.exp(-a / 0.55)
+                    g = np.exp(-a / 0.55)
                     fr += light(BIRD, g * np.exp(-((np.abs(d - pb) - 1100 * a) / (70 + 90 * a)) ** 2))
                     fr += light(BIRD, 0.5 * g * np.exp(-((d - pb) / 45) ** 2))
 
-        # the reed: a feeble pale green sputter that fizzles halfway to the bird
+        # the reed: a pale green sputter that lurches toward the bird and fizzles halfway, in a puff of dull sparks
         for t0, dur, m, v, _, k in notes['reed']:
             a = t - t0
-            if 0 <= a < 0.6:
-                reach = 100 + 50 * k + 500 * a
-                fr += light(REED, 0.9 * np.exp(-a / 0.22) * np.exp(-((d - me - reach) / 45) ** 2))
-                fr += light(REED, 0.5 * np.exp(-a / 0.12) * np.exp(-((d - me) / 40) ** 2))
+            if 0 <= a < 1.4:
+                reach = (180 + 90 * k + 260 * ((m - 60) % 5) / 4) * min(1.0, a / 0.45)
+                g = np.exp(-max(a - 0.45, 0) / 0.25)
+                fr += light(REED, g * np.exp(-((d - me - reach) / (40 + 60 * a)) ** 2))
+                fr += light(REED, 0.6 * g * ((d > me) & (d < me + reach)) * np.exp(-(me + reach - d) / 120))
+                fr += light(REED, 0.7 * np.exp(-a / 0.15) * np.exp(-((d - me) / 40) ** 2))
+                if a > 0.45:
+                    fr += light(STONE, 0.8 * sparks(S, [(t0 + 0.45, 0.8, me + reach)], t, 160 + int(t0), 8, 0.12))
         if T_CUT <= t < T_CUT + 0.8:
             a = t - T_CUT
             fr += light(STEEL, 0.95 * np.exp(-a / 0.12) * np.exp(-((d - me - 25 + 60 * a) / 10) ** 2))
@@ -298,16 +311,16 @@ def render(G, seed=16):
                 g = (0.75 + 0.15 * k) * np.exp(-a / 0.9)
                 fr += light(SIEGFRIED, g * np.exp(-((np.abs(d - me) - 1500 * a) / (110 + 120 * a)) ** 2))
                 fr += light(SIEGFRIED, 0.3 * g * np.exp(-a / 0.3))
-        blaze = smoothstep(T_HORN[2] + 2.0, T_HORN[2] + 2.6, t) * (1 - smoothstep(T_HORN[2] + 3.0, T_HORN[2] + 6.0, t))
+        blaze = smoothstep(T_BLAZE - 0.3, T_BLAZE + 0.3, t) * (1 - smoothstep(T_BLAZE + 1.0, T_BLAZE + 4.0, t))
         fr += light(SIEGFRIED, 0.75 * blaze * (0.8 + 0.2 * S['leaf'](T)))
-        if T_HORN[2] + 2.0 <= t < T_HORN[2] + 2.6:
-            fr += light(WHITE, 0.4 * np.exp(-(t - T_HORN[2] - 2.0) / 0.1))
+        if T_BLAZE <= t < T_BLAZE + 0.6:
+            fr += light(WHITE, 0.4 * np.exp(-(t - T_BLAZE) / 0.1))
 
         # the dragon stirs: the cave mouth smoulders redder and the ground heaves ochre on each note
         for t0, dur, m, v, _, k in notes['dragon']:
             a = t - t0
             if 0 <= a < 2.4:
-                u = (m - lo) / (hi - lo)
+                u = float(np.clip((m - lo) / (hi - lo), 0, 1))
                 r = (250 + 700 * u) * (1 - np.exp(-a / 0.8))
                 fr += light(SCALE, (0.5 + 0.4 * u) * np.exp(-a / 0.9) * np.exp(-((np.abs(d - mid) - r) / (90 + 60 * u)) ** 2))
                 fr += light(CAVE, (0.8 + 0.4 * u) * np.exp(-a / 0.5) * S['mouth'])
@@ -331,7 +344,7 @@ def render(G, seed=16):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with the stage's sounds on top."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -340,69 +353,39 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('winds', 0.4, 0.3), ('brass', 0.42, 0.32), ('strings', 0.3, 0.35), ('low', 0.42, 0.25),
-                            ('perc', 0.36, 0.3), ('harp', 0.28, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    fl = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    fls = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Stacc/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/Trem/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    gong = M.hits('Percussion/gongHit_p.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     moves, perch = birdpath(G)
     me = pan_at(at(G, 'Left', 0.5))
     cave = pan_at(at(G, 'Porch Front', 0.5))
-    for m in ('E3', 'Ab3', 'B3'):           # the forest under it all, murmuring
-        hold('strings', va, note(m), 0.0, T_STIR, 50, 0.0, rise=3.0, fall=4.0, gain=0.5)
+    far = pan_at(G.pd.max())
+    o = Orchestra(M, level=2.8)
     for t, d, m, v, part, k in compose():
         pb = pan_at(min(hops(moves, t + 0.1, perch), G.pd.max()))
-        if part == 'song':
-            if m >= note('B4'):
-                M.add('winds', fl.play(m, v), t, 0.9, pb)
-            else:
-                M.add('harp', harp.play(m + 12, v - 20), t, 0.6, pb)
-        elif part == 'call':
-            if d > 1:
-                hold('winds', fls, m, t, t + d, v, pb, rise=0.05, fall=0.8, gain=0.7)
-            else:
-                M.add('winds', fl.play(m, v), t, 0.9, pb)
-        elif part == 'cut':
-            M.add('perc', harp.play(note('E6'), 80), t, 0.5, me)
-        elif part == 'reed':
-            M.add('winds', ob.play(m - 1 + (k % 2), v), t, 0.8, me)
-        elif part == 'laugh':
-            M.add('brass', horn.play(m - 12, v, dur=0.2, release=0.1), t, 0.7, me)
-        elif part == 'horn':
-            if d > 1:
-                hold('brass', horn, m, t, t + d, v, me, rise=0.08, fall=0.9, gain=0.9)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.25), t, 0.95, me)
+        if part == 'song':                                              # the bird in the woodwinds
+            o.play('flutes', m, t, d, v + 6, pb, 0.7)
+            if d >= 0.25:
+                o.play('oboes', m, t, d, v - 8, pb, 0.3)
+        elif part == 'murmur':
+            o.play('violas trem' if m >= 48 else 'cellos trem', m, t, d, v - 6, 0.0, 0.45)
+        elif part == 'reed':                                            # the cor anglais: his reed
+            o.play('oboes', m, t, max(d, 0.3), v, me, 0.8)
+        elif part == 'horn':                                            # the horn call, echoing off the far end
+            o.play('horns', m, t, d, v + 6, me, 0.95)
+            o.play('horns', m, t + 0.32, d, v - 22, far, 0.35)
         elif part == 'dragon':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.4), t, 0.95, cave)
-        elif part == 'rumble':
-            hold('low', cb, m + 12, t, t + d, v, cave, rise=3.0, fall=1.5, gain=0.6)
-        elif part == 'eyes':
-            M.add('perc', timp.play(v, pitch=-6), t, 0.9, cave)
-            M.add('perc', gong.play(100), t, 0.7, cave)
-            hold('strings', vn, note('Eb4'), t, D, 64, cave, rise=0.5, fall=1.5, gain=0.45)
+            o.play('tuba', m, t, d, v, cave, 0.8)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 4, cave, 0.55)
+            if m >= 43:
+                o.play('trombones', m, t, d, v - 10, cave, 0.45)
+        elif part == 'cut':                                             # the sword flicks through the reed
+            o.hit('metal', t, 70, gain=0.25, pan=me)
+            o.hit('triangle', t + 0.02, 80, gain=0.3, pan=me)
+        elif part == 'rumble':                                          # the earth growls under the cave
+            o.play('basses', m + 12, t, d, v, cave, 0.4)
+            o.hit('timpani roll', T_STIR, 90, pitch=-6, gain=0.5, pan=cave)
+            o.thunder(T_STIR + 4.0, near=0.25, pan=cave, gain=0.7)
+        elif part == 'eyes':                                            # the eyes open
+            o.hit('gong', t, 110, gain=0.6, pan=cave)
+            o.hit('timpani', t, 120, pitch=-6, gain=0.8, pan=cave)
+            o.thunder(t + 0.1, near=0.55, pan=cave, gain=0.8)
+    # the effects: well down under the bird and the horn, up for the dragon
+    o.effects([(0, -14), (T_WAKE, -14), (T_STIR, -4), (T_EYES - 1, 0)])

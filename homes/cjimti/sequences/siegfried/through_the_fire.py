@@ -1,25 +1,31 @@
 """Through the Fire: the storm is thinning; the fire rings the rock on the porch and Siegfried stands at Right 0.6
-looking up at it. He puts his horn to his lips (Donington 48), twice, and every note throws an emerald sweep out
-to both ends of the house.
+looking up at it.
 
-Then he plunges in, and the fire comes out to meet him. Loge's music (20) climbs on the violins and harp over and
-over, and the flames roar out from the porch along both wings and down the Side until every run is burning,
-red at the roots, orange and gold at the tips, licking both ways; each of Loge's figures throws a white-gold
-tongue leaping along the roofline, and his flickering (20a) on the glockenspiel and piccolo scatters sparks.
-Through it Siegfried runs as an emerald comet with a white-hot head, the flames parting round him and closing
-behind, slowly up round the porch toward the summit. Twice his strength (53) blazes on the brass and the whole
-fire leaps gold; his horn call rings out once more in the middle of it.
+The music is Wagner's own: "Jetzt lock' ich ein liebes Gesell!" and his horn call (bars 768 to 771), the fire music
+of the transformation as he plunges through the flames (bars 778 to 793), and the calm at the summit where the
+magic sleep sounds (bars 822 to 825), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from
+the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): his horn call on the horns, the fire's racing
+figures on violins and harp with flutes and piccolo flickering on top, his motifs blazing through it on horns,
+trombones and trumpets, the bass on cellos, basses and tuba, and the sleep's chords on clarinets, flutes and
+bassoons. Like a staged production it adds the fire itself: a low crackle round the rock, a roaring rush as he
+plunges in, the blaze's roar and crackle riding under the orchestra (pulled back so the music leads), and only
+embers under the sleep.
 
-He comes out at the top. The fire sinks back to a ring round the rock, the storm is gone and the sky calms to a
-deep still blue, and at the summit a silver glow wakes in the middle of the flames: the magic sleep (16)
-shimmers in the woodwinds, every chord a violet ripple out from the sleeper, and Siegfried stands beside her.
+He puts his horn to his lips and every note of the call throws an emerald sweep out to both ends of the house.
+Then he plunges in, and the fire comes out to meet him: the flames roar out from the porch along both wings and
+down the Side until every run is burning, red at the roots, orange and gold at the tips, licking both ways; each
+of the fire's racing figures throws a white-gold tongue leaping along the roofline and its high flicker scatters
+sparks. Through it Siegfried runs as an emerald comet with a white-hot head, the flames parting round him and
+closing behind, up round the porch toward the summit; every time his motif blazes in the brass the whole fire
+leaps gold. He comes out at the top. The fire sinks back to a ring round the rock, the storm is gone and the sky
+calms to a deep still blue, and at the summit a silver glow wakes in the middle of the flames: every chord of the
+magic sleep a violet ripple out from the sleeper, and Siegfried stands beside her.
 
-compose() holds every note; stage(), sky(), figure() and fire() are the rock and the sky, shared word for word by
-Act III's scenes on a clock that runs on from scene to scene."""
+compose() tags every note of the excerpt; stage(), sky(), figure() and fire() are the rock and the sky, shared
+word for word by Act III's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF26'
 TITLE = 'Through the Fire'
@@ -30,15 +36,20 @@ VOICEOVER = ('He knows no fear, so he walks straight into the fire. '
              'And at the top of the mountain, someone is sleeping.')
 
 K = 3                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_HORN = [(2.0, 0), (6.0, 1), (36.0, 2)]    # his horn call
-T_PLUNGE = 9.5                              # into the fire
-T_ROAR = (9.5, 15.5)                        # the fire spreading out over the house
-LOGES = [9.6 + 1.6 * k for k in range(30)]  # Loge's climbing figure, over and over
-T_SIEG = [24.0, 30.0]                       # his strength, twice
-T_TOP = 43.0                                # he comes out at the summit
-T_SINK = (42.0, 56.0)                       # the fire sinking back to a ring
-T_SLEEP = 50.0                              # the magic sleep
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 768-772, 778-794 and 822-826, Solti 1958
+NOTES = tidy(EX['notes'])
+D = EX['seconds']
+T_PLUNGE = EX['segments'][1]['start']       # into the fire
+T_SLEEP = EX['segments'][2]['start']        # the summit: the magic sleep
+HORN = [n for n in EX['notes'] if n[4] == 0 and 6.5 <= n[0] < T_PLUNGE - 0.05]    # his horn call
+T_ROAR = (T_PLUNGE, T_PLUNGE + 6.0)         # the fire spreading out over the house
+LOGES = accents(EX['notes'], T_PLUNGE, T_SLEEP - 0.5, vmin=110, n=2, space=0.7)   # the fire's racing figures
+FLICKS = [n[0] for n in EX['notes'] if n[4] == 0 and n[2] >= 84 and T_PLUNGE <= n[0] < T_SLEEP]
+SIEG = accents([n for n in EX['notes'] if n[4] == 1 and n[1] >= 1.0], T_PLUNGE, T_SLEEP, vmin=100, n=2,
+               space=1.5)                   # his motif blazing in the brass
+T_TOP = T_SLEEP - 3.0                       # he comes out at the summit
+T_SINK = (T_SLEEP - 6.0, T_SLEEP + 3.0)     # the fire sinking back to a ring
+SLEEPS = accents(EX['notes'], T_SLEEP, D, vmin=1, n=1, space=1.2)     # the magic sleep's chords
 
 STORM = hexc('#1a2ab0')
 CLOUD = hexc('#4a6aff')
@@ -128,35 +139,21 @@ def figure(fr, S, p, col, lvl, w=16.0):
     fr = fr * (1 - 0.85 * min(1.0, lvl / 0.2) * body)[:, None]
     return fr + light(col, lvl * body) + light(col, 0.35 * lvl * np.exp(-((S['d'] - p) / (3 * w)) ** 2))
 
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged (time, seconds, midi, velocity, part, tremolo): his horn call ('horn'), the
+    fire's figures ('fire'), his motif in the brass ('sieg'), the bass ('bass') and the magic sleep ('sleep')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t0, k in T_HORN:
-        for t, m, v, d in play('siegfried_horn', t0, 0.34, 5 + 2 * (k == 2), 100 + 8 * k):
-            add(t, d, m, v, 'horn', k)
-    add(T_PLUNGE, 0.1, 'C1', 124, 'plunge')
-    for j, t0 in enumerate(LOGES):
-        if t0 > T_SINK[1] + 4:
-            break
-        tr = (0, 3, 7, 12)[j % 4] + 12
-        v = int(98 - 40 * smoothstep(T_SINK[0], T_SINK[1] + 4, t0))
-        for t, m, vv, d in play('loge', t0, 0.2, tr, v):
-            add(t, d, m, vv, 'loge', j)
-        for t, m, vv, d in play('loge_flicker', t0 + 0.8, 0.12, 12, v - 10):
-            add(t, d, m, vv, 'flicker', j)
-    for m in ('E1', 'B1', 'E2', 'B2', 'E3', 'Ab3'):
-        add(T_PLUNGE, T_SINK[1] - T_PLUNGE, m, 72, 'firebed')
-    for k, t0 in enumerate(T_SIEG):
-        for t, m, v, d in play('siegfried', t0, 0.5, -10, 114 + 6 * k):
-            add(t, d, m, v, 'sieg', k)
-    for t, m, v, d in play('sleep', T_SLEEP, 1.0, -4, 82):
-        add(t, d, m, v, 'sleep')
-    for m in ('E2', 'B2', 'E3', 'Ab3'):
-        add(T_SINK[1], D - T_SINK[1], m, 56, 'calm')
+    for t, d, m, v, h, trem in NOTES:
+        if t >= T_SLEEP - 0.01:
+            part = 'sleep'
+        elif t < T_PLUNGE - 0.01:
+            part = 'horn' if h == 0 else 'bass'
+        elif h == 0:
+            part = 'fire'
+        else:
+            part = 'sieg' if d >= 1.0 and m >= 48 else 'bass'
+        N.append((t, d, m, v, part, trem))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -173,13 +170,8 @@ def render(G, seed=26):
     S = stage(G)
     d = S['d']
     L = d.max()
-    N = compose()
-    horns = [e for e in N if e[4] == 'horn']
     leaps = [(t0, rng.uniform(0, L), rng.choice([-1, 1])) for t0 in LOGES]
-    glocks = [e[0] for e in N if e[4] == 'flicker']
-    spark_at = rng.uniform(0, L, len(glocks))
-    sieg = [sorted({e[0] for e in N if e[4] == 'sieg' and e[5] == k}) for k in range(2)]
-    sleeps = np.array(sorted({e[0] for e in N if e[4] == 'sleep'}))
+    spark_at = rng.uniform(0, L, len(FLICKS))
     p0, p1 = at(G, 'Porch Left', 0.0), at(G, 'Porch Right', 1.0)
     from_porch = np.clip(np.maximum(p0 - d, d - p1), 0, None)
     summit = S['summit']
@@ -189,9 +181,9 @@ def render(G, seed=26):
         T = t + 80 * K
         lv = {k: keys(t, [(0, START[k]), (T_SINK[0], START[k]), (T_SINK[1], END[k])]) for k in START}
         lv['storm'] = keys(t, [(0, START['storm']), (T_PLUNGE, 0.3), (T_SINK[1], END['storm'])])
-        lv['sleeper'] = END['sleeper'] * smoothstep(T_TOP + 3, T_SLEEP + 6, t)
+        lv['sleeper'] = END['sleeper'] * smoothstep(T_TOP + 1, T_SLEEP + 6, t)
         roar = smoothstep(T_ROAR[0], T_ROAR[1], t) * (1 - smoothstep(T_SINK[0], T_SINK[1], t))
-        lv['fire'] += 0.35 * roar
+        lv['fire'] += 0.35 * roar + 0.2 * (t < T_PLUNGE) * smoothstep(6.5, T_PLUNGE, t)
         fr = sky(S, T, lv)
         ps = hero(G, t)
 
@@ -199,33 +191,34 @@ def render(G, seed=26):
         reach = 1700 * smoothstep(T_ROAR[0], T_ROAR[1], t) * (1 - smoothstep(T_SINK[0], T_SINK[1], t))
         if reach > 1:
             mask = smoothstep(reach + 80, reach - 80, from_porch) * S['sky']
-            boost = sum(np.exp(-(t - x) / 0.5) for k in range(2) for x in sieg[k][:1] if 0 <= t - x < 2.5)
+            boost = sum(np.exp(-(t - x) / 0.5) for x in SIEG if 0 <= t - x < 2.5)
             flame = fire(S, T, 0.0, 1.0, boost=0.35 + boost)
             fr += flame * mask[:, None]
             front = np.exp(-((from_porch - reach) / 60) ** 2) * S['sky'] * (reach < 1650)
             fr += light(AMBER, 0.8 * front)
 
-        # each of Loge's figures: a white-gold tongue leaping along the roofline
+        # each of the fire's racing figures: a white-gold tongue leaping along the roofline
         for t0, x0, sgn in leaps:
             a = t - t0
             if 0 <= a < 1.2:
                 c = x0 + sgn * 700 * a
                 fr += light(SPARK, 1.0 * roar * np.exp(-a / 0.5) * np.exp(-((d - c) / 45) ** 2))
                 fr += light(AMBER, 0.85 * roar * np.exp(-a / 0.6) * np.exp(-((d - c + sgn * 90) / 110) ** 2))
-        for j, x in enumerate(glocks):         # his flickering: sparks of white-gold
+        for j, x in enumerate(FLICKS):          # its high flicker: sparks of white-gold
             a = t - x
             if 0 <= a < 0.4:
                 fr += light(SPARK, 0.8 * roar * np.exp(-a / 0.1) * np.exp(-((d - spark_at[j]) / 6) ** 2))
 
-        # his strength: the whole fire leaps gold
-        for k, ons in enumerate(sieg):
-            for x in ons:
-                a = t - x
-                if 0 <= a < 0.8:
-                    fr += light(GOLD, (0.75 + 0.15 * k) * np.exp(-a / 0.35) * (0.6 + 0.4 * heat(d, T)))
+        # his motif in the brass: the whole fire leaps gold
+        for k, x in enumerate(SIEG):
+            a = t - x
+            if 0 <= a < 0.9:
+                fr += light(GOLD, 1.0 * np.exp(-a / 0.4) * (0.6 + 0.4 * heat(d, T)))
+                fr += light(SPARK, 0.6 * np.exp(-a / 0.15))
+                fr += light(EMERALD, 0.8 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - ps) - 1800 * a) / 120) ** 2))
 
         # his horn call: emerald sweeps out to both ends on every note
-        for t0, dur, m, v, part, k in horns:
+        for t0, dur, m, v, h in HORN:
             a = t - t0
             if 0 <= a < 1.2:
                 src = hero(G, t0)
@@ -233,10 +226,10 @@ def render(G, seed=26):
                 fr += light(EMERALD, 0.8 * np.exp(-a / 0.25) * np.exp(-((d - src) / 70) ** 2))
 
         # the magic sleep: violet ripples out from the sleeper on every chord
-        j = int(np.searchsorted(sleeps, t, side='right')) - 1
-        if j >= 0 and t - sleeps[j] < 2.5:
-            a = t - sleeps[j]
-            fr += light(VIOLET, 0.7 * np.exp(-a / 1.0) * np.exp(-((np.abs(d - summit) - 500 * a) / 90) ** 2))
+        for t0 in SLEEPS:
+            a = t - t0
+            if 0 <= a < 3.0:
+                fr += light(VIOLET, 0.75 * np.exp(-a / 1.2) * np.exp(-((np.abs(d - summit) - 450 * a) / 90) ** 2))
 
         # Siegfried: an emerald comet with a white-hot head; the flames part round him
         if T_PLUNGE <= t < T_TOP + 1:
@@ -254,7 +247,7 @@ def render(G, seed=26):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the fire's own sound ridden under the music."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -263,74 +256,38 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.23, 0.25), ('strings', 0.19, 0.32), ('brass', 0.23, 0.3), ('perc', 0.21, 0.3),
-                            ('mallet', 0.12, 0.35), ('winds', 0.2, 0.4), ('harp', 0.18, 0.4), ('fx', 0.07, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vlns = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    picc = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
+    o = Orchestra(M, level=1.4)
+    part = {(e[0], e[2]): e[4] for e in compose()}
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        p = part.get((t, m))
+        if p == 'horn':                                     # his horn call, on the horns
+            return [('horns', -12, 6, 0.95), ('horns', -24, -6, 0.4)]
+        if p == 'fire' and d < 0.3:                         # the fire's racing figures: violins and harp
+            out = [('violins', 0, -4, 0.5), ('harp', -12, 0, 0.35)]
+            if m >= 84:
+                out.append(('piccolo', -12, -10, 0.35))
+            return out
+        if p == 'sleep':                                    # the magic sleep: clarinets, flutes, bassoons
+            return ([('clarinets', 0, 18, 0.65), ('flutes', 0, 10, 0.4)] if m >= 55 else
+                    [('bassoons', 0, 18, 0.55), ('cellos', 0, 10, 0.4)])
+        return None
 
-    summit = pan_at(at(G, 'Porch Front', 0.5))
-    rng = np.random.default_rng(26)
-    for t, d, m, v, part, k in compose():
-        ph = pan_at(hero(G, t))
-        if part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.95, ph)
-        elif part == 'plunge':
-            M.add('perc', crash.play(v), t, 0.9, ph)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, ph)
-            M.add('perc', roll.play(110, pitch=-3, dur=5.0), t, 0.7, 0.0)
-            M.add('fx', whoosh(5.0, 200, 4000, 0.9, seed=26), t, 1.0, 0.0)
-        elif part == 'loge':
-            pan = float(rng.uniform(-0.8, 0.8))
-            M.add('strings', vln.play(m - 12, v), t, 0.7, pan)
-            M.add('harp', harp.play(m - 12, v - 10), t, 0.6, pan)
-        elif part == 'flicker':
-            pan = float(rng.uniform(-0.8, 0.8))
-            M.add('mallet', glock.play(m - 12, v - 10), t, 0.6, pan)
-            M.add('winds', picc.play(m - 24, v - 16), t, 0.4, pan)
-        elif part == 'firebed':
-            hold('low', ctrem if m < note('E3') else vlns, m, t, t + d, v, 0.0, rise=3.0, fall=4.0, gain=0.5)
-        elif part == 'sieg':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.95, ph)
-            M.add('brass', tpt.play(m, v - 18, dur=d * 1.1, release=0.3), t, 0.45, ph)
-            M.add('low', tbn.play(m - 12, v - 14, dur=d * 1.1, release=0.3), t, 0.5, ph)
-            if t == T_SIEG[k]:
-                M.add('perc', crash.play(100 + 8 * k), t, 0.7, 0.0)
-                M.add('perc', timp.play(v, pitch=-4), t, 0.8, 0.0)
-        elif part == 'sleep':
-            s = flute if m >= note('E5') else (oboe if m >= note('Ab4') else clar)
-            if d > 1.2:
-                hold('winds', s, m - 12, t, t + d, v, summit, rise=0.4, fall=1.2, gain=0.7)
-            else:
-                M.add('winds', s.play(m - 12, v, dur=d * 1.1, release=0.4), t, 0.75, summit)
-        elif part == 'calm':
-            hold('strings', vcs, m, t, t + d, v, summit * 0.5, rise=4.0, fall=1.5, gain=0.5)
+    o.tutti(NOTES, size=lambda t: 1.0 if T_PLUNGE <= t < T_SINK[1] else 0.6, role=role,
+            pan=lambda t, m: pan_at(hero(G, t)) * 0.6)
+
+    # the fire's own sound: a low crackle round the rock, a rush as he plunges in, the blaze riding under the
+    # orchestra so the music leads, and embers under the sleep
+    o.effects([(0.0, -12), (T_PLUNGE - 0.4, -12), (T_PLUNGE, 1), (T_PLUNGE + 2.5, -5), (T_SINK[0], -5),
+               (T_SLEEP, -12), (D, -15)])
+    blaze = lambda tt: 0.25 + 0.75 * smoothstep(T_ROAR[0], T_ROAR[1], tt) * (1 - 0.75 * smoothstep(T_SINK[0], T_SINK[1], tt))
+    o.fire(0.0, D, level=blaze, pan=-0.5, crackle=14, seed=21)
+    o.fire(0.0, D, level=blaze, pan=0.5, crackle=14, seed=23)
+    from pixelhome.audio import whoosh
+    pp = pan_at(hero(G, T_PLUNGE))
+    o.M.add('fx', whoosh(1.6, 200, 3000, 0.9, seed=4), T_PLUNGE - 0.3, 1.0, pp)    # he plunges in: a roaring rush
+    o.boom(T_PLUNGE, pp, 0.9)
+    o.hit('crash', T_PLUNGE, 118, gain=0.5, pan=pp)
+    for x in SIEG:                                         # the fire leaping gold with his motif
+        o.hit('cymbal swell', x - 1.8, 90, gain=0.25)
+    o.hit('triangle', T_SLEEP + 0.3, 70, gain=0.3, pan=pan_at(at(G, *TOP)))     # the sleeper

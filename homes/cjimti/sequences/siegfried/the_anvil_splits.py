@@ -1,44 +1,78 @@
 """The Anvil Splits: the blade lies red on the anvil and the forge is roaring. Siegfried plunges it into the
 water: a hiss, and a cloud of white steam bursts out from the anvil and rolls away down both sides of the house,
-and when it clears the blade is steel. He hammers it on the forging motif (Donington 52), every low note a blow
-that flashes white and throws sparks to both ends of the roof, the steel growing longer and brighter with each
-phrase, until the gold hilt gleams. The trumpets name it, Nothung (43), a steel flash at every note.
+and when it clears the blade is steel. Then the Forging Song: "Hoho! Hahei! Schmiede, mein Hammer, ein hartes
+Schwert!", and every blow of his hammer, as Wagner marks them in the score, flashes white on the anvil and throws
+sparks to both ends of the roof, the steel growing longer and brighter with each phrase until the gold hilt
+gleams. At the end of Left Mime gloats over his poison, the sickly green bubbling in his corner.
 
-At the end of Left Mime gloats over his poison, his motif (50) bubbling and the sickly green flooding his corner.
-Then the sword motif (45) blazes on trumpets and horns and Siegfried raises the blade: steel all along Porch
-Front. Timpani roll; streaks of white rush in from both ends of the house to gather on the sword; and he brings it
-down. The anvil splits: one white flash over the whole house, a black crack where the anvil was, and two fronts
-of white and gold racing out from it to both ends. Nothung in full on the brass and his horn call (48) twice
-over: emerald and steel waves roll end to end across the house, while Siegfried holds the sword aloft, blazing,
-and Mime cowers, trembling, at the end of Left.
+"Schau, Mime, du Schmied": Siegfried raises the blade, steel all along Porch Front, and streaks of white rush in
+from both ends of the house to gather on it while he sings "So schneidet Siegfrieds Schwert!", and on "Schwert!"
+he brings it down. The anvil splits: one white flash over the whole house, a black crack where the anvil was, and
+two fronts of white and gold racing out from it to both ends. The orchestra races to the end of the act, and on
+every bar an emerald and steel wave rolls end to end across the house while Siegfried holds the sword aloft,
+blazing, and Mime cowers, trembling, at the end of Left.
+
+The music is Wagner's own: Act I, bars 2583 to 2594 (the quenching), 2694 to 2715 (the Forging Song) and 2941 to
+the end of the act, as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and register. Siegfried's lines are not in
+the reduction, so "Hoho! Hahei!", "Schmiede, mein Hammer, ein hartes Schwert!" and "So schneidet Siegfrieds
+Schwert!" come from the Breitkopf & Härtel vocal score (Leipzig 1914, archive.org 31761034115105, pp. 128-129 and
+144), played as he sings them, a tenor an octave below the written notes, on horns doubled by a trumpet; the
+hammer's blows follow the score's own hammer part. On stage: the hiss and steam of the quench, the forge's roar
+and crackle, every hammer blow ringing on the anvil, and the anvil splitting with a crash and a great blow.
 
 compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF10'
 TITLE = 'The Anvil Splits'
 KIND = 'show'
-DESCRIPTION = ('The red-hot blade hisses in the water and is hammered into Nothung. Siegfried raises the new sword '
-               'and brings it down on the anvil, which splits in two from end to end of the house.')
+DESCRIPTION = ('The red-hot blade hisses in the water and is hammered into Nothung to the Forging Song. Siegfried '
+               'raises the new sword and brings it down on the anvil, which splits in two from end to end of the '
+               'house.')
 VOICEOVER = ('The sword is forged. Siegfried raises it high, and strikes the anvil, '
              'and the anvil splits in two.')
 
 K = 9                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_QUENCH = 2.0                              # into the water: the hiss and the steam
-T_HAMMER = [6.5, 10.0, 13.5, 17.0]          # the forging motif, the blade beaten out
-T_HILT = 20.0                               # the gold hilt
-T_NAME = 21.5                               # the trumpets name it
-T_MIME = [29.5, 32.5]                       # Mime gloating over his poison
-T_RAISE = 36.0                              # the sword motif: he raises it
-T_ROLL = 40.5                               # the timpani roll, the light gathering on the sword
-T_SPLIT = 48.0                              # the blow: the anvil splits
-T_TRIUMPH = 50.0                            # Nothung in full on the brass
-T_HORN = [58.0, 62.0]                       # his horn call, twice over
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 2583-2594, 2694-2715 and 2941 to the end, Solti 1958
+D = EX['seconds']
+_M = np.array([m for m, _ in EX['bars']], float)
+_T = np.array([t for _, t in EX['bars']])
+
+
+def bt(m):
+    """Seconds into the scene of measure position m (bar plus fraction)."""
+    return float(np.interp(m, _M, _T))
+
+
+# Siegfried's lines, from the vocal score: (bar, beat, beats, written note, beats in the bar)
+VOICE = ([(2694, 3.5, 0.5, 'C5'), (2695, 0, 1, 'F5'), (2695, 1.5, 0.5, 'A4'), (2695, 2, 1, 'F5'),
+          (2695, 3.5, 0.5, 'G5'), (2696, 0, 1, 'C5'),
+          (2699, 0, 1, 'G5'), (2699, 1, 0.5, 'E5'), (2699, 1.5, 0.5, 'E5'), (2699, 2, 1, 'G5'), (2699, 3, 0.5, 'C5'),
+          (2699, 3.5, 0.5, 'C5'), (2700, 0, 1, 'F5'), (2700, 1, 1, 'D5'), (2700, 2, 2, 'F5'),
+          (2701, 1.5, 0.5, 'Bb4'), (2701, 2, 1, 'D5'), (2701, 3.5, 0.5, 'G5'), (2702, 0, 1, 'C5'),
+          (2702, 1.5, 0.5, 'Bb4'), (2702, 2, 1, 'D5'), (2702, 3.5, 0.5, 'G5'), (2703, 0, 1, 'C5')],
+         [(2949, 0, 3, 'G5'), (2950, 0, 2, 'F#5'), (2950, 2, 1, 'E5'), (2951, 0, 3, 'A5'), (2952, 0, 3, 'C#5'),
+          (2953, 0, 3, 'D5')])
+# the hammer, as the score marks it: strong blows on the downbeats, one on every beat under his song
+_SUNG = {2695, 2699, 2700, 2701, 2702, 2711, 2712, 2713, 2714, 2715}
+HAMMER = [(b + x / 4, 1.2 if x == 0 else 0.75) for b in range(2694, 2716) for x in range(4)
+          if x == 0 or b in _SUNG]
+
+T_QUENCH = bt(2584)                         # into the water: the hiss and the steam
+PUFFS = [t for t in accents(EX['notes'], bt(2584) + 2.5, bt(2694), n=2, space=1.0)]   # steam still hissing off it
+T_HAMMER = bt(2694)                         # the Forging Song
+T_NAME = bt(2699)                           # "Schmiede, mein Hammer, ein hartes Schwert!"
+T_MIME = [bt(b) for b in (2705, 2706.5, 2708, 2709.5)]     # Mime gloating while Siegfried sings his verse
+T_HILT = bt(2711)                           # "Heiaho!": the gold hilt
+T_RAISE = bt(2941)                          # "Schau, Mime, du Schmied": he raises it
+T_ROLL = bt(2949)                           # "So schneidet Siegfrieds Schwert!": the light gathers on it
+T_SPLIT = bt(2953)                          # "Schwert!": the blow; the anvil splits
+T_TRIUMPH = T_SPLIT + 0.6                   # the orchestra races to the end of the act
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -126,42 +160,38 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
     return out
 
 
+def voice():
+    """Siegfried's lines in seconds: (time, seconds, sounding midi)."""
+    out = []
+    for part, per in ((VOICE[0], 4), (VOICE[1], 3)):
+        for b, x, n, name in part:
+            t0 = bt(b + x / per)
+            out.append((t0, bt(b + (x + n) / per) - t0, note(name) - 12))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'orch' (k the hand, or 'trem'
+    for a tremolo); Siegfried's lines are 'sing'; 'hammer', 'name', 'mime', 'triumph' mark the lights' moments."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_SPLIT, 'F1', 62, 'pedal')
-    add(T_QUENCH, 3.0, 'C1', 110, 'hiss')
-    for k, t0 in enumerate(T_HAMMER):
-        for t, m, v, d in play('forging', t0, 0.52, 0, 100 + 5 * k):
-            add(t, d, m, v, 'hammer', k)
-    add(T_HILT, 2.0, 'C5', 70, 'hilt')
-    for t, m, v, d in play('nothung', T_NAME, 0.55, 0, 110):
-        add(t, d, m, v, 'name')
+    for n in tidy(EX['notes']):
+        N.append((n[0], n[1], n[2], n[3], 'orch', 'trem' if n[5] else n[4]))
+    for t, d, m in voice():
+        N.append((t, d, m, 112, 'sing', None))
+        if T_NAME <= t < bt(2701):
+            N.append((t, 0.5, m, 0, 'name', None))
+    for k, (pos, s) in enumerate(HAMMER):
+        N.append((bt(pos), 0.2, 0, int(80 + 40 * s), 'hammer', k))
     for k, t0 in enumerate(T_MIME):
-        for t, m, v, d in play('mime', t0, 0.34, -12, 74):
-            add(t, d, m, v, 'mime', k)
-    for t, m, v, d in play('sword', T_RAISE, 0.55, 0, 116):
-        add(t, d, m, v, 'sword')
-    add(T_ROLL, T_SPLIT - T_ROLL, 'C1', 120, 'roll')
-    add(T_SPLIT, 0.1, 'C1', 127, 'split')
-    for t, m, v, d in play('nothung', T_TRIUMPH, 0.6, -12, 122):
-        add(t, d, m, v, 'triumph')
-    for k, t0 in enumerate(T_HORN):
-        for t, m, v, d in play('siegfried_horn', t0, 0.42, 5 * k, 118):
-            add(t, d, m, v, 'horn', k)
-    for m in ('F2', 'C3', 'F3', 'A3', 'C4'):
-        add(T_HORN[-1] + 3.0, D - T_HORN[-1] - 3.0, m, 84, 'blaze')
-    add(T_HORN[-1] + 3.0, 0.1, 'C1', 118, 'cadence')
+        N.append((t0, 0.3, 0, 0, 'mime', k))
+    for b in range(2955, 2983, 2):
+        N.append((bt(b), 0.5, 0, 0, 'triumph', b))
     return sorted(N, key=lambda e: e[0])
 
 
 def blows(S):
     """Every hammer blow on the anvil: [(time, strength, where)]."""
-    return sorted((t, 1.1, S['anvil']) for t, _, m, v, part, k in compose() if part == 'hammer' and m < note('C3'))
+    return sorted((t, (v - 80) / 40, S['anvil']) for t, _, m, v, part, k in compose() if part == 'hammer')
 
 
 def render(G, seed=10):
@@ -173,9 +203,9 @@ def render(G, seed=10):
     N = compose()
     hits = blows(S)
     hit_t = np.array([h[0] for h in hits])
-    names = np.array(sorted({e[0] for e in N if e[4] in ('name', 'sword')}))
+    names = np.array(sorted({e[0] for e in N if e[4] == 'name'}))
     mimes = np.array([e[0] for e in N if e[4] == 'mime'])
-    waves = np.array(sorted({e[0] for e in N if e[4] in ('triumph', 'horn')}))
+    waves = np.array(sorted({e[0] for e in N if e[4] == 'triumph'}))
     rng = np.random.default_rng(seed)
     bubble = Flicker(rng, G.N, 1.5, 4.0)
     shimmer = Flicker(rng, G.N, 4.0, 10.0)
@@ -189,7 +219,7 @@ def render(G, seed=10):
         t = f * DT
         T = t + 80 * K
         lv = dict(START)
-        lull = smoothstep(T_MIME[0] - 1, T_MIME[0], t) * (1 - smoothstep(T_RAISE - 1, T_RAISE, t))
+        lull = smoothstep(T_MIME[0] - 1, T_MIME[0], t) * (1 - smoothstep(T_HILT - 1, T_HILT, t))
         lv['forge'] -= 0.25 * lull
         lv['walls'] -= 0.25 * lull
         fr = cave(S, T, lv)
@@ -197,13 +227,13 @@ def render(G, seed=10):
 
         # the blade: red at first, steel after the quench, longer with every phrase, raised along Porch Front
         heat = keys(t, [(0, 0.45), (T_QUENCH, 0.45), (T_QUENCH + 0.8, 0.0)])
-        half = keys(t, [(0, 55.0), (T_HAMMER[0], 55.0), (T_HILT, 110.0), (T_RAISE, 110.0), (T_RAISE + 3.0, 175.0)])
+        half = keys(t, [(0, 55.0), (T_HAMMER, 55.0), (T_HILT, 110.0), (T_RAISE, 110.0), (T_RAISE + 3.0, 175.0)])
         bright = keys(t, [(T_QUENCH, 0.0), (T_QUENCH + 1.5, 0.55), (T_HILT, 0.8), (T_RAISE, 0.8), (T_RAISE + 3, 1.0)])
         if t >= T_SPLIT:
             half, bright = keys(t, [(T_SPLIT, 175.0), (T_SPLIT + 2, 70.0)]), 1.0
         blade = np.exp(-((d - anvil) / half) ** 6)
         i = int(np.searchsorted(names, t, side='right')) - 1
-        flash = np.exp(-(t - names[i]) / 0.25) if i >= 0 and t < T_RAISE + 5 else 0.0
+        flash = np.exp(-(t - names[i]) / 0.25) if i >= 0 and t < T_RAISE else 0.0
         if heat > 0:
             fr = fr * (1 - 0.7 * blade)[:, None]
             fr += light(REDHOT * (1 - heat) + HEAT * heat, 0.8 * blade)
@@ -222,12 +252,20 @@ def render(G, seed=10):
             cloud = np.exp(-((np.abs(d - anvil) - r) / (80 + 150 * a)) ** 2) + (np.abs(d - anvil) < r)
             fr += light(STEAM, 1.0 * np.exp(-a / 1.6) * np.clip(cloud, 0, 1) * (0.8 + 0.2 * sh))
 
+        # the steam keeps hissing off the blade: a puff rolling out on each accent as it cools
+        for q, tp in enumerate(PUFFS):
+            a = t - tp
+            if 0 <= a < 3.0:
+                fr += light(STEAM, 0.7 * np.exp(-a / 0.9) * (0.8 + 0.2 * sh) *
+                            np.exp(-((np.abs(d - anvil) - 450 * a) / (60 + 120 * a)) ** 2))
+
         # every hammer blow: a white flash, a shockwave and sparks to both ends
         j = int(np.searchsorted(hit_t, t, side='right')) - 1
         if j >= 0 and t - hit_t[j] < 1.2:
             a = t - hit_t[j]
-            fr += light(HEAT, min(1.0, 1.1 * np.exp(-a / 0.1)) * S['heat'] ** 0.5)
-            fr += light(FORGE, 0.8 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - anvil) - 1500 * a) / 90) ** 2))
+            s = hits[j][1]
+            fr += light(HEAT, min(1.0, 1.1 * s * np.exp(-a / 0.1)) * S['heat'] ** 0.5)
+            fr += light(FORGE, 0.8 * s * np.exp(-a / 0.5) * np.exp(-((np.abs(d - anvil) - 1500 * a) / 90) ** 2))
         fr += light(SPARK, np.clip(sparks(S, hits, t, 100, n=18), 0, 1.0))
 
         # Mime gloating at his pot: the sickly green floods his corner with each bubble of his motif
@@ -296,7 +334,9 @@ def render(G, seed=10):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """The real music: the excerpt orchestrated from the piano reduction, Siegfried's lines on horns and a trumpet,
+    and the forge: the quench's hiss, the hammer on the anvil as the score marks it, the anvil splitting."""
+    from pixelhome.audio import SR
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -305,93 +345,42 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('strings', 0.26, 0.3), ('winds', 0.26, 0.3), ('brass', 0.3, 0.3),
-                            ('perc', 0.3, 0.25), ('fx', 0.16, 0.25), ('harp', 0.2, 0.4), ('warm', 0.26, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    swell = M.hits('Percussion/susCymb1-cresc-Median*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
     forge = pan_at(at(G, 'Porch Front', 0.5))
-    pot = pan_at(at(G, 'Left', MIME_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=3.0, fall=1.0, gain=0.55)
-        elif part == 'hiss':
-            M.add('fx', whoosh(d, 6000, 2500, 0.9, seed=10), t, 1.0, forge)
-            M.add('perc', swell.play(80, dur=d), t - 0.2, 0.5, forge)
-        elif part == 'hammer':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.2), t, 0.9, forge)
-                M.add('perc', anvil.play(min(127, v + 12)), t, 1.0, forge)
-                M.add('perc', timp.play(v - 10, pitch=-3), t, 0.6, forge)
-            elif m < note('C4'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, forge)
-            else:
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.85, forge)
-        elif part == 'hilt':
-            for q, mm in enumerate((m, m + 4, m + 7)):
-                M.add('harp', glock.play(mm, v), t + 0.12 * q, 0.7, forge)
-        elif part in ('name', 'sword'):
-            s = tpt if m >= note('C4') else horn
-            if d > 1.0:
-                hold('brass', s, m - 12, t, t + d, v, forge, rise=0.1, fall=0.8, gain=0.9)
-            else:
-                M.add('brass', s.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.95, forge)
-            if part == 'sword':
-                M.add('brass', horn.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.6, forge)
-        elif part == 'mime':
-            M.add('winds', bsn.play(m, v), t, 0.9, pot)
-        elif part == 'roll':
-            r = 0.0
-            while r < d:
-                M.add('perc', roll.play(min(127, 80 + int(6 * r)), pitch=-3, dur=2.6), t + r, 0.5 + 0.06 * r, forge)
-                r += 2.4
-            M.add('perc', swell.play(110, dur=d), t + d - 4.0, 0.7)
-        elif part == 'split':
-            M.add('perc', anvil.play(v), t, 1.0, forge)
-            M.add('perc', crash.play(v), t, 1.0)
-            M.add('perc', gong.play(v), t, 0.9)
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0)
-            M.add('fx', whoosh(2.0, 300, 6000, 0.9, seed=11), t, 1.0, -0.6)
-            M.add('fx', whoosh(2.0, 300, 6000, 0.9, seed=12), t, 1.0, 0.6)
-        elif part == 'triumph':
-            if d > 1.0:
-                hold('brass', tpt, m, t, t + d, v, 0.0, rise=0.1, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.25), t, 0.95)
-            M.add('low', tbn.play(m - 12, v - 10, dur=d * 1.05, release=0.25), t, 0.7)
-            M.add('perc', timp.play(v - 30, pitch=-4), t, 0.4)
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.95, -0.4 if k == 0 else 0.4)
-            M.add('strings', vc.play(m - 12, v - 15, dur=d * 1.05, release=0.3), t, 0.6)
-        elif part == 'blaze':
-            hold('warm', horn if m >= note('C3') else tbn, m, t, t + d, v, 0.0, rise=0.2, fall=2.5, gain=0.55)
-        elif part == 'cadence':
-            M.add('perc', crash.play(v), t, 0.9)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9)
+    o = Orchestra(M, level=1.95)
+    N = compose()
+
+    def size(t):
+        if t < T_HAMMER:
+            return 1.0 if t < bt(2587) else 0.5
+        return 1.0
+
+    o.tutti([e[:4] + (e[5] if e[5] != 'trem' else 0, e[5] == 'trem') for e in N if e[4] == 'orch'], size=size)
+    for t, d, m, v, part, k in N:
+        if part == 'sing':                                                      # Siegfried: horns and a trumpet
+            o.play('horns', m, t, max(d, 0.15), v, forge, 0.95)
+            o.play('trumpets', m, t, max(d, 0.15), v - 18, forge, 0.4)
+        elif part == 'hammer':                                                  # the hammer on the anvil
+            s = (v - 80) / 40
+            o.hit('anvil', t, int(90 + 30 * s), gain=0.55 + 0.35 * s, pan=forge)
+            if s > 1:
+                o.hit('metal', t + 0.01, 100, gain=0.2, pan=forge)
+    # the quench: a long hiss of steam out of the water, and the forge roaring and crackling all through
+    n = int(4.5 * SR)
+    hiss = o._noise(0, 2500, 11000, 2584, n=n) * np.exp(-np.arange(n) / (1.4 * SR)) * np.clip(
+        np.arange(n) / (0.04 * SR), 0, 1)
+    o._sfx(hiss, T_QUENCH, 0.9, forge)
+    for q, tp in enumerate(PUFFS):                                              # the hiss of each puff
+        m = int(1.2 * SR)
+        o._sfx(o._noise(0, 3000, 11000, 2600 + q, n=m) * np.exp(-np.arange(m) / (0.35 * SR)), tp, 0.35, forge)
+    o.hit('timpani roll', T_QUENCH, 90, pitch=-5, gain=0.35, pan=forge)
+    o.fire(0.0, T_SPLIT + 3, lambda tt: 0.55 - 0.3 * smoothstep(T_QUENCH, T_QUENCH + 2, tt) +
+           0.25 * smoothstep(T_HAMMER - 2, T_HAMMER, tt), forge, crackle=12, seed=1010)
+    # the gathering on the sword, then the split: a crash, the halves falling apart, a great blow
+    o.hit('cymbal swell', T_SPLIT - 3.6, 100, gain=0.45, pan=forge)
+    o.shatter(T_SPLIT, forge, 1.0)
+    o.boom(T_SPLIT + 0.02, forge, 1.0)
+    o.hit('anvil', T_SPLIT + 0.35, 110, gain=0.6, pan=forge - 0.2)
+    o.hit('anvil', T_SPLIT + 0.55, 100, gain=0.5, pan=forge + 0.2)
+    o.thunder(T_SPLIT + 0.05, 0.8, forge, 0.7)
+    o.effects([(0, -2), (T_QUENCH + 4, -2), (T_QUENCH + 6, -9), (T_HAMMER - 1, -9), (T_HAMMER, -6),
+               (T_ROLL - 1, -6), (T_SPLIT - 0.2, 0), (T_SPLIT + 3, 0), (T_SPLIT + 5, -8), (D, -8)])

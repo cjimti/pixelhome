@@ -1,26 +1,36 @@
 """In Flight: Brünnhilde draws back out of sight up Porch Right, her silver and gold fading into the heights,
 and the lovers stagger in from the free end of Right: Sieglinde (hearth amber) lurching ahead, Siegmund (Wälsung
-blue) behind her with Nothung at his side, a white steel glint on a gold hilt. The orchestra runs with them:
-violas and cellos in a breathless D minor gallop, the love of the twins (Donington 37) torn along in the violins
-and oboe, and they come on in stops and starts, along Right and up to the back of the porch.
+blue) behind her with Nothung at his side, a white steel glint on a gold hilt.
 
-There she breaks from him in guilt and horror: her amber flickers wildly, splitting with dark gaps, and she pulls
-away along Porch Front while the twins' love sinks to a tender cello and his blue reaches after her. Then she
-hears horns. Hunding's horn calls (composed, on muted horns) sound from far off at the free end of Right, each a
-red flash there, his heavy dotted motif growls in the tubas, and she runs on round the porch and down onto Left.
-Her visions take her: the hounds, six snarling red-black sparks racing the length of the house toward her to
-shrieking piccolos and trilling low strings, and Siegmund dying, the house drowning in dark red as the tragic
-destiny of the Volsungs (Donington 66) tolls in the brass and his blue bursts apart into sparks and gathers again.
+The music is Wagner's own: Act II, bars 1174 to 1193 (the lovers' flight, rising to its fortissimo, and
+"Raste nun hier ... Weiter! Weiter!") and bars 1392 to 1434 (Sieglinde's terror and vision: "Horch! O horch! Das
+ist Hundings Horn! ... Rüden fletschen die Zähne nach Fleisch ... die Esche stürzt, es bricht der Stamm! Bruder!
+Mein Bruder! Siegmund! Ha!", and her faint), as Solti's 1958 Vienna Philharmonic recording takes them. The notes
+come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the flight on the full orchestra, violins
+doubled by oboes while she sings, the horn calls on the horns, the hounds' yelps on piccolo and flutes over
+churning low strings, her vision of his death on the full brass, and her faint on clarinets over soft strings;
+timpani, cymbals and a gong on its real accents. Over the score, the stage's sounds: their running feet on the
+gallop, a thud on every stumble, the hunt's hooves nearing from the end of Right, each hound's yelp and its paws
+racing at her, teeth snapping, the sword shattering and thunder as he falls in her vision, the ash tree crashing
+down on "es bricht der Stamm", and her body falling as she faints. The effects lead the flight, the hounds, the
+sword's shattering and the ash tree's crash; they back off for the lovers' words, further for Hunding's horns so
+the horns are clear, and all but disappear for Siegmund's "Schwester! Geliebte!".
 
-She faints. Her amber slides down and collapses at Left 0.7, dimming, to a falling clarinet; the house quiets
-to the slate and dawn of the pass, and Siegmund kneels and watches over her at Left 0.55 to the twins' love on a
-solo cello, Nothung's glint steady beside him, while one last horn call sounds faintly from far away.
+The orchestra runs with them: they come on in stops and starts, stumbling on its accents, along Right and up to
+the back of the porch, the gallop racing along the house ahead of them in pulses. There she breaks from him in
+guilt and horror: her amber flickers wildly, splitting with dark gaps, and she pulls away along Porch Front while
+his blue reaches after her. Then she hears horns: Hunding's horn calls, each a red flash at the free end of
+Right, nearer each time, and the hunt darkens Right as she runs on round the porch and down onto Left. Her
+visions take her: the hounds, six snarling red-black sparks racing the length of the house toward her, one on
+each yelp of the orchestra, and Siegmund dying, the house drowning in dark red as the orchestra tolls and his blue
+bursts apart into sparks and gathers again. She faints: her amber slides down and collapses at Left 0.7, dimming,
+as the chords fall away; the house quiets to the slate and dawn of the pass, and Siegmund kneels and watches over
+her at Left 0.55, "Schwester! Geliebte!", Nothung's glint steady beside him.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play, melody
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK15'
 TITLE = 'In Flight'
@@ -30,28 +40,22 @@ DESCRIPTION = ('Siegmund and Sieglinde run for their lives. She is wild with gui
 VOICEOVER = ('They have been running all night. Behind them, getting closer, '
              'are the hunting horns of the man she left.')
 
-T_HIDE = 0.0                                # Brünnhilde withdraws out of sight
-T_ENTER = 3.0                               # the lovers come in from the end of Right
-T_LOVE = [4.0, 10.5]                        # the twins' love, torn along, twice
-LBEAT = 0.42
-T_GUILT = 19.5                              # she breaks from him
-T_TENDER = 21.5
-TBEAT = 0.6
-HORNS = [30.5, 33.8, 37.4, 40.6]            # Hunding's horn calls from the end of Right
-T_HUND = 35.0
-T_DOGS = 44.5                               # the hounds
-T_DEATH = 52.0                              # Siegmund dying: the Volsungs' fate
-FBEAT = 0.5
-T_FAINT = 60.5
-T_WATCH = 66.0
-T_LAST = 74.0                               # one last horn call, far off
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1174-1193 and 1392-1434, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+BAR[1194] = BAR[1392] = EX['segments'][1]['start']
+D = EX['seconds']
+SUNG = [(t0, t1, who.lower()) for t0, t1, who, _ in EX['singing']]
+T_ENTER = 0.3                               # the lovers come in from the end of Right
+STUMBLES = [BAR[b] for b in (1182, 1184, 1186, 1188)]
+T_GUILT = BAR[1189]                         # she breaks from him
+T_HORN = BAR[1392]                          # "Horch! O horch!"
+HORNS = [BAR[1392], BAR[1394], BAR[1395], BAR[1396]]   # Hunding's horn calls from the end of Right
+T_HUND = BAR[1396]                          # the hunt darkens Right
+DOGS = [BAR[b] for b in range(1402, 1408)]  # the hounds, one on each yelp
+T_DEATH = BAR[1423]                         # "du fällst": Siegmund dying
+T_FAINT = BAR[1431]                         # she faints
+T_WATCH = BAR[1433]                         # "Schwester! Geliebte!"
 K = 14
-
-HUNDING = [(0, .75, 'D2'), (.75, .25, 'D2'), (1, 1, 'F2'), (2, .75, 'E2'), (2.75, .25, 'E2'), (3, 1, 'Db2'),
-           (4, 2, 'D2')]                     # composed: Hunding, a heavy dotted tuba figure
-HORN_CALL = [(0, .5, 'A3'), (.5, .25, 'A3'), (.75, 1.0, 'D4'), (1.75, .25, 'C4'), (2, 1.5, 'A3')]
-GALLOP = ['D3', 'F3', 'A3', 'D4', 'A3', 'F3']
 GLINTS = (-24, -9, 10, 23)
 
 SLATE = hexc('#3a3a4a')
@@ -94,68 +98,33 @@ def pass_bed(G):
     return f
 
 
+def singer(t):
+    for t0, t1, who in SUNG:
+        if t0 <= t < t1 + 0.3:
+            return who
+    return None
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The flight's left hand is the
+    gallop ('gallop'), its right hand the twins running ('love'); the left hand of the hunt is 'hunt', the right
+    hand of the hounds 'yelp', the vision of his death 'fate', the faint 'fall'; the rest 'note'."""
     N = []
-
-    def add(t, d, m, v, part, k=0):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    # the flight: a breathless gallop in the violas and cellos, the twins' love torn along over it
-    step = 0.14
-    for i, t in enumerate(np.arange(T_ENTER - 1.5, T_GUILT, step)):
-        m = note(GALLOP[i % 6]) + (0, 0, -2, -4)[(i // 24) % 4]
-        add(t, step, m, 70 + int(30 * smoothstep(T_ENTER - 1.5, T_ENTER + 3, t)) + 10 * (i % 3 == 0), 'gallop', i)
-    for j, t0 in enumerate(T_LOVE):
-        for t, m, v, d in play('twins_love', t0, LBEAT, -12 + 2 * j, 98, 'melody'):
-            add(t, d, m + 12, v, 'love', j)
-        for t, m, v, d in play('twins_love', t0, LBEAT, -12 + 2 * j, 80, 'bass'):
-            add(t, d, m, v, 'lovebass', j)
-    for t in (T_ENTER + 2.2, T_ENTER + 5.6, T_ENTER + 9.4, T_ENTER + 13.0):     # her stumbles
-        add(t, 0.4, 'D2', 104, 'stumble')
-    # guilt: she tears away; the love sinks to a tender cello
-    for j, m in enumerate(('A5', 'Bb5', 'A5', 'Ab5', 'G5')):
-        add(T_GUILT + 0.12 * j, 0.15, m, 104 - 4 * j, 'shriek')
-    add(T_GUILT, 0.5, 'D2', 116, 'stumble')
-    for t, m, v, d in play('twins_love', T_TENDER, TBEAT, -12, 86, 'melody'):
-        add(t, d, m, v, 'tender')
-    for b0, ch in ((0, ('F2', 'C3', 'A3')), (6, ('Bb1', 'F2', 'D3')), (12, ('Eb2', 'Bb2', 'G3'))):
-        for m in ch:
-            add(T_TENDER + b0 * TBEAT, 6 * TBEAT * 1.05, m, 60, 'pad')
-    add(T_GUILT, HORNS[0] - T_GUILT, 'D1', 64, 'pedal')
-
-    # Hunding's horns, far off at the end of Right; his motif in the tubas; she runs again
-    for k, th in enumerate(HORNS + [T_LAST]):
-        for b, d, m in HORN_CALL:
-            add(th + b * 0.32, d * 0.32, m, (78 + 8 * k) if th < T_LAST else 62, 'call', k)
-    for b, d, m in HUNDING:
-        add(T_HUND + b * 0.55, d * 0.55, m, 108, 'hunding')
-        add(T_HUND + 3.3 + b * 0.5, d * 0.5, m, 116, 'hunding')
-    for i, t in enumerate(np.arange(HORNS[0] + 1.5, T_DOGS, 0.14)):
-        add(t, 0.14, note(GALLOP[i % 6]) - 2 + 3 * (i // 36), 80 + int(26 * (t - HORNS[0]) / 14), 'gallop', i)
-    add(HORNS[0], T_DEATH - HORNS[0], 'D2', 76, 'trem')
-    add(0.0, T_ENTER + 2.0, 'D2', 80, 'trem')
-
-    # the hounds: six of them, each a shriek and a snarl
-    for k in range(6):
-        td = T_DOGS + 0.9 * k
-        add(td, 0.2, note('Eb6') - k, 108, 'yelp', k)
-        add(td + 0.05, 0.6, note('D2') + (k % 3), 104, 'snarl', k)
-    add(T_DOGS, T_DEATH - T_DOGS, 'D3', 92, 'trill')
-    # Siegmund dying, in her vision: the Volsungs' fate in the brass
-    for t, m, v, d in play('volsung_fate', T_DEATH, FBEAT, 0, 112):
-        add(t, d, m, v, 'fate' if m >= note('C3') else 'fatebass')
-    add(T_DEATH, 0.8, 'C2', 124, 'crash')
-    # she faints: a falling clarinet; he watches over her
-    for j, m in enumerate(('E5', 'D5', 'C5', 'A4', 'F4', 'D4', 'A3')):
-        add(T_FAINT + 0.32 * j, 0.6, m, 86 - 5 * j, 'fall')
-    add(T_FAINT + 2.4, 1.4, 'D2', 90, 'thud')
-    for t, m, v, d in play('twins_love', T_WATCH + 0.5, 0.75, -12, 92, 'melody'):
-        if t < D - 1.5:
-            add(t, d, m - 12, v, 'solo')
-    for m in ('F1', 'C2', 'A2', 'F3'):
-        add(T_WATCH, D - T_WATCH, m, 66, 'pad')
-    return sorted(N, key=lambda e: e[0])
+    for t, d, m, v, hand in EX['notes']:
+        if t < T_HORN:
+            part = 'gallop' if hand == 1 else 'love'
+        elif t >= T_FAINT - 2.8:
+            part = 'fall'
+        elif t >= T_DEATH:
+            part = 'fate'
+        elif DOGS[0] <= t < BAR[1406] and hand == 0:
+            part = 'yelp'
+        elif T_HUND <= t < BAR[1406] and hand == 1:
+            part = 'hunt'
+        else:
+            part = 'love' if hand == 0 and singer(t) == 'sieglinde' else 'note'
+        N.append((t, d, m, v, part, singer(t)))
+    return N
 
 
 def follow(target, rate):
@@ -174,19 +143,19 @@ def choreography(G):
     F = nframes(D)
     t = np.arange(F) * DT
     rend = at(G, 'Right', 1.0) + 30
-    keys_l = [(0, rend), (T_ENTER, rend), (T_ENTER + 2.2, at(G, 'Right', 0.7)), (T_ENTER + 3.4, at(G, 'Right', 0.62)),
-              (T_ENTER + 5.6, at(G, 'Right', 0.3)), (T_ENTER + 7.0, at(G, 'Right', 0.25)),
-              (T_ENTER + 9.4, at(G, 'Porch Right', 0.7)), (T_ENTER + 10.8, at(G, 'Porch Right', 0.62)),
-              (T_ENTER + 13.0, at(G, 'Porch Right', 0.1)), (T_GUILT, at(G, 'Porch Front', 0.75)),
+    keys_l = [(0, rend), (T_ENTER, rend), (BAR[1176], at(G, 'Right', 0.7)), (BAR[1178], at(G, 'Right', 0.6)),
+              (STUMBLES[0], at(G, 'Right', 0.3)), (STUMBLES[1], at(G, 'Right', 0.25)),
+              (STUMBLES[2], at(G, 'Porch Right', 0.7)), (BAR[1187], at(G, 'Porch Right', 0.62)),
+              (STUMBLES[3], at(G, 'Porch Right', 0.1)), (T_GUILT, at(G, 'Porch Front', 0.75)),
               (T_GUILT + 1.0, at(G, 'Porch Front', 0.5)), (HORNS[0], at(G, 'Porch Front', 0.35)),
               (HORNS[1], at(G, 'Porch Front', 0.1)), (HORNS[2], at(G, 'Porch Left', 0.5)),
-              (HORNS[3], at(G, 'Left', 0.95)), (T_DOGS, at(G, 'Left', 0.85)), (T_FAINT, at(G, 'Left', 0.82)),
+              (HORNS[3], at(G, 'Left', 0.95)), (DOGS[0], at(G, 'Left', 0.85)), (T_FAINT, at(G, 'Left', 0.82)),
               (T_FAINT + 2.4, at(G, 'Left', 0.7)), (D, at(G, 'Left', 0.7))]
-    keys_m = [(0, rend), (T_ENTER + 1.2, rend), (T_ENTER + 3.0, at(G, 'Right', 0.8)),
-              (T_ENTER + 6.5, at(G, 'Right', 0.4)), (T_ENTER + 10.5, at(G, 'Right', 0.05)),
-              (T_ENTER + 14.0, at(G, 'Porch Right', 0.35)), (T_GUILT + 1.0, at(G, 'Porch Front', 0.85)),
-              (T_TENDER + 6.0, at(G, 'Porch Front', 0.65)), (HORNS[1], at(G, 'Porch Front', 0.3)),
-              (HORNS[3], at(G, 'Porch Left', 0.3)), (T_DOGS, at(G, 'Left', 0.95)), (T_FAINT, at(G, 'Left', 0.9)),
+    keys_m = [(0, rend), (T_ENTER + 1.2, rend), (BAR[1177], at(G, 'Right', 0.8)),
+              (BAR[1181], at(G, 'Right', 0.4)), (BAR[1185], at(G, 'Right', 0.05)),
+              (STUMBLES[3] + 0.5, at(G, 'Porch Right', 0.35)), (T_GUILT + 1.0, at(G, 'Porch Front', 0.85)),
+              (BAR[1192], at(G, 'Porch Front', 0.65)), (HORNS[1], at(G, 'Porch Front', 0.3)),
+              (HORNS[3], at(G, 'Porch Left', 0.3)), (DOGS[0], at(G, 'Left', 0.95)), (T_FAINT, at(G, 'Left', 0.9)),
               (T_FAINT + 2.4, at(G, 'Left', 0.72)), (T_WATCH + 2, at(G, 'Left', 0.55)), (D, at(G, 'Left', 0.55))]
 
     def track(keys):
@@ -194,7 +163,7 @@ def choreography(G):
         vs = [k[1] for k in keys]
         return np.interp(t, ts, vs)
     sl = follow(track(keys_l), np.full(F, 3.0))
-    lurch = np.where((t > T_GUILT) & (t < T_TENDER + 8), 10 * np.sin(2 * np.pi * 2.3 * t) * np.sin(2 * np.pi * 0.37 * t), 0.0)
+    lurch = np.where((t > T_GUILT) & (t < T_HORN + 2), 10 * np.sin(2 * np.pi * 2.3 * t) * np.sin(2 * np.pi * 0.37 * t), 0.0)
     sm = follow(track(keys_m), np.full(F, 2.2))
     tb = np.full(F, at(G, 'Porch Right', 0.85))
     tb[t > 0.5] = at(G, 'Porch Right', 0.3)
@@ -207,8 +176,6 @@ def render(G, seed=15):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     d = G.pd
-    L = G.length
-    porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right'])
     bed = pass_bed(G)
     C = choreography(G)
     N = compose()
@@ -221,11 +188,16 @@ def render(G, seed=15):
         i = int(np.searchsorted([e[0] for e in ev], t, side='right')) - 1
         return (ev[i], t - ev[i][0]) if i >= 0 else (None, 99.0)
 
-    love_ev = ons('love', 'tender', 'solo')
+    love_ev = ons('love')
     gallop_ev = ons('gallop')
-    call_on = HORNS + [T_LAST]
-    hund_ev = ons('hunding')
-    fate_on = sorted({e[0] for e in ons('fate')})
+    call_on = HORNS
+    hund_ev = ons('hunt')
+    fate_on = sorted({e[0] for e in ons('fate') if e[3] >= 95})
+    terror = np.array([(e[0], e[3]) for e in N if e[4] == 'note' and BAR[1406] <= e[0] < T_DEATH], float).reshape(-1, 2)
+    lh_t = {round(e[0], 3) for e in N if e[4] == 'note' and e[2] < 60}
+    close = terror[[round(x, 3) in lh_t for x in terror[:, 0]]] if len(terror) else terror
+    snaps = terror[(terror[:, 1] >= 80) & ~np.isin(np.round(terror[:, 0], 3), list(lh_t))]
+    snap_side = rng.uniform(0, 1, len(snaps)) < 0.5
     flick = Flicker(rng, G.N, 3.0, 9.0)
     tw = Flicker(rng, G.N, 2.0, 7.0)
     gap = rng.uniform(0, 1, 64)
@@ -236,25 +208,33 @@ def render(G, seed=15):
         T = t + 80 * K
         fr = np.zeros((G.N, 3))
         fear = smoothstep(HORNS[0] - 1, HORNS[0] + 2, t) * (1 - smoothstep(T_FAINT, T_WATCH, t))
-        vision = smoothstep(T_DOGS - 0.5, T_DOGS + 1.0, t) * (1 - smoothstep(T_FAINT - 0.5, T_FAINT + 2.0, t))
+        vision = smoothstep(DOGS[0] - 0.5, DOGS[0] + 1.0, t) * (1 - smoothstep(T_FAINT - 0.5, T_FAINT + 2.0, t))
         fr += bed(T, 1 - 0.25 * fear - 0.35 * vision, 1 - 0.2 * fear - 0.4 * vision)
         ln, mn = C['linde'][f], C['mund'][f]
 
         # the flight: the gallop as a run of pulses racing along the house ahead of them
         flight = smoothstep(T_ENTER - 1, T_ENTER + 1, t) * (1 - smoothstep(T_GUILT, T_GUILT + 1.5, t))
-        flight += smoothstep(HORNS[0] + 1.5, HORNS[0] + 3, t) * (1 - smoothstep(T_DOGS, T_DOGS + 1, t))
+        flight += smoothstep(HORNS[0] + 1.5, HORNS[0] + 3, t) * (1 - smoothstep(DOGS[0], DOGS[0] + 1, t))
         if flight > 0:
             e, age = last(gallop_ev, t)
             beat = np.exp(-age / 0.1) if e is not None else 0.0
             stripes = (0.5 + 0.5 * np.cos(2 * np.pi * (d / 120 + 2.2 * T))) ** 4
-            near = np.exp(-((d - ln) / 400) ** 2)
-            fr += light(SIEGLINDE, flight * (0.3 + 0.2 * beat) * stripes * near)
-            fr += light(SIEGMUND, flight * (0.25 + 0.15 * beat) * stripes * np.exp(-((d - mn) / 400) ** 2))
+            near = np.exp(-((d - ln) / 650) ** 2)
+            fr += light(SIEGLINDE, flight * (0.4 + 0.4 * beat) * stripes * near)
+            fr += light(SIEGMUND, flight * (0.35 + 0.3 * beat) * stripes * np.exp(-((d - mn) / 650) ** 2))
+
+        # each stumble on the orchestra's accents: a jolt of amber and blue thrown out along the house
+        for ts in STUMBLES:
+            if ts <= t < ts + 1.5:
+                a = t - ts
+                r = 30 + 700 * a ** 0.7
+                fr += light(SIEGLINDE, 1.0 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - ln) - r) / 90) ** 2))
+                fr += light(WHITE, 0.4 * np.exp(-a / 0.15) * np.exp(-((d - ln) / 50) ** 2))
 
         # Hunding's horns: red flashes at the end of Right, nearer each time; his motif darkens Right
         for k, th in enumerate(call_on):
             if th <= t < th + 2.5:
-                a = np.exp(-(t - th) / 0.6) * (0.6 if th == T_LAST else 1.0)
+                a = np.exp(-(t - th) / 0.6)
                 reach = 90 + 70 * k
                 fr += light(HUNDC, a * (0.9 + 0.1 * k) * np.exp(-((d - rend) / reach) ** 2))
                 fr += light(WHITE, 0.25 * a * np.exp(-(t - th) / 0.15) * np.exp(-((d - rend) / 30) ** 2))
@@ -267,8 +247,7 @@ def render(G, seed=15):
         # the hounds: six red-black sparks racing along the house toward her, each with a dark wake
         if vision > 0:
             fr = fr * (1 - 0.45 * vision) + light(DARKRED, 0.9 * vision)
-            for k in range(6):
-                td = T_DOGS + 0.9 * k
+            for k, td in enumerate(DOGS):
                 if td <= t < td + 4.0:
                     u = (t - td) / 3.0
                     p = rend + (ln + 30 - rend) * min(u, 1.0) ** 0.8 + 8 * np.sin(2 * np.pi * 6 * t + k)
@@ -277,6 +256,21 @@ def render(G, seed=15):
                     fr += light(WHITE, 0.35 * a * np.exp(-((d - p + 6) / 4) ** 2))
                     wake = (d > p) & (d < p + 160)
                     fr = fr * (1 - 0.5 * a * wake)[:, None]
+            # the hunt closing in: red waves converge on her on every note of the left hand, teeth snap at her
+            lo = int(np.searchsorted(close[:, 0], t - 1.2))
+            hi = int(np.searchsorted(close[:, 0], t, side='right'))
+            for tn, vn in close[lo:hi]:
+                age = t - tn
+                rad = 1500 * (1 - age / 1.2)
+                fr += light(DOG, vision * 0.7 * (vn / 100) * np.sin(np.pi * age / 1.2)
+                            * np.exp(-((np.abs(d - ln) - rad) / 70) ** 2))
+            lo = int(np.searchsorted(snaps[:, 0], t - 0.4))
+            hi = int(np.searchsorted(snaps[:, 0], t, side='right'))
+            for j in range(lo, hi):
+                age = t - snaps[j, 0]
+                q = ln + (1 if snap_side[j] else -1) * (40 + 220 * (1 - age / 0.4))
+                fr += light(WHITE, vision * 0.8 * (1 - age / 0.4) * np.exp(-((d - q) / 10) ** 2))
+                fr += light(DOG, vision * 0.9 * (1 - age / 0.4) * np.exp(-((d - q) / 30) ** 2))
             # his death, in her mind: the house drowns in dark red and his blue bursts apart, then gathers
             if t >= T_DEATH:
                 i = int(np.searchsorted(fate_on, t, side='right')) - 1
@@ -287,12 +281,18 @@ def render(G, seed=15):
                     q = mn + s * 400 * (1 - np.exp(-(t - T_DEATH) / 0.6)) * (1 - smoothstep(T_DEATH + 3, T_FAINT, t))
                     fr += light(SIEGMUND, vision * 0.8 * burst * np.exp(-((d - q) / 8) ** 2))
                 fr += light(WHITE, 0.8 * np.exp(-(t - T_DEATH) / 0.2) * np.exp(-((d - mn) / 120) ** 2))
+                for b in range(1423, 1429):                                     # each toll: a ring out from him
+                    if BAR[b] <= t < BAR[b] + 1.5:
+                        a = t - BAR[b]
+                        r = 40 + 900 * a ** 0.7
+                        fr += light(HUNDC, 0.9 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - mn) - r) / 80) ** 2))
+                        fr += light(WHITE, 0.5 * np.exp(-a / 0.3) * np.exp(-((np.abs(d - mn) - r) / 20) ** 2))
 
         # Sieglinde: wild flicker in her guilt and terror; she falls and lies dim
         e, age = last(love_ev, t)
         sing = np.exp(-age / 0.3) if e is not None and age < 2 else 0.0
         entered = smoothstep(T_ENTER - 0.2, T_ENTER + 0.8, t)
-        wild = smoothstep(T_GUILT - 0.3, T_GUILT + 0.3, t) * (1 - smoothstep(T_TENDER + 4, T_TENDER + 8, t)) + 0.7 * fear
+        wild = smoothstep(T_GUILT - 0.3, T_GUILT + 0.3, t) * (1 - smoothstep(T_HORN, T_HORN + 2, t)) + 0.7 * fear
         faint = smoothstep(T_FAINT, T_FAINT + 2.6, t)
         jitter = 1 + 0.5 * wild * (flick(t)[:1].item() - 0.5) * 2
         sl = entered * (0.8 + 0.15 * sing) * (1 - 0.56 * faint) * max(jitter, 0.3)
@@ -329,7 +329,8 @@ def render(G, seed=15):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction scene by scene: the flight, the horns, the hounds,
+    the vision, the faint."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -339,42 +340,8 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
-    for name, gain, rev in (('low', 0.18, 0.2), ('brass', 0.17, 0.3), ('horns', 0.15, 0.5),
-                            ('strings', 0.16, 0.3), ('winds', 0.15, 0.35), ('perc', 0.2, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vas = M.sampler('Strings/Viola Section/spic/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    o = Orchestra(M, level=1.8)
+    rend = pan_at(at(G, 'Right', 1.0))
 
     def pl(t):
         return pan_at(np.interp(t, C['t'], C['linde']))
@@ -382,57 +349,76 @@ def score(M, G):
     def pm(t):
         return pan_at(np.interp(t, C['t'], C['mund']))
 
-    rend = pan_at(at(G, 'Right', 1.0))
-    for t, d, m, v, part, k in compose():
-        if part == 'gallop':
-            M.add('strings', (vas if k % 2 else vcs).play(m, v), t, 0.7, 0.5 * (pl(t) + pm(t)) + (0.15 if k % 2 else -0.15))
-        elif part == 'love':
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.2), t, 0.8, pl(t))
-            M.add('winds', ob.play(m, v - 12, dur=d * 1.05, release=0.2), t, 0.6, pl(t))
-        elif part == 'lovebass':
-            M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.3), t, 0.7, pm(t))
-        elif part == 'stumble':
-            M.add('perc', timp.play(v, pitch=-2), t, 0.8, pl(t))
-            M.add('low', cb.play(m, v, dur=d, release=0.2), t, 0.6, pl(t))
-        elif part == 'shriek':
-            M.add('winds', ob.play(m - 12, v, dur=d, release=0.1), t, 0.9, pl(t))
-        elif part == 'tender':
-            M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pm(t))
-        elif part == 'pad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, 0.0, rise=0.8, fall=1.2, gain=0.65)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=1.5, fall=1.0)
-        elif part == 'call':
-            M.add('horns', mute.play(m, v, dur=d * 1.05, release=0.5), t, 0.9 if k < 4 else 0.5, rend)
-        elif part == 'hunding':
-            M.add('brass', tuba.play(m + 12, v, dur=d * 1.05, release=0.2), t, 1.0, rend)
-            M.add('brass', tbn.play(m + 12, v - 14, dur=d * 1.05, release=0.2), t, 0.5, rend)
-            if d >= 0.5:
-                M.add('perc', timp.play(v - 10, pitch=-2), t, 0.6, rend)
-        elif part == 'trem':
-            hold('low', trem, m, t, t + d, v, 0.0, rise=2.0, fall=1.0, gain=0.7)
-        elif part == 'yelp':
-            p = pan_at(np.interp(t + 1.2, [T_DOGS, T_DOGS + 3], [at(G, 'Right', 1.0), np.interp(t, C['t'], C['linde'])]))
-            M.add('winds', pic.play(m - 12, v), t, 1.0, p)
-            M.add('winds', pic.play(m - 13, v - 10), t + 0.1, 0.8, p)
-        elif part == 'snarl':
-            M.add('brass', tbn.play(m + 12, v, dur=d, release=0.1), t, 0.6, rend * 0.7)
-            M.add('perc', whoosh(2.4, 2500, 600, 0.3, seed=20 + k), t, 0.5, rend * (1 - 0.3 * k))
-        elif part == 'trill':
-            for i, tt in enumerate(np.arange(t, t + d, 0.09)):
-                M.add('low', vcs.play(m - 12 + (i % 2), 92), tt, 0.5, -0.2 + 0.4 * (i % 2))
-        elif part == 'fate':
-            s = horn if m >= note('G3') else tbn
-            M.add('horns' if s is horn else 'brass', s.play(m, v, dur=d * 1.05, release=0.5), t, 0.8, pm(t))
-        elif part == 'fatebass':
-            M.add('brass', tuba.play(m + (12 if m < note('E2') else 0), v, dur=d * 1.05, release=0.5), t, 0.8, pm(t))
-        elif part == 'crash':
-            M.add('perc', crash.play(120), t, 0.9, pm(t))
-            M.add('perc', gong.play(116), t, 0.8, pm(t))
-        elif part == 'fall':
-            M.add('winds', cl.play(m - 12, v, dur=d, release=0.3), t, 0.9, pl(t))
-        elif part == 'thud':
-            M.add('perc', roll.play(v, dur=d), t - 0.8, 0.5, pl(t))
-            M.add('low', cb.play(m + 12, v, dur=d, release=0.6), t, 0.8, pl(t))
-        elif part == 'solo':
-            M.add('strings', vc.play(m + 12, v, dur=d * 1.05, release=0.5), t, 1.1, pm(t))
+    def size(t):
+        if t < T_HORN:
+            return 0.5 + 0.5 * smoothstep(BAR[1178], STUMBLES[0], t)
+        return 1.0 if t >= T_DEATH else 0.7
+
+    def role(t, d, m, v, hand):
+        if t >= T_FAINT - 2.8:                                                  # the faint: falling chords
+            return [('clarinets', 0, 0, 0.7)] if hand == 0 else [('cellos', 0, 0, 0.55), ('violas', 12, -8, 0.35)]
+        if T_HORN <= t < T_HUND + 1.2 and d >= 0.3:                             # Hunding's horns, far off
+            return [('horns', 12 if m < 48 else 0, 0, 0.8)]
+        if DOGS[0] <= t < BAR[1406] and hand == 0:                              # the hounds' yelps
+            return [('piccolo', 12 if m < 72 else 0, 4, 0.5), ('violins', 0, 0, 0.5)]
+        if T_DEATH <= t and hand == 1:                                          # his death: the brass tolls
+            return [('trombones', 12 if m < 48 else 0, 6, 0.85), ('tuba', 0 if m < 48 else -12, 0, 0.6),
+                    ('horns', 12, -4, 0.5)]
+        if hand == 0 and singer(t) == 'sieglinde':
+            return [('violins', 0, -4, 0.55), ('oboes', 0, -8, 0.45)]
+        return None
+
+    def pan(t, m):
+        if t < T_HORN:
+            return 0.5 * (pl(t) + pm(t))
+        if T_HORN <= t < T_HUND + 1.2:
+            return rend
+        return pl(t) * 0.7
+
+    o.tutti(EX['notes'], size=size, role=role, pan=pan)
+    for k, ts in enumerate(STUMBLES):
+        o.hit('timpani', ts, 108 + 2 * k, pitch=-2, gain=0.55, pan=pl(ts))
+    o.hit('crash', STUMBLES[0], 108, gain=0.5)
+    o.hit('timpani roll', T_HUND, 96, gain=0.4, pan=rend)
+    for td in DOGS:
+        o.hit('timpani', td, 96, pitch=1, gain=0.35, pan=rend * 0.6)
+    o.hit('crash', T_DEATH, 116, gain=0.6, pan=pm(T_DEATH))
+    for b in (1424, 1425):
+        o.hit('timpani', BAR[b], 112, pitch=-3, gain=0.55)
+    o.hit('gong', BAR[1426], 116, gain=0.55, pan=pm(BAR[1426]))
+    o.hit('crash', BAR[1426], 110, gain=0.45)
+    o.hit('timpani roll', T_FAINT + 1.6, 80, gain=0.35, pan=pl(T_FAINT + 2.4))
+
+    # the stage: what the lights show, heard
+    N = compose()
+    fxhit = lambda name, t, v, g, p: o.hit(name, t, v, gain=g, pan=p, fx=True)       # a stage hit, on the fader
+    last = -1.0
+    for t, d, m, v, part, who in N:                                             # their running feet on the gallop
+        if part == 'gallop' and t - last >= 0.16 and (t < T_GUILT + 1.0):
+            fxhit('hoof soft', t, min(127, v + 10), 0.55, pl(t) if int(t * 7) % 2 else pm(t))
+            last = t
+    for k, ts in enumerate(STUMBLES):                                           # each stumble
+        o.hit('bass drum', ts, 112, gain=0.5, pan=pl(ts), fx=True)
+        fxhit('scrape', ts + 0.04, 96, 0.4, pl(ts))
+    o.gallop(T_HUND, DOGS[0] + 2.0, 0.42, pan=rend, v=84, gain=0.6)             # the hunt riding nearer
+    for k, td in enumerate(DOGS):                                               # each hound: a yelp, paws racing at her
+        fxhit('brake drum', td, 118, 0.8, rend)
+        fxhit('metal', td + 0.02, 100, 0.35, rend)
+        o.gallop(td, td + 3.0, 0.24, v=100, gain=0.55,
+                 pan=lambda t, td=td: rend + (pl(td + 3) - rend) * min((t - td) / 3.0, 1.0) ** 0.8)
+    for t, d, m, v, part, who in N:                                             # teeth snapping at her
+        if part == 'note' and BAR[1406] <= t < T_DEATH and v >= 95:
+            fxhit('brake drum', t, 105, 0.45, float(np.clip(pl(t) + (0.25 if int(t * 13) % 2 else -0.25), -1, 1)))
+    o.shatter(T_DEATH, pm(T_DEATH), 1.0)                                        # "du fällst": the sword in pieces
+    o.thunder(T_DEATH + 0.05, 0.9, pm(T_DEATH), 0.8)
+    o.boom(BAR[1426], pm(BAR[1426]), 1.0)                                       # "die Esche stürzt": the ash crashes down
+    fxhit('scrape', BAR[1426] - 0.4, 120, 1.0, pm(BAR[1426]))
+    o.thunder(BAR[1426] + 0.05, 1.0, pm(BAR[1426]), 0.9)
+    o.boom(T_FAINT + 1.2, pl(T_FAINT + 1.2), 0.45)                              # she falls
+    # the flight's feet and stumbles lead; they back off for the lovers' words and further for Hunding's horns, so
+    # the horns are clear; the hunt comes forward as it nears, the hounds lead, the snapping stays up, the sword's
+    # shattering and the ash tree's crash lead hardest; then they recede for "Bruder!" and all but go for his
+    # "Schwester! Geliebte!"
+    o.effects([(0.0, 0), (22.8, 0), (23.4, -8), (30.4, -8), (30.8, -13), (35.8, -13), (36.4, -6), (43.0, -6),
+               (43.4, 1), (51.0, 1), (51.6, -6), (55.6, -6), (56.2, -3), (68.6, -3), (69.0, 1), (70.4, 0),
+               (72.2, 3), (75.2, 3), (76.0, -8), (81.0, -8), (81.6, -15)])

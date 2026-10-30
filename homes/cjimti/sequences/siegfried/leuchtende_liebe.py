@@ -1,25 +1,32 @@
 """Leuchtende Liebe: the end of the opera, on the summit in the full sunrise, Siegfried emerald at Porch Front 0.42
 and Brünnhilde silver with gold glints at 0.55.
 
-Siegfried's heroism (Donington 78) opens it on the horns and trombones, every note an emerald wave rolling out
-from him over the house. Then the two of them answer each other, faster and faster: his motif (53) on the
-horns, each note an emerald wave; love as fulfilment (90) from her on the violins, each note a wave of silver
-and gold. Siegfried's love (89) comes back broad in the whole orchestra, and the runs of the house swell one
-after another in emerald and silver. Then they laugh at death, "leuchtende Liebe, lachender Tod!": the two
-motifs tumble over each other, quicker every time, and every note slams a whole run of the house in emerald or
-silver-gold, run after run round the roofline, while the light beneath them builds. His heroism comes once
-more, fast, over a timpani roll, the whole house climbing to full strength: emerald on the wings, silver and
-gold on the rock.
+The music is Wagner's own: the last 53 bars of Siegfried (Act III, bars 1738-1790), as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py), to the
+opera's last chord. The two of them throw their lines at each other ("Götterdämm'rung, dunkle herauf!", "Heil der
+Welt, da Brünnhilde lebt!", "Sie ist mir ewig, ist mir immer, Erb' und Eigen, Ein' und All'!"), and then laugh at
+death together, "leuchtende Liebe, lachender Tod!", four times, the last up to her high C; then the orchestra
+races to the end. The voices are not in the reduction, so Brünnhilde's "leuchtende Liebe, lachender Tod!" comes
+from the printed vocal score (Breitkopf & Härtel, 1914, archive.org 31761034115105, pp. 364-365), checked against
+the orchestra doubling it, and is played as written on a trumpet doubled by violins. The orchestra is full from
+the start and fuller as it goes, trumpets on top in the coda. The staging adds what a production would for the
+final blaze: timpani driving the coda, cymbal swells into the great chords and a crash and a gong on the last; it
+keeps out of the way while they sing.
 
-Four great C major chords end it, each a whole-house hit of white gold, and on the last the house blazes
-emerald and silver and gold on every run, and holds it to the end.
+Every line they throw at each other sends a wave out across the house, emerald from him, silver and gold from
+her, and the orchestra's big chords swell whole runs between them. "Leuchtende Liebe, lachender Tod!": every note
+of her line slams a whole run of the house in silver-gold, every chord under it a run in emerald, run after run
+round the roofline, and on her high C the whole house flashes white gold. The coda builds the light beneath them
+to full strength, emerald on the wings, silver and gold on the rock, every accent a flash; the four great chords
+at the end are each a whole-house hit of white gold, and on the last the house blazes emerald and silver and gold
+on every run and holds it to the end.
 
 compose() holds every note; stage(), sky(), fire() and figure() are the rock and the sky, shared word for word by
 Act III's scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF30'
 TITLE = 'Leuchtende Liebe'
@@ -30,19 +37,26 @@ VOICEOVER = ('Shining love, and laughing death! '
              'The end of Siegfried.')
 
 K = 7                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_HERO = 0.5                                # Siegfried's heroism, broad
-HBEAT = 0.48
-# the answers, quicker every time: (start, beat, who) -- 'S' his motif, 'L' love as fulfilment, from her
-CALLS = [(13.0, 0.6, 'S'), (16.2, 0.5, 'L'), (19.6, 0.55, 'S'), (22.5, 0.45, 'L'), (25.6, 0.5, 'S'),
-         (28.0, 0.42, 'L'), (31.0, 0.45, 'S'), (33.2, 0.38, 'L')]
-T_LOVE = 36.0                               # Siegfried's love, broad, the whole orchestra
-LBEAT = 0.62
-LAUGH = [(45.5, 0.55, 'S'), (47.8, 0.45, 'L'), (50.6, 0.48, 'S'), (52.6, 0.4, 'L'), (55.0, 0.42, 'S'),
-         (56.7, 0.36, 'L'), (58.8, 0.38, 'S'), (60.3, 0.33, 'L')]
-T_HERO2 = 62.0                              # his heroism once more, fast
-H2BEAT = 0.26
-T_CHORDS = [68.5, 70.0, 71.5, 73.5]         # the four great chords; the last held to the end
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1738-1790, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds'] + 2.4                     # the last chord rings on and the blaze holds
+LINES = sorted((s[0], s[2][:2]) for s in EX['singing'] if s[0] < BAR[1761])   # their lines: (time, 'Si'/'Br')
+T_LAUGH = BAR[1761]                         # "leuchtende Liebe, lachender Tod!"
+# Her line, from the vocal score: (bar, beat, beats, note), 4/4.
+VOICE = [(1761, 2, 4, 'A5'), (1762, 2, 1.5, 'C#5'), (1762, 3.5, 0.5, 'D5'), (1763, 0, 1.5, 'D#5'),
+         (1763, 1.5, 0.5, 'E5'), (1763, 2, 2, 'E5'), (1764, 1, 2, 'F5'), (1764, 3, 0.5, 'D5'), (1764, 3.5, 0.5, 'B4'),
+         (1765, 0, 2.5, 'G5'),
+         (1767, 2, 4, 'F5'), (1768, 2, 1.5, 'E5'), (1768, 3.5, 0.5, 'D5'), (1769, 0, 1, 'G5'),
+         (1769, 1, 1 / 3, 'G5'), (1769, 4 / 3, 1 / 3, 'F5'), (1769, 5 / 3, 1 / 3, 'E5'), (1769, 2, 1, 'E5'),
+         (1771, 0, 4 / 3, 'D5'), (1771, 4 / 3, 1 / 3, 'C#5'), (1771, 5 / 3, 1 / 3, 'D5'), (1771, 2, 4, 'A5'),
+         (1772, 2, 1, 'G#5'),
+         (1773, 0, 4 / 3, 'E5'), (1773, 4 / 3, 1 / 3, 'A5'), (1773, 5 / 3, 1 / 3, 'G5'), (1773, 2, 4, 'G5'),
+         (1774, 2, 2, 'E5'),
+         (1776, 0, 3, 'G5'), (1776, 3, 0.5, 'A5'), (1776, 3.5, 0.5, 'G5'), (1777, 0, 2, 'C6')]
+T_HIGH_C = BAR[1777]                        # her high C: the whole house flashes
+T_CODA = BAR[1778]                          # the orchestra races to the end
+CHORDS = accents(EX['notes'], BAR[1786] + 1, EX['seconds'], 60, 4, 0.8)[-4:]     # the four great chords
+CODA = accents(EX['notes'], T_CODA, CHORDS[0] - 0.3, 80, 3, 0.3)
 
 STORM = hexc('#1a2ab0')
 CLOUD = hexc('#4a6aff')
@@ -145,36 +159,25 @@ def heroine(fr, S, p, lvl, T, w=16.0):
     return fr + light(GLINT, 0.8 * lvl * tw ** 3 * np.exp(-((S['d'] - p) / (3 * w)) ** 2))
 
 
+def when(bar, beat):
+    """Excerpt time of a beat in a 4/4 bar."""
+    return float(np.interp(bar + beat / 4, [b[0] for b in EX['bars']], [b[1] for b in EX['bars']]))
+
+
+def voice():
+    """Her line in seconds: (time, seconds, midi)."""
+    return [(when(b, x), when(b, x + n) - when(b, x), note(name)) for b, x, n, name in VOICE]
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, hand, part, trem). 'lines' while they
+    throw their lines at each other, 'laugh' under "leuchtende Liebe", 'coda' after; 'voice' is her line."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t, m, v, d in play('siegfried_heroism', T_HERO, HBEAT, 0, 108):
-        add(t, d, m, v, 'heroism', 0)
-    for i, (t0, beat, who) in enumerate(CALLS + LAUGH):
-        v = 100 + min(24, 3 * i)
-        if who == 'S':
-            for t, m, vv, d in play('siegfried', t0, beat, -12, v):
-                add(t, d, m, vv, 'S', i)
-        else:
-            for t, m, vv, d in play('love_fulfilled', t0, beat, 0, v):
-                add(t, d, m, vv, 'L', i)
-    for t, m, v, d in play('siegfried_love', T_LOVE, LBEAT, -12, 112):
-        add(t, d, m, v, 'love')
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3'):
-        add(T_LOVE, 13.9 * LBEAT, m, 84, 'lovebed')
-    for t, m, v, d in play('siegfried_heroism', T_HERO2, H2BEAT, 0, 120):
-        add(t, d, m, v, 'heroism', 1)
-    add(T_HERO2, T_CHORDS[0] - T_HERO2, 'C2', 110, 'roll')
-    chords = [('C2', 'C3', 'G3', 'C4', 'E4', 'G4'), ('F2', 'C3', 'A3', 'C4', 'F4', 'A4'),
-              ('G2', 'D3', 'B3', 'D4', 'G4', 'B4'), ('C2', 'C3', 'G3', 'C4', 'E4', 'G4', 'C5')]
-    for k, (t0, ch) in enumerate(zip(T_CHORDS, chords)):
-        dur = (T_CHORDS[k + 1] - t0 - 0.15) if k + 1 < len(T_CHORDS) else D - t0 - 1.0
-        for m in ch:
-            add(t0, dur, m, 124, 'chord', k)
+    for t, d, m, v, h, tr in tidy(EX['notes']):
+        part = 'lines' if t < T_LAUGH - 0.01 else 'laugh' if t < T_CODA - 0.01 else 'coda'
+        N.append((t, d, m, v, h, part, tr))
+    for t, d, m in voice():
+        N.append((t, d, m, 110, 0, 'voice', False))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -183,17 +186,15 @@ def render(G, seed=30):
     out = np.zeros((F, G.N, 3))
     S = stage(G)
     d = S['d']
-    L = d.max()
     N = compose()
     ps, pb = at(G, 'Porch Front', SIEG_AT), at(G, 'Porch Front', BRUNN_AT)
-    hero_on = np.array(sorted({e[0] for e in N if e[4] == 'heroism'}))
-    s_notes = [e for e in N if e[4] == 'S']
-    l_notes = [e for e in N if e[4] == 'L']
-    love_on = np.array(sorted({e[0] for e in N if e[4] == 'love'}))
     runs = {r: (G.seg_of == r) for r in RUNS}
     wings = np.isin(G.seg_of, ['Side', 'Left', 'Right'])
-    laugh_from = LAUGH[0][0] - 0.5
-    slam = sorted([(e[0], 'S') for e in s_notes if e[0] >= laugh_from] + [(e[0], 'L') for e in l_notes if e[0] >= laugh_from])
+    big = np.array(accents(EX['notes'], 0, T_LAUGH, 90, 4, 0.9))
+    sung = np.array(sorted({e[0] for e in N if e[5] == 'voice'}))
+    under = np.array(accents([e[:5] for e in N if e[5] == 'laugh' and e[4] == 1], T_LAUGH, T_CODA, 70, 2, 0.35))
+    slam = sorted([(t0, 'B') for t0 in sung] + [(t0, 'S') for t0 in under])
+    coda = np.array(CODA)
 
     def recent(ts, t, span):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -202,55 +203,56 @@ def render(G, seed=30):
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        build = smoothstep(T_HERO2 - 2, T_CHORDS[-1], t)
-        blaze = smoothstep(T_CHORDS[-1], T_CHORDS[-1] + 0.6, t)
+        build = smoothstep(T_CODA - 2, CHORDS[-1], t)
+        blaze = smoothstep(CHORDS[-1], CHORDS[-1] + 0.6, t)
         lv = dict(DAWN)
         lv['dawn'] = DAWN['dawn'] * (1 - 0.45 * smoothstep(1, 3, t)) * (1 - 0.6 * blaze)
         fr = sky(S, T, lv)
 
         # the light building beneath them: emerald on the wings, silver and gold on the rock
-        base = 0.15 * smoothstep(T_LOVE, T_LOVE + 9, t) + 0.6 * build + 0.3 * blaze
+        base = 0.12 * smoothstep(T_LAUGH - 4, T_LAUGH, t) + 0.6 * build + 0.3 * blaze
         shimmer = 0.85 + 0.15 * np.sin(2 * np.pi * (d / 260 - 0.6 * t))
         fr += light(EMERALD, base * wings * shimmer)
         fr += light(SILVER, 0.85 * base * S['porch'] * shimmer)
         tw = 0.5 + 0.5 * np.sin(2 * np.pi * (d / 31 + 1.7 * T)) * np.sin(2 * np.pi * (d / 19 - 1.1 * T))
         fr += light(GOLD, (0.4 * build + 0.6 * blaze) * tw ** 2)
 
-        # heroism: emerald waves out from him
-        span = 2.2
-        a = recent(hero_on, t, span)
-        if a is not None:
-            r = 1500 * (1 - np.exp(-a / 0.6))
-            fr += light(EMERALD, 0.95 * np.exp(-a / 0.9) * np.exp(-((np.abs(d - ps) - r) / 260) ** 2))
-
-        # the answers before the laughter: emerald waves from him, silver and gold from her
-        for notes, p, c1, c2 in ((s_notes, ps, EMERALD, HEAD), (l_notes, pb, SILVER, GLINT)):
-            ons = np.array(sorted({e[0] for e in notes if e[0] < laugh_from}))
-            a = recent(ons, t, 2.0)
-            if a is not None:
+        # their lines thrown at each other: a wave out from whoever sings, emerald from him, silver and gold from her
+        for t0, who in LINES:
+            a = t - t0
+            if 0 <= a < 2.2:
+                p, c1, c2 = (ps, EMERALD, HEAD) if who == 'Si' else (pb, SILVER, GLINT)
                 r = 1500 * (1 - np.exp(-a / 0.55))
                 fr += light(c1, 0.95 * np.exp(-a / 0.8) * np.exp(-((np.abs(d - p) - r) / 240) ** 2))
                 fr += light(c2, 0.5 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - p) - 0.8 * r) / 80) ** 2))
-
-        # his love, broad: each note swells a whole run, emerald and silver in turn
-        a = recent(love_on, t, 3.0)
+        # the orchestra's big chords between them swell whole runs
+        a = recent(big, t, 2.0)
         if a is not None:
-            j = int(np.searchsorted(love_on, t, side='right')) - 1
-            c = EMERALD if j % 2 == 0 else SILVER
-            fr += light(c, 0.95 * smoothstep(0, 0.3, a) * np.exp(-a / 1.6) * runs[RUNS[j % len(RUNS)]])
+            j = int(np.searchsorted(big, t, side='right')) - 1
+            fr += light(EMERALD if j % 2 == 0 else SILVER, 0.8 * smoothstep(0, 0.15, a) * np.exp(-a / 0.9)
+                        * runs[RUNS[j % len(RUNS)]])
 
-        # laughing at death: every note slams a whole run, emerald for him, silver-gold for her
+        # laughing at death: every note of hers slams a run in silver-gold, every chord under it a run in emerald
         for j, (t0, who) in enumerate(slam):
             a = t - t0
             if 0 <= a < 0.9:
                 run = runs[RUNS[j % len(RUNS)]]
                 if who == 'S':
-                    fr += light(EMERALD, np.exp(-a / 0.3) * run) + light(HEAD, 0.5 * np.exp(-a / 0.08) * run)
+                    fr += light(EMERALD, np.exp(-a / 0.45) * run) + light(HEAD, 0.5 * np.exp(-a / 0.08) * run)
                 else:
-                    fr += light(SILVER, np.exp(-a / 0.3) * run) + light(GLINT, 0.6 * np.exp(-a / 0.2) * run)
+                    fr += light(SILVER, np.exp(-a / 0.45) * run) + light(GLINT, 0.6 * np.exp(-a / 0.3) * run)
+        if T_HIGH_C <= t < T_HIGH_C + 2.0:
+            a = t - T_HIGH_C
+            fr += light(WHITEGOLD, 0.85 * np.exp(-a / 0.45))
+
+        # the coda: every accent a flash over the building light, from both ends in turn
+        a = recent(coda, t, 0.6)
+        if a is not None:
+            j = int(np.searchsorted(coda, t, side='right')) - 1
+            fr += light(WHITEGOLD if j % 2 else EMERALD, 0.7 * np.exp(-a / 0.22) * (S['porch'] if j % 2 else wings))
 
         # the four great chords: each a whole-house hit of white gold; the last becomes the blaze
-        for k, t0 in enumerate(T_CHORDS):
+        for k, t0 in enumerate(CHORDS):
             a = t - t0
             if 0 <= a < 1.5:
                 fr += light(WHITEGOLD, (0.75 + 0.08 * k) * np.exp(-a / (0.35 + 0.25 * (k == 3))))
@@ -265,7 +267,7 @@ def render(G, seed=30):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with her line from the vocal score on top."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -274,76 +276,25 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.26, 0.25), ('brass', 0.28, 0.3), ('strings', 0.26, 0.32), ('perc', 0.24, 0.3),
-                            ('harp', 0.18, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     her = pan_at(at(G, 'Porch Front', BRUNN_AT))
     him = pan_at(at(G, 'Porch Front', SIEG_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'heroism':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, him, rise=0.08, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, him)
-            M.add('low', tbn.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.6, him)
-            if k == 1 and d > 1.0:
-                M.add('perc', timp.play(v - 10, pitch=-5), t, 0.7, 0.0)
-        elif part == 'S':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.85, him)
-            M.add('brass', tpt.play(m, v - 22, dur=d * 1.1, release=0.25), t, 0.4, him)
-        elif part == 'L':
-            if d > 0.8:
-                hold('strings', vn, m, t, t + d, v, her, rise=0.06, fall=0.6, gain=0.7)
-            else:
-                M.add('strings', vn.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, her)
-            M.add('harp', harp.play(m, v - 20), t, 0.5, her)
-        elif part == 'love':
-            if d > 1.0:
-                hold('strings', vn, m, t, t + d, v, 0.0, rise=0.2, fall=1.0, gain=0.75)
-                hold('brass', horn, m - 12, t, t + d, v - 14, 0.0, rise=0.2, fall=1.0, gain=0.5)
-            else:
-                M.add('strings', vn.play(m, v, dur=d * 1.1, release=0.35), t, 0.85, 0.0)
-        elif part == 'lovebed':
-            s = vc if m >= note('E3') else cb
-            hold('low', s, m if s is vc else m + 12, t, t + d, v, 0.0, rise=1.0, fall=1.5, gain=0.5)
-        elif part == 'roll':
-            r = 0.0
-            while r < d:
-                M.add('perc', roll.play(min(127, int(v * (0.7 + 0.3 * r / d))), pitch=-4, dur=2.2), t + r, 0.6, 0.0)
-                r += 2.0
-        elif part == 'chord':
-            s = tuba if m < note('C3') else tbn if m < note('C4') else tpt if m >= note('G4') else horn
-            mm = m if s in (tuba, tbn) else m - 12
-            hold('brass', s, mm, t, t + d, v, 0.0, rise=0.03, fall=1.2 if k < 3 else 2.0, gain=0.7)
-            if m == min(e[2] for e in compose() if e[4] == 'chord' and e[5] == k):
-                M.add('perc', timp.play(124, pitch=-5), t, 1.0, 0.0)
-                M.add('perc', crash.play(124), t, 0.9, 0.0)
-    for t0 in (T_LOVE, T_HERO2):
-        M.add('perc', crash.play(110), t0, 0.7, 0.0)
+    mid = (her + him) / 2
+    o = Orchestra(M, level=1.7)
+    notes = [(t, d, m, v, h, tr) for t, d, m, v, h, part, tr in compose() if part != 'voice']
+    o.tutti(notes, size=lambda t: 0.7 if t < T_LAUGH else 0.85 if t < T_CODA else 1.0,
+            pan=lambda t, m: mid * 0.6)
+    for t, d, m in voice():                  # her line: a trumpet, doubled by violins
+        o.play('trumpets', m, t, d, 112, her, 0.9)
+        o.play('violins', m, t, d, 98, her, 0.4)
+
+    # the staging for the final blaze: timpani driving the coda, cymbals into the great chords, a gong at the last
+    o.hit('crash', T_HIGH_C, 112, gain=0.5, pan=her)
+    o.hit('timpani roll', T_CODA, 100, pitch=-5, gain=0.45, pan=mid)
+    for t0 in CODA:
+        o.hit('timpani', t0, 112, pitch=-5, gain=0.45, pan=mid)
+    o.hit('cymbal swell', CHORDS[0] - 2.6, 100, gain=0.45, pan=mid)
+    for k, t0 in enumerate(CHORDS):
+        o.hit('crash', t0, 110 + 4 * k, gain=0.4 + 0.08 * k, pan=mid)
+        o.hit('bass drum', t0, 120, gain=0.5, pan=mid)
+    o.hit('gong', CHORDS[-1], 120, gain=0.5, pan=mid)
+    o.effects([(0.0, -6), (T_LAUGH - 1, -12), (T_HIGH_C - 0.5, -12), (T_HIGH_C, -3), (T_CODA, 0), (D, 0)])

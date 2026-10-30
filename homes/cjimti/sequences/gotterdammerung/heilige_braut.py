@@ -1,22 +1,26 @@
 """Heilige Braut: the valley at dusk as GD24 left it, Siegfried dying in the middle of Porch Front with the vassals'
 torches drawn in round him, Gunther beside him. His heartbeat is still going, faint. Then the harp begins, and the
 music of Brünnhilde's awakening comes back to him: rising chords, E minor into C major, the harp running up through
-each one. Every chord blooms a wave out of him over the whole house, silver white in front and gold behind, and
-with each one the vision holds a little more of the house, until every run shimmers silver with gold glinting all
-through it and his emerald burns bright again. "Brünnhilde! Heilige Braut!"
+each one. Every chord blooms a wave out of him over the whole house, silver white in front and gold behind, and with
+each one the vision holds a little more of the house, until every run shimmers silver with gold glinting all through
+it and his emerald burns bright again. "Brünnhilde! Heilige Braut!": his voice sends emerald surging through the
+silver; violet ripples shimmer after it, and on "da lacht ihm Brünnhildes Lust" the climax surges emerald end to end.
+"Brünnhild' bietet mir Gruß!": on its last note he dies, one white flash over the whole house, his emerald goes out,
+the vision falls back into him from both ends like a tide running out, and the night comes down.
 
-The magic sleep (Donington 16) shimmers in the winds, violet-silver ripples over the vision, and his love (89)
-sings out on the horn, every long note an emerald surge running through the silver to both ends. On its last note
-he dies: one white flash over the whole house, his emerald goes out, and the vision falls back into him from both
-ends like a tide running out. The power of fate (84) sounds twice on the brass, indigo rolling over the house, the
-vassals' torches gather close round the body and lift, and the night comes down.
+The music is Wagner's own, Act III, bars 866 to 869, 872 to 874, 898 to 900 and 909 to 912 as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): harp and the
+violins' shimmer for the arpeggios, soft strings and winds for the held chords. His lines are not in the reduction,
+so they are taken from the Schott vocal score (archive.org gtterdmmerung1900wagn, pp. 297 to 301) and played on the
+horn, his own instrument, doubled by the cellos. Nothing else is added but the last of his heartbeat on the timpani
+and a soft gong as he dies.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD25'
 TITLE = 'Heilige Braut'
@@ -26,15 +30,32 @@ DESCRIPTION = ('Dying, Siegfried remembers the morning he woke Brünnhilde, and 
 VOICEOVER = ('At the very end, his memory comes back. With his last breath, Siegfried greets Brünnhilde.')
 
 K = 3                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_HARP = 4.0                                # the harp begins
-CHORDS = [(6.0, ('E2', 'E3', 'G3', 'B3', 'E4')), (11.0, ('C2', 'C3', 'E3', 'G3', 'C4')),
-          (16.0, ('A1', 'A2', 'E3', 'A3', 'C4')), (21.0, ('E2', 'E3', 'Ab3', 'B3', 'E4')),
-          (26.0, ('C2', 'G2', 'E3', 'G3', 'C4', 'E4'))]
-T_SLEEP = 31.0                              # the magic sleep, shimmering
-T_LOVE = 41.0                               # his love, on the horn
-T_DEATH = 57.0                              # he dies
-T_FATE = [62.0, 70.0]
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 866-870, 872-875, 898-901 and 909-913, Solti 1958
+D = EX['seconds']
+SEG = [s_['start'] for s_ in EX['segments']] + [D]
+
+
+def when(m):
+    """Bar position m (as in the dataset) -> seconds into the excerpt."""
+    for s_ in EX['segments']:
+        a, b = s_['measures']
+        if a <= m <= b:
+            bars = [(x, y) for x, y in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bars], [y for _, y in bars]))
+    raise ValueError(m)
+
+
+CHORDS = [(when(866), 'E minor'), (when(867), 'C major'), (when(872), 'E minor'), (when(873), 'D minor')]
+T_SLEEP = when(874.67)                      # after "Heilige Braut!": the magic sleep, shimmering
+T_LOVE = SEG[2]                             # "da lacht ihm Brünnhildes Lust"
+T_DEATH = when(912.3)                       # "... bietet mir Gruß!": he dies
+T_FATE = []
+# His lines, from the vocal score (tenor, sounding an octave below the written treble): (bar, start, length in
+# beats, note); 3/4 to bar 910, 4/4 from 911
+VOICE = [(868, 0, 1, 'C4'), (868, 1, 1.5, 'G3'), (868, 2.5, 0.5, 'G3'),
+         (873, 1, 1, 'B3'), (873, 2, 0.75, 'B3'), (873, 2.75, 0.25, 'B3'), (874, 0, 2, 'D4'),
+         (910, 1, 1, 'B3'), (910, 2, 1, 'E3'), (911, 2, 0.75, 'B3'), (911, 2.75, 0.25, 'B3'), (911, 3, 0.5, 'A#3'),
+         (912, 0, 1, 'C#4')]
 
 SIEGFRIED = hexc('#00ff40')
 HEAD = hexc('#e8ffe8')
@@ -205,34 +226,45 @@ def panner(G):
     return pan_at
 
 
+def thin(ts, gap):
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
+
+
+def voice():
+    """His lines in seconds: (time, seconds, midi)."""
+    out = []
+    for b, x, n, m in VOICE:
+        per = 3 if b <= 910 else 4
+        t0, t1 = when(b + x / per), when(b + (x + n) / per)
+        out.append((t0, t1 - t0, note(m)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every event for the lights: (time, seconds, midi, velocity, part, k). The heartbeat ('heart'), the awakening
+    chords ('chord'), the harp's notes as gold glints ('harp'), the shimmer after "Heilige Braut!" ('sleep'), the
+    climax's long notes ('love') and his own lines ('voice', also surging emerald)."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
+    notes = EX['notes']
     for j, tb in enumerate(heart()):
-        add(tb, 0.3, 'E1', 60 - 4 * j, 'heart')
-    add(0.0, T_HARP + 2, 'E2', 58, 'dusk')
-    for k, (t0, chord) in enumerate(CHORDS):
-        for m in chord:
-            add(t0, 5.2, m, 74 + 5 * k, 'chord', k)
-        for j in range(12):                 # the harp running up through the chord and back
-            m = note(chord[1 + j % (len(chord) - 1)]) + 12 * (j // (len(chord) - 1))
-            add(t0 - 1.2 + 0.1 * j, 0.6, min(m, note('E6')), 70 + 2 * j, 'harp', k)
-    for t, m, v, d in play('sleep', T_SLEEP, 0.9, -4, 82):
-        add(t, d, m, v, 'sleep')
-    for t, m, v, d in play('siegfried_love', T_LOVE, 0.95, -12, 100):
-        add(t, d, m, v, 'love')
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3'):
-        add(T_LOVE, T_DEATH - T_LOVE, m, 64, 'bed')
-    add(T_DEATH, 0.1, 'C1', 124, 'death')
-    for j, t0 in enumerate(T_FATE):
-        for t, m, v, d in play('fate', t0, 0.8, 0, 96 - 8 * j):
-            add(t, d, m, v, 'fate', j)
-    for m in ('E1', 'E2', 'B2'):
-        add(T_DEATH + 2, D - T_DEATH - 2, m, 56, 'night')
+        N.append((tb, 0.3, note('E1'), 60 - 4 * j, 'heart', None))
+    for k, (t0, name) in enumerate(CHORDS):
+        N.append((t0, 5.0, note('E3'), 90, 'chord', k))
+    for t in thin([n[0] for n in notes if n[4] == 0 and n[2] >= note('B4') and n[0] < T_LOVE], 0.12):
+        N.append((t, 0.6, note('E5'), 80, 'harp', None))
+    for t in thin([n[0] for n in notes if T_SLEEP <= n[0] < SEG[2]], 0.7):
+        N.append((t, 1.0, note('E4'), 80, 'sleep', None))
+    for t, d, m, v, h in notes:
+        if T_LOVE <= t < SEG[3] and d >= 0.6:
+            N.append((t, d, m, v, 'love', None))
+    for t, d, m in voice():
+        N.append((t, d, m, 100, 'voice', None))
+        if d >= 0.6:
+            N.append((t, d, m, 100, 'love', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -245,13 +277,13 @@ def levels(t):
     """Siegfried's level, his head's, and how much of the vision holds the house, at time t."""
     flick = 0.8 + 0.2 * np.sin(2 * np.pi * (t + 80) / 0.7)
     dying = 0.45 * flick
-    rise = smoothstep(CHORDS[0][0] - 1, CHORDS[-1][0] + 2, t)
+    rise = smoothstep(CHORDS[0][0], CHORDS[-1][0] + 2, t)
     bright = 0.85 + 0.1 * smoothstep(T_LOVE, T_DEATH - 1, t)
     alive = dying + (bright - dying) * rise
     gone = smoothstep(T_DEATH, T_DEATH + 2.0, t)
     lvl = alive * (1 - gone) + BODY * gone
     head = 0.8 * alive * (1 - gone)
-    vision = smoothstep(CHORDS[0][0], CHORDS[-1][0] + 4, t) * (1 - smoothstep(T_DEATH, T_DEATH + 3.5, t))
+    vision = smoothstep(CHORDS[0][0], CHORDS[-1][0] + 4, t) * (1 - smoothstep(T_DEATH, T_DEATH + 3.0, t))
     return lvl, head, vision
 
 
@@ -274,7 +306,7 @@ def render(G, seed=25):
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        night = smoothstep(T_DEATH, D - 4, t)
+        night = smoothstep(T_DEATH, D, t)
         lv = {k: START[k] + (END[k] - START[k]) * night for k in START}
         ls, lh, vis = levels(t)
         dim = 1 - 0.55 * vis
@@ -317,9 +349,9 @@ def render(G, seed=25):
         a = t - T_DEATH
         if 0 <= a < 0.6:
             fr += light(WHITE, 0.9 * np.exp(-a / 0.12))
-        if 0 <= a < 3.5:
-            r = reach * (1 - a / 3.5)
-            fr += light(SILVER, 0.9 * np.exp(-((np.abs(d - p_sf) - r) / 70) ** 2) * (1 - a / 3.5))
+        if 0 <= a < 3.0:
+            r = reach * (1 - a / 3.0)
+            fr += light(SILVER, 0.9 * np.exp(-((np.abs(d - p_sf) - r) / 70) ** 2) * (1 - a / 3.0))
             fr += light(SIEGFRIED, 0.6 * np.exp(-a / 0.7) * np.exp(-((d - p_sf) / 120) ** 2))
         for j, tb in enumerate(heart()):
             fr = ring(fr, S, t, tb, p_sf, BLOOD, 0.55 - 0.15 * j, speed=800, width=140, tau=0.7)
@@ -329,7 +361,7 @@ def render(G, seed=25):
             fr = ring(fr, S, t, t0, p_sf, FATE_C, 0.95, speed=850, width=240, tau=1.5)
 
         # the torches gather close round the body and lift
-        g = smoothstep(T_DEATH + 1, T_DEATH + 12, t)
+        g = smoothstep(T_DEATH, D, t)
         tl = TORCHES[0] + (TORCHES[1] - TORCHES[0]) * g
         fr = torches(fr, S, T, tl, pull=p_sf, k=TORCHES[2] + (TORCHES[3] - TORCHES[2]) * g)
 
@@ -344,59 +376,25 @@ def render(G, seed=25):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes from the piano reduction, with his lines from the vocal score on the horn, his own instrument;
+    nothing added but the last of his heartbeat and a gong as he dies."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.3, 0.25), ('strings', 0.27, 0.38), ('winds', 0.27, 0.4), ('brass', 0.3, 0.32),
-                            ('harp', 0.27, 0.45), ('perc', 0.29, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    harp = M.sampler('Strings/Harp/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
+    o = Orchestra(M, level=2.85)
     sf = pan_at(at(G, *SIEG_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'heart':
-            M.add('perc', timp.play(v, pitch=-9), t, 0.5, sf)
-            M.add('perc', timp.play(v - 14, pitch=-9), t + 0.22, 0.4, sf)
-        elif part == 'dusk':
-            hold('low', cb, m, t, t + d, v, sf * 0.5, rise=0.5, fall=2.0, gain=0.5)
-        elif part == 'chord':
-            if m < note('C3'):
-                hold('low', tuba if m < note('C2') + 1 else tbn, m, t, t + d, v, 0.0, rise=0.3, fall=1.5, gain=0.6)
-            elif m < note('C4'):
-                hold('brass', horn, m, t, t + d, v, sf, rise=0.25, fall=1.5, gain=0.6)
-            else:
-                hold('strings', vln, m, t, t + d, v, sf, rise=0.4, fall=1.5, gain=0.55)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 0.85, sf + 0.1 * ((t * 7) % 3 - 1))
-        elif part == 'sleep':
-            s = flute if m >= note('E4') else clar
-            hold('winds', s, m - 12 if s is flute else m, t, t + d, v, sf, rise=0.3, fall=1.0, gain=0.6)
-        elif part == 'love':
-            if d >= 0.6:
-                hold('brass', horn, m - 12, t, t + d, v, sf, rise=0.15, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.85, sf)
-            M.add('strings', vln.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, sf)
-        elif part == 'bed':
-            hold('strings', vc, m, t, t + d, v, sf * 0.5, rise=2.0, fall=1.5, gain=0.45)
-        elif part == 'death':
-            M.add('perc', gong.play(v), t, 0.9, sf)
-            M.add('perc', crash.play(110), t, 0.6, sf)
-            M.add('perc', timp.play(v, pitch=-7), t, 1.0, sf)
-        elif part == 'fate':
-            if m >= note('Ab3'):
-                hold('brass', horn, m - 12, t, t + d, v, sf, rise=0.4, fall=1.0, gain=0.75)
-            else:
-                hold('low', tuba, m - 12, t, t + d, v, sf, rise=0.4, fall=1.0, gain=0.7)
-        elif part == 'night':
-            hold('low', cb if m < note('C2') else vc, m, t, t + d, v, sf * 0.4, rise=4.0, fall=1.5, gain=0.5)
+
+    def role(t, d, m, v, h):
+        if h == 0 and d < 0.4 and m >= 60:                  # the harp's arpeggios, with the violins' shimmer
+            return [('harp', 0, 0, 0.6), ('violins', 0, -16, 0.25)]
+        if d >= 0.4 and t < SEG[2]:                         # the held chords: strings and winds, soft
+            return [('violins' if m >= 55 else 'cellos', 0, -10, 0.45), ('clarinets' if m >= 50 else 'bassoons', 0, -14, 0.35)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if SEG[2] <= t < SEG[3] else 0.5, role=role, pan=lambda t, m: sf * 0.5)
+    for t, d, m in voice():                                 # his lines: horn, doubled by the cellos
+        o.play('horns', m, t, max(d, 0.2), 104, sf, 0.9)
+        o.play('cellos', m, t, max(d, 0.2), 90, sf, 0.4)
+    for j, tb in enumerate(heart()):
+        o.hit('timpani', tb, 78, pitch=-9, gain=0.3 - 0.08 * j, pan=sf)
+    o.hit('cymbal swell', T_LOVE - 1.5, 90, gain=0.3, pan=sf)
+    o.hit('gong', T_DEATH, 96, gain=0.45, pan=sf)
+    o.effects([(0.0, -18), (D, -18)])

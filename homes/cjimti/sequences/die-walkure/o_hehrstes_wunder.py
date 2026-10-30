@@ -1,56 +1,56 @@
-"""O hehrstes Wunder!: Brünnhilde rides in from the free end of Right, silver with gold glints, Sieglinde's
-amber held close beside her, to a breathless Ride (Donington 47) on the horns, and comes down on the summit of
-the rock in the middle of Porch Front. The sisters flare to greet her; the fallen heroes fade from the rock.
+"""O hehrstes Wunder!: on the summit of the rock, in the middle of Porch Front, Brünnhilde stands silver with
+gold glints beside Sieglinde's amber, which is sunk low and wrapped in indigo: she wants only to die. The
+sisters, too afraid of Wotan to help, have shrunk away to the edges of the rock, shivering.
 
-She begs them for help, her own motif (88) on horn and trumpet, and her silver reaches out toward each of
-them in turn. But far off to the right the sky growls, a dark blue flicker and a low spear call in the
-trombones: Wotan is coming. The sisters refuse, one after another, each a little falling cry on a trumpet as
-her light jerks back and dims, until all eight have shrunk away to the edges of the rock, shivering.
+The music is Wagner's own: Act III, bars 494 to 510 and 526 to 566, as Solti's 1958 Vienna Philharmonic
+recording takes them. Brünnhilde tells her she carries "den hehrsten Helden der Welt", the greatest hero in
+the world, and Siegfried's motif is heard for the first time; she gives her the pieces of the sword and names
+the child ("Siegfried erfreu' sich des Siegs!"); Sieglinde sings "O hehrstes Wunder!", thanks her, says
+farewell ("Lebe wohl!") and flees, and the orchestra sweeps her away. The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py): the hero's motif on horns and trumpets, Sieglinde's soaring line
+on violins doubled by oboe over horns and cellos, the rest on the full orchestra. The stage is heard too: a
+shimmer of cymbal and glockenspiel on every ring of gold, the sword's pieces whistling through the air and ringing
+as they land, a boom and a cymbal swell under the wonder, Sieglinde's running feet as she flees, and wind and
+far-off thunder as Wotan's storm gathers, its first lightning cracking nearer. The effects lead as the shards fly
+and again as the storm gathers at the end; they back far off for "O hehrstes Wunder" and her farewell, which
+belong to the music.
 
-Sieglinde wants only to die: her motif (36) on the oboe over the cellos, and her amber sinks, flickers and
-shrinks under a wash of indigo. Then Brünnhilde tells her she carries Siegmund's son, the hero to come, and
-Siegfried's motif (53) rings out on the horns, three times and growing: with each note a seed of gold-white
-light pulses inside her amber. Sieglinde rises, and sings "O hehrstes Wunder!" (90b), the violins and oboe
-soaring over a harp and a glowing chorus of strings and horns: a golden-amber blaze rolls out from her in
-waves over the whole house and holds it, warm, at its height. Brünnhilde gives her the pieces of Nothung,
-the sword's motif (43) on a trumpet, each note a white steel glint flying from the silver into the amber.
-Sieglinde flees east toward the forest, out along the Left wing and Side with the glints round her, the
-Siegfried motif going with her in the cellos. The sisters creep back to their places, and at the free end
-of Right a blue-black storm begins to gather and flicker: the timpani roll, the storm stirs in the basses.
+With the first notes the indigo lifts and a seed of gold-white light pulses inside her amber; every accent of
+the hero's motif sends a ring of gold out from her across the whole house. On "Verwahr ihm die starken
+Schwertesstücken" the pieces of Nothung fly as white steel glints from the silver into the amber and stay
+there, circling. Then "O hehrstes Wunder!": a golden-amber blaze rolls out from her in waves over the whole
+house and holds it, brighter on every high note of her melody, until her farewell. She flees east toward the
+forest, out along the Left wing and Side with the glints round her; the sisters creep back to their places,
+and at the free end of Right a blue-black storm begins to gather and flicker.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.audio import whoosh
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK22'
 TITLE = 'O hehrstes Wunder!'
 KIND = 'show'
-DESCRIPTION = ('Brünnhilde arrives with Sieglinde, but her sisters are too afraid of Wotan to help. Sieglinde '
-               'wants to die, until Brünnhilde tells her she is carrying Siegmund\'s child, and her cry of joy '
-               'turns the whole house to gold.')
+DESCRIPTION = ('Sieglinde wants to die, until Brünnhilde tells her she is carrying Siegmund\'s child, the greatest '
+               'hero in the world. Her cry of joy turns the whole house to gold, and she flees into the forest with '
+               'the pieces of his father\'s sword.')
 VOICEOVER = ('A woman who has lost everything learns that she is going to have a child. '
              'Listen to her answer.')
 
-RB = 0.3
-T_LAND = 5.4                                # Brünnhilde lands on the summit
-T_PLEA = 6.4                                # "Schützt mich!" (her motif)
-PBEAT = 0.55
-FAR = [9.0, 15.6, 21.6]                     # Wotan, far off
-REFUSE = [12.4 + 1.25 * i for i in range(8)]    # one by one the sisters refuse
-T_DIE = 23.6                                # Sieglinde's lament
-LBEAT = 0.7
-T_SON = [34.6, 37.8, 41.0]                  # Siegfried's motif: the son she carries
-SBEAT = 0.6
-T_WUNDER = 45.0                             # "O hehrstes Wunder!"
-WBEAT = 0.75
-T_SHARDS = 58.6                             # the pieces of Nothung
-NBEAT = 0.55
-T_FLEE = 66.0                               # Sieglinde flees east
-T_GONE = 73.0
-T_STORM = 74.0                              # Wotan's storm gathering at the free end of Right
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 494-510 and 526-566, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SING = EX['singing']
+D = EX['seconds']
+line = lambda w: next(x for x in SING if x[3].startswith(w))
+SON = [(line('den hehrsten')[0] - 0.6, line('hegst du')[1]),       # Siegfried's motif: the son she carries
+       (line('Siegfried')[0], line('Siegfried')[1])]
+T_SHARDS = line('Verwahr')[0] - 2.0         # the pieces of Nothung
+T_WUNDER = line('O hehrstes')[0]            # "O hehrstes Wunder!"
+T_FAREWELL = line('Lebe wohl')[0]
+T_FLEE = BAR[561]                           # Sieglinde flees east
+T_GONE = T_FLEE + 7.0
+T_STORM = BAR[564]                          # Wotan's storm gathering at the free end of Right
 CLOCK = 80.0 * 21
 
 NAMES = ['Gerhilde', 'Ortlinde', 'Waltraute', 'Schwertleite', 'Helmwige', 'Siegrune', 'Grimgerde', 'Rossweisse']
@@ -59,7 +59,6 @@ SPOTS = [('Porch Left', 0.25), ('Porch Left', 0.65), ('Porch Front', 0.12), ('Po
          ('Porch Front', 0.63), ('Porch Front', 0.88), ('Porch Right', 0.35), ('Porch Right', 0.75)]
 BACK = [('Porch Left', 0.12), ('Porch Left', 0.45), ('Porch Left', 0.8), ('Porch Front', 0.13),
         ('Porch Front', 0.9), ('Porch Right', 0.2), ('Porch Right', 0.55), ('Porch Right', 0.85)]
-ORDER = [4, 3, 6, 2, 7, 1, 5, 0]            # who refuses when
 SILVER = hexc('#f4f8ff')
 GOLD = hexc('#ffd060')
 AMBER = hexc('#ffa860')
@@ -82,75 +81,50 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
+def onsets(notes, win=0.06):
+    """Chords: (time, weight) where weight is the summed velocity of the notes struck together."""
+    out = []
+    for t, d, m, v, h in notes:
+        if out and t - out[-1][0] < win:
+            out[-1][1] += v / 127
+        else:
+            out.append([t, v / 127])
+    return np.array(out)
+
+
+def bolt_time():
+    """The first lightning of Wotan's storm: the hardest accent of the closing bars."""
+    ons = onsets(EX['notes'])
+    sel = ons[(ons[:, 0] > T_STORM) & (ons[:, 0] < D - 1.2)]
+    return float(sel[np.argmax(sel[:, 1]), 0])
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who). who: 0-7 a sister, 'b' Brünnhilde, 's' Sieglinde."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). Parts: 'son' (the hero's motif,
+    the left hand's held notes from C3 to B4 while Brünnhilde tells of him), 'wunder' (the right hand while Sieglinde
+    sings), 'flight' (the orchestra sweeping her away), 'note' otherwise. Silent markers (velocity 0): 'ring' on the
+    accented chords of the hero's motif, 'shard' as each piece of the sword flies to her."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for p, tr in enumerate((0, 3)):                                             # the Ride, breathless
-        for t, m, v, d in play('ride', 0.2 + p * 6 * RB, RB, tr, 104):
-            add(t, d * 1.5, m, v, 'ride', 'b')
-        for bar in range(2):
-            for b, dd in ((0, 1.0), (1.0, 0.5), (1.5, 1.0), (2.5, 0.5)):
-                add(0.2 + p * 6 * RB + (bar * 3 + b) * RB, dd * RB * 0.9, note(('B1', 'D2')[p]) + (12 if b else 0),
-                    96, 'gallop')
-    for h in range(int((T_LAND - 0.2) / (1.5 * RB))):
-        add(0.2 + h * 1.5 * RB, 0.1, 'B1', 86, 'hoof', 'b')
-    for m in ('B1', 'F#2', 'D3', 'B3'):
-        add(T_LAND, 1.4, m, 104, 'arrive')
-    for t, m, v, d in play('brunnhilde', T_PLEA, PBEAT, 0, 100):                # "Schützt mich und helft!"
-        add(t, d, m, v, 'plea', 'b')
-    for tf in FAR:                                                              # Wotan, far off
-        add(tf, 2.0, 'D1', 90, 'far')
-        for t, m, v, d in play('spear', tf + 0.3, 0.45, 0, 76):
-            if t < tf + 0.3 + 3 * 0.45:
-                add(t, d, m, v, 'farspear')
-    for i, (tr, k) in enumerate(zip(REFUSE, ORDER)):                            # they refuse, one by one
-        top = note('D5') - (i % 4)
-        add(tr, 0.25, top, 104, 'nein', k)
-        add(tr + 0.25, 0.6, top - 1, 98, 'nein', k)
-        if i % 2 == 0:
-            for t, m, v, d in play('valkyrie_cry', tr + 0.1, RB, 0, 70):
-                if t < tr + 0.1 + 2 * RB and m >= note('B4'):
-                    add(t, d, m, v, 'shiver')
-    add(REFUSE[0], T_DIE - REFUSE[0], 'B1', 72, 'dread')
-    for t, m, v, d in play('sieglinde', T_DIE, LBEAT, 0, 88):                   # she wants to die
-        add(t, d * 1.05, m, v, 'lament' if m >= note('D4') else 'lamentlow', 's')
-    for k, ts in enumerate(T_SON):                                              # the son she carries
-        for t, m, v, d in play('siegfried', ts, SBEAT, -12 + 2 * k, 96 + 8 * k):
-            add(t, d * 1.2, m, v, 'son', 'b')
-        add(ts, 4 * SBEAT, ('G2', 'A2', 'B2')[k], 80 + 6 * k, 'sonpad')
-    for j in range(14):                                                         # up to the wonder
-        add(T_WUNDER - 1.5 + j * 0.1, 0.8, note('A2') + (0, 4, 7, 9, 12, 16, 19, 21, 24, 28, 31, 33, 36, 40)[j], 80, 'harp')
-    add(T_WUNDER - 2.5, 2.5, 'A3', 84, 'swell')
-    for t, m, v, d in play('redemption', T_WUNDER, WBEAT, -12, 112):            # O hehrstes Wunder!
-        add(t, d * 1.08, m, v, 'wunder', 's')
-    for b, ch in ((0, ('A2', 'E3', 'C#4', 'A4')), (3, ('C#3', 'G#3', 'E4')), (6, ('E2', 'B3', 'G#4', 'D4')),
-                  (9, ('D2', 'A3', 'F#4', 'D4'))):
-        for m in ch:
-            add(T_WUNDER + b * WBEAT, (3 if b < 9 else 6) * WBEAT * 1.05, m, 92, 'glow')
-    for j in range(8):
-        add(T_WUNDER + 9 * WBEAT + j * 0.14, 1.5, note('D3') + (0, 4, 7, 12, 16, 19, 24, 28)[j], 80, 'harp')
-    for t, m, v, d in play('nothung', T_SHARDS, NBEAT, -12, 104):               # the pieces of Nothung
-        add(t, d * 1.1, m, v, 'nothung', 'b')
-    for m in ('D3', 'F3', 'A3'):
-        add(T_SHARDS, 12 * NBEAT, m, 66, 'glow')
-    for k in range(2):                                                          # she flees, the hero's motif with her
-        for t, m, v, d in play('siegfried', T_FLEE + 0.3 + k * 2.6, 0.5, -24 + 3 * k, 96):
-            add(t, d * 1.1, m, v, 'flight', 's')
-    for j in range(int((T_GONE + 1 - T_FLEE) / 0.15)):
-        add(T_FLEE + j * 0.15, 0.1, note('D3') + (0, 2, 4, 5, 7, 5, 4, 2)[j % 8], 84, 'hurry', 's')
-    add(T_STORM - 1.0, D - T_STORM + 1.0, 'D1', 80, 'roll')                     # the storm gathers
-    add(T_STORM, D - T_STORM, 'D2', 74, 'stir')
-    for t, m, v, d in play('storm', T_STORM + 1.5, 0.3, 0, 90):
-        if t < T_STORM + 1.5 + 6 * 0.3:
-            add(t, d, m, v, 'storm')
-    for t, m, v, d in play('valkyrie_cry', T_STORM + 2.0, RB, 0, 76):
-        if t < D - 1.0 and m >= note('B4'):
-            add(t, d, m, v, 'shiver')
-    add(77.2, 2.0, 'D1', 96, 'thunder')
+    for t, d, m, v, h in EX['notes']:
+        if any(a <= t < b for a, b in SON) and h == 1 and 48 <= m < 72 and d >= 0.3:
+            part = 'son'
+        elif T_WUNDER <= t < T_FLEE and h == 0:
+            part = 'wunder'
+        elif t >= T_FLEE:
+            part = 'flight'
+        else:
+            part = 'note'
+        N.append((t, d, m, v, part, 'b' if part == 'son' else 's' if part != 'note' else None))
+    ons = onsets(EX['notes'])
+    med = np.median(ons[:, 1])
+    last = -9.0
+    for t, w in ons:
+        if any(a <= t < b for a, b in SON) and w > med and t - last > 0.7:
+            N.append((float(t), 0.5, 60, 0, 'ring', 's'))
+            last = t
+    sh = [t for t, w in ons if T_SHARDS <= t < T_SHARDS + 4.0]
+    for t in sh[::max(1, len(sh) // 7)][:7]:
+        N.append((float(t), 0.5, 60, 0, 'shard', 'b'))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -174,29 +148,19 @@ def choreography(G):
     """Per frame: the sisters, Brünnhilde and Sieglinde (path distance)."""
     F = nframes(D)
     t = np.arange(F) * DT
-    L = G.length
     home = np.array([sway(G, k, t + CLOCK) for k in range(8)])
     pos = home.copy()
-    for i, k in enumerate(ORDER):                                               # shrinking back, then creeping home
+    for k in range(8):                                                          # shrunk back, then creeping home
         back = at(G, *BACK[k]) + 6 * np.sin(2 * np.pi * (4.0 * t + k))          # shivering
-        w = smoothstep(REFUSE[i], REFUSE[i] + 0.6, t) * (1 - smoothstep(T_FLEE + 1, T_STORM, t))
+        w = 1 - smoothstep(T_FLEE + 1 + 0.4 * k, T_STORM + 0.4 * k, t)
         pos[k] = home[k] + (back - home[k]) * w
     B = at(G, 'Porch Front', 0.55)
     S = at(G, 'Porch Front', 0.4)
-    b0 = at(G, 'Right', 1.0) + 40 - 120                                         # where the last scene saw her
-    marks = [(0.0, b0), (T_LAND - 0.3, B - 25), (T_LAND + 1.0, B), (D, B)]
-    ts, ds = zip(*marks)
-    bpos = follow(np.interp(t, ts, ds), np.full(F, 7.0))
-    bpos[:3] = b0 - np.arange(3) * 3.0
-    reach = np.zeros(F)
-    for i, k in enumerate(ORDER):                                               # she turns to each sister as she asks
-        reach += 30 * np.sign(at(G, *SPOTS[k]) - B) * np.exp(-((t - REFUSE[i] + 0.4) / 0.5) ** 2)
-    bpos = bpos + reach
-    smarks = [(0.0, b0 + 18), (T_LAND - 0.3, B - 7), (T_LAND + 1.4, S), (T_FLEE, S), (T_FLEE + 1.5, at(G, 'Porch Left', 0.6)),
+    bpos = np.full(F, B)
+    smarks = [(0.0, S), (T_FLEE, S), (T_FLEE + 1.5, at(G, 'Porch Left', 0.6)),
               (T_FLEE + 3.8, at(G, 'Left', 0.4)), (T_GONE, -140.0), (D, -140.0)]
     ts, ds = zip(*smarks)
     spos = follow(np.interp(t, ts, ds), np.full(F, 8.0))
-    spos[:3] = b0 + 18 - np.arange(3) * 3.0
     return dict(t=t, pos=pos, bpos=bpos, spos=spos)
 
 
@@ -231,19 +195,25 @@ def render(G, seed=22):
     C = choreography(G)
     N = compose()
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
-    wing = 1 - porch
     stone = 0.8 + 0.2 * np.interp(d / 18, np.arange(int(L / 18) + 2), np.random.default_rng(30).uniform(-1, 1, int(L / 18) + 2))
     jag = [0.55 + 0.45 * np.random.default_rng(100 + k).random(G.N) for k in range(8)]
-    plea = np.array([e[0] for e in N if e[4] == 'plea'])
-    nein = [np.array([e[0] for e in N if e[4] == 'nein' and e[5] == k]) for k in range(8)]
-    lament = np.array([e[0] for e in N if e[4] == 'lament'])
-    son = np.array([e[0] for e in N if e[4] == 'son'])
-    wunder = [(e[0], e[2]) for e in N if e[4] == 'wunder']
+    son = np.array(sorted({e[0] for e in N if e[4] == 'son'}))
+    rings = [e[0] for e in N if e[4] == 'ring']
+    wunder = sorted((e[0], e[2]) for e in N if e[4] == 'wunder' and e[1] >= 0.2)
     wt = np.array([w[0] for w in wunder])
-    shard_t = [e[0] for e in N if e[4] == 'nothung']
+    shard_t = [e[0] for e in N if e[4] == 'shard']
+    flight = np.array(sorted({e[0] for e in N if e[4] == 'flight' and e[3] >= 80}))
     tw = Flicker(rng, G.N, 2.0, 6.0)
     sh_off = rng.uniform(-26, 26, len(shard_t))
     sh_ph = rng.uniform(0, 1, len(shard_t))
+    T_BOLT = bolt_time()
+    ons = onsets(EX['notes'])                                                   # the music's loudness, 0..1
+    env = np.zeros(F)
+    for t0, w in ons:
+        f0 = int(t0 / DT)
+        n = min(F - f0, nframes(1.5))
+        env[f0:f0 + n] += w * np.exp(-np.arange(n) * DT / 0.4)
+    env = np.clip(env / np.percentile(env, 95), 0, 1.2)
 
     def blob(p, w):
         return np.exp(-((d - p) / w) ** 2)
@@ -267,110 +237,91 @@ def render(G, seed=22):
         fr = rock_bed(d, tt, porch, stone)
         pb, ps = C['bpos'][f], C['spos'][f]
 
-        # despair: indigo settling over everything while Sieglinde wants to die
-        dark = smoothstep(T_DIE - 1, T_DIE + 3, t) * (1 - smoothstep(T_SON[0], T_SON[1], t))
+        # despair: indigo over everything while Sieglinde wants to die, lifting as the hero's motif sounds
+        dark = 1 - smoothstep(0.5, SON[0][0] + 4.0, t)
         if dark > 0:
             fr = fr * (1 - 0.35 * dark) + light(FATE, 0.6 * dark * (0.7 + 0.3 * np.cos(2 * np.pi * (d / 400 - 0.05 * tt))))
 
+        # the hero's motif: every accent a ring of gold rolling out from her over the whole house
+        for tr in rings:
+            if tr <= t < tr + 2.2:
+                age = t - tr
+                r = 20 + 900 * age ** 0.8
+                fr += light(GOLD, 1.0 * (1 - age / 2.2) * np.exp(-((np.abs(d - ps) - r) / 150) ** 2))
+                fr += light(WHITE * 0.3 + GOLD * 0.7, 0.5 * (1 - age / 2.2) * np.exp(-((np.abs(d - ps) - r) / 30) ** 2))
+
+        # hope: a warm glow over the clouds, breathing with the music, growing toward the wonder
+        hope = smoothstep(SON[0][0], T_WUNDER, t) * (1 - smoothstep(T_WUNDER, T_WUNDER + 3, t))
+        fr += light(AMBER * 0.5 + GOLD * 0.5, (0.12 + 0.45 * hope) * (0.35 + 0.65 * env[f]) * (1 - 0.5 * porch)
+                    * (1 - dark) * (0.6 + 0.4 * np.cos(2 * np.pi * (d / 300 - 0.2 * tt))))
+
         # O hehrstes Wunder: golden-amber waves rolling out from her over the whole house, holding at the height
-        blaze = smoothstep(T_WUNDER - 0.5, T_WUNDER + 3.0, t) * (1 - smoothstep(T_WUNDER + 10, T_SHARDS + 2, t))
+        blaze = smoothstep(T_WUNDER - 0.5, T_WUNDER + 3.0, t) * (1 - smoothstep(T_FAREWELL + 4, T_FLEE + 3, t))
         if blaze > 0:
             i = int(np.searchsorted(wt, t, side='right')) - 1
-            hi = (wunder[i][1] - note('Gb3')) / 15.0 if i >= 0 else 0.0
+            hi = (wunder[i][1] - 66) / 15.0 if i >= 0 else 0.0
             wav = 0.5 + 0.5 * np.cos(2 * np.pi * (np.abs(d - ps) / 380 - 0.45 * tt))
             fr = fr * (1 - 0.8 * blaze)
-            fr += light(BLAZE, blaze * (0.6 + 0.25 * np.clip(hi, 0, 1)) * (0.6 + 0.4 * wav))
+            fr += light(BLAZE, blaze * (0.5 + 0.4 * np.clip(hi, 0, 1)) * (0.6 + 0.4 * wav))
             fr += light(AMBER, blaze * 0.35 * (1 - wav))
             fr += light(GOLD, blaze * 0.6 * wav ** 4 * (0.7 + 0.3 * tw(t)))
-            fr += light(WHITE * 0.4 + GOLD * 0.6, 0.4 * blaze * last(wt, t, 0.3) * blob(ps, 200))
+            fr += light(WHITE * 0.4 + GOLD * 0.6, 0.45 * blaze * last(wt, t, 0.3) * blob(ps, 200))
 
-        # Wotan, far off: a dark flicker at the free end of Right
-        for tf in FAR:
-            if tf <= t < tf + 2.0:
-                age = t - tf
-                g = np.exp(-age / 0.6) * (0.7 + 0.3 * np.sin(2 * np.pi * 9 * age))
-                fr = fr * (1 - 0.4 * g * smoothstep(L - 300, L, d))[:, None] + light(WBLUE, 0.6 * g * smoothstep(L - 260, L, d))
-        # and at the end his storm begins to gather there
+        # at the end Wotan's storm begins to gather at the free end of Right
         amt = 0.6 * smoothstep(T_STORM - 1, D - 1.0, t)
         fr = thunderhead(fr, d, tt, L - 60 - 60 * smoothstep(T_STORM - 1, D - 1.0, t), amt)
-        if 77.2 <= t < 78.2:
-            fr += light(WHITE, 0.8 * bolt(t - 77.2, L, L - 260, 3))
+        if T_BOLT <= t < T_BOLT + 1.0:
+            fr += light(WHITE, 0.8 * bolt(t - T_BOLT, L, L - 260, 3))
 
-        # the sisters: greeting her, shrinking back one by one, dimmed and shivering; home again at the end
-        heroes = 1 - smoothstep(0.5, 6.0, t)
+        # the sisters: shrunk back and shivering, a little braver in the blaze; home again at the end
         for k in range(8):
             p = C['pos'][k][f]
-            i = ORDER.index(k)
-            fear = smoothstep(REFUSE[i], REFUSE[i] + 0.5, t) * (1 - 0.6 * smoothstep(T_WUNDER - 1, T_WUNDER + 3, t))
-            fear = max(fear, 0.0) * (1 - smoothstep(T_FLEE + 1, T_STORM, t)) + 0.3 * smoothstep(T_STORM - 1, D - 1, t)
-            hail = last(np.array([T_LAND]), t, 0.6, 2.0)
-            nn = last(nein[k], t, 0.2, 1.0)
-            b = 0.85 - 0.3 * fear + 0.35 * hail + 0.3 * nn
+            fear = (1 - 0.6 * blaze) * (1 - smoothstep(T_FLEE + 1, T_STORM, t)) + 0.3 * smoothstep(T_STORM - 1, D - 1, t)
+            b = 0.85 - 0.3 * fear + 0.15 * blaze
             fr += light(COLS[k], b * blob(p, 16) + 0.35 * b * blob(p, 75))
-            fr += light(PALE, 0.3 * heroes * blob(at(G, *SPOTS[k]) + 15, 6))
-            for tc in nein[k]:
-                if tc <= t < tc + 0.8:
-                    age = t - tc
-                    r = 15 + 220 * age ** 0.7
-                    fr += light(COLS[k], 0.55 * (1 - age / 0.8) * np.exp(-((np.abs(d - p) - r) / 22) ** 2))
-            if T_LAND <= t < T_LAND + 1.2:
-                fr += light(COLS[k], 0.5 * np.exp(-(t - T_LAND) / 0.4) * blob(p, 60))
 
-        # Brünnhilde: riding in, landing on the summit, pleading with each sister in turn
-        riding = t < T_LAND + 0.5
-        gal = 0.85 + 0.15 * np.cos(2 * np.pi * tt / (1.5 * RB)) if riding else 1.0
-        pl = last(plea, t, 0.3, 1.5)
-        bb = (0.55 + 0.25 * smoothstep(T_LAND - 1.5, T_LAND + 0.5, t)) * gal + 0.2 * pl
-        fr += light(SILVER, bb * blob(pb, 16 + 2 * smoothstep(0, T_LAND, t)) + 0.3 * bb * blob(pb, 70 + 10 * smoothstep(0, T_LAND, t)))
+        # Brünnhilde on the summit, flaring as she sings of the hero
+        sn = last(son, t, 0.3, 1.5)
+        bb = 0.8 + 0.25 * sn
+        fr += light(SILVER, bb * blob(pb, 18) + 0.3 * bb * blob(pb, 80))
         for kg in range(3):
             q = pb + 18 * np.sin(2 * np.pi * (0.8 * tt + kg / 2))
-            fr += light(GOLD, (0.5 + 0.15 * smoothstep(T_LAND, T_LAND + 2, t)) * blob(q, 5) * (kg < 2 or t > T_LAND))
-        if riding and abs(pb - C['bpos'][max(f - 4, 0)]) > 8:
-            trail = np.zeros(G.N)
-            for j, lag in enumerate(range(2, 26, 2)):
-                trail = np.maximum(trail, blob(C['bpos'][max(f - lag, 0)], 20) * (1 - j / 12.5))
-            fr += light(SILVER, 0.55 * trail)
-        if T_LAND <= t < T_LAND + 1.4:
-            age = t - T_LAND
-            fr += light(SILVER, 0.7 * np.exp(-age / 0.4) * porch * blob(pb, 300))
-        for i, k in enumerate(ORDER):                                           # her plea reaching toward each sister
-            tr = REFUSE[i] - 0.5
-            if tr <= t < tr + 0.6:
-                u = (t - tr) / 0.6
-                q = pb + (C['pos'][k][f] - pb) * u
-                fr += light(SILVER, 0.6 * (1 - u) * blob(q, 12))
+            fr += light(GOLD, 0.65 * blob(q, 5))
 
-        # Sieglinde: on the horse, set down, sinking toward death; the child; the wonder; fleeing with the shards
+        # Sieglinde: sunk toward death; the child; the wonder; fleeing with the shards
         sv = smoothstep(-120, 20, ps)
-        seed_ = smoothstep(T_SON[0], T_SON[0] + 0.4, t)
-        die = dark
-        sb = sv * (0.45 + 0.15 * smoothstep(T_LAND, T_LAND + 2, t) - 0.3 * die + 0.35 * blaze + 0.15 * seed_)
-        sb *= 1 - 0.35 * die * max(0.0, np.sin(2 * np.pi * 1.3 * t)) ** 4
-        lm = last(lament, t, 0.5, 2.0)
-        fr += light(AMBER, (sb + 0.1 * lm) * blob(ps, 15 + 3 * blaze) + 0.35 * sb * blob(ps, 70))
+        seed_ = smoothstep(SON[0][0], SON[0][0] + 0.4, t)
+        sb = sv * (0.6 - 0.3 * dark + 0.35 * blaze + 0.15 * seed_)
+        sb *= 1 - 0.35 * dark * max(0.0, np.sin(2 * np.pi * 1.3 * t)) ** 4
+        fr += light(AMBER, sb * blob(ps, 15 + 3 * blaze) + 0.35 * sb * blob(ps, 70))
         if seed_ > 0:                                                           # the child: a gold-white seed in her light
-            sn = last(son, t, 0.25, 1.0)
-            fr += light(GOLD * 0.6 + WHITE * 0.4, sv * seed_ * (0.4 + 0.5 * sn) * blob(ps, 5 + 3 * sn))
-        given = [ts_ for ts_ in shard_t if ts_ <= t]
+            sr = max(last(son, t, 0.25, 1.0), 0.8 * max((last(np.array([r]), t, 0.3, 1.0) for r in rings), default=0))
+            fr += light(GOLD * 0.6 + WHITE * 0.4, sv * seed_ * (0.4 + 0.5 * sr) * blob(ps, 5 + 3 * sr))
         for j, ts_ in enumerate(shard_t):                                       # the shards: flying from her to Sieglinde
             if ts_ <= t < ts_ + 0.5:
                 u = (t - ts_) / 0.5
                 q = pb + (ps - pb) * u
                 fr += light(STEEL, 0.9 * blob(q, 7)) + light(WHITE, 0.5 * blob(q, 3))
+                fr += light(WHITE, 0.4 * (1 - u) * blob(pb, 40))
+                fr += light(STEEL, 0.5 * (1 - u) * porch * (0.6 + 0.4 * jag[j % 8]))
             elif t >= ts_ + 0.5:
                 q = ps + sh_off[j] * np.sin(2 * np.pi * (0.6 * tt + sh_ph[j]))
                 fr += light(STEEL, 0.6 * sv * blob(q, 4) * (0.7 + 0.3 * np.sin(2 * np.pi * (2.1 * tt + sh_ph[j]))))
-        if T_FLEE <= t and abs(ps - C['spos'][max(f - 4, 0)]) > 8:
-            trail = np.zeros(G.N)
-            for j, lag in enumerate(range(2, 26, 2)):
-                trail = np.maximum(trail, blob(C['spos'][max(f - lag, 0)], 20) * (1 - j / 12.5))
-            fr += light(AMBER, 0.8 * sv * trail + 0.25 * sv * blob(ps, 150))
+        if T_FLEE <= t:                                                         # her flight, a gust on every accent
+            fl = last(flight, t, 0.25, 1.0)
+            if abs(ps - C['spos'][max(f - 4, 0)]) > 4:
+                trail = np.zeros(G.N)
+                for j, lag in enumerate(range(2, 26, 2)):
+                    trail = np.maximum(trail, blob(C['spos'][max(f - lag, 0)], 20) * (1 - j / 12.5))
+                fr += light(AMBER, 0.8 * sv * trail + 0.25 * sv * blob(ps, 150))
+            fr += light(AMBER * 0.6 + GOLD * 0.4, 0.4 * fl * (1 - porch) * smoothstep(T_GONE + 2, T_FLEE, t))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction: the hero's motif on horns and trumpets, Sieglinde's
+    melody on violins and oboe over horns and cellos, the rest on the full orchestra."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -380,130 +331,48 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
+    ps = lambda t: pan_at(float(np.clip(np.interp(t, C['t'], C['spos']), 0, G.length)))
+    o = Orchestra(M, level=LEVEL)
 
-    def pan_of(who, t):
-        tr = C['bpos'] if who == 'b' else C['spos'] if who == 's' else C['pos'][who]
-        return pan_at(float(np.clip(np.interp(t, C['t'], tr), 0, G.length)))
+    def role(t, d, m, v, h):
+        if any(a <= t < b for a, b in SON) and h == 1 and 48 <= m < 72 and d >= 0.3:
+            parts = [('horns', 0, 4, 0.9), ('horns', -12, -6, 0.4)]
+            return parts + ([('trumpets', 0, -10, 0.45)] if v >= 80 else [])
+        if T_WUNDER <= t < T_FLEE:
+            if h == 0:
+                parts = [('violins', 0, 0, 0.75), ('violins', 0, -6, 0.45)]
+                if d >= 0.3:
+                    parts += [('oboes', 0, -8, 0.6)] if m < 84 else [('flutes', 0, -10, 0.5)]
+                return parts
+            if m >= 54 and d >= 0.3:
+                return [('horns', 0, -4, 0.6), ('cellos', -12 if m >= 60 else 0, -8, 0.5)]
+        return None
 
-    for name, gain, rev in (('brass', 0.22, 0.3), ('low', 0.22, 0.2), ('strings', 0.21, 0.35), ('winds', 0.2, 0.35),
-                            ('perc', 0.2, 0.28), ('harp', 0.18, 0.45), ('fx', 0.1, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
-    snare = M.hits('Percussion/Snare2-taps_v[2-4]*.wav')
+    o.tutti(EX['notes'], size=lambda t: 0.45 + 0.55 * smoothstep(T_WUNDER - 3, T_WUNDER + 2, t),
+            role=role, pan=lambda t, m: ps(t) if t >= T_FLEE else None)
+    o.hit('crash', T_WUNDER, 100, gain=0.5, pan=ps(T_WUNDER))
+    o.hit('timpani roll', T_WUNDER - 2.0, 90, gain=0.4)
+    o.hit('timpani roll', T_STORM, 84, gain=0.5, pan=0.8)
+    o.hit('bass drum', bolt_time(), 96, gain=0.6, pan=0.85, fx=True)
+    o.hit('timpani', bolt_time(), 96, pitch=-9, gain=0.6, pan=0.85, fx=True)
+    # the stage: what the lights show, heard
+    N = compose()
+    pb = pan_at(C['bpos'][0])
+    for tr in [e[0] for e in N if e[4] == 'ring']:                             # each ring of gold: a shimmer
+        o.hit('crash', tr, 70, gain=0.22, pan=ps(tr), fx=True)
+        o.play('glock', 84, tr, 0.3, 70, ps(tr), 0.25)
+    for k, ts_ in enumerate(e[0] for e in N if e[4] == 'shard'):               # the shards ring as they fly to her
+        o.hit('metal', ts_ + 0.45, 96, gain=0.45, pan=ps(ts_), fx=True)
+        o.play('glock', [88, 91, 86, 93, 89, 84, 95][k % 7], ts_ + 0.45, 0.5, 92, ps(ts_), 0.4)
+        o.M.add('fx', whoosh(0.5, 2500, 7000, 0.5, seed=k + 1), ts_, 0.35, pb)
+    o.hit('cymbal swell', T_WUNDER - 2.5, 90, gain=0.3, pan=ps(T_WUNDER))   # the wonder: the music's own
+    o.gallop(T_FLEE + 0.3, T_GONE + 1.0, beat=0.36, pan=ps, v=92, gain=0.9)   # she runs for the forest
+    o.wind(T_STORM - 2.0, D, level=lambda tt: smoothstep(T_STORM - 2.0, D - 1.0, tt), pan=0.75)
+    o.thunder(T_STORM, near=0.15, pan=0.85, gain=0.8)                          # far off, the storm gathers
+    o.thunder(bolt_time(), near=0.6, pan=0.85, gain=1.0)                       # and its first lightning
+    # the fader: the shards lead; the wonder and her farewell are the music's alone; the storm leads at the end
+    o.effects([(0.0, -4), (T_SHARDS - 1.0, -4), (T_SHARDS, 0), (T_SHARDS + 4.5, 0), (T_WUNDER - 3.0, -14),
+               (T_FAREWELL + 3.0, -14), (T_FLEE, -5), (T_STORM - 1.0, -3), (T_STORM + 2.0, 0), (D, 2)])
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
 
-    rock = pan_at(at(G, 'Porch Front', 0.5))
-    right = pan_at(G.length)
-    for t, d, m, v, part, who in compose():
-        pa = pan_of(who, t) if who is not None else rock
-        if part == 'ride':
-            M.add('brass', horn.play(m, v, dur=d, release=0.15), t, 0.85, pa)
-            M.add('brass', tpt.play(m + 12, v - 22, dur=d, release=0.15), t, 0.3, pa)
-        elif part == 'gallop':
-            M.add('low', cbs.play(m + 12, v), t, 0.6, -0.2)
-            M.add('low', vcs.play(m + 12, v - 6), t, 0.5, 0.2)
-        elif part == 'hoof':
-            M.add('perc', snare.play(v), t, 0.55, pa)
-        elif part == 'arrive':
-            hold('brass', tuba if m < note('F#2') else horn, m + (12 if m < note('F#2') else 0), t, t + d, v, rock,
-                 rise=0.05, fall=0.8, gain=0.5)
-            if m == note('B1'):
-                M.add('perc', crash.play(100), t, 0.6, rock)
-                M.add('perc', timp.play(110, pitch=-4), t, 0.7, rock)
-        elif part == 'plea':
-            if m >= note('Eb4'):
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-                M.add('brass', tpt.play(m, v - 24, dur=d * 1.05, release=0.3), t, 0.3, pa)
-            else:
-                hold('strings', va if m >= note('C3') else vc, m, t, t + d, v - 26, pa, rise=0.3, fall=0.8, gain=0.4)
-        elif part == 'far':
-            M.add('perc', roll.play(v, dur=d), t, 0.6, right)
-            M.add('perc', timp.play(v, pitch=-8), t, 0.5, right)
-        elif part == 'farspear':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.6, right)
-        elif part == 'nein':
-            M.add('brass', tpt.play(m - 12, v, dur=d, release=0.15), t, 0.7, pa)
-            M.add('brass', horn.play(m - 12, v - 16, dur=d, release=0.15), t, 0.4, pa)
-        elif part == 'shiver':
-            M.add('winds', pic.play(m, v), t, 0.5, -0.3 + 0.6 * ((t * 3) % 1))
-        elif part == 'dread':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=3.0, fall=1.5, gain=0.6)
-        elif part == 'lament':
-            M.add('winds', ob.play(m, v, dur=d, release=0.35), t, 0.95, pa)
-        elif part == 'lamentlow':
-            M.add('strings', vc.play(m + 12 if m < note('C3') else m, v - 12, dur=d, release=0.35), t, 0.65, pa)
-        elif part == 'son':
-            M.add('brass', horn.play(m, v, dur=d, release=0.25), t, 0.9, pa)
-            if v > 100:
-                M.add('brass', tpt.play(m, v - 16, dur=d, release=0.25), t, 0.5, pa)
-        elif part == 'sonpad':
-            hold('strings', trem, m + 12, t, t + d, v, rock, rise=0.3, fall=0.8, gain=0.5)
-            M.add('perc', timp.play(v, pitch=-3), t, 0.4, rock)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, pan_of('s', t) + 0.3 * (m - 57) / 24)
-        elif part == 'swell':
-            hold('strings', vtrem, m + 12, t, t + d, v, 0.0, rise=2.0, fall=0.3, gain=0.5)
-            M.add('perc', roll.play(v, dur=d), t, 0.5, rock)
-        elif part == 'wunder':
-            ps_ = pan_of('s', t)
-            M.add('strings', vn.play(m, v, dur=d, release=0.5), t, 1.0, ps_ - 0.15)
-            M.add('strings', vn.play(m, v - 6, dur=d, release=0.5), t, 0.6, ps_ + 0.15)
-            M.add('winds', ob.play(m, v - 10, dur=d, release=0.5), t, 0.7, ps_)
-            M.add('strings', vc.play(m - 12, v - 14, dur=d, release=0.5), t, 0.5, ps_)
-            if t < T_WUNDER + 0.05:
-                M.add('perc', crash.play(104), t, 0.7, ps_)
-        elif part == 'glow':
-            s = horn if note('C3') <= m < note('F4') else (va if m >= note('F4') else vc)
-            hold('brass' if s is horn else 'strings', s, m, t, t + d, v, rock, rise=0.4, fall=1.2, gain=0.45)
-        elif part == 'nothung':
-            M.add('brass', tpt.play(m, v, dur=d, release=0.3), t, 0.85, pan_of('b', t))
-            M.add('harp', harp.play(m + 12, 84), t + 0.45, 0.6, pan_of('s', t))
-        elif part == 'flight':
-            M.add('strings', vc.play(m + 12, v, dur=d, release=0.2), t, 0.8, pa)
-            M.add('brass', horn.play(m + 12, v - 14, dur=d, release=0.2), t, 0.5, pa)
-        elif part == 'hurry':
-            M.add('strings', vns.play(m + 12, v), t, 0.4, pa)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, right)
-        elif part == 'stir':
-            hold('low', trem, m + 12, t, t + d, v, right * 0.7, rise=2.0, fall=0.5, gain=0.7)
-            hold('low', cb, m + 12, t, t + d, v, right * 0.7, rise=2.0, fall=0.5, gain=0.4)
-        elif part == 'storm':
-            M.add('low', cbs.play(m + 12, v), t, 0.7, right * 0.7)
-            M.add('low', vcs.play(m + 12, v - 8), t, 0.6, right * 0.7)
-        elif part == 'thunder':
-            M.add('perc', bd.play(v), t, 0.7, right)
-            M.add('perc', timp.play(v, pitch=-9), t, 0.7, right)
-            M.add('fx', whoosh(1.2, 2500, 200, 0.6, seed=77), t, 0.6, right)
+LEVEL = 1.75

@@ -1,26 +1,31 @@
 """The Oath on the Spear: the shore as the last scene left it, the torches low, Brünnhilde blazing silver at the
 corner of Right, Siegfried emerald at the corner of the porch with the Ring glinting on his hand. The crowd
-mutters: torches flicker, the low strings churn. Hagen raises his spear in the middle of Porch Front and its point
-flares white; a steel line runs the length of the porch.
+mutters: torches flicker. Hagen raises his spear in the middle of Porch Front and its point flares white; a steel
+line runs the length of the porch.
 
-Siegfried strides to it and swears he is innocent, his hand on the point ("Helle Wehr! Heilige Waffe!"): the oath
-(Donington 42) and the spear (73) in the brass, and every note an emerald strike that shoots up the porch to the
-spear point and bursts over a whole run, round the house. Then Brünnhilde storms across, a silver streak from the
-corner of Right, tears his hand away and swears on the same point that he lies: the oath's second form (42a) and
-her own motif (88) fortissimo, silver strikes bigger than his, one run after another and then every run at once,
-gold glints flying. The men roar for Donner's help: their call (54) in the trombones, every torch flaring, the
-stomp thumping orange round the house.
+Siegfried strides to it and swears he is innocent, his hand on the point ("Helle Wehr, heilige Waffe! Hilf meinem
+ewigen Eide!"): every hammering chord an emerald strike that shoots up the porch to the spear point and bursts over
+a whole run, round the house. Then Brünnhilde storms across, a silver streak from the corner of Right, tears his
+hand away and swears on the same point that he lies: silver strikes bigger than his, one run after another, and
+on "Spitze! Achte des Spruchs!" every run at once, gold glints flying. The men roar for Donner's help ("Hilf,
+Donner! Tose dein Wetter!"), every torch flaring, the stomp thumping orange round the house.
 
-Siegfried laughs it off (his motif, 53, light and staccato, emerald sparkling), takes Gutrune by the hand and leads
-her into the hall: the two of them cross to the doors and vanish in an amber flare. The torches sink; Brünnhilde
-stands by the spear, Gunther shamed on Right, Hagen watching.
+Siegfried laughs it off ("Folgt mir zum Mahl! Froh zur Hochzeit helfet, ihr Frauen!"), emerald sparkling, takes
+Gutrune by the hand and leads her into the hall: the two of them cross to the doors and vanish in an amber flare.
+The torches sink; Brünnhilde stands by the spear, Gunther shamed on Right, Hagen watching.
+
+The music is Wagner's own: Act II, scene 4, Hagen's spear (bars 1127 to 1130), Siegfried's oath (1142 to 1150),
+Brünnhilde's (1179 to 1195), the men's cry to Donner (1213 to 1221) and Siegfried's "Froh zur Hochzeit" (1264
+to 1269), as Solti's 1958 Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py) orchestrated by hand and register. The stage adds the ring of steel as the spear is raised and
+as each of them lays a hand on its point, a blow as she seizes it, thunder answering the men's cry to Donner, and
+their stamping; it stays back under both oaths.
 
 compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD19'
 TITLE = 'The Oath on the Spear'
@@ -31,18 +36,27 @@ VOICEOVER = ("Two oaths on one spear. He swears he is innocent. She swears he is
              'telling the truth.')
 
 K = 4                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_MUTTER = (0.0, 8.0)                       # the crowd mutters
-T_SPEAR = 7.0                               # Hagen raises the spear
-T_WALK = (9.0, 12.5)                        # Siegfried strides to it
-T_HIS = [13.5, 19.5]                        # his oath: the oath motif, then the spear
-T_STORM = (25.5, 28.5)                      # Brünnhilde storms across
-T_HERS = [29.5, 35.5, 40.5]                 # her oath: the second form, her motif, the spear
-T_ROAR = [45.5, 48.5]                       # "Hilf, Donner!"
-T_STOMP = (45.0, 54.0)
-T_LAUGH = 55.0                              # he laughs it off
-T_LEAD = (61.0, 67.0)                       # he leads Gutrune into the hall
+EX = excerpt(__file__)                      # Act II, bars 1127-1130, 1142-1150, 1179-1195, 1213-1221, 1264-1269
+D = EX['seconds']
+_SEG = [(g['start'], g['start'] + g['seconds']) for g in EX['segments']]
+def _sung(who, text):
+    """When the first sung line by who (or a group starting so) beginning with text starts."""
+    return next(t0 for t0, t1, w, x in EX['singing'] if w.startswith(who) and x.startswith(text))
+
+
+
+T_MUTTER = (0.0, 2.0)                       # the crowd mutters
+T_SPEAR = accents(EX['notes'], 0.0, _SEG[0][1], vmin=90, n=3, space=1.0)[0]     # Hagen raises the spear
+T_WALK = (_SEG[0][1] - 3.5, _SEG[0][1])     # Siegfried strides to it
+T_HIS = [_sung('Siegfried', 'Helle Wehr, '), _sung('Siegfried', 'Hilf meinem ')]   # his oath
+T_STORM = (_SEG[2][0], _sung('Brünnhilde', 'Helle Wehr! '))                       # she storms across
+T_HERS = [_sung('Brünnhilde', 'Helle Wehr! '), _sung('Brünnhilde', 'Hilf meinem '),
+          _sung('Brünnhilde', 'Spitze! Acht')]                                    # her oath; "Spitze!": all at once
+T_ROAR = [_sung('Mannen (B2)', 'Hilf, Donner'), _sung('Mannen (T1, T2', 'Hilf, Donner')]   # "Hilf, Donner!"
+T_STOMP = (T_ROAR[0], _SEG[3][1] - 0.4)
 BEAT = 0.5
-D = 80.0
+T_LAUGH = _SEG[4][0] + 0.2                  # he laughs it off
+T_LEAD = (_sung('Siegfried', 'Froh zur Hoch') + 1.0, D - 2.5)   # he leads Gutrune into the hall
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -187,41 +201,22 @@ def siegfried(fr, S, p, lvl):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for j in range(16):                     # the crowd mutters: a churning figure in the low strings
-        add(T_MUTTER[0] + j * 0.5, 0.45, ('C2', 'Db2', 'C2', 'B1')[j % 4], 78 + j, 'mutter')
-    add(T_SPEAR, 1.0, 'C2', 120, 'spearhit')
-    for t, m, v, d in play('oath', T_HIS[0], 0.55, -12, 108):
-        add(t, d, m, v, 'his', 0)
-    for t, m, v, d in play('spear', T_HIS[1], 0.38, 0, 110):
-        add(t, d, m, v, 'his', 1)
-    for t, m, v, d in play('oath_b', T_HERS[0], 0.42, -12, 112):
-        add(t, d, m, v, 'hers', 0)
-    for t, m, v, d in play('brunnhilde', T_HERS[1], 0.42, -12, 118):
-        add(t, d, m, v, 'hers', 1)
-    for t, m, v, d in play('spear', T_HERS[2], 0.34, 0, 122):
-        add(t, d, m, v, 'hers', 2)
-    for k, t0 in enumerate(T_ROAR):
-        for t, m, v, d in play('vassals', t0, 0.36, 0, 110 + 4 * k):
-            add(t, d, m, v, 'roar', k)
-    t, j = T_STOMP[0], 0
-    while t < T_STOMP[1] - 1e-6:
-        add(t, 0.2, 'C2', 100 + 16 * (j % 4 == 0), 'stomp', j)
-        t += BEAT
-        j += 1
-    for t, m, v, d in play('siegfried', T_LAUGH, 0.42, -12, 96):
-        add(t, d, m, v, 'laugh', 0)
-    for t, m, v, d in play('siegfried', T_LAUGH + 2.6, 0.36, -7, 92):
-        add(t, d, m, v, 'laugh', 1)
-    for t, m, v, d in play('gutrune', T_LEAD[0], 0.5, -5, 90):
-        add(t, d, m, v, 'gutrune')
-    for m in ('C3', 'Eb3', 'G3'):
-        add(T_LEAD[1] + 1, D - T_LEAD[1] - 1, m, 64, 'after')
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'score'. The orchestra's
+    hammering chords under his oath are 'his' (k 0, 1), under hers 'hers' (k 2 from "Spitze!"), under the men's cry
+    'roar'; 'stomp', 'spearhit' and 'laugh' (each phrase of his) mark moments too. Only 'score' sounds."""
+    N = [(t, d, m, v, 'score', h) for t, d, m, v, h in EX['notes']]
+    N.append((T_SPEAR, 1.0, 36, 0, 'spearhit', None))
+    for t0 in accents(EX['notes'], _SEG[1][0], _SEG[1][1], vmin=55, n=2, space=0.5):
+        N.append((t0, 0.3, 60, 0, 'his', int(t0 >= T_HIS[1])))
+    for t0 in accents(EX['notes'], _SEG[2][0], _SEG[2][1], vmin=75, n=2, space=0.4):
+        N.append((t0, 0.3, 60, 0, 'hers', 2 if t0 >= T_HERS[2] else int(t0 >= T_HERS[1])))
+    for t0 in accents(EX['notes'], _SEG[3][0], _SEG[3][1], vmin=80, n=2, space=0.35):
+        N.append((t0, 0.3, 60, 0, 'roar', int(t0 >= T_ROAR[1])))
+    lh = [n for n in EX['notes'] if n[4] == 1]
+    for j, t0 in enumerate(accents(lh, T_STOMP[0], T_STOMP[1], vmin=70, n=1, space=0.45)):
+        N.append((t0, 0.2, 36, 0, 'stomp', j))
+    for k, (t0, t1, who, text) in enumerate(x for x in EX['singing'] if x[2] == 'Siegfried' and x[0] >= _SEG[4][0]):
+        N.append((t0, 1.0, 60, 0, 'laugh', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -354,7 +349,7 @@ def render(G, seed=19):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, and the stage: steel on the spear, thunder for Donner."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -363,88 +358,24 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.37, 0.25), ('brass', 0.37, 0.3), ('perc', 0.34, 0.25), ('winds', 0.33, 0.35),
-                            ('strings', 0.33, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tbn_st = M.sampler('Brass/Tenor Trombone/stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    horn_st = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vlns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v6*.wav')
-    snare = M.hits('Percussion/Snare2-HitSN*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    pspear = pan_at(at(G, 'Porch Front', 0.5))
-    pb = pan_at(at(G, *BRUNN_AT))
-    psg = pan_at(at(G, *SIEG_AT))
-    pgt = pan_at(at(G, *GUTRUNE_AT))
+    o = Orchestra(M, level=2.75)
+    # the stage backs off under both oaths, leads when the men call for the thunder, then steps back again
+    o.effects([(0, -2), (T_HIS[0] - 0.5, -2), (T_HIS[0], -10), (T_ROAR[0] - 0.3, -10), (T_ROAR[0], 0),
+               (T_STOMP[1], 0), (T_STOMP[1] + 1, -6), (D, -6)])
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0)
+    psp = pan_at(at(G, 'Porch Front', 0.5))
+    o.clash(T_SPEAR, psp, 120, 0.8)
+    o.boom(T_SPEAR + 0.02, psp, 0.6)
+    o.hit('metal', T_HIS[0], 100, gain=0.45, pan=psp)       # his hand on the point
+    o.hit('scrape', T_STORM[0] + 0.3, 110, gain=0.4, pan=pan_at(at(G, *BRUNN_AT)))
+    o.clash(T_HERS[0] - 0.1, psp, 124, 0.9)                 # she tears his hand away and seizes it
+    o.boom(T_HERS[2], psp, 0.8)                             # "Spitze! Achte des Spruchs!"
+    o.hit('crash', T_HERS[2], 120, gain=0.5, pan=psp)
+    for k, t0 in enumerate(T_ROAR):                         # Donner answers the men
+        o.thunder(t0 + 0.6, near=0.6 + 0.4 * k, pan=(-0.5, 0.5)[k], gain=1.0)
     pans = [pan_at(at(G, r, 0.5)) for r in RUNS]
     for t, d, m, v, part, k in compose():
-        if part == 'mutter':
-            M.add('low', cbs.play(m, v), t, 0.8, 0.0)
-            M.add('strings', vcs.play(m + 12, v - 10), t, 0.5, 0.0)
-        elif part == 'spearhit':
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pspear)
-            M.add('perc', crash.play(100), t, 0.6, pspear)
-            hold('brass', tbn, m + 12, t, t + d, v - 10, pspear, rise=0.05, fall=1.0, gain=0.7)
-        elif part == 'his':
-            if d > 0.8:
-                hold('brass', horn, m + (12 if k == 0 else 0), t, t + d, v, psg, rise=0.05, fall=0.7, gain=0.8)
-            else:
-                M.add('brass', horn.play(m + (12 if k == 0 else 0), v, dur=d * 1.05, release=0.25), t, 0.9, psg)
-            M.add('brass', tbn.play(m - (0 if k == 0 else 12), v - 12, dur=d * 1.05, release=0.25), t, 0.6, psg)
-            M.add('perc', timp.play(v - 20, pitch=-3), t, 0.4, psg)
-        elif part == 'hers':
-            if d > 0.8:
-                hold('brass', tpt, m + (12 if k < 2 else 0), t, t + d, v, pb, rise=0.05, fall=0.7, gain=0.75)
-            else:
-                M.add('brass', tpt.play(m + (12 if k < 2 else 0), v, dur=d * 1.05, release=0.25), t, 0.85, pb)
-            M.add('strings', vln.play(m + (12 if k < 2 else 0), v - 10, dur=d * 1.05, release=0.25), t, 0.6, pb)
-            M.add('perc', timp.play(v - 10, pitch=-2), t, 0.5, pb)
-            if k == 2 and t == min(e[0] for e in compose() if e[4] == 'hers' and e[5] == 2):
-                M.add('perc', crash.play(118), t, 0.8, 0.0)
-        elif part == 'roar':
-            M.add('brass', tbn_st.play(m, v), t, 0.9, 0.0)
-            M.add('brass', tbn_st.play(m - 12, v - 6), t, 0.7, 0.0)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d * 1.1, release=0.15), t, 0.6, 0.0)
-        elif part == 'stomp':
-            p = pans[k % len(pans)]
-            M.add('perc', bd.play(v), t, 0.8, p)
-            if k % 4 == 0:
-                M.add('perc', timp.play(v, pitch=-4), t, 0.7, p)
-            else:
-                M.add('perc', snare.play(v - 30), t + 0.25, 0.3, p)
-        elif part == 'laugh':
-            M.add('brass', horn_st.play(m + 12, v), t, 0.8, psg)
-            M.add('strings', vlns.play(m + 24, v - 20), t, 0.4, psg)
-        elif part == 'gutrune':
-            if m >= note('C5'):
-                M.add('strings', vln.play(m - 12, v, dur=d * 1.1, release=0.3), t, 0.6, pgt)
-            else:
-                M.add('winds', oboe.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, pgt)
-        elif part == 'after':
-            hold('strings', vln, m + 12, t, t + d, v, pb * 0.5, rise=3.0, fall=1.5, gain=0.4)
-            hold('low', tbn, m - 12, t, t + d, v - 10, pspear, rise=3.0, fall=1.5, gain=0.4)
+        if part == 'stomp':
+            o.M.add('fx', o.hits['bass drum'].play(104), t, 0.3, pans[k % len(pans)])
+            o.M.add('fx', o.hits['hoof soft'].play(92), t + 0.01, 0.35, -pans[k % len(pans)])
+    o.hit('scrape', T_LEAD[1] - 0.4, 96, gain=0.3, pan=pan_at(at(G, *DOOR)))     # the doors close behind them

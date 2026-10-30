@@ -1,28 +1,30 @@
-"""Fafner Strikes: Freia is free and the gods are bright again, but the gold is the giants' now. Fafner stamps
-up to the pile to his motif (Donington 58) in the tubas and starts stuffing it into his sack: with every heavy
-note a lump of gold flies off the heap into his ochre light, and the pile shrinks from the edges in.
+"""Fafner Strikes: the gold is the giants' now, and they quarrel over the ring until Fafner strikes his brother
+dead with one blow: the curse on the ring has claimed its first.
 
-Fasolt wants the ring. The two giants quarrel in the motif of their authority (Donington 59), Fasolt on the
-trombones, Fafner on the tubas, each phrase a step higher and quicker, and each one a shove: their lights slam
-together over the gold in a burst of grey and ochre. Fasolt snatches the ring (the small gold point with its red
-glint jumps to his grey light). Fafner draws back, his light gathering over a timpani roll, and strikes him
-with his staff: a flash across the whole house, a gong, and Fasolt's grey light shatters into fragments that
-spray along the roofline and go out. Two more blows, smaller, where he fell.
+The music is Wagner's own: bars 3584-3615 of the last scene of Das Rheingold, as Solti's 1958 Vienna Philharmonic
+recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py). The giants' quarrel
+("Halt, du Gieriger! Gönne mir auch was!") over their own heavy rhythm in the tubas, trombones and low strings;
+Fasolt seizes the ring, they wrestle for it, and after "Halt ihn fest, daß er nicht fall'!" the full orchestra
+strikes, the trombones plunge down and the timpani beat on a single F; then the curse motif, quiet and terrible,
+in the horns and bassoons, and Fafner's own heavy steps as he gathers the hoard and goes ("Nun blinzle nach
+Freias Blick! An den Reif rührst du nicht mehr!"). The staging's sounds: gold rattling into Fafner's sack, the
+shoves and thuds of the quarrel, the ring snatched, the blow with a crash and a gong and two more thuds where
+Fasolt fell, a deep gong as the curse rises, the ring wrenched off his hand, and Fafner's footfalls going away.
+They pull back under the curse.
 
-Then the Curse motif (Donington 13), fortissimo in the trombones over a G flat pedal: Alberich swore the ring
-would bring death to whoever held it, and here is the first. Fafner wrenches the ring from his brother, and with
-every note of the curse a pulse of deep red runs out from the ring across the house while the mountain shadows
-and the gods turn pale. Fafner gathers the rest of the hoard and the helmet into his light to his own creeping
-chromatic motif (Donington 57), and stamps off down Porch Right and out of the free end of Right, a trail of
-gold glinting behind him, each step shaking the roofline. The gods stand horrified; Fricka goes to Wotan,
-Freia to the empty place where the gold was, and the curse sounds once more, softly, on a muted horn. Heavy
-grey-blue storm air begins to gather over the mountain, and far off a horn hints at Donner's call.
+Fafner stuffs the gold into his sack, a lump flying off the heap into his ochre light on every heavy note, and the
+two giants shove each other back and forth over the pile, their lights slamming together in grey and ochre.
+Fasolt snatches the ring (the small gold point with its red glint jumps to his grey light). Fafner draws back and
+strikes: a flash across the whole house, and Fasolt's grey light shatters into fragments that spray along the
+roofline and go out, then two more blows where he fell. With every note of the curse a pulse of deep red runs out
+from the ring across the house while the mountain shadows; Fafner wrenches the ring from his brother, gathers the
+rest of the hoard and the helmet into his light, and stamps off down Porch Right and out of the free end of
+Right, a trail of gold glinting behind him. The gods stand horrified as storm air begins to gather.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags the music's moments, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG23'
 TITLE = 'Fafner Strikes'
@@ -33,23 +35,23 @@ DESCRIPTION = ('The giants quarrel over the ring, and Fafner strikes his brother
 VOICEOVER = ('Two brothers, one ring, and only one of them walks away. '
              'Alberich said the ring would bring death. He was right.')
 
-GBEAT = 0.55                                # the giants' tread while Fafner fills his sack
-T_GATHER = 2.0
-QUARREL = [(11.4, 0.5, 0, 'fasolt'), (13.6, 0.48, 1, 'fafner'), (15.7, 0.45, 2, 'fasolt'),
-           (17.6, 0.42, 3, 'fafner'), (19.4, 0.38, 5, 'fasolt'), (20.9, 0.35, 6, 'fafner')]
-T_GRAB = 22.5                               # Fasolt snatches the ring
-T_WIND = 23.6                               # Fafner draws back
-STRIKES = [25.5, 26.4, 27.2]
-T_CURSE = 28.5
-CBEAT = 0.6
-T_TAKE = 30.0                               # Fafner wrenches the ring from him
-T_HOARD = 41.0                              # he gathers the rest
-FBEAT = 0.7
-T_EXIT = 47.0                               # and stamps off
-STEPS = [T_EXIT + 0.72 * k for k in range(19)]
-T_HORROR = 61.0
-T_STORM = 63.0
-D = 80.0
+EX = excerpt(__file__)                      # bars 3584-3615, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+T_GATHER = 0.5
+T_GRAB = 42.3                               # "Zurück! Du Frecher! Mein ist der Ring": Fasolt snatches it
+# every line a giant sings in the quarrel is a shove; after the grab, every line a lunge for the ring
+QUARREL = [(t0, 0, 0, who.lower()) for t0, t1, who, text in EX['singing'] if who in ('Fasolt', 'Fafner') and t0 < T_GRAB]
+T_WIND = 55.3                               # Fafner draws back, on the rising chords
+TUSSLE = [(t0, who.lower()) for t0, t1, who, text in EX['singing'] if who in ('Fasolt', 'Fafner') and T_GRAB < t0 < T_WIND]
+STRIKES = [BAR[3608], BAR[3609], 60.47]     # the blow (the fortissimo), and two more where he fell
+T_CURSE = 63.59                             # the curse rises
+T_TAKE = 68.75                              # "Nun blinzle nach Freias Blick!": he wrenches the ring away
+T_HOARD = BAR[3613]                         # he gathers the rest
+T_EXIT = BAR[3614]                          # and stamps off
+STEPS = [T_EXIT + 0.7 * k for k in range(12)]
+T_HORROR = 82.0
+T_STORM = 83.0
+D = EX['seconds']
 T0 = 160.0                                  # the opera's clock at our start: steady motion carries across the cuts
 
 HEAP = 92
@@ -113,64 +115,35 @@ def billow(d, t):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """The music's moments, from the excerpt's real notes: (time, seconds, midi, velocity, part, who). 'scoop' is
+    gold flying into Fafner's sack (the left hand's long notes), 'stamp' the giants' heavy rhythm (its low notes),
+    'shove' a turn of the quarrel, 'strike'/'blow' the killing, 'curse' each note of the curse, 'fafmotif' the music
+    of his going."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('D3', 'A3', 'D4', 'Gb4'):                     # Freia's D major, still ringing as the giants move
-        add(0.0, 3.0, m, 74, 'chord')
-    for m in ('C2', 'G2'):                                  # and under the gathering, a low open fifth
-        add(T_GATHER, QUARREL[0][0] - T_GATHER, m, 76, 'bed')
-    # Fafner fills his sack: each long note of the giants' motif is a scoop of gold
-    for t, m, v, d in play('giants', T_GATHER, GBEAT, -12, 100):
-        add(t, d, m, v, 'giants', 'fafner')
-        if d >= 0.3 * GBEAT:
-            add(t, 0.4, m + 24, 70, 'scoop', 'fafner')
-    for k in range(int((QUARREL[0][0] - T_GATHER) / (2 * GBEAT))):
-        add(T_GATHER + k * 2 * GBEAT, 0.4, 'C2', 96, 'stamp', 'fafner')
-
-    # the quarrel: phrases of the giants' authority, a step higher and quicker each time, each one a shove
+    seen = set()
+    for t, d, m, v, h in EX['notes']:
+        key = round(t, 2)
+        if t < T_GRAB and h == 1:
+            if d >= 0.4 and (key, 's') not in seen:
+                seen.add((key, 's'))
+                N.append((t, d, m + 24, v, 'scoop', 'fafner'))
+            if m < 45 and d >= 0.3 and (key, 't') not in seen:
+                seen.add((key, 't'))
+                N.append((t, d, m, v, 'stamp', 'fafner'))
+        elif T_CURSE <= t < T_HOARD and d >= 0.15 and (key, 'c') not in seen:
+            seen.add((key, 'c'))
+            N.append((t, d, m, v, 'curse', None))
+        elif t >= T_HOARD and d >= 0.3 and (key, 'f') not in seen:
+            seen.add((key, 'f'))
+            N.append((t, d, m, v, 'fafmotif', 'fafner'))
     for t0, b, tr, who in QUARREL:
-        for t, m, v, d in play('giants_authority', t0, b, tr - 12, 104 + 2 * tr):
-            if t < t0 + 6 * b:
-                add(t, d, m, v, 'quarrel', who)
-        add(t0, 0.5, 'C2', 112 + tr, 'shove', who)
-    for t, m, v, d in play('ring', T_GRAB, 0.4, -12, 108):
-        if t < T_GRAB + 1.5 and m >= note('C3'):
-            add(t, d, m, v, 'grab', 'fasolt')
-    add(T_WIND, STRIKES[0] - T_WIND, 'Gb2', 100, 'wind')
-    for k in range(10):
-        add(T_WIND + k * 0.19, 0.2, note('Gb3') + k, 80 + 4 * k, 'rise')
+        N.append((t0, 0.5, 36, 0, 'shove', who))
     for i, ts in enumerate(STRIKES):
-        add(ts, 1.5, 'Gb1', 127 - 10 * i, 'strike' if i == 0 else 'blow', 'fafner')
-
-    # the curse
-    for t, m, v, d in play('curse', T_CURSE, CBEAT, 0, 118):
-        add(t, d, m, v, 'curse' if m >= note('C3') else 'cursepedal')
-    for k in range(5):
-        add(T_CURSE + k * 4 * CBEAT, 0.6, 'Gb2', 116, 'timp')
-
-    # Fafner gathers the hoard and stamps away
-    for t, m, v, d in play('fafner', T_HOARD, FBEAT, 0, 104):
-        add(t, d, m, v, 'fafmotif', 'fafner')
+        N.append((ts, 1.5, 30, 0, 'strike' if i == 0 else 'blow', 'fafner'))
     for k in range(10):
-        add(T_HOARD + k * 0.5, 0.4, note('G5') + (k * 5) % 12, 64, 'scoop', 'fafner')
+        N.append((T_HOARD + k * 0.4, 0.4, 79 + (k * 5) % 12, 0, 'scoop', 'fafner'))
     for i, ts in enumerate(STEPS):
-        add(ts, 0.5, 'C2' if i % 2 == 0 else 'G1', 110 - 2 * max(0, i - 10), 'stamp', 'fafner')
-
-    # horror, and the storm air
-    for t, m, v, d in play('curse', T_HORROR, 0.7, 0, 74):
-        if t < T_HORROR + 8 * 0.7:
-            add(t, d, m, v, 'echo' if m >= note('C3') else 'echopedal')
-    for m in ('Bb1', 'Bb2', 'Db3', 'F3'):
-        add(T_STORM, D - T_STORM, m, 60, 'mist')
-    for ts in (68.0, 74.0):
-        add(ts, 3.0, 'Bb1', 76, 'rumble')
-    for t, m, v, d in play('donner', 76.4, 0.6, 0, 66):
-        if t < 79.0:
-            add(t, d, m, v, 'distant')
+        N.append((ts, 0.5, 36, 0, 'stamp', 'fafner'))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -228,6 +201,11 @@ def choreography(G):
     S = hc + 175                                            # where Fasolt falls
     set_('fasolt', T_GRAB, D, S, 4.0)
     set_('fafner', T_GRAB, T_WIND, hc + 70, 3.0)
+    for t0, w in TUSSLE:                                    # wrestling for the ring
+        set_('fafner', t0, t0 + 0.5, S - 40, 8.0)
+        set_('fasolt', t0, t0 + 0.5, S + (25 if w == 'fafner' else -25), 8.0)
+        set_('fafner', t0 + 0.5, t0 + 1.6, hc + 70, 3.0)
+        set_('fasolt', t0 + 0.5, t0 + 1.6, S, 3.0)
     set_('fafner', T_WIND, STRIKES[0] - 0.12, hc + 20, 1.5)  # drawing back
     for ts in STRIKES:
         set_('fafner', ts - 0.12, ts + 0.3, S - 45, 14.0)
@@ -425,7 +403,7 @@ def render(G, seed=23):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the staging's sounds over them."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -440,119 +418,58 @@ def score(M, G):
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C[who]))
 
-    for name, gain, rev in (('strings', 0.16, 0.3), ('low', 0.19, 0.18), ('winds', 0.15, 0.3),
-                            ('brass', 0.18, 0.28), ('perc', 0.22, 0.25), ('glock', 0.07, 0.4), ('fx', 0.09, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbtrem = M.sampler('Strings/Solo Contrabass/Trem/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_fff.wav')
+    o = Orchestra(M, level=3.8)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        if t < STRIKES[0] - 0.05:                       # the quarrel: the giants' rhythm in the low brass
+            if h == 1:
+                return [('tuba', 0, 10, 0.7 if m < 52 else 0.0), ('trombones', 0 if m >= 45 else 12, 6, 0.55),
+                        ('cellos', 0, 6, 0.5), ('basses', 0, 0, 0.4 if m < 45 else 0.0)]
+            return None
+        if t < T_CURSE - 0.05:                          # the blow: the full brass, then the trombones plunging
+            if h == 1:
+                return [('trombones', 0, 70, 0.7), ('tuba', 0, 70, 0.6), ('basses', 0, 60, 0.5)]
+            return [('trumpets', 0, 0, 0.55), ('horns', -12, 0, 0.6), ('violins', 0, 0, 0.5)]
+        if t < T_HOARD:                                 # the curse, quiet: horns and bassoons
+            if h == 1:
+                return [('cellos', 0, 30, 0.55), ('basses', -12 if m >= 40 else 0, 30, 0.45)]
+            return [('horns', 0, 20, 0.7), ('bassoons', -12, 16, 0.45)]
+        if h == 1 or m < 50:                            # Fafner's heavy going
+            return [('tuba', 0, 20, 0.6), ('bassoons', 0, 16, 0.45), ('basses', 0, 10, 0.4)]
+        return [('horns', 0, 10, 0.55), ('clarinets', 0, 4, 0.35)]
 
-    S = pan_at(at(G, 'Porch Front', 0.5) + 175)
-    for t, d, m, v, part, who in compose():
-        if part == 'giants':
-            p = pan_of(who, t)
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.2), t, 1.5, p)
-            M.add('brass', tbn.play(m + 12, v - 8, dur=d * 1.05, release=0.2), t, 0.9, p)
-        elif part == 'scoop':
-            M.add('glock', glock.play(m, v), t + 0.45, 1.0, pan_of('fafner', t))
-            M.add('fx', whoosh(0.5, 2500, 600, 0.3, seed=int(t * 10)), t, 0.5, hc)
-        elif part == 'stamp':
-            p = pan_of(who, t)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.85, p)
-            M.add('perc', bd.play(v - 8), t, 0.75, p)
-            M.add('low', pizz.play(m + 12, v - 10), t, 0.7, p)
-        elif part == 'quarrel':
-            p = pan_of(who, t)
-            if who == 'fasolt':
-                M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.2), t, 1.1, p)
-                M.add('low', vc.play(m + 12, v - 12, dur=d, release=0.2), t, 0.6, p)
-            else:
-                M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.2), t, 1.2, p)
-                M.add('low', bsn.play(m, v - 10, dur=d, release=0.2), t, 0.7, p)
-        elif part == 'shove':
-            p = pan_of(who, t)
-            M.add('perc', timp.play(v, pitch=-3), t, 0.9, p)
-            M.add('perc', bd.play(v), t, 0.8, p)
-            M.add('fx', whoosh(0.4, 3000, 500, 0.4, seed=int(t * 7)), t - 0.15, 0.6, p)
-        elif part == 'grab':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 1.0, pan_of(who, t))
-            M.add('brass', horn.play(m + 12, v - 10, dur=d * 1.05, release=0.3), t, 0.7, pan_of(who, t))
-        elif part == 'wind':
-            M.add('perc', roll.play(v, dur=d + 0.1), t, 0.9, pan_of('fafner', t))
-            hold('strings', vatrem, m + 12, t, t + d, v, 0.0, rise=d, fall=0.1, gain=0.8)
-        elif part == 'rise':
-            M.add('strings', vtrem.play(m, v, dur=0.25, release=0.05), t, 0.6, pan_of('fafner', t))
-        elif part in ('strike', 'blow'):
-            p = S
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, p)
-            M.add('perc', bd.play(v), t, 1.0, p)
-            if part == 'strike':
-                M.add('perc', gong.play(127), t, 0.9, p)
-                M.add('perc', crash.play(127), t, 0.9, p)
-                for mm in ('Gb1', 'C2', 'Gb2', 'A2', 'C3', 'Eb3'):     # the blow: a diminished chord, full force
-                    M.add('brass', (tuba if note(mm) < note('Gb2') else tbn).play(note(mm), 124, dur=1.4, release=0.6),
-                          t, 1.0, p)
-                M.add('fx', whoosh(0.5, 5000, 400, 0.6, seed=3), t - 0.25, 0.8, p)
-        elif part == 'curse':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.4), t, 1.2, hc)
-            M.add('brass', horn.play(m, v - 10, dur=d * 1.05, release=0.4), t, 0.8, hc - 0.2)
-            M.add('low', vc.play(m, v - 12, dur=d * 1.05, release=0.4), t, 0.6, hc + 0.2)
-        elif part == 'cursepedal':
-            hold('low', cbtrem, m + 12, t, t + d, v, hc, rise=0.2, fall=0.8, gain=0.8)
-            M.add('brass', tuba.play(m + 12, v - 10, dur=d, release=0.6), t, 0.8, hc)
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=-1), t, 0.9, hc)
-        elif part == 'fafmotif':
-            p = pan_of(who, t)
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.25), t, 1.1, p)
-            M.add('low', bsn.play(m, v - 6, dur=d * 1.05, release=0.25), t, 0.8, p)
-            M.add('low', cb.play(m + 12, v - 12, dur=d, release=0.25), t, 0.6, p)
-        elif part == 'echo':
-            M.add('brass', mute.play(m, v, dur=d * 1.05, release=0.6), t, 1.4, pan_of('wotan', t))
-            M.add('low', bsn.play(m - 12, v - 8, dur=d * 1.05, release=0.6), t, 1.0, pan_of('wotan', t))
-        elif part == 'echopedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=0.6, fall=1.5, gain=0.7)
-        elif part == 'mist':
-            s = trem if m <= note('Bb2') else vatrem
-            hold('strings', s, m + 12 * (m == note('Bb1')), t, t + d, v, -0.3 + 0.2 * (m % 4), rise=5.0, fall=1.5,
-                 gain=1.4)
-        elif part == 'rumble':
-            M.add('perc', roll.play(v, dur=d), t, 1.0, -0.4)
-            M.add('fx', whoosh(d, 150, 600, 0.5, seed=int(t)), t, 0.6, -0.3)
-        elif part == 'chord':
-            hold('strings', va if m < note('D4') else vtrem, m, t, t + d, v, 0.0, rise=0.05, fall=2.0, gain=0.8)
-        elif part == 'bed':
-            hold('low', cb if m < note('C2') + 1 else vc, m + 12, t, t + d, v, hc, rise=1.0, fall=1.0, gain=0.8)
-        elif part == 'distant':
-            M.add('brass', mute.play(m, v, dur=d, release=0.6), t, 1.2, pan_of('donner', t))
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if STRIKES[0] - 0.1 <= t < T_CURSE else 0.6, role=role)
+
+    N = compose()
+    o.effects([(0.0, -4.0), (STRIKES[0] - 1.0, -4.0), (STRIKES[0], 0.0), (T_CURSE + 1.0, -10.0),
+               (T_HOARD - 1.0, -10.0), (T_HOARD, -2.0)])
+    for t, d, m, v, part, who in N:
+        if part == 'scoop':                             # gold rattling into his sack
+            o.play('glock', 84 + (int(t * 11) % 6) * 2, t, 0.1, 62, pan_of('fafner', t), 0.22)
+            o.hit('metal', t + 0.02, 58, gain=0.08, pan=pan_of('fafner', t))
+        elif part == 'stamp' and t >= T_EXIT:           # his footfalls going away
+            far = (t - T_EXIT) / (D - T_EXIT)
+            o.hit('bass drum', t, 116, gain=0.55 * (1 - 0.6 * far), pan=pan_of('fafner', t))
+            o.hit('timpani', t, 104, pitch=-7, gain=0.3 * (1 - 0.6 * far), pan=pan_of('fafner', t))
+        elif part == 'shove':                           # bodies slamming together over the pile
+            o.hit('bass drum', t, 112, gain=0.4, pan=hc + 0.15)
+            o.hit('scrape', t + 0.05, 96, gain=0.25, pan=hc + 0.15)
+    for t, who in TUSSLE:
+        o.hit('bass drum', t, 110, gain=0.45, pan=pan_of(who, t))
+        o.hit('brake drum', t, 90, gain=0.18, pan=pan_of(who, t))
+    pg = pan_of('fasolt', T_GRAB)
+    o.play('glock', 91, T_GRAB, 0.1, 96, pg, 0.4)       # the ring snatched
+    o.hit('scrape', T_GRAB, 104, gain=0.3, pan=pg)
+    ps = pan_of('fasolt', STRIKES[0])
+    o.hit('timpani roll', T_WIND, 90, pitch=-4, gain=0.4, pan=ps)
+    o.boom(STRIKES[0], ps, 1.1)                         # the blow
+    o.hit('crash', STRIKES[0], 124, gain=0.7, pan=ps)
+    o.shatter(STRIKES[0] + 0.02, ps, 0.7)
+    for ts in STRIKES[1:]:                              # two more, where he fell
+        o.hit('bass drum', ts, 120, gain=0.6, pan=ps)
+        o.hit('timpani', ts, 116, pitch=-8, gain=0.45, pan=ps)
+    o.hit('gong', T_CURSE, 110, gain=0.5, pan=ps)       # the curse rises
+    o.hit('gong scrape', T_TAKE, 100, gain=0.4, pan=ps)  # the ring torn off his hand
+    o.play('glock', 85, T_TAKE + 0.3, 0.1, 90, ps, 0.35)
+    o.hit('gong scrape', T_HOARD + 2.0, 96, gain=0.35, pan=pan_of('fafner', T_HOARD + 2.0))   # the helmet
+    o.thunder(T_STORM + 0.5, near=0.1, pan=-0.4, gain=0.6)   # storm air, far off

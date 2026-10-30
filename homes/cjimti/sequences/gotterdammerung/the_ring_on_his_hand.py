@@ -1,25 +1,30 @@
 """The Ring on His Hand: the shore in a red morning, a sea of the vassals' torches over every run, Hagen
 ultraviolet at the doors by his spear, Gunther and Gutrune on Right. A boat comes up the river: Gunther leads in
 his bride. Brünnhilde comes in from the free end of Right pale and dimmed, a faint silver with her eyes down,
-while the men hail them: three great chords, and each sends gold and silver waves over the torches.
+while the men hail them ("Willkommen! Heil dir, Gunther!"), every great chord sending gold and silver waves over
+the torches.
 
 Then the hall's doors open and Siegfried comes out of them, emerald, and crosses to the corner of the porch.
-She sees him: her silver shudders, the torches flicker. Then she sees the Ring on his hand. The Ring (Donington 8)
-cracks out in the brass and the whole house flashes blinding gold; gold rings race out from his hand to both
-ends; the Curse (13) follows in blood red the length of the roofline, and every torch on the house recoils,
-ducking and scattering away from him. Twice more the Ring flares on his hand, and Hagen's tritone (61a) knocks
-violet shocks through the crowd: "mark well what she says."
+She sees him ("Siegfried ... hier? Gutrune?"): her silver shudders, the torches flicker. Then she sees the Ring on
+his hand ("Ha! Der Ring an seiner Hand!"): the whole house flashes blinding gold on each of her cries, gold rings
+race out from his hand to both ends, the Curse follows in blood red the length of the roofline, and every torch
+on the house recoils, ducking and scattering away from him. Hagen's violet shocks knock through the crowd.
 
-Her fury breaks: Brünnhilde's motif (88) on the horns, fortissimo, and every note a silver strike that fills a
-whole run, round and round the house, faster, with gold glints flying, until she stands blazing silver at the
-corner of Right facing the man who betrayed her.
+Her fury breaks: "Betrug! Schändlichster Betrug! Verrat! Wie noch nie er gerächt!" Every hammering chord of the
+orchestra is a silver strike that fills a whole run, round and round the house, with gold glints flying, until
+she stands blazing silver at the corner of Right facing the man who betrayed her.
+
+The music is Wagner's own: Act II, scene 4, the welcome (bars 728 to 741), her first sight of Siegfried (836 to
+839), the Ring on his hand (856 to 865) and her fury (942 to 957), as Solti's 1958 Vienna Philharmonic recording
+takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py) orchestrated by hand and register.
+The stage adds a cymbal and drum to each hail, a crash and a gong as the Ring flashes on his hand, a timpani roll
+under the Curse, and a cymbal on each of her cries of betrayal.
 
 compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD18'
 TITLE = 'The Ring on His Hand'
@@ -29,18 +34,27 @@ DESCRIPTION = ('Gunther leads in his bride, pale and silent. Then she sees Siegf
 VOICEOVER = ('Brünnhilde is brought to the wedding as a prize. Then she sees the Ring, on Siegfried\'s hand.')
 
 K = 3                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_BOAT = 2.0                                # she is led in from the river end
-T_THERE = 12.0
-T_HAIL = [6.0, 9.0, 12.0]                   # "Heil dir, Gunther! Heil dir und deiner Braut!"
-T_BRUNN = 14.5                              # her motif, softly: she does not look up
-T_SIEG = 19.0                               # Siegfried comes out of the doors
-T_SIEG_THERE = 24.0
-T_SEES = 25.5                               # she sees him: "Siegfried ... hier? Gutrune?"
-T_RING = [31.0, 41.0, 47.0]                 # the Ring on his hand
-T_CURSE = 34.0
-T_TRITONE = [44.0, 50.0]                    # "merket wohl"
-T_FURY = [54.0, 59.5, 64.0]                 # her fury: her motif, fortissimo
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 728-741, 836-839, 856-865 and 942-957, Solti 1958
+D = EX['seconds']
+_BARS = [(m, t) for m, t in EX['bars']]
+
+
+def bar(pos):
+    """Seconds into the excerpt of a (fractional) bar position."""
+    seg = [b for b in _BARS if abs(b[0] - pos) < 15]
+    return float(np.interp(pos, [b[0] for b in seg], [b[1] for b in seg]))
+
+
+T_BOAT = 0.3                                # she is led in from the river end
+T_THERE = bar(736)
+T_HAIL = accents(EX['notes'], 0.0, bar(742) - 1.0, vmin=90, n=3, space=2.4)      # "Willkommen! Heil!"
+T_SIEG = bar(739)                           # Siegfried comes out of the doors
+T_SIEG_THERE = bar(836)
+T_SEES = bar(836.625)                       # she sees him: "Siegfried ... hier? Gutrune?"
+T_RING = [bar(860.25), bar(862.125), bar(864.25)]   # "Ha! Der Ring ...", "an seiner Hand!", "Er ...? Siegfried ...?"
+T_CURSE = bar(862.75)
+T_TRITONE = [bar(865.3), bar(942.0)]        # Hagen's shocks
+T_FURY = [bar(942.625), bar(944.625), bar(949.625), bar(951.625), bar(955.666)]   # "Betrug!", "Verrat!"
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -186,38 +200,23 @@ def siegfried(fr, S, p, lvl):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_RING[0], 'Eb2', 62, 'pedal')
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'score'. 'boom' (each hail),
+    'brunn_soft' (her first words), 'ring' and 'ringhit', 'curse', 'fury' (every hammering chord of her fury) and
+    'furyhit' (each cry) mark moments for the lights and the stage; they make no sound."""
+    N = [(t, d, m, v, 'score', h) for t, d, m, v, h in EX['notes']]
     for k, t0 in enumerate(T_HAIL):
-        for m in ('Eb3', 'G3', 'Bb3', 'Eb4'):
-            add(t0, 1.5, m, 104 + 4 * k, 'hail', k)
-        add(t0, 0.5, 'Eb2', 112, 'boom', k)
-    for t, m, v, d in play('brunnhilde', T_BRUNN, 0.55, -12, 70):
-        add(t, d, m, v, 'brunn_soft')
-    for t, m, v, d in play('siegfried', T_SIEG, 0.6, -12, 92):
-        add(t, d, m, v, 'sieg')
-    add(T_SEES, 5.0, 'D3', 84, 'trem')
-    add(T_SEES, 5.0, 'Ab3', 84, 'trem')
+        N.append((t0, 0.5, 39, 0, 'boom', k))
+    for t0, t1, who, text in EX['singing']:
+        if who == 'Brünnhilde' and t0 < T_RING[0]:
+            N.append((t0, t1 - t0, 60, 0, 'brunn_soft', None))
     for k, t0 in enumerate(T_RING):
-        for t, m, v, d in play('ring', t0, 0.42 if k == 0 else 0.3, 0, 120 - 4 * k):
-            add(t, d, m, v, 'ring', k)
-        add(t0, 0.5, 'C2', 124, 'ringhit', k)
-    for t, m, v, d in play('curse', T_CURSE, 0.5, -12, 116):
-        add(t, d, m, v, 'curse')
-    for k, t0 in enumerate(T_TRITONE):
-        for t, m, v, d in play('hagen', t0, 0.8, -12, 112):
-            add(t, d, m, v, 'tritone', k)
+        N.append((t0, 0.5, 72, 0, 'ring', k))
+        N.append((t0, 0.5, 36, 0, 'ringhit', k))
+    N.append((T_CURSE, 1.0, 48, 0, 'curse', None))
+    for j, t0 in enumerate(accents(EX['notes'], T_FURY[0] - 0.2, D - 0.5, vmin=80, n=2, space=0.33)):
+        N.append((t0, 0.3, 60, 0, 'fury', min(2, j // 12)))
     for k, t0 in enumerate(T_FURY):
-        for t, m, v, d in play('brunnhilde', t0, 0.48 - 0.06 * k, -12, 112 + 4 * k):
-            add(t, d, m, v, 'fury', k)
-        add(t0, 0.5, 'Bb1', 118, 'furyhit', k)
-    for m in ('Bb2', 'D3', 'F3', 'Bb3'):
-        add(T_FURY[-1] + 6.0, D - T_FURY[-1] - 6.0, m, 72, 'blaze')
+        N.append((t0, 0.5, 34, 0, 'furyhit', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -353,7 +352,7 @@ def render(G, seed=18):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with the stage's cymbals, drums and gong."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -362,84 +361,20 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.31, 0.25), ('brass', 0.31, 0.3), ('perc', 0.29, 0.25), ('winds', 0.28, 0.35),
-                            ('strings', 0.28, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    ph = pan_at(at(G, *HAGEN_AT))
-    pg = pan_at(at(G, *GUNTHER_AT))
-    pb = pan_at(at(G, *BRUNN_AT))
-    ps = pan_at(at(G, *SIEG_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v + 8, 0.0, rise=2.0, fall=1.0, gain=0.55)
-        elif part == 'hail':
-            hold('brass', horn, m, t, t + d, v, pg * 0.5, rise=0.08, fall=0.8, gain=0.6)
-            hold('brass', tbn, m - 12, t, t + d, v - 6, pg * 0.5, rise=0.08, fall=0.8, gain=0.55)
-        elif part == 'boom':
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pg)
-            M.add('perc', crash.play(100), t, 0.5, pg)
-        elif part == 'brunn_soft':
-            M.add('winds', oboe.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, pb)
-        elif part == 'sieg':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, ps)
-        elif part == 'trem':
-            hold('strings', vtrem, m + 12, t, t + d, v, pb, rise=0.3, fall=0.6, gain=0.6)
-        elif part == 'ring':
-            if d > 0.9:
-                hold('brass', tpt, m, t, t + d, v, ps, rise=0.05, fall=0.8, gain=0.75)
-            else:
-                M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.25), t, 0.85, ps)
-            M.add('brass', tbn.play(m - 12, v - 10, dur=d * 1.05, release=0.25), t, 0.7, ps)
-            M.add('winds', clar.play(m + 12, v - 20, dur=d * 1.05, release=0.25), t, 0.5, ps)
-        elif part == 'ringhit':
-            M.add('perc', crash.play(v), t, 0.9, ps)
-            M.add('perc', timp.play(v, pitch=-3), t, 0.9, ps)
-        elif part == 'curse':
-            if d > 1.2:
-                hold('brass', tbn, m + 12, t, t + d, v, ps, rise=0.1, fall=1.0, gain=0.9)
-            else:
-                M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.9, ps)
-            if t == T_CURSE:
-                M.add('perc', gong.play(110), t, 0.7, ps)
-        elif part == 'tritone':
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.08, fall=1.0, gain=0.9)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.8, ph)
-        elif part == 'fury':
-            if d > 0.8:
-                hold('brass', horn, m + 12, t, t + d, v, pb, rise=0.05, fall=0.6, gain=0.8)
-            else:
-                M.add('brass', horn.play(m + 12, v, dur=d * 1.05, release=0.25), t, 0.9, pb)
-            M.add('strings', vln.play(m + 12, v - 10, dur=d * 1.05, release=0.25), t, 0.6, pb)
-        elif part == 'furyhit':
-            M.add('perc', timp.play(v, pitch=-2), t, 0.9, pb)
-            M.add('perc', crash.play(v - 10), t, 0.6, pb)
-        elif part == 'blaze':
-            hold('strings', vtrem, m + 12, t, t + d, v, pb * 0.5, rise=1.0, fall=1.5, gain=0.5)
+    o = Orchestra(M, level=1.6)
+    # the stage is felt in the welcome and the fury; it holds back while she sees him and finds the Ring
+    o.effects([(0, 0), (T_SIEG, 0), (T_SIEG + 1, -9), (T_RING[0] - 0.5, -9), (T_RING[0], -2), (D, -2)])
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.7 if T_SEES <= t < T_RING[0] else 1.0)
+    pg, ps, pb = pan_at(at(G, *GUNTHER_AT)), pan_at(at(G, *SIEG_AT)), pan_at(at(G, *BRUNN_AT))
+    for k, t0 in enumerate(T_HAIL):
+        o.hit('crash', t0, 108, gain=0.45, pan=pg)
+        o.hit('bass drum', t0, 116, gain=0.55, pan=pg)
+    for k, t0 in enumerate(T_RING):         # the Ring flashes on his hand
+        o.hit('crash', t0, 124 - 6 * k, gain=0.6, pan=ps)
+        o.hit('gong', t0 + 0.02, 116 - 8 * k, gain=0.45, pan=ps)
+    o.hit('timpani roll', T_CURSE, 110, pitch=-4, gain=0.55, pan=ps)
+    for t0 in T_TRITONE:
+        o.hit('timpani', t0, 118, pitch=-6, gain=0.7, pan=pan_at(at(G, *HAGEN_AT)))
+    for k, t0 in enumerate(T_FURY):         # her cries of betrayal
+        o.hit('crash', t0, 112 + 3 * k, gain=0.45, pan=pb)
+        o.hit('bass drum', t0, 118, gain=0.5, pan=pb)

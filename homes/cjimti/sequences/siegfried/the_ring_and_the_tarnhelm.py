@@ -1,25 +1,35 @@
 """The Ring and the Tarnhelm: broad day in the forest, the dragon dead. The Woodbird, a hot magenta point on Right,
-sings its motif (Donington 27) and every note is a hop and a flash: take the Ring and the Tarnhelm from the hoard.
-Siegfried, emerald on Porch Front, walks into the dark middle of the cave and is swallowed; the cave mouth flares
-with the gold of the hoard, the Ring (8) glinting in the horns, and the bird flies off out of the free end of Right.
+sings on, every note a hop and a flash: "Wollt' er den Tarnhelm gewinnen... doch wollt' er den Ring sich erraten,
+der macht' ihn zum Walter der Welt!" Siegfried, emerald on Porch Front, walks into the dark middle of the cave
+and is swallowed; the cave mouth flares with the gold of the hoard, and the bird flies off out of the free end
+of Right on its last trill.
 
-While he is inside, Alberich (red in his muddy halo) and Mime (sulphur yellow) come running in from the free end of
-Right and fight over the spoils: the whole of Right splits into a red half and a yellow half whose border lurches
-back and forth with every blow of their quarrel, Alberich's curse (13) in the trombones against Mime's whine (71)
-in the bassoons, and white sparks flying where they clash.
+While he is inside, Alberich (red in his muddy halo) and Mime (sulphur yellow) come running in from the free end
+of Right and fight over the spoils: the whole of Right splits into a red half and a yellow half whose border
+lurches with every blow of their quarrel, toward Mime when Alberich is snarling and back when Mime whines, white
+sparks flying where they clash, up to the frenzy of "Weder Ring noch Tarnhelm soll dir denn taugen!"
 
-Siegfried comes out with the Ring: the Ring sounds in full on the horns and a gold wave sweeps the whole house end
-to end, Alberich and Mime shrinking back. Then the Tarnhelm (18): the whole house shimmers and thins into a
+"Aus der Höhle kommt er daher": Siegfried comes out with the Ring; on every note of its motif a gold wave sweeps
+the house, Alberich and Mime shrinking back. "Den Tarnhelm hält er": the whole house shimmers and thins into a
 grey-green mist, Siegfried flickering in and out of sight. Alberich slinks off out of the free end of Right with a
-red ripple of his laugh, and Mime is left on Right, while Siegfried stands at the middle of Porch Front with the
-Ring's gold glint on him.
+red ripple of his curse, Mime is left plotting on Right ("Ich will ihn mir schon gewinnen"), and Siegfried's
+strength surges out of him in emerald.
 
-compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
-word by Act II's scenes on a clock that runs on from scene to scene."""
+The music is Wagner's own: Act II, bars 1202 to 1207, 1240 to 1255 and 1318 to 1349, as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+birdsong on flutes and violins, the dwarfs' quarrel with Alberich's snarls on bassoons, trombones and cellos and
+Mime's whining on oboes and clarinets, the Ring and the Tarnhelm on horns over murmuring strings. The end of the
+Woodbird's song comes from the printed vocal score (Breitkopf & Härtel, archive.org 31761034115105, pp. 210-211),
+played as written on flute. The stage adds every blow of the dwarfs' scuffle, the glitter of the hoard, the
+Tarnhelm's shimmer and Alberich's sneer; the effects keep out of the bird's way and the Ring's, and lead the
+fight.
+
+compose() holds every note; stage(), forest(), figure() and sparks() are Act II's forest and cave, shared word
+for word with SF11 on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'SF20'
 TITLE = 'The Ring and the Tarnhelm'
@@ -30,18 +40,66 @@ VOICEOVER = ('The little bird sings: take the Ring, and the magic helmet. '
              'But two greedy dwarfs are already fighting over the gold.')
 
 K = 9                                       # this scene's place on Act II's shared clock: T = t + 80 K
+EX = excerpt(__file__)                      # Act II, bars 1202-1207, 1240-1255 and 1318-1349, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
 BEAT = 0.5
-T_BIRD = [1.0, 5.5]                         # the Woodbird's song
-T_IN = 9.5                                  # Siegfried walks into the cave
-T_HOARD = 13.0                              # the Ring in the horns, the hoard flaring
-T_FLY = 12.0                                # the bird flies off
-T_RUSH = 18.0                               # Alberich and Mime run in
-T_FIGHT = 22.0                              # the quarrel, blow by blow
-T_OUT = 41.0                                # Siegfried comes out with the Ring
-T_HELM = [49.0, 54.0]                       # the Tarnhelm
-T_SLINK = 60.0                              # Alberich slinks off, laughing
-T_HERO = 66.0
-D = 80.0
+T_IN = BAR[1206]                            # "...Walter der Welt!": Siegfried walks into the cave
+T_HOARD = BAR[1207]                         # the hoard flaring
+T_FLY = BAR[1207] + 0.8                     # the bird flies off on its trill
+T_RUSH = BAR[1240]                          # Alberich and Mime run in
+T_FIGHT = BAR[1241]                         # the quarrel, blow by blow
+T_OUT = BAR[1341]                           # "Aus der Höhle kommt er daher": the Ring
+T_HELM = [BAR[1344], BAR[1346]]             # "Den Tarnhelm hält er"
+T_SLINK = BAR[1348]                         # Alberich slinks off
+T_HERO = BAR[1349] + 0.4
+
+
+def _nine(b, notes, last):
+    """A 9-in-6 bar of the Woodbird's song: nine quavers as triplets over the first two beats, the last note on the
+    third (Wagner's footnote) -> [(bar, from, to, note)]."""
+    out, x = [], 0.0
+    for name, u in notes:
+        out.append((b, x * 2 / 27, (x + u) * 2 / 27, name))
+        x += u
+    return out + [(b, 2 / 3, last[1], last[0])]
+
+
+def _four(b, notes):
+    """A 4/4 bar of the song against the 9/8: its first three crotchets fill the first two beats, the fourth the
+    third (Wagner's footnote); notes [(name, from, to)] in quavers -> [(bar, from, to, note)]."""
+    q = lambda x: x / 9 if x <= 6 else 2 / 3 + (x - 6) / 6
+    return [(b, q(x0), q(x1), name) for name, x0, x1 in notes]
+
+
+_T = 2 / 3
+# The end of the Woodbird's first song, from the vocal score (Breitkopf & Härtel, pp. 210-211).
+WOODBIRD = (_four(1202, [('E5', 4, 4 + _T), ('C#5', 4 + _T, 4 + 2 * _T), ('E5', 4 + 2 * _T, 6), ('A5', 6, 6 + _T),
+                         ('G#5', 6 + _T, 7.5), ('E5', 7.5, 8)]) +
+            _nine(1203, [(n, 1) for n in ('E5', 'C#5', 'B4', 'A4', 'F#4', 'A4', 'C#5', 'A4', 'C#5')], ('E5', 1.0)) +
+            _four(1204, [('E5', 3, 4), ('E5', 4, 6 + _T), ('C#5', 6 + _T, 6 + 2 * _T), ('E5', 6 + 2 * _T, 8)]) +
+            _four(1205, [(n, j * _T, (j + 1) * _T) for j, n in enumerate(
+                ('A5', 'G#5', 'E5', 'E5', 'C#5', 'B4', 'E5', 'A4', 'C#5', 'E5', 'C#5', 'E5'))]) +
+            [(1206, 0, 2 / 3, 'A5')])
+
+
+def sung(lines):
+    """A sung line [(bar, from, to, note)] -> [(time, seconds, midi)] on the excerpt's clock."""
+    out = []
+    for b, f0, f1, name in lines:
+        seg = next(s['measures'] for s in EX['segments'] if s['measures'][0] <= b < s['measures'][1])
+        ms, ts = zip(*sorted((m, t) for m, t in EX['bars'] if seg[0] <= m <= seg[1]))
+        t0, t1 = float(np.interp(b + f0, ms, ts)), float(np.interp(b + f1, ms, ts))
+        out.append((t0, t1 - t0, note(name)))
+    return out
+
+
+def singer(t):
+    """Who of the two dwarfs is singing at t (0 Alberich, 1 Mime, None)."""
+    for t0, t1, who, _ in EX['singing']:
+        if t0 - 0.2 <= t < t1 + 0.4:
+            return 0 if who == 'Alberich' else 1 if who == 'Mime' else None
+    return None
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -149,49 +207,42 @@ def woodbird(fr, S, pos, t, lvl, T):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note, tagged: (time, seconds, midi, velocity, part, k, tremolo). The Woodbird's line ('bird') over the
+    orchestra's birdsong ('birdbed'); the hoard's glitter ('hoard'); in the quarrel the low line is Alberich's
+    ('alb'), the high Mime's ('mime'), and its accents are the blows ('blow', k 0 Alberich's, 1 Mime's); then the
+    Ring ('ring'), the Tarnhelm ('helm'), Alberich's parting sneer ('laugh') and Siegfried ('hero')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_BIRD):
-        for t, m, v, d in play('woodbird', t0, 0.55, 0, 90, line='melody'):
-            add(t, d, m, v, 'bird', k)
-        for t, m, v, d in play('woodbird', t0, 0.55, 0, 58, line='bass'):
-            add(t, d, m, v, 'birdbed', k)
-    for t, m, v, d in play('ring', T_HOARD, 0.6, 0, 92):
-        add(t, d, m, v, 'hoard')
-    add(T_RUSH, 0.1, 'C1', 110, 'rush')
-    rng = np.random.default_rng(20)
-    for j in range(14):                     # the quarrel: blows alternating, Alberich and Mime
-        t = T_FIGHT + j * 1.25 + rng.uniform(-0.15, 0.15)
-        add(t, 0.4, 'C1', 96 + 2 * (j % 4), 'blow', j % 2)
-    for t, m, v, d in play('curse', T_FIGHT + 0.5, 0.5, -12, 96):
-        add(t, d, m, v, 'alb')
-    for k, t0 in enumerate((T_FIGHT + 3.0, T_FIGHT + 8.0, T_FIGHT + 13.0)):
-        for t, m, v, d in play('mime_frustrated', t0, 0.75, 12, 94):
-            add(t, d, m, v, 'mime', k)
-    for t, m, v, d in play('ring', T_OUT, 0.66, 0, 118):
-        add(t, d, m, v, 'ring')
-    add(T_OUT, 0.1, 'C1', 122, 'crash')
-    for k, t0 in enumerate(T_HELM):
-        for t, m, v, d in play('tarnhelm', t0, 0.7, 0, 84 - 8 * k):
-            add(t, d, m, v, 'helm', k)
-    for t, m, v, d in play('curse', T_SLINK, 0.75, -12, 88):
-        add(t, d, m, v, 'laugh')
-    for t, m, v, d in play('siegfried', T_HERO, 0.6, -12, 96):
-        add(t, d, m, v, 'hero', 0)
-    for t, m, v, d in play('siegfried', T_HERO + 4.0, 0.6, -12, 86):
-        add(t, d, m, v, 'hero', 1)
-    for m in ('E2', 'B2', 'E3'):
-        add(0.0, D, m, 50, 'murmur')
+    notes = tidy(EX['notes'])
+    for t, d, m, v, h, *tr in notes:
+        tr, k = bool(tr and tr[0]), None
+        if t < T_IN - 0.01:
+            part = 'birdbed'
+        elif t < T_RUSH - 0.01:
+            part = 'hoard' if h == 0 else 'birdbed'
+        elif t < T_OUT - 0.01:
+            part = 'alb' if (h == 1 or m < 58) else 'mime'
+        elif t < T_HELM[0] - 0.01:
+            part = 'ring' if h == 0 else 'murmur'
+        elif t < T_SLINK - 0.01:
+            part, k = ('helm' if h == 0 else 'murmur'), int(t >= T_HELM[1] - 0.01)
+        elif t < T_HERO - 0.01:
+            part = 'laugh' if h == 0 else 'murmur'
+        else:
+            part = 'hero' if h == 0 else 'murmur'
+        N.append((float(t), float(d), int(m), int(v), part, k, tr))
+    for t, d, m in sung(WOODBIRD):
+        N.append((t, d, m, 104, 'bird', 0, False))
+    last = None
+    for j, t in enumerate(accents([n for n in notes if T_FIGHT - 0.01 <= n[0] < T_OUT - 0.5], vmin=72, n=2, space=0.55)):
+        who = singer(t)
+        last = (1 - last if last is not None else 0) if who is None else who
+        N.append((t, 0.4, 24, 100, 'blow', last, False))
     return sorted(N, key=lambda e: e[0])
 
 
 def bird_track(G):
     """Where the bird is: hops among the trees on Right on its song, then off out of the free end."""
-    N = compose()
+    N = [e[:6] for e in compose()]
     rng = np.random.default_rng(27)
     home = at(G, 'Right', 0.3)
     pts, p = [(0.0, home)], home
@@ -216,7 +267,7 @@ def render(G, seed=20):
     S = stage(G)
     d, mid = S['d'], S['mid']
     L = d.max()
-    N = compose()
+    N = [e[:6] for e in compose()]
     bird = bird_track(G)
     bird_on = np.array([e[0] for e in N if e[4] == 'bird'])
     blows = [e for e in N if e[4] == 'blow']
@@ -321,7 +372,7 @@ def render(G, seed=20):
 
         # his strength: emerald surges out from him on each phrase
         if t >= T_HERO:
-            for t0 in (T_HERO, T_HERO + 4.0):
+            for t0 in (T_HERO, T_HERO + 2.4):
                 a = t - t0
                 if 0 <= a < 2.5:
                     fr += light(SIEGFRIED, 0.95 * np.exp(-a / 1.0) * np.exp(-((np.abs(d - p_end) - 800 * a) / 170) ** 2))
@@ -330,7 +381,7 @@ def render(G, seed=20):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, the Woodbird's line on flute, and the stage's sounds."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -339,87 +390,45 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.28, 0.25), ('brass', 0.27, 0.3), ('perc', 0.27, 0.28), ('winds', 0.28, 0.32),
-                            ('strings', 0.22, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    fl = M.sampler('Woodwinds/Flute/susNV/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Stacc/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    bsn_st = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    snare = M.hits('Percussion/Snare2-HitSN*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     bird = bird_track(G)
+    bp = lambda t: pan_at(min(bird(t), G.pd.max()))
     cave = pan_at(at(G, 'Porch Front', 0.5))
-    right = pan_at(at(G, 'Right', 0.4))
-    alb = pan_at(at(G, 'Right', ALB_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'bird':
-            M.add('winds', fl.play(m, v, dur=d * 1.1, release=0.15), t, 0.9, pan_at(bird(t)))
-            M.add('winds', ob.play(m, v - 20), t, 0.4, pan_at(bird(t)))
-        elif part == 'birdbed':
-            M.add('strings', harp.play(m, v), t, 0.6, right)
-        elif part == 'hoard':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, cave, rise=0.3, fall=1.0, gain=0.6)
+    alb, mime = pan_at(at(G, 'Right', ALB_AT)), pan_at(at(G, 'Right', MIME_AT))
+    o = Orchestra(M, level=2.6)
+    for t, d, m, v, part, k, trem in compose():
+        if part == 'bird':                                              # the Woodbird sings
+            o.play('flutes', m, t, max(d, 0.15), v, bp(t), 0.95)
+            o.play('piccolo', m + 12, t, max(d, 0.15), v - 30, bp(t), 0.2)
+        elif part in ('birdbed', 'hoard'):
+            if m >= 72:
+                o.play('flutes' if m < 86 else 'piccolo', m, t, d, v, bp(t) if part == 'birdbed' else cave, 0.45)
+                o.play('violins', m, t, d, v - 14, bp(t), 0.25)
             else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.65, cave)
-            M.add('perc', glock.play(m + 12, v - 30), t, 0.5, cave)
-        elif part == 'rush':
-            M.add('perc', snare.play(100), t, 0.6, right)
-            M.add('perc', timp.play(v, pitch=-3), t, 0.8, right)
-        elif part == 'blow':
-            M.add('perc', timp.play(v, pitch=-1 if k else -6), t, 0.8, alb if k == 0 else right)
-            M.add('perc', snare.play(v - 10), t, 0.5, right)
+                o.play('violas trem' if trem else 'violas', m, t, d, v - 8, 0.0, 0.35)
         elif part == 'alb':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, alb, rise=0.15, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.25), t, 0.85, alb)
-            M.add('low', cbs.play(m - 12, v - 10), t, 0.6, alb)
+            o.play('bassoons' if m >= 46 else 'cellos', m, t, d, v, alb, 0.6)
+            if v >= 85 and d >= 0.2:
+                o.play('trombones', m, t, d, v - 8, alb, 0.45)
         elif part == 'mime':
-            M.add('winds', bsn_st.play(m, v), t, 0.9, right)
-            M.add('winds', ob.play(m + 12, v - 16), t, 0.5, right)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, cave, rise=0.12, fall=1.0, gain=0.9)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.95, cave)
-            M.add('low', tbn.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.7, cave)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9, cave)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, cave)
-        elif part == 'helm':
-            hold('strings', vtrem, m, t, t + d, v, cave, rise=0.3, fall=1.2, gain=0.55)
-            M.add('winds', bsn.play(m - 12, v - 10, dur=d, release=0.5), t, 0.5, cave)
-        elif part == 'laugh':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, alb)
-            M.add('low', cbs.play(m - 12, v - 6), t, 0.7, alb)
-        elif part == 'hero':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.85, cave)
-            M.add('strings', vc.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, cave)
+            o.play('oboes' if m < 80 else 'flutes', m, t, d, v, mime, 0.55)
+            o.play('clarinets', m - 12, t, d, v - 12, mime, 0.3)
+        elif part in ('ring', 'helm', 'laugh', 'hero'):
+            o.play('horns', m, t, d, v + 4, cave, 0.8)
+            if part == 'laugh':
+                o.play('bassoons', m, t, d, v - 6, alb, 0.4)
         elif part == 'murmur':
-            hold('strings', vtrem, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.18)
+            o.play('cellos trem' if trem and m < 60 else 'violas trem' if trem else 'cellos', m, t, d, v - 6, 0.0, 0.45)
+        elif part == 'blow':                                            # the dwarfs' scuffle
+            where = alb if k == 0 else mime
+            o.hit('brake drum', t, 100, gain=0.35, pan=where)
+            o.hit('timpani', t, 96, pitch=-1, gain=0.3, pan=where)
+            o.hit('metal', t + 0.02, 80, gain=0.18, pan=where)
+    o.hit('cymbal swell', T_HOARD - 1.8, 80, gain=0.25, pan=cave)        # the hoard glitters
+    for j in range(6):
+        o.hit('triangle', T_HOARD + 0.6 * j, 70 + 4 * j, gain=0.2, pan=cave)
+    o.hit('crash', T_OUT, 104, gain=0.4, pan=cave)
+    for t0 in T_HELM:                                                   # the Tarnhelm's shimmer
+        o.hit('scrape', t0, 90, gain=0.35, pan=cave)
+        o.hit('gong scrape', t0 + 0.4, 80, gain=0.3, pan=cave)
+    o.hit('gong', T_SLINK, 80, gain=0.3, pan=alb)
+    o.effects([(0, -18), (T_IN, -18), (T_HOARD, -8), (T_RUSH, -2), (T_OUT - 0.5, -2), (T_OUT, -9)])
