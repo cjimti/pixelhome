@@ -169,6 +169,95 @@ gtag('config', 'G-KQYBQLRBMP');
       intro is its own FSEQ and MP3, scheduled just before the show it introduces.</p>
   </section>
 
+  <section id="live">
+    <h2>Live</h2>
+    <p>Stand in front of the house, open <a href="../live/">pixelhome.app/live</a>, and your phone shows what the
+      lights are doing right now and plays the soundtrack in time with them. No video or audio is streamed. The site
+      already has every sequence and every MP3, so all that has to travel is a few bytes: which file FPP is playing
+      and how far into it.</p>
+    <p>That message goes through <a href="https://workers.cloudflare.com/">Cloudflare Workers</a>. A small service on
+      the Pi reads FPP's status once a second and posts to the Worker when something changes (a new song, a start, a
+      stop, a jump) and every 30 seconds as a heartbeat. The Worker hands it to a Durable Object, one per house, that
+      keeps the latest state and pushes it over a WebSocket to every phone watching. Connections only go out from the
+      Pi, so nothing at my house is open to the internet, and phones only listen. It all fits in Cloudflare's free
+      plan: a night is about 2,000 small requests against a limit of 100,000 a day.</p>
+
+    <figure class="diagram hw net" aria-labelledby="d4">
+      <figcaption id="d4">From the roofline to your phone</figcaption>
+      <div class="hwscroll">
+        <svg viewBox="0 0 1200 560" role="img" aria-label="The Pi in the house posts what FPP is playing to a Cloudflare Worker over one kept-open HTTPS connection. The Worker stamps it and hands it to a Durable Object for the house, which pushes it over WebSockets to every phone watching. Each phone already has the lights and music and plays from the same moment.">
+          <defs>
+            <marker id="na1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
+            <marker id="na2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
+          </defs>
+          <!-- the house, its roofline lit, the Pi inside -->
+          <path class="house" d="M50 210 L180 110 L310 210 V380 H50 Z"/>
+          <polyline class="dots p1" points="50,210 180,110 310,210"/>
+          <rect class="ctrl" x="75" y="270" width="215" height="80" rx="12"/>
+          <text class="ctxt" x="95" y="305">Pi + FPP</text>
+          <text class="csub" x="95" y="334">HW04 · 41.27 s</text>
+          <text class="lbl" x="180" y="80" text-anchor="middle">The house</text>
+
+          <!-- Cloudflare -->
+          <rect class="cloud" x="450" y="40" width="340" height="370" rx="22"/>
+          <text class="cfname" x="620" y="80" text-anchor="middle">Cloudflare · free plan</text>
+          <rect class="ctrl" x="480" y="110" width="280" height="100" rx="12"/>
+          <text class="ctxt" x="500" y="148">Worker</text>
+          <text class="csub" x="500" y="180">token, arrival time</text>
+          <rect class="ctrl" x="480" y="280" width="280" height="100" rx="12"/>
+          <text class="ctxt" x="500" y="318">Durable Object</text>
+          <text class="csub" x="500" y="350">"House": state + age</text>
+          <path class="link p1" d="M620 212 V272" marker-end="url(#na1)"/>
+
+          <!-- Pi to Worker -->
+          <path class="link p1" d="M292 300 C365 300 380 160 472 160" marker-end="url(#na1)"/>
+          <text class="hop" x="360" y="132" text-anchor="middle">HTTPS POST</text>
+          <text class="csub" x="360" y="158" text-anchor="middle">~100 bytes</text>
+
+          <!-- Durable Object to phones -->
+          <path class="link p2" d="M762 330 C850 330 860 120 948 120" marker-end="url(#na2)"/>
+          <path class="link p2" d="M762 330 C850 330 860 240 948 240" marker-end="url(#na2)"/>
+          <path class="link p2" d="M762 330 C850 330 860 360 948 360" marker-end="url(#na2)"/>
+          <text class="hop" x="855" y="440" text-anchor="middle">WebSocket</text>
+          <!-- phones, each showing the same roofline -->
+          <g class="phone"><rect x="955" y="72" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,128 984,112 1002,128"/></g>
+          <g class="phone"><rect x="955" y="192" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,248 984,232 1002,248"/></g>
+          <g class="phone"><rect x="955" y="312" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,368 984,352 1002,368"/></g>
+          <text class="csub" x="1030" y="126">yours</text>
+          <text class="csub" x="1030" y="246">a neighbor's</text>
+          <text class="csub" x="1030" y="366">up to 250</text>
+
+          <!-- where each delay is taken out -->
+          <line class="rule" x1="40" y1="470" x2="1160" y2="470"/>
+          <text class="fix" x="40" y="508"><tspan class="num">1</tspan> Pi to Cloudflare</text>
+          <text class="fixsub" x="40" y="538">+ half the quickest round trip</text>
+          <text class="fix" x="450" y="508"><tspan class="num">2</tspan> Waiting at Cloudflare</text>
+          <text class="fixsub" x="450" y="538">+ the report's age</text>
+          <text class="fix" x="860" y="508"><tspan class="num">3</tspan> On the phone</text>
+          <text class="fixsub" x="860" y="538">lights follow the phone's audio</text>
+        </svg>
+      </div>
+    </figure>
+
+    <h3>Getting past the latency</h3>
+    <p>The hard part isn't knowing what's playing, it's knowing <i>where</i> it is to within a fraction of a second.
+      Clocks on a Pi, a server and a phone never quite agree, so nothing compares timestamps between them. Instead
+      each delay is measured on its own:</p>
+    <ul>
+      <li><b>Pi to Cloudflare.</b> The Pi keeps its connection open so a report never waits on a new TLS handshake,
+        times each round trip, and adds half the quickest recent one to the position before sending.</li>
+      <li><b>Waiting at Cloudflare.</b> A phone that joins mid-song gets the last report plus its age, so it adds
+        however long the report sat there.</li>
+      <li><b>On the phone.</b> From then on the phone runs its own clock and only needs a heartbeat to check it.</li>
+    </ul>
+    <p>Sound is the trickier part. A phone takes a moment to start playing after it jumps to a new spot, and every
+      jump is a gap you can hear. So the page aims a little ahead of the house, measures how late the music actually
+      came out, and remembers that lead on your phone so the next song lands right the first time. It doesn't
+      correct with a second jump; it only re-syncs if the music slips by more than a second. Once the music is
+      playing, the lights on screen follow your phone's audio, not the network, so what you see always matches what
+      you hear. Anything left over is about the same as the delay of sound crossing a front yard.</p>
+  </section>
+
   <section id="license">
     <h2>Open source</h2>
     <p>This site and everything behind it is open source <a href="https://github.com/cjimti/pixelhome">on GitHub</a>.
