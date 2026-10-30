@@ -204,13 +204,7 @@
     state = st;
     if (st.status === 'offline') return dark('Live', 'The house is offline', 'We can’t reach the lights right now. Keep this page open; it will join in when they’re back.');
     if (st.status !== 'playing') return dark('Live', 'The show is resting', 'The lights are taking a break. Keep this page open; it will join in when the show starts again.');
-    // A report can only arrive late (the network never delivers it early), so within one sequence the report
-    // that puts the house furthest along is the truest; later, slower ones don't pull the clock back.
-    // It may drift back 20 ms a report, in case the house itself stalled.
-    const ms = st.ms + (st.age || 0), now = performance.now();
-    const ours = anchor && anchor.seq === st.seq ? livePos() * 1000 : null;
-    anchor = ours !== null && Math.abs(ms - ours) < 1500 ? { ms: Math.max(ms, ours - 20), recv: now, seq: st.seq }
-      : { ms, recv: now, seq: st.seq };
+    anchor = { ms: st.ms + (st.age || 0), recv: performance.now() };
     const w = find(st.seq);
     if (!w) return dark('Now playing', 'Something special', 'This one isn’t on the website yet, so just watch the house!', true);
     setAccent(w.meta.occasion);
@@ -234,50 +228,73 @@
   // ---------- the music ----------
   const music = new Audio();
   music.preload = 'auto';
-  music.preservesPitch = true;
-  let soundOn = false, seekedAt = 0, needSeek = false, wake = null;
-  const audioClock = () => soundOn && cur && music.dataset.key === cur.key && !music.paused && !music.seeking && music.readyState >= 2;
+  let soundOn = false, seekedAt = 0, wake = null;
+  // A phone takes a moment to start sounding after a seek, so a seek aims this far ahead of the house.
+  // It is measured with the music muted, before anyone hears it, and kept for the next song.
+  let lead = 0.15, lockId = 0, locking = false;
+  const audioClock = () => soundOn && !locking && cur && music.dataset.key === cur.key && !music.paused && !music.seeking && music.readyState >= 2;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function until(ok, id, ms = 6000) {
+    for (let t = 0; !ok(); t += 50) {
+      if (t > ms || id !== lockId) return false;
+      await sleep(50);
+    }
+    return id === lockId;
+  }
+  // how far the music is behind the house, in seconds: the middle of a few readings once it plays smoothly
+  async function behind(id) {
+    if (!(await until(() => !music.seeking && !music.paused && music.readyState >= 3, id))) return null;
+    await sleep(250);
+    const r = [];
+    for (let i = 0; i < 5; i++) {
+      r.push(livePos() - music.currentTime);
+      await sleep(100);
+    }
+    return id === lockId ? r.sort((a, b) => a - b)[2] : null;
+  }
+  // Put the music in step without being heard: muted, aim, measure how late it came out, aim again, unmute.
+  async function lockOn() {
+    const id = ++lockId;
+    locking = true;
+    music.muted = true;
+    $('soundText').textContent = 'Getting in step…';
+    if (music.readyState >= 1 || (await until(() => music.readyState >= 1, id, 10000))) {
+      for (let i = 0; i < 4; i++) {
+        const at = livePos() + lead;
+        if (!isFinite(music.duration) || at >= music.duration) break;
+        music.currentTime = at;
+        if (music.paused) music.play().catch(blocked);   // the first time, still inside the tap
+        const err = await behind(id);
+        if (err === null || Math.abs(err) < 0.03) break;
+        if (Math.abs(err) < 1) lead = Math.min(1.5, Math.max(0, lead + err));   // more is a seek that didn't take
+      }
+    }
+    if (id !== lockId) return;                           // muted, or a newer song took over
+    locking = false;
+    seekedAt = performance.now();
+    music.muted = false;
+    showSound();
+  }
   function syncAudio() {
     if (!soundOn || !cur || !cur.audio) {
       if (!music.paused) music.pause();
       return;
     }
-    const at = livePos();
     if (music.dataset.key !== cur.key) {
       music.dataset.key = cur.key;
+      music.muted = true;
       music.src = cur.audio;
-      needSeek = true;                             // set the position once the phone knows the file
-      seekedAt = performance.now();
       music.play().catch(blocked);
+      lockOn();
       return;
     }
-    if (music.paused && !music.ended) {
-      if (music.readyState >= 1) music.currentTime = at;
-      seekedAt = performance.now();
-      music.play().catch(blocked);
-      return;
-    }
-    trim();
-    // only a real slip, and never while the last correction is still settling: each seek is a gap in the sound
+    if (locking) return;
+    if (music.paused && !music.ended) { lockOn(); return; }
+    // only a real slip, and never while the last correction is still settling
+    const at = livePos();
     if (music.seeking || performance.now() - seekedAt < 15e3 || !isFinite(music.duration) || at >= music.duration) return;
-    if (Math.abs(music.currentTime - at) > 1) {
-      music.currentTime = at;
-      seekedAt = performance.now();
-    }
+    if (Math.abs(music.currentTime - at) > 1) lockOn();
   }
-  // Small slips (a seek on a phone resumes late; reports arrive late) are closed by playing a little faster or
-  // slower, pitch kept, instead of seeking: up to 2.5%, so 100 ms takes about four seconds and nothing is heard.
-  let err = 0;
-  function trim() {
-    if (!audioClock() || !isFinite(music.duration)) { if (music.playbackRate !== 1) music.playbackRate = 1; return; }
-    const e = livePos() - music.currentTime;      // + means the phone is behind the house
-    err = Math.abs(e - err) > 0.5 ? e : err * 0.8 + e * 0.2;   // some phones report the position coarsely
-    const rate = Math.abs(err) < 0.02 || Math.abs(err) > 1 ? 1 : 1 + Math.max(-0.025, Math.min(0.025, err * 0.25));
-    if (Math.abs(music.playbackRate - rate) > 0.002) music.playbackRate = rate;
-  }
-  music.addEventListener('loadedmetadata', () => {
-    if (needSeek) { needSeek = false; music.currentTime = livePos(); }
-  });
   function blocked() {
     soundOn = false;
     showSound();
@@ -307,7 +324,7 @@
     showSound();
     keepAwake(soundOn);
     track(soundOn ? 'live_sound_on' : 'live_sound_off', { sequence_id: cur ? cur.meta.id : '' });
-    if (!soundOn) { music.pause(); return; }
+    if (!soundOn) { lockId++; locking = false; music.pause(); music.muted = false; return; }
     // this tap is what lets the phone play sound: start the element now, even before there's a song
     if (cur && cur.audio) syncAudio();
     else {
@@ -355,7 +372,6 @@
     syncAudio();
   });
   // keep the music in step, and notice a Pi that has gone quiet (it reports every 30 s playing, every minute idle)
-  setInterval(trim, 250);
   setInterval(() => {
     syncAudio();
     if (!state || !recv || state.status === 'offline') return;
