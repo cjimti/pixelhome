@@ -254,22 +254,25 @@
     }
     return id === lockId ? r.sort((a, b) => a - b)[2] : null;
   }
-  // Put the music in step: aim ahead by the lead, measure how late it came out, and aim again only if it's off.
+  // Put the music in step: aim ahead by the lead and measure how late it came out. Every seek is a gap in the
+  // sound on a phone, so what's left over is only learned for the next song, never corrected with another seek
+  // (sound from the house's own speakers is ~90 ms late across a yard anyway, and the lights follow the phone).
+  // Aim again only if the seek didn't take.
   async function lockOn() {
     const id = ++lockId;
     locking = true;
     if (music.readyState >= 1 || (await until(() => music.readyState >= 1, id, 10000))) {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 2; i++) {
         const at = livePos() + lead;
         if (!isFinite(music.duration) || at >= music.duration) break;
         music.currentTime = at;
         if (music.paused) music.play().catch(blocked);   // the first time, still inside the tap
         const err = await behind(id);
-        if (err === null || Math.abs(err) < 0.03) break;
+        if (err === null) break;
         if (Math.abs(err) >= 1) continue;                // a seek that didn't take; nothing to learn
         lead = Math.min(1.5, Math.max(0, lead + err));
         try { localStorage.setItem('pixelhome.live.lead', lead.toFixed(3)); } catch (e) { /* no storage */ }
-        if (Math.abs(err) < 0.06) break;                 // close enough not to make another gap in the sound
+        break;
       }
     }
     if (id !== lockId) return;                           // sound turned off, or a newer song took over
