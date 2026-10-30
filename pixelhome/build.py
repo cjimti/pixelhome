@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from . import catalog, fseq, intro, share
 from .fx import DT, to_bytes, to_bytes_dithered
-from .occasions import OCCASIONS, KINDS
+from .occasions import OCCASIONS, KINDS, PLAYLIST, playlists
 
 WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half frame rate
 MAX_SECONDS = 15 * 60
@@ -78,22 +78,23 @@ def _build_one(args):
         shutil.rmtree(cached, ignore_errors=True)
         os.replace(tmp, cached)
     for sub in ('fseq', 'data'):
-        os.makedirs(os.path.join(out, sub, s.home, s.occasion), exist_ok=True)
+        os.makedirs(os.path.join(out, sub, s.home, s.playlist), exist_ok=True)
     shutil.copyfile(os.path.join(cached, 'seq.fseq'), os.path.join(out, 'fseq', s.home, s.id + '.fseq'))
     shutil.copyfile(os.path.join(cached, 'seq.png'), os.path.join(out, 'data', s.home, s.id + '.png'))
     with open(os.path.join(cached, 'meta.json')) as f:
         meta = json.load(f)
     meta['cached'] = hit
+    meta.update(occasion=s.occasion, playlist=s.playlist)     # set here: cached renders predate playlists
     mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
     if os.path.exists(mp3):
-        os.makedirs(os.path.join(out, 'audio', s.home, s.occasion), exist_ok=True)
+        os.makedirs(os.path.join(out, 'audio', s.home, s.playlist), exist_ok=True)
         shutil.copyfile(mp3, os.path.join(out, 'audio', s.home, s.id + '.mp3'))
         meta.update(audio=f'audio/{s.home}/{s.id}.mp3', audioName=f'{s.code} {s.title}.mp3')
     mp3, js = intro.paths(s)                # spoken intro, rendered locally by `pixelhome intro`
     if os.path.exists(js):
         with open(js) as f:
             env = json.load(f)['env']
-        d = os.path.join(out, 'intros', s.home, s.occasion)
+        d = os.path.join(out, 'intros', s.home, s.playlist)
         os.makedirs(d, exist_ok=True)
         data = to_bytes(intro.frames(catalog.load_home(s.home), env))
         base = os.path.join(out, 'intros', s.home, s.id)
@@ -146,8 +147,14 @@ def build(out, want):
         for d in os.listdir(CACHE):
             if d not in keep:
                 shutil.rmtree(os.path.join(CACHE, d), ignore_errors=True)
-    used = {m['occasion'] for h in homes for m in h['sequences']}
-    cat = dict(occasions=[o for o in OCCASIONS if o['id'] in used], kinds=KINDS, homes=homes,
+    used = {m['playlist'] for h in homes for m in h['sequences']}
+    occasions = []
+    for o in OCCASIONS:                 # each occasion with the playlists under it that have sequences
+        pls = [dict(id=p, label=PLAYLIST[p]['label'], accent=PLAYLIST[p]['accent']) for p in playlists(o['id'])
+               if p in used]
+        if pls:
+            occasions.append(dict({k: v for k, v in o.items() if k != 'prefix'}, playlists=pls))
+    cat = dict(occasions=occasions, kinds=KINDS, homes=homes,
                built=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))

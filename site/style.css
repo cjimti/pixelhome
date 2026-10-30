@@ -125,6 +125,11 @@ input[type="search"]::placeholder { color: var(--muted); }
   font-size: 17px; display: flex; align-items: center; gap: 8px; padding: 10px 2px 6px;
 }
 .group h3::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.sub { display: grid; gap: 2px; }
+.sub h4 {
+  margin: 0; font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: 13px; color: var(--c); display: flex; align-items: center; gap: 8px; padding: 8px 2px 4px 16px;
+}
 .item {
   display: grid; gap: 1px; width: 100%; text-align: left; padding: 8px 10px;
   background: transparent; border: 1px solid transparent; border-radius: 8px;

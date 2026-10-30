@@ -392,7 +392,7 @@ def music(want, occasion=None, video=False, out=None):
                 print('  lowered (semitones): ' + ', '.join(moved))
             if video:
                 out = out or os.path.join(catalog.ROOT, 'build', 'preview')
-                preview([s.code], out, s.occasion, True)
+                preview([s.code], out, s.playlist, True)
                 v = os.path.join(out, f'{h} {s.code} {s.title} preview.mp4')
                 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', v, '-i', path, '-c:v', 'copy', '-c:a', 'aac',
                                 '-b:a', '192k', '-shortest', v.replace(' preview.mp4', ' with music.mp4')], check=True)
