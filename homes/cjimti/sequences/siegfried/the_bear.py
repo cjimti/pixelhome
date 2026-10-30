@@ -1,21 +1,29 @@
-"""The Bear: Mime is tapping at the anvil, sulphur yellow beside the forge, when a horn call (Donington 48) rings
-out of the forest: the cave mouth at the free end of Right flares green and the whole of Right flashes emerald
-with each note. Then Siegfried bursts in, electric emerald with a white-hot head, driving a bear on a rope: a
-great brown-black mass that rolls in along Right ahead of him and goes straight for Mime.
+"""The Bear: Mime is grumbling at the anvil, sulphur yellow beside the forge and tapping, when the orchestra
+bursts out fortissimo and the cave mouth at the free end of Right flares green: Siegfried's horn from the forest.
+Then he bursts in, electric emerald with a white-hot head, driving a bear on a rope: a great brown-black mass that
+rolls in along Right ahead of him and goes straight for Mime.
+
+The music is Wagner's own: Act I, bars 240 to 310, as Solti's 1958 Vienna Philharmonic recording takes them, from
+Mime's "Das beste Schwert, das je ich geschweißt" through Siegfried's "Hoiho! Hau ein!" and the chase to "Aus dem
+Busche kam ein Bär". The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): Mime's
+tapping on bassoons and cellos, the outburst on horns, Siegfried's audacity on horns and violins with a piccolo on
+top, the bear's churning bass on cellos, basses and bassoons. The staging adds the bear: a growl in the tubas and
+trombones and the thud of its weight on every lunge, its paws padding after Mime between lunges and off to the
+woods, a boom and a rush of air as they burst in, the forge crackling.
 
 Mime flees round the forge (Porch Left, across the anvil to Porch Right, out onto Left and back) with the bear
-lunging after him; every lunge is a roar in the tubas and the run under the bear flashes red-brown. Siegfried's
-audacity (55) bustles along in horns and violins, and each of its notes throws an emerald shockwave out from him
-to both ends of the house. He laughs at Mime ("Hoho!", stopped horns, the house rippling green), then sends the
-bear back out the way it came. His horn call sounds again in full, his strength (53) blazes in emerald sweeps end
-to end, and the cave settles with Siegfried at the anvil's right hand and Mime cowering at its left.
+lunging after him on the chase's accents; every lunge flashes the run under it red-brown, and each of Siegfried's
+notes throws an emerald shockwave out from him. He laughs ("Ha ha ha!", the house rippling green), then "Lauf,
+Brauner!" sends the bear back out the way it came. He tells how he blew his horn for a better friend, each phrase
+a soft emerald pulse; his horn call rings out and his strength blazes in emerald sweeps end to end, and the cave
+settles with Siegfried at the anvil's right hand and Mime cowering at its left.
 
-compose() holds every note, choreography() every chase; stage(), cave(), figure() and sparks() are the cave,
+compose() tags every note, choreography() every chase; stage(), cave(), figure() and sparks() are the cave,
 shared word for word by Act I's scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'SF02'
 TITLE = 'The Bear'
@@ -26,17 +34,17 @@ VOICEOVER = ('A horn in the forest, and here comes Siegfried, with a bear on a r
              'Poor Mime runs for his life.')
 
 K = 1                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
-T_SMITH = [1.0, 5.5]                        # Mime tapping at the anvil
-T_HORN = 10.5                               # the horn call from the forest
-T_IN = 14.0                                 # Siegfried and the bear burst in
-T_AUD = [17.0, 25.0, 33.0]                  # Siegfried's audacity
-T_HO = 41.5                                 # he laughs
-T_OUT = 46.0                                # the bear sent back to the woods
-T_HORN2 = 53.0                              # the horn call in full
-T_STR = [57.0, 61.0]                        # his strength
-T_REST = 66.0
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 240-310, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_HORN = BAR[248]                           # the horn from the forest, fortissimo
+T_IN = BAR[250]                             # Siegfried and the bear burst in, on the bear's music
+T_HO = BAR[262]                             # he laughs
+T_OUT = BAR[281]                            # "Lauf, Brauner!": the bear sent back to the woods
+T_TELL = BAR[285]                           # he tells how he called for a better friend
+T_HORN2 = BAR[296]                          # "ließ ich hallend da ertönen": his horn call
+T_STR = [BAR[305], BAR[306]]                # the fanfare at its top: his strength
+T_REST = BAR[307]
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -150,7 +158,7 @@ def marks(G):
     }
 
 
-LUNGES = [19.5, 23.0, 27.0, 30.5, 34.5, 38.0]                      # the bear's roars
+LUNGES = [BAR[b] for b in (258, 260, 262, 265, 273, 276)]          # the bear's roars, on the chase's accents
 
 
 def choreography(G):
@@ -165,46 +173,42 @@ def choreography(G):
             tgt[i] = [m[k] for tk, k in pts if tk <= x][-1]
         return tgt
 
-    mime = track([(0, 'mime'), (18.5, 'PL7'), (22.0, 'PL2'), (26.0, 'PR3'), (29.5, 'PR8'), (33.5, 'L8'),
-                  (37.0, 'L5'), (40.0, 'mime')])
-    bear = track([(0, 'off'), (T_IN, 'PF6'), (LUNGES[0], 'PL7'), (LUNGES[1], 'PL2'), (LUNGES[2], 'PR3'),
-                  (LUNGES[3], 'PR8'), (LUNGES[4], 'L8'), (LUNGES[5], 'PL4'), (40.5, 'PF5'), (T_OUT, 'off')])
-    sieg = track([(0, 'off'), (T_IN + 0.8, 'R6'), (20.0, 'R2'), (28.0, 'PR5'), (36.0, 'PR3'), (T_OUT - 0.5, 'PR8'),
-                  (T_OUT + 2.5, 'R2'), (T_HORN2 - 2, 'hero')])
-    return dict(t=t, mime=follow(mime, 5.0) + 3 * np.sin(2 * np.pi * 7 * t) * ((t > 18) & (t < 41)),
+    Lg = LUNGES
+    mime = track([(0, 'mime'), (Lg[0] - 1.0, 'PL7'), (Lg[1] - 1.0, 'PL2'), (Lg[2] - 1.0, 'PR3'), (Lg[3] - 1.0, 'PR8'),
+                  (Lg[4] - 1.0, 'L8'), (Lg[5] - 1.0, 'L5'), (T_OUT - 1.0, 'mime')])
+    bear = track([(0, 'off'), (T_IN, 'PF6'), (Lg[0], 'PL7'), (Lg[1], 'PL2'), (Lg[2], 'PR3'), (Lg[3], 'PR8'),
+                  (Lg[4], 'L8'), (Lg[5], 'PL4'), (Lg[5] + 2.5, 'PF5'), (T_OUT, 'off')])
+    sieg = track([(0, 'off'), (T_IN + 0.8, 'R6'), (Lg[1], 'R2'), (Lg[3], 'PR5'), (Lg[5], 'PR3'), (T_OUT - 0.5, 'PR8'),
+                  (T_OUT + 2.5, 'R2'), (T_TELL + 2, 'hero')])
+    return dict(t=t, mime=follow(mime, 5.0) + 3 * np.sin(2 * np.pi * 7 * t) * ((t > T_IN) & (t < T_OUT)),
                 bear=follow(bear, 3.6), sieg=follow(sieg, 3.0))
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Under Mime's grumbling the left
+    hand's repeated notes are his tapping ('smith'); the fortissimo outburst is the horn from the forest ('horn',
+    k 0); the right hand of the bear's music and the rising chase is Siegfried's audacity ('aud'), the left hand
+    churning under it the bear ('bear'); while he tells his story his phrases glow ('tell'), and the horn call he
+    sang for a friend is 'horn' (k 1). 'roar' marks the bear's lunges; everything else 'orch'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_SMITH):
-        for t, m, v, d in play('mime', t0, BEAT, -12, 58 + 6 * k):
-            add(t, d, m, v, 'smith', k)
-    add(0.0, T_HORN, 'F1', 50, 'pedal')
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.42, 0, 104):
-        add(t, d, m, v, 'horn', 0)
-    add(T_IN, 0.1, 'C1', 124, 'burst')
-    for k, t0 in enumerate(T_AUD):
-        for t, m, v, d in play('siegfried_audacity', t0, 0.5, 0, 96 + 6 * k):
-            add(t, d, m, v, 'aud', k)
-            add(t, d, m - 24, v - 16, 'aud_bass', k)
+    for t, d, m, v, h in EX['notes']:
+        b = max(mm for mm, bt in EX['bars'] if bt <= t + 1e-6)
+        part, k = 'orch', None
+        if b < 247 and h == 1 and d < 0.4:
+            part = 'smith'
+        elif 248 <= b < 250 and h == 0:
+            part, k = 'horn', 0
+        elif T_IN <= t < T_OUT + 1.5 and h == 0 and v >= 75:
+            part = 'aud'
+        elif T_IN <= t < T_OUT + 1.5 and h == 1:
+            part = 'bear'
+        elif 296 <= b < 307 and h == 0:
+            part, k = 'horn', 1
+        elif T_TELL <= t and h == 0:
+            part = 'tell'
+        N.append((t, d, m, v, part, k))
     for k, t0 in enumerate(LUNGES):
-        add(t0, 1.0, 'D1', 110, 'roar', k)
-    for j in range(12):                     # "Hoho!": stopped horns laughing
-        add(T_HO + j * 0.3, 0.2, ('G4', 'D5')[j % 2], 100 - 2 * j, 'laugh')
-    add(T_OUT, 0.1, 'C1', 120, 'out')
-    for t, m, v, d in play('siegfried_horn', T_HORN2, 0.5, 0, 118):
-        add(t, d, m, v, 'horn', 1)
-    for k, t0 in enumerate(T_STR):
-        for t, m, v, d in play('siegfried', t0, 0.9, -12, 112):
-            add(t, d, m, v, 'strength', k)
-    for m in ('G2', 'D3', 'G3', 'B3'):
-        add(T_REST, D - T_REST, m, 66, 'glow')
+        N.append((t0, 1.0, 26, 0, 'roar', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -220,7 +224,9 @@ def render(G, seed=2):
     smith_t = np.array([h[0] for h in smith])
     horn = [e for e in N if e[4] == 'horn']
     aud_on = np.array(sorted({e[0] for e in N if e[4] == 'aud'}))
-    str_on = np.array(sorted({e[0] for e in N if e[4] == 'strength'}))
+    str_on = np.array([T_STR[0], T_STR[1]] + [e[0] for e in N if e[4] == 'horn' and e[5] == 1 and e[0] > T_STR[0]])
+    str_on.sort()
+    tell_on = np.array(sorted({e[0] for e in N if e[4] == 'tell'}))
     seg = G.seg_of
     right = seg == 'Right'
     jag = np.random.default_rng(seed).uniform(0.3, 1.0, G.N)
@@ -230,7 +236,7 @@ def render(G, seed=2):
         T = t + 80 * K
         pm, pb, ps = C['mime'][f], C['bear'][f], C['sieg'][f]
         lv = dict(LV)
-        lv['mouth'] += 0.4 * smoothstep(T_HORN - 0.3, T_HORN + 0.5, t) * (1 - smoothstep(T_IN + 1, T_IN + 6, t))
+        lv['mouth'] += 0.4 * smoothstep(T_HORN - 0.3, T_HORN + 0.3, t) * (1 - smoothstep(T_IN + 1, T_IN + 6, t))
         fr = cave(S, T, lv)
 
         # Mime tapping at the anvil
@@ -277,9 +283,9 @@ def render(G, seed=2):
             fr += light(SIEGFRIED, 0.5 * np.exp(-a / 0.2) * np.exp(-((d - ps) / 150) ** 2))
 
         # "Hoho!": the whole house ripples green
-        if T_HO <= t < T_OUT:
+        if T_HO <= t < T_HO + 3.0:
             a = t - T_HO
-            fr += light(SIEGFRIED, 0.55 * (0.5 + 0.5 * np.sin(2 * np.pi * (d / 240 - a * 3.3))) ** 3)
+            fr += light(SIEGFRIED, 0.55 * (1 - smoothstep(2.0, 3.0, a)) * (0.5 + 0.5 * np.sin(2 * np.pi * (d / 240 - a * 3.3))) ** 3)
 
         # the bear sent out: a whoosh of green chasing it to the free end
         if T_OUT <= t < T_OUT + 3:
@@ -296,7 +302,14 @@ def render(G, seed=2):
             fr += light(SIEGFRIED, fade * (0.95 * np.exp(-((d - front) / 90) ** 2) + 0.3 * (d < front)))
             fr += light(HEAD, fade * 0.6 * np.exp(-(t - str_on[k]) / 0.12) * np.exp(-((d - front) / 40) ** 2))
 
-        mlvl = keys(t, [(0, 0.5), (14, 0.6), (18, 0.85), (40, 0.85), (41.5, 0.35), (T_HORN2, 0.35), (D - 8, 0.6)])
+        # his story: each phrase a soft emerald pulse out from him
+        jt = int(np.searchsorted(tell_on, t, side='right')) - 1
+        if jt >= 0 and t - tell_on[jt] < 1.0 and t < T_HORN2:
+            a = t - tell_on[jt]
+            fr += light(SIEGFRIED, 0.55 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - ps) - 700 * a) / 90) ** 2))
+
+        mlvl = keys(t, [(0, 0.5), (T_HORN, 0.6), (T_IN + 3, 0.85), (T_OUT - 1, 0.85), (T_OUT, 0.35),
+                        (T_HORN2, 0.35), (D - 8, 0.6)])
         fr = figure(fr, S, pm, MIME, mlvl)
         if ps < L + 40:
             slvl = keys(t, [(T_IN, 0.9), (T_REST, 0.9), (D - 6, 0.8)])
@@ -306,7 +319,7 @@ def render(G, seed=2):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the bear's roars and Siegfried's entrance."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -316,89 +329,55 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
-
-    def pan_of(key, t):
-        return pan_at(np.interp(t, C['t'], C[key]))
-
-    for name, gain, rev in (('low', 0.4, 0.22), ('winds', 0.32, 0.3), ('brass', 0.38, 0.3), ('strings', 0.34, 0.3),
-                            ('perc', 0.36, 0.25), ('mallet', 0.22, 0.3), ('fx', 0.15, 0.3), ('warm', 0.34, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    horn_st = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tuba_st = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    forge = pan_at(at(G, 'Porch Front', 0.5))
+    S = stage(G)
+    forge = pan_at(S['anvil'])
     mouth = pan_at(at(G, 'Right', 0.95))
-    for t, d, m, v, part, k in compose():
-        if part == 'smith':
-            M.add('perc', anvil.play(v), t, 0.6, forge)
-            M.add('mallet', xylo.play(m + 12, v - 10), t, 0.6, forge)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.5)
-        elif part == 'horn':
-            pa = mouth if k == 0 else pan_of('sieg', t)
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v, pa, rise=0.08, fall=0.6, gain=0.95)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.15), t, 0.95, pa)
-        elif part == 'burst':
-            M.add('perc', crash.play(v), t, 0.9, mouth)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, mouth)
-            M.add('fx', whoosh(1.4, 4000, 500, 0.8, seed=2), t - 0.2, 1.0, mouth)
-        elif part == 'aud':
-            pa = pan_of('sieg', t)
-            M.add('strings', vln.play(m + 12, v, dur=d, release=0.1), t, 0.8, pa)
-            M.add('brass', horn_st.play(m, v - 6), t, 0.7, pa)
-        elif part == 'aud_bass':
-            M.add('low', tuba_st.play(m, v), t, 0.6, pan_of('sieg', t))
-        elif part == 'roar':
-            pa = pan_of('bear', t)
-            for mm in (m, m + 1, m + 6):
-                M.add('low', tuba.play(mm + 12, v, dur=0.9, release=0.3), t, 0.7, pa)
-            M.add('low', bsn.play(m + 12, v, dur=0.8, release=0.3), t, 0.6, pa)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.8, pa)
-            M.add('perc', roll.play(90, dur=0.9), t, 0.5, pa)
-        elif part == 'laugh':
-            M.add('brass', mute.play(m, v, dur=d, release=0.08), t, 0.9, pan_of('sieg', t))
-        elif part == 'out':
-            pa = pan_of('bear', t)
-            M.add('fx', whoosh(2.2, 600, 5000, 0.8, seed=5), t, 1.0, mouth)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.8, pa)
-            M.add('perc', crash.play(100), t + 1.5, 0.5, mouth)
-        elif part == 'strength':
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.08, fall=0.5, gain=0.9)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.15), t, 0.9)
-            M.add('strings', vln.play(m + 12, v - 10, dur=d, release=0.1), t, 0.6)
-            if k == 0 and abs(t - T_STR[0]) < 0.01:
-                M.add('perc', crash.play(110), t, 0.7)
-        elif part == 'glow':
-            hold('warm', vc if m < note('C3') else horn, m, t, t + d, v, pan_at(at(G, 'Porch Front', HERO_AT)) * 0.5,
-                 rise=2.5, fall=2.0, gain=0.55)
+
+    def pan_of(who, t):
+        return pan_at(np.interp(t, C['t'], C[who]))
+
+    o = Orchestra(M, level=2.0)
+    tag = {(round(e[0], 4), e[2]): e[4] for e in compose()}
+
+    def role(t, d, m, v, h):
+        p = tag.get((round(t, 4), m), 'orch')
+        if p == 'smith':
+            return [('bassoons', 0, 0, 0.6), ('cellos', 0, -8, 0.4)]
+        if p == 'horn':
+            return [('horns', 0, 4, 0.95), ('horns', -12, -6, 0.4)]
+        if p == 'aud':
+            return [('horns', 0, 0, 0.7), ('violins', 0, -4, 0.55)] + \
+                ([('piccolo', 0, -14, 0.3)] if m >= note('D5') else [])
+        if p == 'bear':
+            return [('cellos', 0, 0, 0.7), ('basses', -12 if m >= 40 else 0, -4, 0.55), ('bassoons', 0, -8, 0.45)]
+        return None
+
+    def pan(t, m):
+        if T_IN <= t < T_OUT:
+            return pan_of('bear', t) * 0.6
+        if t >= T_OUT:
+            return pan_of('sieg', t) * 0.6
+        return forge * 0.5
+
+    o.tutti(EX['notes'], role=role, pan=pan)
+    for t, d, m, v, p, k in compose():
+        if p == 'smith':                    # Mime's little hammer on the anvil
+            o.hit('anvil', t, 64, gain=0.25, pan=forge)
+        elif p == 'roar':                   # the bear lunges: a growl in the tubas and a thud of its weight
+            pb = pan_of('bear', t)
+            o.play('tuba', note('D1'), t, 1.0, 120, pb, 0.8)
+            o.play('trombones', note('D2'), t + 0.02, 0.8, 112, pb, 0.5)
+            o.hit('timpani', t, 112, pitch=-6, gain=0.6, pan=pb)
+            o.hit('bass drum', t, 110, gain=0.5, pan=pb)
+            o.hit('hoof soft', t - 0.15, 100, gain=0.6, pan=pb)
+    o.hit('crash', T_HORN, 110, gain=0.5, pan=mouth)
+    o.boom(T_IN, mouth, 0.8)                # he bursts in through the cave mouth
+    o.wind(T_IN - 0.3, T_IN + 3.0, 0.9, pan=mouth)
+    o.gallop(T_IN, T_IN + 2.5, 0.36, pan=lambda t: pan_of('bear', t), v=104, gain=0.8)
+    for a, b in zip(LUNGES, LUNGES[1:] + [T_OUT - 1]):  # the bear's paws between lunges, chasing Mime
+        o.gallop(a + 0.5, min(b - 0.3, a + 2.0), 0.34, pan=lambda t: pan_of('bear', t), v=92, gain=0.6)
+    o.gallop(T_OUT, T_OUT + 3.5, 0.32, pan=lambda t: pan_of('bear', t), v=104, gain=0.75)   # off to the woods
+    o.hit('crash', T_STR[0], 112, gain=0.5, pan=pan_of('sieg', T_STR[0]))
+    o.fire(0.0, D, 0.25, pan=forge, crackle=5.0)
+    o.effects([(0.0, -4.0), (T_IN - 0.5, -4.0), (T_IN, 0.0), (T_OUT + 3.5, 0.0), (T_TELL, -10.0),
+               (T_HORN2, -12.0), (D, -12.0)])     # the chase leads; his story and horn call stand clear

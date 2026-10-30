@@ -4,7 +4,9 @@ Transcribed from the "Ring Leitmotiv dN.mid" files on Wikimedia Commons (Peter B
 Category:Leitmotifs from Der Ring des Nibelungen), numbered as in Robert Donington's "Wagner's 'Ring' and its
 Symbols" (`d`). Each motif is notes=[(beat, beats, 'Eb4')] at the pitch of that example, beats counted in
 quarter notes from its first note (a bar of 6/8 is 3 beats), durations rounded up to the written value. Some
-are the bare motif, some carry the harmony under it (melody() and bass() pull the outer lines out).
+are the bare motif, some carry the harmony under it (melody() and bass() pull the outer lines out). The Ride's
+full theme (ride_theme, ride_theme_b) comes from a melody transcription of the Act III prelude, since the
+Commons example (d47) is only its first bar.
 
     play('gold', t0, beat=0.5, transpose=5)  ->  [(seconds, midi, velocity, seconds)], ready for Synth.render
 """
@@ -325,6 +327,18 @@ MOTIFS = {
         (0, 0.25, 'Gb3'), (0.5, 0.25, 'B3'), (1, 0.0833, 'Gb3'), (1.1667, 0.1667, 'B3'), (1.5, 0.5, 'D4'),
         (2.5, 0.5, 'B3'), (3.5, 0.25, 'D4'), (4, 0.0833, 'B3'), (4.1667, 0.1667, 'D4'), (4.5, 0.5, 'Gb4'),
         (5.5, 0.5, 'D4')]),
+    'ride_theme': dict(d='47', meter='9/8', name='The Ride of the Valkyries, the full theme: first phrase, B minor',
+        notes=[
+        (0, 0.25, 'Gb3'), (0.5, 0.75, 'B3'), (1.25, 0.25, 'Gb3'), (1.5, 0.5, 'B3'), (2, 1.5, 'D4'), (3.5, 1.5, 'B3'),
+        (5, 0.75, 'D4'), (5.75, 0.25, 'B3'), (6, 0.5, 'D4'), (6.5, 1.5, 'Gb4'), (8, 1.5, 'D4'),
+        (9.5, 0.75, 'Gb4'), (10.25, 0.25, 'D4'), (10.5, 0.5, 'Gb4'), (11, 1.5, 'A4'), (12.5, 1.5, 'A3'),
+        (14, 0.75, 'D4'), (14.75, 0.25, 'A3'), (15, 0.5, 'D4'), (15.5, 6, 'Gb4')]),
+    'ride_theme_b': dict(d='47', meter='9/8', name='The Ride of the Valkyries, the full theme: second phrase, D major',
+        notes=[
+        (0, 0.5, 'A3'), (0.5, 0.75, 'D4'), (1.25, 0.25, 'A3'), (1.5, 0.5, 'D4'), (2, 1.5, 'Gb4'), (3.5, 1.5, 'D4'),
+        (5, 0.75, 'Gb4'), (5.75, 0.25, 'D4'), (6, 0.5, 'Gb4'), (6.5, 1.5, 'A4'), (8, 1.5, 'Gb4'),
+        (9.5, 0.75, 'A4'), (10.25, 0.25, 'Gb4'), (10.5, 0.5, 'A4'), (11, 1.5, 'Db5'), (12.5, 1.5, 'Db4'),
+        (14, 0.75, 'Gb4'), (14.75, 0.25, 'Db4'), (15, 0.5, 'Gb4'), (15.5, 6, 'Bb4')]),
     'siegfried_horn': dict(d='48', meter='6/8', name="Siegfried's horn call",
         notes=[
         (0, 0.3333, 'G3'), (0.5, 0.6667, 'D4'), (1.25, 0.125, 'B3'), (1.5, 0.25, 'G3'), (2, 0.25, 'A3'),

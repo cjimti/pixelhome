@@ -1,24 +1,35 @@
 """Loge, Come!: night on the rock. Brünnhilde sleeps at the summit under her shield, a still violet-silver glow
-in the middle of Porch Front, and Wotan stands a little way off to her left. He turns away from her and grips
-his spear: the spear's motif (Donington 73) strides down through the trombones, tubas and basses, every note a
-cold steel pulse running out from him along the roof while the shaft gleams at his side.
+in the middle of Porch Front, and Wotan stands a little way off to her left.
 
-"Loge, hör! Lausche hieher!" He calls the fire god on the trombones, his blue swelling. Then three huge strikes
-of the spear on the rock, each with timpani, gong and bass drum under a full brass chord: a steel-white shock
-across the whole house and a band of steel light racing out from the rock to both ends of the roofline.
+The music is Wagner's own: Act III, bars 1646 to 1680, as Solti's 1958 Vienna Philharmonic recording takes them,
+from Wotan gripping his spear, its motif striding down in octaves, through "Loge, hör'! Lausche hieher!" over the
+roaring string tremolo, "Herauf, wabernde Lohe" and "Loge! Loge! Hieher!", to the flames rushing up the chromatic
+scales and the first bars of the Magic Fire in E major. The notes come from the Wagner Ring Dataset's piano
+reduction of the score (pixelhome/ring.py): the spear's octaves on trombones, tuba, horns and basses; the tremolo
+on violas and cellos with the brass on its long notes; the rising scales on violins and flutes; the Magic Fire's
+glittering arpeggios on harp, glockenspiel and flutes over violins, its middle on violas and clarinets. Over it
+the stage adds what the house shows: the night wind rising as he calls; steel ringing on the spear's motif; a
+gong and drum on "Loge, hör'!" and the rock rumbling louder on every bar of the call as its embers glow; three
+strikes of steel on stone, each a huge boom, the rock cracking and the mountain rumbling; then the flames
+bursting out with a rushing roar and burning on, crackling, louder as they spread along the porch. The effects
+stay back under the spear's motif and the call, lead at full level for the three strikes and the fire bursting out,
+then back off under the Magic Fire's first bars so its music is clear.
 
-After the third, the rock answers. Loge's fire (Donington 20) leaps up in the violins and harp, and his
-flickering (Donington 20a) on piccolo and glockenspiel: flames burst out of the rock where the spear struck and
-begin to spread along the porch in both directions, red at the roots and orange to gold at the tips, licking
-and flickering, while the music grows into the first bars of the Magic Fire in E major. By the end they have
-run the length of the porch, a ring round the sleeper who glows on untouched in the middle, and the first
-tongues are reaching for the wings.
+He turns away from her and grips his spear: every note of its motif a cold steel pulse running out from him along
+the roof while the shaft gleams at his side. "Loge, hör'!": his blue swells with the call, and the rock begins to
+glow where the spear will strike, red embers pulsing with the tremolo and a red pulse racing out to both ends of
+the house on every bar, wider and brighter as he calls the fire up. Then three huge strikes of the spear on the
+rock: a steel-white shock across the whole house and a band of steel light racing out to both ends of the
+roofline. With the third the rock answers: flames burst out of it, climb with the scales and begin to spread
+along the porch in both directions, red at the roots and orange to gold at the tips, every glittering note of the
+Magic Fire a spark in them. By the end they have run the length of the porch, a ring round the sleeper who glows on
+untouched in the middle, and the first tongues are reaching for the wings.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, colormap
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.audio import whoosh
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'WK29'
 TITLE = 'Loge, Come!'
@@ -28,14 +39,19 @@ DESCRIPTION = ('Wotan strikes the rock three times with his spear and calls on L
 VOICEOVER = ('Three blows of the spear on the rock, and a name called into the night. '
              'Loge, come. And the fire comes.')
 
-T_SPEAR = 4.0                               # the spear's motif
-PBEAT = 0.65
-T_CALL = 12.5                               # "Loge, hör!"
-STRIKES = [17.0, 20.0, 23.0]                # three strikes of the spear
-T_FIRE = 23.3                               # flames burst out of the rock
-LOGES = [23.3 + 1.6 * k for k in range(35)]
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1646-1680, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+T_SPEAR = BAR[1647]                         # the spear's motif, striding down in octaves
+T_CALL = BAR[1650]                          # "Loge, hör'!" over the tremolo
+T_RISE = BAR[1661]                          # "Herauf, wabernde Lohe"
+T_LOGE = BAR[1668]                          # "Loge! Loge! Hieher!"
+T_FIRE = BAR[1670]                          # the third strike: flames burst out of the rock and climb the scales
+T_MAGIC = BAR[1674]                         # the Magic Fire
+D = EX['seconds']
 T0 = 80.0 * 28                              # the opera's clock at our start
+# three strikes of the spear: on the bass chords of "hieher!", the third as the flames burst out
+_bass = sorted({n[0] for n in EX['notes'] if n[4] == 1 and n[2] < 44 and n[1] >= 0.5 and BAR[1669] - 0.1 <= n[0] <= T_FIRE + 0.1})
+STRIKES = [_bass[0], _bass[len(_bass) // 2], T_FIRE]
 
 WOTAN = hexc('#1a3cff')
 WOTAN_SOFT = hexc('#5a78ff')
@@ -83,17 +99,16 @@ def heat(d, ta):
     return np.clip((h * swell - 0.15) * 1.5, 0, 1)
 
 
-def blaze(ta):
-    """The fire's state on the opera's clock (shared with WK30): (reach from the rock, level)."""
-    bt = ta - 1920.0
-    reach = np.interp(bt, [343.3, 346, 352, 365, 380, 400, 410, 422], [0, 90, 200, 380, 560, 680, 1000, 1500])
-    level = np.interp(bt, [343.3, 344, 360, 400, 425, 440, 470, 480], [0, .95, .8, .82, .92, .9, .72, .64])
-    return float(reach), float(level)
+def blaze(t):
+    """The fire's state at our time t: (reach from the rock, level). WK30 picks it up where this leaves it."""
+    reach = np.interp(t, [T_FIRE, T_FIRE + 1.6, T_MAGIC, T_MAGIC + 8, D], [0, 120, 340, 520, 700])
+    level = np.interp(t, [T_FIRE, T_FIRE + 0.7, T_MAGIC, T_MAGIC + 1, D], [0, .95, .8, .9, .85])
+    return float(reach), float(level) * (t >= T_FIRE)
 
 
-def flames(d, ta, ds, db, fl):
-    """Light of the fire at clock ta: ds = distance from where the spear struck, db = from the sleeper."""
-    reach, level = blaze(ta)
+def flames(d, t, ta, ds, db, fl):
+    """Light of the fire at time t (clock ta): ds = distance from where the spear struck, db = from the sleeper."""
+    reach, level = blaze(t)
     if level <= 0 or reach <= 0:
         return np.zeros((len(d), 3)), np.zeros(len(d))
     on = smoothstep(reach + 70, reach - 70, ds)
@@ -105,39 +120,26 @@ def flames(d, ta, ds, db, fl):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand): 'spear' the left hand's
+    octaves, 'call' everything under the call, 'run' the scales, 'spark' the Magic Fire's right hand and 'glow' its
+    left; 'pre' the bar before the spear."""
     N = []
+    for t, d, m, v, h in EX['notes']:
+        part = ('pre' if t < T_SPEAR - 0.01 else 'spear' if t < T_CALL - 0.01 else 'call' if t < T_FIRE - 0.01
+                else 'run' if t < T_MAGIC - 0.01 else 'spark' if h == 0 else 'glow')
+        N.append((t, d, m, v, part, h))
+    return N
 
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
 
-    for m in ('Ab2', 'Eb3', 'C4'):                          # the end of the sleep, hanging in the air
-        add(0.0, 5.0, m, 50, 'bed')
-    add(0.0, STRIKES[0], 'E1', 56, 'pedal')
-    for t, m, v, d in play('spear', T_SPEAR, PBEAT, 0, 104):
-        add(t, d, m, v, 'spear')
-    for b, d, m in ((0, 1.0, 'E3'), (1.0, 0.5, 'G3'), (1.5, 2.0, 'B3'), (4.0, 0.5, 'Bb3'), (4.5, 1.5, 'E3')):
-        add(T_CALL + b * 0.55, d * 0.55, m, 108, 'call')
-    for k, ts in enumerate(STRIKES):
-        add(ts, 2.4, 'E1', 118 + 4 * k, 'strike', k)
-        for m in ('E2', 'B2', 'E3', 'G3', 'Bb3'):
-            add(ts, 1.4 + 0.6 * (k == 2), m, 110 + 4 * k, 'strikechord', k)
-    add(STRIKES[1] + 1.2, STRIKES[2] - STRIKES[1] - 1.2, 'E2', 90, 'roll')
-    for k, t0 in enumerate(LOGES):                         # the Magic Fire begins
-        if t0 > D - 1.2:
-            break
-        tr = (0, 3, 7, 12)[k % 4] + (12 if k >= 8 else 0) + (5 if k >= 20 else 0)
-        for t, m, v, d in play('loge', t0, 0.2 + 0.05 * (k < 4), tr + 12, 82 + min(k, 20)):
-            add(t, d, m, v, 'loge', k)
-        if k % 2 == 1 or k >= 12:
-            for t, m, v, d in play('loge_flicker', t0 + 0.8, 0.12, 12 if k >= 12 else 0, 76 + min(k, 20)):
-                if t < D - 0.5:
-                    add(t, d, m, v, 'flicker', k)
-    add(T_FIRE, D - T_FIRE - 0.3, 'E2', 70, 'firebed')
-    add(T_FIRE + 8, D - T_FIRE - 8.3, 'B2', 66, 'firebed')
-    add(T_FIRE + 16, D - T_FIRE - 16.3, 'Ab3', 62, 'firebed')
-    add(T_FIRE + 24, D - T_FIRE - 24.3, 'E4', 60, 'firebed')
-    return sorted(N, key=lambda e: e[0])
+def energy(N, F):
+    """Per frame: how loud and busy the orchestra is, 0..1 (velocity-weighted notes, smoothed)."""
+    e = np.zeros(F)
+    for t, d, m, v, part, h in N:
+        f0, f1 = int(t / DT), int(min(t + max(d, 0.15), D) / DT) + 1
+        e[f0:f1] += (v / 127) ** 2 / max(1, f1 - f0) ** 0.5
+    k = np.exp(-np.arange(-40, 41) ** 2 / (2 * 14 ** 2))
+    e = np.convolve(e, k / k.sum(), 'same')
+    return np.clip(e / np.percentile(e, 97), 0, 1)
 
 
 def follow(target, rate):
@@ -156,7 +158,7 @@ def choreography(G):
     F = nframes(D)
     t = np.arange(F) * DT
     w = np.full(F, at(G, 'Porch Front', 0.25))
-    sway = 4 * np.sin(2 * np.pi * (t - T_CALL) / 2.0) * ((t > T_CALL) & (t < STRIKES[0]))
+    sway = 4 * np.sin(2 * np.pi * (t - T_CALL) / 2.0) * ((t > T_CALL) & (t < STRIKES[0] - 0.5))
     return dict(t=t, w=follow(w + sway, np.full(F, 3.0)), b=np.full(F, at(G, 'Porch Front', 0.5)))
 
 
@@ -167,16 +169,19 @@ def render(G, seed=29):
     d = G.pd
     C = choreography(G)
     N = compose()
+    E = energy(N, F)
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
     sh = Flicker(np.random.default_rng(2801), G.N, 0.3, 1.2)            # the shield's shimmer, from WK28
     fl = Flicker(np.random.default_rng(2901), G.N, 4.0, 11.0)           # flame flicker, shared with WK30
-    spears = np.array([e[0] for e in N if e[4] == 'spear'])
-    calls = np.array([e[0] for e in N if e[4] == 'call'])
+    spears = np.array(sorted({e[0] for e in N if e[4] == 'spear'}))
+    pulses = np.array([BAR[m] for m in range(1650, 1670)])              # a red pulse on every bar of the call
+    sparks = np.array(sorted({e[0] for e in N if e[4] == 'spark'}))
     pb = at(G, 'Porch Front', 0.5)
     sp = at(G, 'Porch Front', 0.25)                                       # where the spear strikes the rock
     ds = np.abs(d - sp)
     db = np.abs(d - pb)
     jag = [rng.random(G.N) for _ in range(3)]
+    spot = rng.random((len(sparks), 3))
 
     def recent(ts, t, tau, span=3.0):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -185,29 +190,59 @@ def render(G, seed=29):
     for f in range(F):
         t = f * DT
         ta = t + T0
+        e = E[f]
         fr = stage(d, ta, porch)
         pw = C['w'][f]
 
         # the fire
-        fire, lvl = flames(d, ta, ds, db, fl)
+        fire, lvl = flames(d, t, ta, ds, db, fl)
         fr *= (1 - 0.6 * np.clip(lvl / 0.7, 0, 1))[:, None]
         fr += fire
+        # the firelight on the clouds over the wings
+        _, level = blaze(t)
+        if level > 0:
+            glow = level * (1 - porch) * (0.5 + 0.5 * np.sin(2 * np.pi * (d / 700 - 0.13 * ta))) * (0.75 + 0.25 * fl(ta))
+            fr += light(FIRE(0.3 + 0.25 * glow), 0.3 * glow)
+        # every glittering note of the Magic Fire a spark in the flames
+        i = int(np.searchsorted(sparks, t, side='right')) - 1
+        reach, _ = blaze(t)
+        for j in range(max(0, i - 4), i + 1):
+            age = t - sparks[j]
+            if 0 <= age < 0.5:
+                q = sp + (2 * spot[j, 0] - 1) * (reach + 60)
+                fr += light(hexc('#fff0b0'), 0.9 * np.exp(-age / 0.15) * np.exp(-((d - q) / (10 + 20 * spot[j, 1])) ** 2))
 
         # the spear's motif: steel pulses running out from him, the shaft gleaming at his side
         spl = smoothstep(T_SPEAR - 1, T_SPEAR, t) * (1 - smoothstep(STRIKES[2] + 0.5, STRIKES[2] + 3, t))
         if spl > 0:
             i = int(np.searchsorted(spears, t, side='right')) - 1
-            if i >= 0 and t - spears[i] < 1.4:
+            if i >= 0 and t - spears[i] < 1.4 and t < T_CALL + 1:
                 age = t - spears[i]
                 band = np.exp(-((np.abs(d - pw) - 1300 * age / 1.4) / 90) ** 2) * (1 - age / 1.4)
-                fr += light(STEEL, 0.55 * band)
+                fr += light(STEEL, 0.7 * band)
             shaft = ((d > pw - 70) & (d < pw - 8)) * (0.45 + 0.4 * recent(spears, t, 0.3))
             fr += light(STEEL, spl * shaft)
 
-        # the call: his blue swells
-        cp = recent(calls, t, 0.4)
-        call = smoothstep(T_CALL - 0.5, T_CALL + 0.5, t) * (1 - smoothstep(STRIKES[0], STRIKES[0] + 1, t))
-        fr += light(WOTAN, call * (0.35 + 0.25 * cp) * np.exp(-((d - pw) / 260) ** 2))
+        # the call: his blue swells with the orchestra; the rock glows red where the spear will strike, a red pulse
+        # racing out to both ends on every bar, wider and brighter as he calls the fire up
+        call = smoothstep(T_CALL - 0.3, T_CALL + 0.3, t) * (1 - smoothstep(T_FIRE, T_FIRE + 1, t))
+        if call > 0:
+            up = 0.5 + 0.5 * smoothstep(T_RISE - 2, T_LOGE, t)
+            fr += light(WOTAN, call * (0.3 + 0.45 * e) * np.exp(-((d - pw) / (350 + 900 * e)) ** 2))
+            ember = np.exp(-(ds / (140 + 380 * up)) ** 2)
+            fr *= (1 - 0.4 * call * ember)[:, None]
+            fr += light(FIRE(np.clip(0.35 + 0.4 * fl(ta) * up, 0, 1)), call * (0.45 + 0.5 * e) * up * ember)
+            i = int(np.searchsorted(pulses, t, side='right')) - 1
+            if i >= 0 and t - pulses[i] < 2.0:
+                age = t - pulses[i]
+                r = 2400 * up * (age / 2.0) ** 0.7
+                band = np.exp(-((ds - r) / 240) ** 2) * (1 - age / 2.0)
+                trail = smoothstep(r + 50, r - 300, ds) * (1 - age / 2.0) ** 2
+                fr += light(RED, call * (0.55 + 0.3 * up) * band + call * 0.2 * up * trail)
+                fr += light(ORANGE, call * 0.45 * up * band ** 3)
+        if T_CALL <= t < T_CALL + 2.5:                    # "Loge, hör'!"
+            a = np.exp(-(t - T_CALL) / 0.5)
+            fr += light(WOTAN, 0.7 * a * np.ones(G.N)) + light(RED, 0.4 * a * np.exp(-(ds / 400) ** 2))
 
         # three strikes: a steel-white shock across the house and a band racing to both ends
         for k, ts in enumerate(STRIKES):
@@ -221,10 +256,11 @@ def render(G, seed=29):
                 fr += light(STEEL, 0.6 * np.exp(-age / 0.5) * np.exp(-(ds / 120) ** 2))
         if T_FIRE <= t < T_FIRE + 2.5:                   # the burst out of the rock
             a = np.exp(-(t - T_FIRE) / 0.6)
-            sparks = (rng.random(G.N) < 0.25 * a) * np.exp(-(ds / (200 + 500 * (t - T_FIRE))) ** 2)
-            fr += light(AMBER, 0.9 * a * np.exp(-(ds / 80) ** 2)) + light(hexc('#fff0b0'), 0.9 * sparks)
+            burst = (rng.random(G.N) < 0.25 * a) * np.exp(-(ds / (200 + 500 * (t - T_FIRE))) ** 2)
+            fr += light(AMBER, 0.9 * a * np.exp(-(ds / 80) ** 2)) + light(hexc('#fff0b0'), 0.9 * burst)
 
         # Wotan
+        cp = call * e
         wc = mix(WOTAN, WOTAN_SOFT, 0.5 - 0.3 * smoothstep(T_SPEAR, T_CALL, t))
         fr += light(wc, (0.85 + 0.1 * cp) * np.exp(-((d - pw) / 24) ** 2) + 0.375 * np.exp(-((d - pw) / 120) ** 2))
 
@@ -237,95 +273,72 @@ def render(G, seed=29):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the spear's strikes on the percussion."""
+    o = Orchestra(M, level=2.15)
+
+    def role(t, d, m, v, h):
+        if t < T_SPEAR - 0.01:
+            return [('cellos' if m < 48 else 'violas', 0, 0, 0.6), ('horns', 0, -10, 0.4)]
+        if t < T_CALL - 0.01:                                   # the spear: brass and basses in octaves
+            return ([('trombones', 0, 0, 0.8), ('tuba', 0, -4, 0.7), ('basses', 0, -6, 0.5)] if m < 48 else
+                    [('horns', 0, 0, 0.8), ('trombones', 0, -6, 0.5)])
+        if t < T_FIRE - 0.01:                                   # the call: string tremolo, brass on the long notes
+            return None
+        if t < T_MAGIC - 0.01:                                  # the scales: violins and flutes rushing up
+            return ([('violins', 0, 0, 0.5), ('flutes', 12, -10, 0.35)] if h == 0 or m >= 55 else None)
+        if h == 0:                                              # the Magic Fire's glitter
+            parts = [('harp', -12, 0, 0.5), ('flutes', -12, -14, 0.3), ('violins', -12, -16, 0.3)]
+            if d >= 0.3 or m in (88, 90, 92, 94):
+                parts.append(('glock', -24, -10, 0.3))
+            return parts
+        return [('violas', 0, -12, 0.45), ('clarinets', 0, -10, 0.4), ('harp', -12, -10, 0.35)]
+
+    call = lambda n: T_CALL - 0.01 <= n[0] < T_FIRE - 0.01
+    notes = [n for n in EX['notes'] if not call(n)] + tidy([n for n in EX['notes'] if call(n)])
+    o.tutti(sorted(notes), size=lambda t: 1.0 if T_CALL <= t < T_FIRE else 0.7, role=role)
+
+    pan_at = house_pan(G)
+    C = choreography(G)
+    N = compose()
+    sp = pan_at(at(G, 'Porch Front', 0.25))                     # where the spear strikes the rock
+    wp = lambda t: pan_at(np.interp(t, C['t'], C['w']))
+    # the spear's motif and the call are the music's: the wind and embers stay back (rising as he calls the fire up);
+    # the three strikes and the fire bursting out lead at full level; then they back off so the Magic Fire is clear
+    o.effects([(0, -10), (T_CALL, -10), (T_LOGE, -6), (STRIKES[0] - 0.3, 0), (T_FIRE + 3, 0), (T_MAGIC, -5),
+               (T_MAGIC + 3, -9), (D, -9)])
+    # the night wind on the rock, rising as he calls the fire
+    o.wind(0, T_FIRE + 3, level=lambda tt: 0.35 + 0.5 * smoothstep(T_CALL, T_LOGE, tt), pan=-0.4)
+    # the spear's motif: steel ringing on its loudest octaves
+    for ts in accents([e for e in N if e[4] == 'spear'], vmin=70, n=1, space=0.45):
+        o.hit('metal', ts, 90, gain=0.3, pan=wp(ts), fx=True)
+        o.hit('brake drum', ts, 80, gain=0.2, pan=wp(ts), fx=True)
+    # "Loge, hör'!": a gong and drum as his blue swells; then the rock rumbling louder on every bar of the call
+    o.boom(T_CALL, wp(T_CALL), gain=0.6)
+    o.hit('crash', T_CALL, 110, gain=0.4)
+    for m in range(1650, 1670):
+        up = 0.5 + 0.5 * smoothstep(T_RISE - 2, T_LOGE, BAR[m])
+        o.hit('timpani', BAR[m], int(70 + 40 * up), pitch=-7, gain=0.25 + 0.3 * up, pan=sp, fx=True)
+    o.fire(T_CALL, T_FIRE + 0.5, level=lambda tt: 0.15 + 0.35 * smoothstep(T_RISE - 2, T_LOGE, tt), pan=sp,
+           crackle=4, seed=29)
+    o.hit('cymbal swell', STRIKES[0] - 2.4, 100, gain=0.4, pan=sp)
+    # three strikes on the rock: steel on stone, a huge boom, the rock cracking and the mountain rumbling
+    for k, ts in enumerate(STRIKES):
+        o.hit('timpani', ts, 118, pitch=-4, gain=0.6, fx=True)
+        o.hit('crash', ts, 115, gain=0.4, fx=True)
+        o.clash(ts, sp, 120, gain=0.8 + 0.1 * k)
+        o.boom(ts, sp, gain=1.0 + 0.15 * k)
+        o.thunder(ts + 0.03, near=0.7 + 0.15 * k, pan=sp, gain=0.7 + 0.15 * k, seed=290 + k)
+    # the flames burst out of the rock with a rushing roar, and burn on, spreading along the porch
+    o.M.add('fx', whoosh(1.4, 200, 5000, 0.9, seed=29), T_FIRE - 0.2, 1.0, sp)
+    o.M.add('fx', whoosh(2.5, 300, 2500, 0.7, seed=31), T_FIRE + 0.5, 0.8, sp * 0.5)
+    o.hit('cymbal swell', T_MAGIC - 3, 90, gain=0.35)
+    reach_lv = lambda tt: np.array([blaze(x)[1] * (0.6 + 0.4 * min(blaze(x)[0] / 700, 1)) for x in tt])
+    o.fire(T_FIRE, D, level=reach_lv, pan=lambda t: sp * (1 - 0.6 * smoothstep(T_FIRE, D, t)), crackle=18, seed=290)
+
+
+def house_pan(G):
+    """Path distance -> left/right across the facade, as heard from the street."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
-
-    def pan_at(dd):
-        x = np.interp(dd, ds, xs)
-        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
-
-    C = choreography(G)
-    pf = pan_at(at(G, 'Porch Front', 0.5))
-    sp = at(G, 'Porch Front', 0.25)
-    psp = pan_at(sp)
-
-    def fire_pan(k):
-        """Each fire figure is heard at the leading edge of the flames, alternating sides."""
-        reach, _ = blaze(LOGES[k] + T0)
-        return pan_at(sp + (reach if k % 2 else -reach))
-
-    for name, gain, rev in (('strings', 0.15, 0.4), ('low', 0.17, 0.25), ('brass', 0.15, 0.35), ('winds', 0.13, 0.4),
-                            ('harp', 0.15, 0.45), ('perc', 0.16, 0.35), ('fx', 0.06, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[5-7]*.wav')
-    gong = M.hits('Percussion/gongHit_fff.wav')
-    crash = M.hits('Percussion/cymbal-crash1_ff*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'bed':
-            hold('strings', va if m < note('C4') else vn, m, t, t + d, v, pf, rise=0.1, fall=2.0, gain=0.7)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, psp, rise=2.0, fall=1.0, gain=0.8)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, psp)
-            M.add('low', tuba.play(m - 12, v - 6, dur=d * 1.05, release=0.4), t, 0.9, psp)
-            M.add('low', cb.play(m, v - 10, dur=d, release=0.3), t, 0.7, psp)
-        elif part == 'call':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.5), t, 1.1, psp)
-            M.add('brass', horn.play(m, v - 14, dur=d * 1.05, release=0.5), t, 0.6, psp)
-        elif part == 'strike':
-            M.add('perc', timp.play(v, pitch=-4), t, 1.0, psp)
-            M.add('perc', bd.play(v), t, 1.0, psp)
-            M.add('perc', gong.play(v), t, 0.7 + 0.15 * who, psp)
-            M.add('perc', crash.play(v), t, 0.6, psp)
-            M.add('fx', whoosh(1.6, 3500, 150, 0.7, seed=290 + who), t, 1.0, psp)
-        elif part == 'strikechord':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d, release=0.6), t, 1.0, psp)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d, release=0.6), t, 0.8, psp - 0.1)
-                M.add('brass', horn.play(m + 12, v - 8, dur=d, release=0.6), t, 0.7, psp + 0.1)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.8, psp)
-        elif part == 'loge':
-            p = fire_pan(who)
-            M.add('strings', vns.play(m, v, dur=d, release=0.08), t, 0.9, p)
-            M.add('harp', harp.play(m, v - 8), t, 0.8, -p * 0.5)
-        elif part == 'flicker':
-            p = fire_pan(who)
-            M.add('winds', pic.play(m, v), t, 0.8, p)
-            if d >= 0.3 or m >= note('C6'):
-                M.add('perc', glock.play(m, v - 6), t, 0.6, -p)
-        elif part == 'firebed':
-            s = cb if m < note('C3') else vtrem if m >= note('E4') else va
-            hold('strings', s, m, t, t + d, v, -0.4 + 0.8 * ((m * 7) % 12) / 11, rise=3.0, fall=0.5, gain=0.75)
+    return lambda dd: float(0.85 * (2 * (np.interp(dd, ds, xs) - x0) / (x1 - x0) - 1))

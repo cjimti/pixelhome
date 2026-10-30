@@ -1,20 +1,26 @@
 """Dawn: the Norns are gone and the night is lifting off Brünnhilde's rock. The red in the east, at the free end of
-Right, swells; then the cellos play the Dawn motif (Donington 49), and every note of it is a wave of colour that
-leaves the east and races the whole length of the house to the far end of the Side, laying the new colour behind
-it. Each time the motif comes round it is fuller and the colour has climbed: deep red, then orange, then gold,
-then white-gold, while the night drains out, the stars go out and the sky turns from indigo to blue.
+Right, swells; then the Dawn comes round, and every note of it is a wave of colour that leaves the east and races
+the whole length of the house to the far end of the Side, laying the new colour behind it. Each time it comes round
+it is fuller and the colour has climbed: deep red, then orange, then gold, then white-gold, while the night drains
+out, the stars go out and the sky turns from indigo to blue.
 
-On the summit two figures rise out of the rock in bursts of light: Brünnhilde in silver and gold on her motif (88),
-and Siegfried in emerald. At the climax the whole orchestra has the Dawn and the house blazes: gold-white sweeps
-crossing both ways, timpani on every downbeat, every run in full morning, before it settles into the bright day
-with the two of them standing on the summit.
+The music is Wagner's own: the orchestral daybreak between the Norns' scene and the duet (bars 335 to 361), as
+Solti's 1958 Vienna Philharmonic recording takes it, from the first glimmer in the low strings through the swelling
+statements of the Dawn to Siegfried's motif on the horns and the full orchestra's blaze. The notes come from the
+Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and register and growing with the
+light: strings and woodwinds at first, the horns joining, then trombones, tuba and trumpets; their tremolos on the
+strings' tremolo. A suspended cymbal swells into the sunrise, and the timpani and cymbals mark its downbeats.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
-the Prologue's scenes (see GD01)."""
+On the summit two figures rise out of the rock in bursts of light: Siegfried in emerald as his motif rings out on
+the horns, then Brünnhilde in silver and gold. At the climax the whole orchestra has it and the house blazes:
+gold-white sweeps crossing both ways on every downbeat, every run in full morning, before it settles into the
+bright day with the two of them standing on the summit.
+
+compose() tags every note of the excerpt; stage(), heat(), fire(), scene(), strand() and figure() are shared word
+for word by the Prologue's scenes (see GD01)."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD03'
 TITLE = 'Dawn'
@@ -24,14 +30,15 @@ DESCRIPTION = ('Daybreak over the mountain: wave after wave of colour races acro
 VOICEOVER = ('The sun comes up over the mountain. Siegfried and Brünnhilde wake to a new day.')
 
 K = 2                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-DBEAT = 0.55
-T_DAWN = [(2.0, 0.08, 74), (14.0, 0.3, 88), (26.0, 0.55, 100), (38.0, 0.8, 110)]   # (time, hue it lays, velocity)
-T_BRUNN = 47.0
-T_RISE_B = 47.0                             # Brünnhilde rises
-T_RISE_S = 52.0                             # Siegfried rises
-T_CLIMAX = [56.0, 62.6]                     # the full orchestra's Dawn
-T_SETTLE = 70.0
-D = 80.0
+EX = excerpt(__file__)                      # bars 335-361, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+T_DAWN = [(BAR[337], 0.08), (BAR[341], 0.3), (BAR[345], 0.55), (BAR[349], 0.8)]   # (time, hue it lays)
+WAVE_BARS = [(337, 341), (341, 345), (345, 349), (349, 352)]
+T_RISE_S = BAR[349]                         # Siegfried rises: his motif on the horns
+T_RISE_B = BAR[352]                         # Brünnhilde rises
+T_CLIMAX = [BAR[354], BAR[358]]             # the full orchestra
+T_SETTLE = BAR[361]
+D = EX['seconds']
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -148,28 +155,27 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def bar_of(t):
+    return max([m for m, bt in BAR.items() if bt <= t + 1e-6] or [335])
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The longer notes of each swell
+    are the Dawn ('dawn', k = which swell); the right hand's long notes as she rises are Brünnhilde ('brunn'); the
+    long notes of the full orchestra are the climax ('climax', k = which half); the rest 'orch'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_DAWN[3][0], 'Bb1', 58, 'pedal')
-    for k, (t0, hue, v) in enumerate(T_DAWN):
-        for t, m, vv, d in play('dawn', t0, DBEAT, 12 * (k >= 2), v):
-            add(t, d, m, vv, 'dawn', k)
-    for t, m, v, d in play('brunnhilde', T_BRUNN, 0.6, -5, 104):
-        add(t, d, m, v, 'brunn')
-    for k, t0 in enumerate(T_CLIMAX):
-        for t, m, v, d in play('dawn', t0, DBEAT, 0, 122):
-            add(t, d, m, v, 'climax', k)
-        for j in range(4):
-            add(t0 + j * 3 * DBEAT, 0.3, 'Bb1', 118, 'timp', k)
-    for m in ('Bb1', 'F2', 'Bb2', 'D3', 'F3', 'Bb3'):
-        add(T_SETTLE, D - T_SETTLE, m, 70, 'settle')
-    add(T_RISE_S, 0.4, 'Bb2', 100, 'riseS')
-    add(T_RISE_B, 0.4, 'D3', 100, 'riseB')
+    for n in tidy(EX['notes']):
+        t, d, m, v, h = n[:5]
+        b = bar_of(t)
+        k = next((i for i, (b0, b1) in enumerate(WAVE_BARS) if b0 <= b < b1), None)
+        if k is not None and d >= 0.3 and not n[5]:
+            N.append((t, d, m, v, 'dawn', k))
+        elif b in (352, 353) and h == 0 and d >= 0.3:
+            N.append((t, d, m, v, 'brunn', None))
+        elif b >= 354 and d >= 0.3 and not n[5]:
+            N.append((t, d, m, v, 'climax', 0 if b < 358 else 1))
+        else:
+            N.append((t, d, m, v, 'orch', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -179,8 +185,8 @@ def render(G, seed=3):
     S = stage(G)
     d, L = S['d'], S['L']
     N = compose()
-    waves = [(e[0], T_DAWN[e[5]][1], 0.75 + 0.08 * e[5]) for e in N if e[4] == 'dawn']
-    waves += [(e[0], 1.0, 1.0) for e in N if e[4] == 'climax']
+    waves = sorted({(round(e[0], 2), T_DAWN[e[5]][1], 0.75 + 0.08 * e[5]) for e in N if e[4] == 'dawn'})
+    waves += sorted({(round(e[0], 2), 1.0, 1.0) for e in N if e[4] == 'climax'})
     waves.sort()
     climax = [e for e in N if e[4] == 'climax']
     brunn = sorted({e[0] for e in N if e[4] == 'brunn'})
@@ -253,7 +259,8 @@ def render(G, seed=3):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction and growing with the light, with the cymbal swelling
+    into the sunrise and the timpani on its downbeats."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -262,67 +269,35 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.34, 0.25), ('strings', 0.32, 0.35), ('brass', 0.34, 0.3), ('perc', 0.3, 0.3),
-                            ('harp', 0.24, 0.4), ('warm', 0.3, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     S = stage(G)
     east = pan_at(S['L'] - 100)
-    sb = pan_at(at(G, *BRUNNHILDE_END[:2]))
     ss = pan_at(at(G, *SIEGFRIED_END[:2]))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, east * 0.4, rise=4.0, fall=2.0, gain=0.5)
-        elif part == 'dawn':
-            p = east * (1 - 0.25 * k)
-            hold('strings', vc, m, t, t + d * 0.95, v, p, rise=0.15, fall=0.6, gain=0.8)
-            if k >= 2:
-                M.add('brass', horn.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.6, p)
-            if k == 3:
-                M.add('harp', harp.play(m, v - 20), t, 0.6, p)
-        elif part == 'brunn':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, sb, rise=0.15, fall=1.0, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, sb)
-            M.add('strings', vln.play(m, v - 20, dur=d * 1.1, release=0.3), t, 0.5, sb)
-        elif part == 'climax':
-            hold('brass', tbn if m < note('F3') else horn, m, t, t + d * 0.95, v, 0.0, rise=0.08, fall=0.6, gain=0.75)
-            hold('strings', vln, m + 12, t, t + d * 0.95, v - 10, 0.0, rise=0.08, fall=0.6, gain=0.55)
-            if m >= note('Bb3'):
-                M.add('brass', tpt.play(m, v - 14, dur=d * 1.05, release=0.3), t, 0.55)
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=-2), t, 0.9)
-            if t in T_CLIMAX:
-                M.add('perc', crash.play(110), t, 0.7)
-        elif part == 'settle':
-            hold('warm', vc if m < note('D3') else vln, m, t, t + d, v, 0.0, rise=2.0, fall=1.0, gain=0.5)
-        elif part == 'riseS':
-            M.add('harp', harp.play(m + 12, 96), t, 0.9, ss)
-            M.add('brass', horn.play(m, 90, dur=1.2, release=0.4), t, 0.6, ss)
-        elif part == 'riseB':
-            M.add('harp', harp.play(m + 12, 96), t, 0.9, sb)
+    o = Orchestra(M, level=2.25)
+    N = compose()
+    tag = {(round(e[0], 4), e[2]): e[4] for e in N}
+
+    def size(t):                                                    # the orchestra grows with the light
+        return float(np.interp(t, [0, BAR[341], BAR[349], T_CLIMAX[0]], [0.2, 0.4, 0.7, 1.0]))
+
+    def role(t, d, m, v, h):
+        part = tag.get((round(t, 4), m), 'orch')
+        if part == 'dawn' and t < BAR[345]:                         # the first swells: cellos and violas, clarinets
+            return [('cellos' if m < 55 else 'violas', 0, 4, 0.7), ('clarinets', 0, -10, 0.35)]
+        if part == 'dawn' and t >= T_RISE_S and h == 1 and m >= 50:   # Siegfried's motif: horns
+            return [('horns', 0, 8, 0.85), ('horns', -12, 0, 0.45)]
+        if part == 'brunn':                                         # Brünnhilde: violins and oboes
+            return [('violins', 0, 4, 0.6), ('oboes', 0, -6, 0.4)]
+        return None
+
+    def pan(t, m):                                                  # the light comes from the east
+        return east * (1 - smoothstep(0, T_CLIMAX[0], t)) * 0.8
+
+    o.tutti(tidy(EX['notes']), size=size, role=role, pan=pan)
+    o.hit('cymbal swell', T_CLIMAX[0] - 4.5, 100, gain=0.5)         # swelling into the sunrise
+    for k, tc in enumerate(T_CLIMAX):
+        o.hit('crash', tc, 118, gain=0.7)
+        o.hit('bass drum', tc, 118, gain=0.6)
+    for b in range(354, 362):                                       # the timpani on every downbeat of the blaze
+        o.hit('timpani', BAR[b], 118 if b in (354, 358) else 104, pitch=-2, gain=0.7)
+    o.hit('timpani roll', T_RISE_S - 1.0, 96, pitch=-3, gain=0.4, pan=ss)
+    o.effects([(0.0, 0.0), (D, 0.0)])                              # nothing on the effects bus: this is the orchestra's

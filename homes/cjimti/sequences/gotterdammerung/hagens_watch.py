@@ -2,40 +2,48 @@
 Hagen comes out of the shadows of Porch Left to the middle of Porch Front, the hall's door, to keep watch: "Hier
 sitz' ich zur Wacht."
 
-The hall darkens round him as the night comes on, the torches sinking, the drapes going black, and his falling
-tritone (Donington 61a) lands again and again on the tubas and timpani, each a blow: the house knocked dark, a
-violet flash, and a black-violet shock running out from the door to both ends, heavier as the night goes on. Twice
-the Ring (8) rises in the woodwinds and horns, the thing he waits for: gold streaks race in from both ends of the
-house into him and a ring of gold whirls round the whole roofline. Far off, his vassals' call (54) answers on a
-muted horn, torch-orange points flaring up and running along the far walls and the Side. Under the last blows the
-conspiracy (75) creeps out from him in black and violet, the Rhine glints white at the free end of Right, and he
-sits on in a darkened hall, the only bright thing his spear.
+The music is Wagner's own, Hagen's watch from Act I as Solti's 1958 Vienna Philharmonic recording takes it: the
+night coming on and "Hier sitz' ich zur Wacht" (bars 869-879), "mir aber bringt er den Ring!" (903-906), and the
+swell to "dünkt er euch niedrig, ihr dient ihm doch, des Niblungen Sohn" (918-921). The notes come from the Wagner
+Ring Dataset's piano reduction (pixelhome/ring.py): the dark hall on clarinets, bassoons, cellos and basses; his
+falling tritone on tubas, trombones and basses with timpani and gong; the Ring on clarinets and oboes over horns;
+the swell on string tremolo into the full brass. The stage adds the Rhine running past in the dark, harp glints on
+the water, and a great blow as the fortissimo lands; the river backs off under his lines.
 
-compose() holds every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
-Act I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
+The hall darkens round him as the night comes on, the torches sinking, the drapes going black, and his tritone
+lands on the real strokes, each a blow: the house knocked dark, a violet flash, and a black-violet shock running out
+from the door to both ends. "Mir aber bringt er den Ring!": gold streaks race in from both ends of the house into
+him and a ring of gold whirls round the whole roofline. Then the tremolo swells and the dark gathers in on him from
+both ends until the fortissimo hits, two blows heavier than any before; under "des Niblungen Sohn" the conspiracy
+creeps out from him in black and violet, the Rhine glints white at the free end of Right, and he sits on in a
+darkened hall, the only bright thing his spear.
+
+compose() tags every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by Act
+I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play, melody
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD12'
 TITLE = "Hagen's Watch"
 KIND = 'show'
 DESCRIPTION = ('Hagen sits alone at the door of the darkening hall, waiting for the Ring. His blows knock the house '
-               'dark, gold visions of the Ring sweep round it, and his men answer from far off.')
+               'dark, a gold vision of the Ring sweeps round it, and the night gathers in on him.')
 VOICEOVER = ('Hagen keeps watch at the door, alone in the dark. '
              'He is waiting for the Ring.')
 
 K = 5                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_GUT = 0.8                                 # Gutrune goes in
-T_STEP = (4.0, 11.0)                        # Hagen comes to the door
-T_HAGEN = [9.5, 17.0, 25.0, 36.5, 48.0, 59.0, 66.0, 71.5]
-T_RING = [13.0, 40.0]                       # the Ring, what he waits for
-RBEAT = 0.62
-T_VASSALS = [30.0, 53.0]                    # his men, far off
-T_PLOT = 62.0
-T_GLINT = [6.0, 21.5, 34.0, 46.5, 57.0, 69.0, 76.0]
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 869-879, 903-906 and 918-921, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SEG = [s['start'] for s in EX['segments']] + [D]
+T_GUT = 0.3                                 # Gutrune goes in
+T_STEP = (1.0, 4.5)                         # Hagen comes to the door
+T_RING = [56.7, 61.9]                       # "mir aber bringt er den Ring!": the Ring, what he waits for
+T_SURGE = (72.6, 75.5)                      # the tremolo swelling to the fortissimo
+T_GLINT = [10.5, 24.5, 37.0, 46.0, 68.0]
+T_DARK = (8.0, 50.0)                        # the night coming on
 
 AMBER = hexc('#ff8a20')
 PURPLE = hexc('#6a10c0')
@@ -137,29 +145,31 @@ def blow(fr, S, p, a, s=1.0):
     return fr
 
 
+def part_of(t, d, m, v, h):
+    """What a note of the excerpt is: its part, see compose()."""
+    if t < BAR[870] and h == 0:
+        return 'gutrune'
+    if h == 1 and v >= 113 and d >= 0.3 and (t < SEG[1] or 57.0 <= t < 59.0 or 75.0 <= t < 77.5):
+        return 'hagen'
+    if 55.5 <= t < 66.0 and h == 0 and v >= 96:
+        return 'ring'
+    if t >= BAR[920] and d >= 0.6:
+        return 'plot'
+    return 'music'
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'B0', 60, 'pedal')
-    for t, m, v, d in play('gutrune', T_GUT, 0.6, -24, 72):
-        add(t, d, m, v, 'gutrune')
-    for k, t0 in enumerate(T_HAGEN):
-        for t, m, v, d in play('hagen', t0, 0.75, -1, 104 + 2 * k):
-            add(t, d, m, v, 'hagen', k)
-    for k, t0 in enumerate(T_RING):
-        for t, m, v, d in play('ring', t0, RBEAT, -1, 92 + 8 * k):
-            add(t, d, m, v, 'ring', k)
-    for k, t0 in enumerate(T_VASSALS):
-        for t, m, v, d in play('vassals', t0, 0.55, 0, 80 + 8 * k):
-            add(t, d, m, v, 'vassals', k)
-    for t, m, v, d in play('plot', T_PLOT, 0.6, -24, 92):
-        add(t, d, m, v, 'plot')
-    for t0 in T_GLINT:
-        add(t0, 0.5, 'B5', 52, 'glint')
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The held chord as the scene opens
+    is Gutrune going in ('gutrune'); the left hand's loud strokes are Hagen's tritone and the fortissimo's blows
+    ('hagen', k = which, one per stroke); the rising run and the chords of "mir aber bringt er den Ring!" are the
+    Ring ('ring'); the long notes of "des Niblungen Sohn" the conspiracy creeping out of him ('plot'). Everything
+    else is 'music'."""
+    N = [(float(t), float(d), int(m), int(v), part_of(t, d, m, v, h), int(t >= T_RING[1]))
+         for t, d, m, v, h, _ in tidy(EX['notes'])]
+    hag = [e for e in N if e[4] == 'hagen']
+    keep = [e for i, e in enumerate(hag) if i == 0 or e[0] - hag[i - 1][0] > 0.2]
+    N = [e for e in N if e[4] != 'hagen'] + [e[:5] + (k,) for k, e in enumerate(keep)]
+    N += [e[:4] + ('music', None) for e in hag if e not in keep]
     return sorted(N, key=lambda e: e[0])
 
 
@@ -173,19 +183,16 @@ def render(G, seed=12):
     gut = [e for e in N if e[4] == 'gutrune']
     hag = [e for e in N if e[4] == 'hagen']
     ring = [e for e in N if e[4] == 'ring']
-    vas = [e for e in N if e[4] == 'vassals']
     plot = [e for e in N if e[4] == 'plot']
     h0, h1 = at(G, *HAGEN_FROM), at(G, *HAGEN_AT)
     p_gut = at(G, *GUTRUNE_AT)
     rng = np.random.default_rng(seed)
-    far = np.isin(G.seg_of, ['Left', 'Side'])
-    vpts = [rng.uniform(at(G, 'Side', 0.05), at(G, 'Left', 0.95), 14) for _ in vas]
     foam = Flicker(rng, G.N, 3.0, 9.0)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        u = smoothstep(8.0, 32.0, t)
+        u = smoothstep(*T_DARK, t)
         lv = {k: START[k] + (END[k] - START[k]) * u for k in START}
         fr = hall(S, T, lv)
         p = h0 + (h1 - h0) * smoothstep(*T_STEP, t)
@@ -205,7 +212,7 @@ def render(G, seed=12):
                 fr += light(HEAT, 0.8 * np.exp(-((a - 0.9) / 0.08) ** 2) * np.exp(-((d - p) / 30) ** 2))
         for k, t0 in enumerate(T_RING):
             a = t - t0
-            span = 12 * RBEAT + 1.5
+            span = 4.5
             if 0 <= a < span:
                 g = smoothstep(0, 1.0, a) * (1 - smoothstep(span - 2.0, span, a))
                 c = (p + 900 * a * (1 if k == 0 else -1)) % L
@@ -214,19 +221,13 @@ def render(G, seed=12):
                 fr += light(HEAT, 0.5 * g * np.exp(-(dist / 50) ** 2))
                 fr += light(GOLD, 0.25 * g)
 
-        # his men, far off: torch points flaring up and running along the far walls and the Side
-        for k, (t0) in enumerate(T_VASSALS):
-            a = t - t0
-            if 0 <= a < 5.0:
-                g = smoothstep(0, 0.3, a) * (1 - smoothstep(3.5, 5.0, a))
-                ps = vpts[k] + 160 * a * np.where(np.arange(14) % 2 == 0, 1, -1)
-                pts = np.exp(-((d[None, :] - ps[:, None]) / 9) ** 2).sum(0)
-                fr += light(TORCH, 1.0 * g * np.clip(pts, 0, 1) * far * (0.75 + 0.25 * S['fl'](T)))
-                fr += light(AMBER, 0.75 * g * far * (0.8 + 0.2 * np.sin(2 * np.pi * (d / 120 - 1.5 * t))))
-        for t0, dur, m, v, part, k in vas:
-            a = t - t0
-            if 0 <= a < 0.6:
-                fr += light(TORCH, 0.5 * np.exp(-a / 0.2) * far)
+        # the tremolo swelling: the dark gathers in on him from both ends of the house
+        if T_SURGE[0] <= t < T_SURGE[1] + 0.3:
+            g = smoothstep(*T_SURGE, t)
+            r = (1 - g) * max(p, L - p)
+            fr = fr * (1 - 0.5 * g)
+            fr += light(HAGEN, (0.4 + 0.6 * g) * smoothstep(r - 200, r + 40, np.abs(d - p)))
+            fr += light(SPEAR, 0.8 * g * np.exp(-((d - p + 18) / 8) ** 2))
 
         # the conspiracy creeping out of him in black and violet
         for t0, dur, m, v, part, k in plot:
@@ -260,13 +261,13 @@ def render(G, seed=12):
         fr = figure(fr, S, p, HAGEN, lvl)
         fr += light(SPEAR, (0.45 + 0.2 * u) * np.exp(-((d - p + 18) / 6) ** 2))
         for i, (t0, dur, m, v, part, k) in enumerate(hag):
-            fr = blow(fr, S, p, t - t0, (1.0 if m < note('C3') else 0.6) * (0.85 + 0.03 * k))
+            fr = blow(fr, S, p, t - t0, (1.0 if m < note('C3') else 0.6) * (0.85 + 0.15 * (t0 > T_SURGE[0])))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with the Rhine running past in the dark."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -275,65 +276,41 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.36, 0.28), ('brass', 0.3, 0.32), ('winds', 0.28, 0.35), ('strings', 0.26, 0.35),
-                            ('perc', 0.32, 0.3), ('far', 0.22, 0.6)):
-        M.bus(name, gain=gain, reverb=rev)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=2.6)
     door = pan_at(at(G, *HAGEN_AT))
-    far = pan_at(at(G, 'Left', 0.2))
     river = pan_at(at(G, 'Right', 0.95))
+
+    def role(t, d, m, v, h):
+        part = part_of(t, d, m, v, h)
+        if part == 'hagen':                                 # his tritone: tubas, trombones, basses
+            return [('tuba', 0 if m >= 33 else 12, 4, 0.95), ('trombones', 12, -4, 0.6),
+                    ('basses', 0 if m < 40 else -12, 0, 0.6)]
+        if part == 'ring':                                  # the Ring: clarinets and oboes, horns beneath
+            return [('clarinets', 0, 0, 0.7), ('oboes', 0, -8, 0.45), ('horns', -12, -10, 0.5)]
+        if part == 'gutrune':
+            return [('oboes', 0, -6, 0.55), ('violas', 0, -10, 0.4)]
+        if t < SEG[1]:                                      # the dark hall: low winds and low strings
+            if h == 0:
+                return [('clarinets' if m >= 50 else 'bassoons', 0, -4, 0.5), ('violas', 0, -12, 0.35)]
+            return [('cellos', 0, 0, 0.6), ('basses', -12 if m >= 40 else 0, -6, 0.5)] + (
+                [('tuba', 0, -14, 0.4)] if d > 1.5 else [])
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if t >= T_SURGE[0] else 0.6, role=role,
+            pan=lambda t, m: door * 0.6)
     for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 24, t, t + d, v, door, rise=4.0, fall=2.0, gain=0.4)
-            hold('low', cb, m + 12, t, t + d, v, door, rise=4.0, fall=2.0, gain=0.45)
-        elif part == 'gutrune':
-            if m >= note('C3'):
-                M.add('winds', oboe.play(m, v, dur=d * 1.1, release=0.3), t, 0.7, door)
-        elif part == 'hagen':
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.2, release=0.4), t, 1.0, door)
-            M.add('low', tbn.play(m, v - 10, dur=d * 1.2, release=0.4), t, 0.7, door)
-            M.add('perc', timp.play(v, pitch=-8 if m < note('C3') else -4), t, 0.9, door)
-            if m < note('C3') and k in (3, 5, 7):
-                M.add('perc', gong.play(100), t, 0.55, door)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('winds', clar, m, t, t + d, v, door, rise=0.2, fall=1.0, gain=0.7)
-            else:
-                M.add('winds', clar.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, door)
-            M.add('brass', horn.play(m - 12, v - 12, dur=d * 1.05, release=0.3), t, 0.55, door)
-        elif part == 'vassals':
-            M.add('far', mute.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, far)
-            M.add('far', bsn.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, far)
-        elif part == 'plot':
-            hold('low', tuba, m + 12, t, t + d, v, door, rise=0.5, fall=1.0, gain=0.6)
-            hold('strings', ctrem, m + 12, t, t + d, v - 10, door, rise=0.5, fall=1.0, gain=0.45)
-        elif part == 'glint':
-            M.add('strings', harp.play(m, v), t, 0.5, river)
-            M.add('strings', harp.play(m + 7, v - 8), t + 0.12, 0.4, river)
+        if part == 'hagen':
+            o.hit('timpani', t, min(127, v), pitch=-8 if m < note('C3') else -4, gain=0.85, pan=door)
+            if m < note('F2') or t > T_SURGE[0]:
+                o.hit('gong', t, 104, gain=0.45, pan=door)
+    o.hit('timpani roll', T_SURGE[0], 100, pitch=-6, gain=0.6, pan=door)
+    o.hit('cymbal swell', T_SURGE[1] - 3.0, 96, gain=0.4)
+    o.hit('crash', T_SURGE[1], 124, gain=0.8)
+    o.boom(T_SURGE[1], door, 0.9)                           # the fortissimo lands on him
+    for t0 in T_GLINT:                                      # the Rhine glinting at the free end of Right
+        o.play('harp', 83, t0, 0.5, 52, river, 0.5)
+        o.play('harp', 90, t0 + 0.12, 0.5, 44, river, 0.4)
+    o.wind(0.0, D, level=0.3, pan=river, seed=12)           # the river running past in the dark
+    # the river leads in the quiet of the night, and backs right off under his lines, the Ring and the fortissimo
+    o.effects([(0, -2), (19.5, -2), (20.5, -12), (41, -12), (43, -3), (50, -3), (51.5, -14), (70, -14), (72, -6),
+               (75, -6), (75.6, -16), (D, -16)])

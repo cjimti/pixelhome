@@ -1,40 +1,74 @@
 """Nothung! Nothung!: Siegfried takes the anvil and Mime scuttles back down the porch to the far end of Left to
-brew a sleeping draught. The trumpets name the sword (Donington 43), and with every note the shards on the anvil
-flash steel white. Siegfried files them to dust: white streaks rasp back and forth across Porch Front, two strokes
-a second, throwing grey-white grit.
+brew a sleeping draught, his poison seething sickly green. Siegfried sings his Sword Song, and every "Nothung!"
+flashes the shards on the anvil steel white. On "Zu Spreu nun schuf ich die scharfe Pracht" he files them to
+dust: white streaks rasp back and forth across Porch Front on every beat, throwing grey-white grit, and on "im
+Tiegel brat' ich die Späne" the crucible starts to glow. Then the refrain, "Hoho! Hahei!", and "Blase, Balg!":
+with every breath of the bellows the fire surges up the chimney walls and floods out across the whole house in
+orange, sparks flying to both ends. After the third verse the refrain comes round once more as the steel melts,
+the crucible going from red to orange to white-hot, and the forge ends roaring.
 
-Then the bellows: the forging motif (52) in the low brass, and with every breath of the bellows the fire surges
-up the chimney walls and floods out across the whole house in orange, sparks flying to both ends. The steel melts
-under his heroism (78) on the horns, the blade on the anvil glowing red, then orange, then white-hot, and the
-hammer song begins: the forging motif again, faster, every low note a blow that flashes white on the anvil, sends
-a shockwave and sparks to both ends of the roof. Between the blows, Mime's motif (50) bubbles in the bassoons at
-the end of Left, where his poison seethes sickly green. The forge ends roaring, the blade red on the anvil.
+The music is Wagner's own: Act I, bars 2430 to 2456 (the Sword Song's first verse and refrain) and 2504 to 2512
+(its third refrain), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and register; the bellows' surging figure in
+the bass on cellos, basses and tuba, the trills on violins and flutes. Siegfried's own line is not in the
+reduction, so it comes from the Breitkopf & Härtel vocal score (Leipzig 1914, archive.org 31761034115105, pp.
+113-114 and 118) and is played as he sings it, a tenor an octave below the written notes, on horns doubled by a
+trumpet. On stage: the file's rasp on every stroke, a whoosh for every breath of the bellows, the forge roaring
+up with it and crackling, the crucible sizzling as the steel melts; they back off under "Nothung! Nothung!" and
+lead in the bellows refrains.
 
 compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
+from pixelhome.audio import note, whoosh
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF09'
 TITLE = 'Nothung! Nothung!'
 KIND = 'show'
-DESCRIPTION = ('Siegfried files the broken sword to dust, works the bellows until the forge roars across the whole '
-               'house, and melts and hammers the steel himself, while the dwarf brews poison in the corner.')
+DESCRIPTION = ('Siegfried sings his Sword Song, files the broken sword to dust, and works the bellows until the '
+               'forge roars across the whole house and the steel melts, while the dwarf brews poison in the corner.')
 VOICEOVER = ('Nobody can mend the sword, so Siegfried makes it new himself. '
              'Nothung! Nothung!')
 
 K = 8                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
+EX = excerpt(__file__)                      # Act I, bars 2430-2456 and 2504-2512, Solti 1958
+D = EX['seconds']
+_M = np.array([m for m, _ in EX['bars']], float)
+_T = np.array([t for _, t in EX['bars']])
+
+
+def bt(m):
+    """Seconds into the scene of measure position m (bar plus fraction)."""
+    return float(np.interp(m, _M, _T))
+
+
+# Siegfried's Sword Song, from the vocal score: (bar, beat, beats, written note); 3/4, a quarter to the beat
+_BLASE = [(0, 'G5'), (0.5, 'F5'), (1, 'Eb5'), (1.5, 'D5'), (2, 'C5'), (2.5, 'Bb4')]
+_HOHO = lambda b: [(b, 2, 1, 'A4'), (b + 1, 0, 2, 'D5'), (b + 1, 2, 1, 'E5'), (b + 2, 0, 0.5, 'A4'),
+                   (b + 2, 0.5, 0.5, 'E5'), (b + 2, 1, 1, 'A4'), (b + 3, 0.5, 0.5, 'E5'), (b + 3, 1, 1, 'A4'),
+                   (b + 3, 2, 1, 'E5'), (b + 4, 0, 2.5, 'A5')] + [(b + 5, x, 0.5, n) for x, n in _BLASE] + \
+                  [(b + 6, 0, 2, 'A4')]
+VOICE = ([(2434, 0, 2, 'F5'), (2434, 2, 1, 'F4'), (2435, 0, 2, 'F5'), (2435, 2, 1, 'F4'), (2436, 0, 1.5, 'E5'),
+          (2436, 1.5, 0.5, 'F5'), (2436, 2, 1, 'E5'), (2437, 0, 2, 'D5'), (2437, 2, 1, 'C5'), (2438, 0, 0.75, 'B4'),
+          (2438, 0.75, 0.25, 'B4'), (2438, 1, 1.5, 'B4'), (2438, 2.5, 0.5, 'E5'), (2439, 0, 1, 'E5'),
+          (2439, 1, 1, 'G4'), (2440, 2, 1, 'A4'), (2441, 0, 2, 'D5'), (2441, 2, 1, 'D5'), (2442, 0, 2, 'C5'),
+          (2442, 2, 0.5, 'C5'), (2442, 2.5, 0.5, 'C5'), (2443, 0, 2, 'Bb4'), (2443, 2, 1, 'Bb4'), (2444, 0, 1, 'A4'),
+          (2444, 2, 1, 'A4'), (2445, 0, 2, 'D5'), (2445, 2, 1, 'D4'), (2446, 0, 2, 'A4'), (2446, 2, 0.5, 'B4'),
+          (2446, 2.5, 0.5, 'C#5'), (2447, 0, 1, 'D5'), (2447, 1, 1, 'D4')] + _HOHO(2448) +
+         [(2455, x, 0.5, n) for x, n in _BLASE] + [(2456, 0, 2, 'A4')] + _HOHO(2504)[:-7] +
+         [(2509, x, 0.5, n) for x, n in _BLASE] + [(2510, 0, 2, 'A4')] +
+         [(2511, x, 0.5, n) for x, n in zip((0, 0.5, 1, 1.5, 2, 2.5), ('A5', 'G5', 'F5', 'E5', 'D5', 'C#5'))] +
+         [(2512, 0, 2, 'D5')])
+
 T_MOVE = 0.5                                # Siegfried to the anvil, Mime off down the porch
-T_NAME = 3.0                                # the trumpets name the sword
-T_FILE = (9.5, 20.0)                        # filing the shards to dust
-T_BELLOWS = [20.5, 24.0, 27.5, 31.0]        # the forging motif: one breath of the bellows per two beats
-T_MELT = 35.5                               # his heroism on the horns; the steel melts
-T_HAMMER = [48.5, 51.5, 54.5, 57.5, 60.5, 63.5]   # the hammer song: the forging motif, faster
-T_MIME = [52.0, 58.0, 64.0]                 # Mime's motif bubbling at his poison between the blows
-D = 80.0
+T_SING = bt(2434)                           # "Nothung! Nothung!"
+T_FILE = (bt(2440.6), bt(2448))             # "Zu Spreu nun schuf ich die scharfe Pracht": the file
+T_CRUCIBLE = bt(2444.6)                     # "im Tiegel brat' ich die Späne": the shards in the fire
+T_BELLOWS = [bt(b) for b in range(2449, 2457)] + [bt(b) for b in range(2505, 2513)]   # a breath a bar
+T_MELT = bt(2504)                           # the third refrain: the steel melts
+T_MIME = [bt(b) for b in (2441, 2443, 2445, 2447, 2505.5, 2507.5, 2509.5)]       # his poison bubbling
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -123,46 +157,44 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
     return out
 
 
+def voice():
+    """Siegfried's Sword Song in seconds: (time, seconds, sounding midi)."""
+    return [(bt(b + x / 3), bt(b + (x + n) / 3) - bt(b + x / 3), note(name) - 12) for b, x, n, name in VOICE]
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'orch' (k the hand, or 'trem'
+    for a tremolo); Siegfried's line is 'sing'; 'name', 'file', 'breath' and 'surge' mark the lights' moments."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'F1', 62, 'pedal')
-    for t, m, v, d in play('nothung', T_NAME, BEAT, 0, 108):
-        add(t, d, m, v, 'name')
-    t = T_FILE[0]
-    k = 0
-    while t < T_FILE[1]:
-        add(t, 0.4, 'C3', 80 + 3 * (k % 4), 'file', k)
-        t += 0.45
+    for n in tidy(EX['notes']):
+        N.append((n[0], n[1], n[2], n[3], 'orch', 'trem' if n[5] else n[4]))
+    for t, d, m in voice():
+        N.append((t, d, m, 112, 'sing', None))
+    for t, d, m in voice()[:4]:
+        if d > 0.5:
+            N.append((t, 1.0, m, 0, 'name', None))
+    t, k = T_FILE[0], 0
+    beat = (bt(2441) - bt(2440)) / 3
+    while t < T_FILE[1] - 0.1:
+        N.append((t, beat * 0.9, 0, 0, 'file', k))
+        t += beat
         k += 1
     for k, t0 in enumerate(T_BELLOWS):
-        for t, m, v, d in play('forging', t0, 0.52, 0, 96 + 6 * k):
-            add(t, d, m, v, 'forging', k)
-        for b in range(3):
-            add(t0 + b * 1.04, 1.0, 'C1', 80 + 6 * k, 'breath', k)
-    for t, m, v, d in play('siegfried_heroism', T_MELT, BEAT, 0, 112):
-        add(t, d, m, v, 'melt')
-    for k, t0 in enumerate(T_HAMMER):
-        for t, m, v, d in play('forging', t0, 0.44, 0, 108 + 3 * k):
-            add(t, d, m, v, 'hammer', k)
+        N.append((t0, 1.6, 0, 0, 'breath', k))
     for k, t0 in enumerate(T_MIME):
-        for t, m, v, d in play('mime', t0, 0.32, -12, 70):
-            add(t, d, m, v, 'mime', k)
-    for m in ('F2', 'C3', 'F3', 'A3'):
-        add(T_HAMMER[-1] + 3.5, D - T_HAMMER[-1] - 3.5, m, 74, 'blaze')
-    add(T_HAMMER[-1] + 3.0, 0.1, 'C1', 124, 'last')
+        N.append((t0, 0.3, 0, 0, 'mime', k))
+    lows = [n for n in EX['notes'] if n[4] == 1 and n[3] >= 105 and (n[0] >= bt(2448) or n[0] < T_SING)]
+    seen = []
+    for n in sorted(lows):
+        if not seen or n[0] - seen[-1] > 0.6:
+            seen.append(n[0])
+            N.append((n[0], 0.5, n[2], n[3], 'surge', None))
     return sorted(N, key=lambda e: e[0])
 
 
 def blows(S):
-    """Every hammer blow and bellows breath on the anvil: [(time, strength, where)]."""
-    hits = [(t, 0.9, S['anvil']) for t, _, m, v, part, k in compose() if part == 'forging' and m < note('C3')]
-    hits += [(t, 1.2, S['anvil']) for t, _, m, v, part, k in compose() if part == 'hammer' and m < note('C3')]
-    return sorted(hits)
+    """The forge's surges on the orchestra's accents: [(time, strength, where)]."""
+    return [(t, 0.8 if t < T_MELT else 1.0, S['anvil']) for t, _, m, v, part, k in compose() if part == 'surge']
 
 
 def render(G, seed=9):
@@ -176,8 +208,9 @@ def render(G, seed=9):
     names = np.array([e[0] for e in N if e[4] == 'name'])
     files = [e for e in N if e[4] == 'file']
     breaths = np.array([e[0] for e in N if e[4] == 'breath'])
-    melt_on = np.array(sorted({e[0] for e in N if e[4] == 'melt'}))
+    melt_on = np.array(sorted({e[0] for e in N if e[4] == 'sing' and e[0] >= T_MELT}))
     mimes = np.array([e[0] for e in N if e[4] == 'mime'])
+    sung = [(e[0], e[1]) for e in N if e[4] == 'sing' and T_SING + 4 <= e[0] < T_BELLOWS[0] - 1]
     rng = np.random.default_rng(seed)
     bubble = Flicker(rng, G.N, 1.5, 4.0)
     pf = at(G, 'Porch Front', 0.0), at(G, 'Porch Front', 1.0)
@@ -185,87 +218,94 @@ def render(G, seed=9):
     p_pot = at(G, 'Left', MIME_AT)
     pot = np.exp(-((d - p_pot) / 60) ** 2)
     m0, s0 = at(G, 'Porch Front', MIME_FROM), at(G, 'Porch Front', SIEG_FROM)
+    b0 = T_BELLOWS[0]
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        lv = {k: keys(t, [(0, START[k]), (T_BELLOWS[0], START[k]), (T_MELT, END[k])]) for k in START}
+        lv = {k: keys(t, [(0, START[k]), (b0, START[k]), (T_MELT, 0.5 * (START[k] + END[k])), (D - 4, END[k])])
+              for k in START}
 
         # the bellows: every breath the fire surges up the chimney and floods the house in orange
         j = int(np.searchsorted(breaths, t, side='right')) - 1
         surge = 0.0
-        if j >= 0 and t - breaths[j] < 1.04:
-            surge = np.sin(np.pi * (t - breaths[j]) / 1.04) ** 2 * (0.8 + 0.07 * (j // 3))
+        if j >= 0 and t - breaths[j] < 1.6:
+            surge = np.sin(np.pi * (t - breaths[j]) / 1.6) ** 2 * (0.8 + 0.03 * j)
         lv['forge'] += 0.3 * surge
         lv['walls'] += 0.35 * surge
-        hammering = smoothstep(T_HAMMER[0] - 1, T_HAMMER[0], t)
+        roaring = smoothstep(T_MELT - 1, T_MELT + 2, t)
         fr = cave(S, T, lv)
         fr += light(FORGE, 0.85 * surge * S['spill'])
-        fr += light(SPARK, 0.4 * surge * S['spill'] ** 3 * np.clip(S['lick'](T), 0, 1))
-        fr += light(FORGE, 0.3 * hammering * S['spill'] * (1 - smoothstep(T_HAMMER[-1] + 4, D, t) * 0.4))
+        fr += light(SPARK, 0.45 * surge * S['spill'] ** 3 * np.clip(S['lick'](T), 0, 1))
+        fr += light(FORGE, 0.3 * roaring * S['spill'])
 
-        # the sword named: the shards flash steel white with every note, a white sweep across the porch
+        # "Nothung!": the shards flash steel white, a white sweep across the porch
         i = int(np.searchsorted(names, t, side='right')) - 1
-        if i >= 0 and t - names[i] < 1.0 and t < T_FILE[0]:
+        if i >= 0 and t - names[i] < 1.4:
             a = t - names[i]
-            fr += light(STEEL, 0.95 * np.exp(-a / 0.2) * blade)
-            fr += light(STEEL, 0.85 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - anvil) - 1400 * a) / 120) ** 2))
+            fr += light(STEEL, 0.95 * np.exp(-a / 0.25) * blade)
+            fr += light(STEEL, 0.85 * np.exp(-a / 0.7) * np.exp(-((np.abs(d - anvil) - 1200 * a) / 120) ** 2))
+
+        # his song stirs the forge: every sung note sends a ripple of embers out from the anvil
+        for t0, dd in sung:
+            a = t - t0
+            if 0 <= a < 2.0:
+                w = min(1.0, 0.45 + 0.4 * dd)
+                fr += light(FORGE, w * np.exp(-a / 0.7) * np.exp(-((np.abs(d - anvil) - 700 * a) / 90) ** 2))
 
         # the file: white streaks rasping back and forth across Porch Front, grit thrown off
         for t0, dd, m, v, part, k in files:
             a = t - t0
-            if 0 <= a < 0.6:
-                u = min(1.0, a / 0.4)
+            if 0 <= a < 0.7:
+                u = min(1.0, a / max(dd, 0.3))
                 x = pf[0] + 30 + (pf[1] - pf[0] - 60) * (u if k % 2 == 0 else 1 - u)
                 fr += light(STEEL, 0.9 * np.exp(-a / 0.4) * np.exp(-((d - x) / 18) ** 2))
                 fr += light(GRIT, 0.45 * np.exp(-a / 0.2) * ((d > pf[0]) & (d < pf[1])))
                 fr += light(GRIT, 0.6 * np.exp(-a / 0.3) * ((d - x) * (1 if k % 2 == 0 else -1) < 0) *
                             np.exp(-np.abs(d - x) / 70))
 
-        # the blade: red-hot, orange, white-hot while it melts and is hammered; red on the anvil at the end
-        heat = keys(t, [(T_MELT, 0.0), (T_MELT + 4, 0.35), (T_MELT + 12, 1.0), (T_HAMMER[-1] + 2, 0.75),
-                        (D, 0.45)])
+        # the crucible: the shards glow in the fire, then melt red, orange, white-hot on the last refrain
+        heat = keys(t, [(T_CRUCIBLE, 0.0), (T_CRUCIBLE + 3, 0.25), (T_MELT, 0.35), (T_MELT + 8, 0.7), (D - 3, 1.0)])
         if heat > 0:
             col = REDHOT * (1 - heat) + HEAT * heat if heat < 0.8 else HEAT
             k = int(np.searchsorted(melt_on, t, side='right')) - 1
-            flare = np.exp(-(t - melt_on[k]) / 0.3) if k >= 0 and t < T_MELT + 13 else 0.0
+            flare = np.exp(-(t - melt_on[k]) / 0.3) if k >= 0 else 0.0
             fr = fr * (1 - 0.8 * min(1, heat * 3) * blade)[:, None]
             fr += light(col, (0.6 + 0.4 * heat + 0.2 * flare) * blade)
             fr += light(REDHOT, 0.5 * (heat + flare) * np.exp(-((d - anvil) / 260) ** 2))
-            fr += light(FORGE, 0.75 * flare * S['spill'])
+            fr += light(FORGE, 0.6 * flare * S['spill'])
 
-        # every blow: a white-hot flash on the anvil, a shockwave and sparks to both ends of the house
+        # the forge's surges on the orchestra's accents: a flash on the anvil, a shockwave and sparks
         i = int(np.searchsorted(hit_t, t, side='right')) - 1
         if i >= 0 and t - hit_t[i] < 1.2:
             a, s = t - hit_t[i], hits[i][1]
-            fr += light(HEAT, min(1.0, s * np.exp(-a / 0.1)) * S['heat'] ** 0.5)
+            fr += light(HEAT, min(1.0, 0.8 * s * np.exp(-a / 0.12)) * S['heat'] ** 0.5)
             fr += light(FORGE, 0.75 * s * np.exp(-a / 0.5) * np.exp(-((np.abs(d - anvil) - 1500 * a) / 90) ** 2))
-        fr += light(SPARK, np.clip(sparks(S, hits, t, 90, n=18), 0, 1.0))
+        fr += light(SPARK, np.clip(sparks(S, hits, t, 90, n=18) + sparks(S, [(b, 0.6, anvil) for b in breaths],
+                                                                         t, 91, n=10), 0, 1.0))
 
-        # Mime at his pot at the end of Left: the poison seethes sickly green, bubbling with his motif
+        # Mime at his pot at the end of Left: the poison seethes sickly green, bubbling as he mutters
         k = int(np.searchsorted(mimes, t, side='right')) - 1
-        bub = np.exp(-(t - mimes[k]) / 0.15) if k >= 0 else 0.0
+        bub = np.exp(-(t - mimes[k]) / 0.25) if k >= 0 else 0.0
         brew = smoothstep(T_MOVE + 4, T_MOVE + 8, t)
         fr += light(POISON, brew * (0.45 + 0.2 * np.clip(bubble(T), 0, 1) + 0.45 * bub) * pot)
         u = smoothstep(T_MOVE, T_MOVE + 5, t)
         pm = m0 + u * (p_pot - m0) + 10 * bub * np.sin(2 * np.pi * 5 * t)
         fr = figure(fr, S, pm, MIME, 0.6 + 0.15 * bub)
 
-        # Siegfried at the anvil, flaring with each blow
+        # Siegfried at the anvil, flaring as he sings and with every surge
         ps = s0 + smoothstep(T_MOVE, T_MOVE + 3, t) * (anvil + 4 - s0)
         blow = np.exp(-(t - hit_t[i]) / 0.2) if i >= 0 else 0.0
-        lvl = 0.8 * (1 + 0.3 * blow)
+        lvl = 0.8 * (1 + 0.3 * blow + 0.25 * surge)
         fr = figure(fr, S, ps, SIEGFRIED, lvl, 18.0)
         fr += light(HEAD, lvl * np.exp(-((d - ps) / 6) ** 2))
-        if T_HAMMER[-1] + 3.0 <= t < T_HAMMER[-1] + 5.0:
-            a = t - T_HAMMER[-1] - 3.0
-            fr += light(WHITE, 0.5 * np.exp(-a / 0.15))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """The real Sword Song: the excerpt orchestrated from the piano reduction, Siegfried's line on horns and a
+    trumpet, and the forge's sounds: the file, the bellows, the fire, the melting steel."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -274,71 +314,38 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('strings', 0.26, 0.3), ('winds', 0.26, 0.3), ('brass', 0.3, 0.3),
-                            ('perc', 0.3, 0.25), ('fx', 0.16, 0.25), ('warm', 0.26, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/spic/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    guiro = M.hits('Percussion/Guiro-Hit*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
     forge = pan_at(at(G, 'Porch Front', 0.5))
-    pot = pan_at(at(G, 'Left', MIME_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=4.0, fall=2.0, gain=0.55)
-        elif part == 'name':
-            if d > 1.0:
-                hold('brass', tpt, m - 12, t, t + d, v, forge, rise=0.1, fall=0.8, gain=0.9)
-            else:
-                M.add('brass', tpt.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.95, forge)
+    o = Orchestra(M, level=1.5)
+    guiro = M.hits('Percussion/Guiro-Hit*.wav')
+    N = compose()
+
+    def size(t):
+        if t < T_SING:
+            return 0.9
+        return 1.0 if t >= bt(2448) else 0.55
+
+    def role(t, d, m, v, hand):
+        if T_SING <= t < bt(2448) and hand == 1 and m >= 54 and d >= 0.3:       # under the verse: soft horns
+            return [('horns', 0, -16, 0.45), ('violas', 0, -10, 0.35)]
+        return None
+
+    o.tutti([e[:4] + (e[5] if e[5] != 'trem' else 0, e[5] == 'trem') for e in N if e[4] == 'orch'],
+            size=size, role=role)
+    for t, d, m, v, part, k in N:
+        if part == 'sing':                                                      # Siegfried: horns and a trumpet
+            o.play('horns', m, t, max(d, 0.15), v, forge, 0.95)
+            o.play('trumpets', m, t, max(d, 0.15), v - 18, forge, 0.4)
         elif part == 'file':
-            M.add('perc', guiro.play(v), t, 0.9, forge + (0.15 if k % 2 else -0.15))
-            M.add('strings', vla.play(note('F3') + (k % 4 == 3) * 5, v - 15), t, 0.6, forge)
+            M.add('fx', guiro.play(96 + 6 * (k % 2)), t, 0.9, forge + (0.15 if k % 2 else -0.15))
         elif part == 'breath':
-            M.add('fx', whoosh(1.0, 200, 1400, 0.7, seed=90 + k), t, 0.9, forge)
-        elif part in ('forging', 'hammer'):
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.2), t, 0.9, forge)
-                M.add('perc', anvil.play(min(127, v + 10)), t, 1.0 if part == 'hammer' else 0.8, forge)
-                M.add('perc', timp.play(v - 10, pitch=-3), t, 0.6, forge)
-            elif m < note('C4'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, forge)
-            else:
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.85, forge)
-        elif part == 'melt':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, forge, rise=0.2, fall=0.8, gain=0.85)
-                hold('strings', vc, m, t, t + d, v - 10, forge, rise=0.2, fall=0.8, gain=0.5)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, forge)
-        elif part == 'mime':
-            M.add('winds', bsn.play(m, v), t, 0.9, pot)
-        elif part == 'blaze':
-            hold('warm', horn if m >= note('C3') else tbn, m, t, t + d, v, forge * 0.4, rise=0.3, fall=2.0, gain=0.5)
-        elif part == 'last':
-            M.add('perc', crash.play(v), t, 1.0, forge)
-            M.add('perc', anvil.play(v), t, 1.0, forge)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, forge)
+            M.add('fx', whoosh(1.4, 180, 1300, 0.7, seed=90 + k), t - 0.1, 0.8, forge)
+            o.hit('timpani roll', t, 70, pitch=-6, gain=0.25, pan=forge)
+        elif part == 'surge':
+            o.hit('timpani', t, min(127, v), pitch=-4, gain=0.35, pan=forge)
+    level = lambda tt: (0.25 + 0.35 * smoothstep(T_BELLOWS[0] - 2, T_BELLOWS[0], tt) +
+                        0.3 * smoothstep(T_MELT, D - 4, tt))
+    o.fire(0.0, D + 0.5, level, forge, crackle=10, seed=909)
+    o.fire(T_CRUCIBLE, D + 0.5, lambda tt: 0.15 + 0.35 * smoothstep(T_MELT, D - 3, tt), forge, crackle=25, seed=910)
+    o.effects([(0, -4), (T_SING - 0.5, -4), (T_SING, -11), (T_FILE[0] - 0.3, -11), (T_FILE[0], -3),
+               (T_FILE[1] - 0.5, -3), (T_FILE[1], -6), (T_BELLOWS[0] - 0.3, -6), (T_BELLOWS[0], -1),
+               (T_MELT, -2), (D, 0)])

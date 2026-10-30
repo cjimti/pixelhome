@@ -1,22 +1,31 @@
-"""Zu neuen Taten: full morning on Brünnhilde's rock, and Siegfried must go out to new deeds. His heroism
-(Donington 78) strides out on the horns, and every note of it is an emerald wave out from him to both ends of
-the house, one run after another flashing green. Brünnhilde answers with her love (87) in the violins: each long
-note swells a whole run silver, the short ones throw gold glints, and her silver rolls out over the house.
+"""Zu neuen Taten: full morning on Brünnhilde's rock, and Siegfried must go out to new deeds. Brünnhilde sends him
+with her song, "Zu neuen Taten, teurer Helde": each long note of it swells a whole run silver, the short ones throw
+gold glints, and her silver rolls out over the house.
 
-Then the gift. The Ring (8) sounds in the woodwinds and a ring of gold light leaves Siegfried's hand and travels
-across the summit to her; when it reaches her the whole house flashes gold, and a gold loop races round the
-roofline both ways and meets itself. In return she gives him her horse Grane: the Valkyries' gallop (47) on the
-timpani and low strings, and the gallop itself is light, great rhythmic sweeps of silver and white thundering
-along the house on every beat, faster and wider each time, from her end out to the free end of Right and back.
-To finish his heroism comes round again on the full brass, emerald and silver trading whole runs at every note,
-and it settles into the bright morning with the two of them on the summit, the Ring glinting on her hand.
+The music is Wagner's own: the start of the duet (bars 362 to 373) and the exchange of the Ring for her horse
+(bars 501 to 529), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and register. Her voice is not in the
+reduction, so the line she sings, "Zu neuen Taten, teurer Helde, wie liebt' ich dich, ließ' ich dich nicht?",
+comes from the printed vocal score (Schirmer, archive.org ringofnibelungen00wagn2, p. 21) and is played as written
+on oboes doubled by violins. Under the Ring the woodwinds glint; his dragon-slaying pounds on horns, trombones and
+tuba; when she gives him Grane her horse is heard, galloping off along the house, with a cymbal and gong as the
+Ring reaches her. The effects keep clear of her song.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
-the Prologue's scenes (see GD01)."""
+Then the gift. "Zum Tausche deiner Runen reich' ich dir diesen Ring": a ring of gold light leaves Siegfried's hand
+and travels across the summit to her, pulsing on every note; when it reaches her the whole house flashes gold, and
+a gold loop races round the roofline both ways and meets itself. He tells of the dragon he killed for it, and every
+pounding note of it is an emerald wave out from him, one run after another flashing green, then emerald and
+silver trading whole runs. In return she gives him her horse Grane: the gallop is light, great rhythmic sweeps of
+silver and white thundering along the house on every beat, faster and wider each time, from her end out to the free
+end of Right and back, and it settles into the bright morning with the two of them on the summit, the Ring
+glinting on her hand.
+
+compose() tags every note of the excerpt; stage(), heat(), fire(), scene(), strand() and figure() are shared word
+for word by the Prologue's scenes (see GD01)."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD04'
 TITLE = 'Zu neuen Taten'
@@ -26,19 +35,20 @@ DESCRIPTION = ('Siegfried must ride out to new adventures. He gives Brünnhilde 
 VOICEOVER = ('A hero has to go out into the world. He leaves her the Ring, and she gives him her horse.')
 
 K = 3                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-T_HERO = 1.5                                # his heroism, horns
-HBEAT = 0.42
-T_LOVE = 12.5                               # her love, violins
-LBEAT = 0.4
-T_RING = 27.0                               # the Ring motif: the gift leaves his hand
-RBEAT = 0.5
-T_GIVEN = 32.0                              # it reaches her: the gold flash
-T_GRANE = [37.0, 41.0, 45.0, 49.0]          # Grane: the gallop, four times
-GBEAT = 0.62
-T_HERO2 = 55.0                              # his heroism on the full brass
-HBEAT2 = 0.38
-T_SETTLE = 66.0
-D = 80.0
+EX = excerpt(__file__)                      # bars 362-373 and 501-529, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+# Her song, from the vocal score: (bar, beat, beats, note), 4/4.
+VOICE = [(362, 1, 1, 'Ab4'), (362, 2, 1.5, 'F5'), (362, 3.5, 0.5, 'C5'), (363, 0, 2, 'Eb5'), (363, 2, 1, 'F4'),
+         (364, 1, 2.5, 'C5'), (364, 3.5, 0.5, 'Bb4'), (365, 0, 2, 'Ab4'), (365, 2, 1, 'G4'), (366, 1, 3, 'C5'),
+         (367, 0, 1.5, 'C5'), (367, 1.5, 0.5, 'Eb4'), (367, 2, 2, 'Eb4'), (368, 1, 2, 'G4'), (368, 3, 0.5, 'F4'),
+         (368, 3.5, 0.5, 'Eb4'), (369, 0, 2, 'F4')]
+T_RING = BAR[501]                           # "reich' ich dir diesen Ring": the gift leaves his hand
+T_GIVEN = BAR[504]                          # it reaches her: the gold flash
+HERO_BARS = [range(504, 517), range(517, 524)]   # his deeds and the dragon he killed; then the full brass
+GALLOP_BARS = range(524, 530)               # Grane
+T_GRANE = [BAR[b] for b in (524, 526, 528)]
+T_SETTLE = BAR[528]
+D = EX['seconds']
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -159,30 +169,45 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def bar_of(t):
+    return max([m for m, bt in BAR.items() if bt <= t + 1e-6] or [362])
+
+
+def voice():
+    """Her song in seconds: (time, seconds, midi)."""
+    out = []
+    for b, x, n, name in VOICE:
+        t0 = float(np.interp(b + x / 4, [m for m, _ in EX['bars'][:13]], [t for _, t in EX['bars'][:13]]))
+        t1 = float(np.interp(b + (x + n) / 4, [m for m, _ in EX['bars'][:13]], [t for _, t in EX['bars'][:13]]))
+        out.append((t0, t1 - t0, note(name)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t, m, v, d in play('siegfried_heroism', T_HERO, HBEAT, 12, 104):
-        add(t, d, m, v, 'hero', 0)
-    for t, m, v, d in play('brunnhilde_love', T_LOVE, LBEAT, -5, 96):
-        add(t, d, m, v, 'love')
-    for t, m, v, d in play('ring', T_RING, RBEAT, 0, 92):
-        add(t, d, m, v, 'ring')
-    add(T_GIVEN, 0.1, 'C1', 124, 'given')
-    for k, t0 in enumerate(T_GRANE):
-        for t, m, v, d in play('ride', t0, GBEAT, -12 + 2 * k, 100 + 6 * k):
-            add(t, d, m, v, 'grane', k)
-        for j in range(6):
-            add(t0 + j * GBEAT, 0.2, 'Gb1' if j % 2 else 'B1', 96 + 6 * k, 'gallop', k)
-    for t, m, v, d in play('siegfried_heroism', T_HERO2, HBEAT2, 12, 122):
-        add(t, d, m, v, 'hero', 1)
-    for m in ('Eb1', 'Bb1', 'Eb2', 'G2', 'Bb2', 'Eb3'):
-        add(T_SETTLE, D - T_SETTLE, m, 68, 'settle')
-    add(0.0, T_RING, 'Eb1', 56, 'pedal')
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Her song ('love', from the vocal
+    score); the right hand as the Ring passes to her ('ring'); the left hand's pounding as he tells of the dragon
+    and then the full brass ('hero', k = which); Grane's gallop in the left hand ('gallop') and the right hand over
+    it ('grane'); the rest 'orch'."""
+    N = [(t, d, m, 100, 'love', 'song') for t, d, m in voice()]
+    for n in tidy(EX['notes']):
+        t, d, m, v, h = n[:5]
+        b = bar_of(t)
+        if 370 <= b < 374 and h == 0 and d >= 0.3:                 # her next line: its accompaniment carries it
+            N.append((t, d, m, v, 'love', 'orch'))
+            part, k = 'orch', n[5]
+        elif 501 <= b < 504 and h == 0:
+            part, k = 'ring', None
+        elif b in HERO_BARS[0] and (h == 1 or d >= 0.3):
+            part, k = 'hero', 0
+        elif b in HERO_BARS[1] and h == 1 and d >= 0.3:
+            part, k = 'hero', 1
+        elif b in GALLOP_BARS and h == 1:
+            part, k = 'gallop', None
+        elif b in GALLOP_BARS:
+            part, k = 'grane', None
+        else:
+            part, k = 'orch', n[5]
+        N.append((t, d, m, v, part, k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -201,7 +226,7 @@ def render(G, seed=4):
     hero = [e for e in N if e[4] == 'hero']
     love = [e for e in N if e[4] == 'love']
     ring_on = sorted({e[0] for e in N if e[4] == 'ring'})
-    gallop = sorted(e[0] for e in N if e[4] == 'gallop')
+    gallop = sorted({round(e[0], 2) for e in N if e[4] == 'gallop'})
     grane = [e for e in N if e[4] == 'grane']
     runs = runs_by_order()
     masks = {r: (G.seg_of == r) for r in runs}
@@ -269,7 +294,7 @@ def render(G, seed=4):
             a = t - t0
             if not 0 <= a < 1.3:
                 continue
-            k = min(3, i // 6)
+            k = min(3, int(np.searchsorted(T_GRANE, t0, side='right')))
             sgn = 1 if i % 2 == 0 else -1
             start = p_b if sgn > 0 else L
             q = start + sgn * (1300 + 300 * k) * a
@@ -279,7 +304,7 @@ def render(G, seed=4):
             fr += light(DAY, 0.35 * np.exp(-a / 0.2) * masks[runs[(i + 3) % 6]])
         for t0, dur, m, v, part, k in grane:
             a = t - t0
-            if 0 <= a < 0.5 and dur >= 0.9 * GBEAT:
+            if 0 <= a < 0.5 and dur >= 0.5:
                 fr += light(GLINT, 0.6 * np.exp(-a / 0.15) * np.exp(-((d - p_b) / 160) ** 2))
 
         # settling: the two answer each other in great breaths of emerald and silver over the house, and the
@@ -308,7 +333,8 @@ def render(G, seed=4):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, her song from the vocal score on oboes and violins, and
+    Grane's hooves as she gives him her horse."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -317,82 +343,45 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.25), ('strings', 0.3, 0.35), ('brass', 0.32, 0.3), ('perc', 0.3, 0.3),
-                            ('winds', 0.26, 0.35), ('harp', 0.22, 0.4), ('warm', 0.28, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    S = stage(G)
-    ss = pan_at(at(G, *SIEGFRIED_START[:2]))
     sb = pan_at(at(G, *BRUNNHILDE_START[:2]))
-    east = pan_at(S['L'] - 100)
-    for t, d, m, v, part, k in compose():
-        if part == 'hero':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d * 0.95, v, ss, rise=0.1, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.25), t, 0.85, ss)
-            M.add('low', vc.play(m - 12, v - 12, dur=d * 1.05, release=0.25), t, 0.6, ss)
-            if k == 1:
-                M.add('brass', tbn.play(m - 12, v - 8, dur=d * 1.05, release=0.25), t, 0.7, 0.0)
-                if m >= note('Bb3') + 12:
-                    M.add('brass', tpt.play(m, v - 14, dur=d * 1.05, release=0.25), t, 0.5, 0.0)
-                if d > 1.0:
-                    M.add('perc', timp.play(v - 10, pitch=-3), t, 0.6, 0.0)
-        elif part == 'love':
-            if d >= 0.9:
-                hold('strings', vln, m, t, t + d, v, sb, rise=0.2, fall=0.8, gain=0.8)
-            else:
-                M.add('strings', vln.play(m, v, dur=d * 1.1, release=0.25), t, 0.8, sb)
-            M.add('harp', harp.play(m, v - 24), t, 0.5, sb)
-        elif part == 'ring':
-            p = ss + (sb - ss) * min(1.0, (t - T_RING) / (T_GIVEN - T_RING))
-            if d > 1.0:
-                hold('winds', clar, m, t, t + d, v, p, rise=0.2, fall=0.8, gain=0.8)
-            else:
-                M.add('winds', clar.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, p)
-            M.add('winds', bsn.play(m - 12, v - 14, dur=d * 1.05, release=0.3), t, 0.5, p)
-        elif part == 'given':
-            M.add('perc', crash.play(118), t, 0.85, sb)
-            M.add('perc', timp.play(120, pitch=-2), t, 0.9, sb)
-            for i, mm in enumerate(('G5', 'C6', 'E6', 'G6')):
-                M.add('harp', glock.play(note(mm), 100), t + 0.08 * i, 0.5, sb)
-        elif part == 'grane':
-            M.add('strings', vcs.play(m, v), t, 0.8, east * 0.5)
-            if d >= 0.9:
-                M.add('brass', horn.play(m, v - 10, dur=d * 1.05, release=0.25), t, 0.6, sb)
-        elif part == 'gallop':
-            M.add('perc', timp.play(v, pitch=-5 if note('B1') == m else -7), t, 0.85, sb)
-            M.add('low', cb.play(m + 12, v - 10, dur=0.25, release=0.1), t, 0.6, sb)
-        elif part == 'settle':
-            hold('warm', vc if m < note('G2') else vln, m + 12 * (m < note('Eb2')), t, t + d, v, 0.0,
-                 rise=2.0, fall=1.0, gain=0.45)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.45)
+    ss = pan_at(at(G, *SIEGFRIED_START[:2]))
+    o = Orchestra(M, level=2.25)
+    N = compose()
+    tag = {(round(e[0], 4), e[2]): e[4] for e in N}
+
+    def size(t):
+        return 0.4 if t < T_RING else 0.75 if t < BAR[509] else 1.0
+
+    def role(t, d, m, v, h):
+        part = tag.get((round(t, 4), m), 'orch')
+        if t < T_RING:                                              # under her song: strings, softly
+            return [('violins' if m >= 55 else 'violas' if m >= 48 else 'cellos', 0, -10, 0.45)]
+        if part == 'ring':                                          # the Ring: woodwinds glinting
+            return [('flutes' if m >= 67 else 'clarinets', 0, 0, 0.5), ('violins', 0, -12, 0.3)]
+        if part == 'hero' and t >= BAR[509]:                        # the dragon he killed: horns, trombones, tuba
+            if m < 45:
+                return [('tuba', 0, 0, 0.6), ('basses', 0, -4, 0.5), ('trombones', 12, -6, 0.5)]
+            return [('horns', 0, 4, 0.8), ('trombones', 0, -4, 0.55)]
+        if part == 'gallop':                                        # Grane's gallop: low strings and bassoons
+            return [('cellos', 0, 4, 0.6), ('bassoons', 0, -6, 0.4)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=size, role=role)
+    for t, d, m, v, part, k in N:                                   # her song: oboes doubled by violins
+        if part == 'love' and k == 'song':
+            o.play('oboes', m, t, d, 104, sb, 0.8)
+            o.play('violins', m, t, d, 92, sb, 0.45)
+    for k, (t0, t1) in enumerate(((BAR[501], BAR[502]), (BAR[502], BAR[504]))):   # the ring passing: glints
+        o.hit('triangle', t0 + 0.2, 80 + 10 * k, gain=0.3, pan=ss + (sb - ss) * (0.3 + 0.4 * k))
+    o.hit('crash', T_GIVEN, 112, gain=0.6, pan=sb)                  # it reaches her
+    o.hit('gong', T_GIVEN + 0.02, 100, gain=0.4, pan=sb)
+    # Grane: his hooves, galloping out from her end to the free end of Right and back
+    beat = (BAR[525] - BAR[524]) / 4                                 # a hoofbeat a quarter note
+    for j, t0 in enumerate(T_GRANE):
+        t1 = T_GRANE[j + 1] if j + 1 < len(T_GRANE) else D
+        a, b = (sb, 0.85) if j % 2 == 0 else (0.85, sb)
+        o.gallop(t0, t1 - 0.2, beat=beat, pan=lambda t, t0=t0, t1=t1, a=a, b=b: a + (b - a) * (t - t0) / (t1 - t0),
+                 v=104 + 6 * j, gain=0.9)
+    # the fader: well down under her song and his telling; up for the gift and for Grane
+    o.effects([(0.0, -14.0), (T_RING - 0.5, -14.0), (T_RING, -6.0), (T_GIVEN + 2.0, -6.0), (BAR[509], -12.0),
+               (T_GRANE[0] - 0.5, -12.0), (T_GRANE[0], 0.0), (D, 0.0)])

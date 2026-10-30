@@ -1,21 +1,29 @@
-"""The Wanderer: Mime alone in his cave, sulphur yellow at the anvil, tapping at a sword he knows he cannot make
-whole, his obstinate little figure (Donington 51) on the bassoons. A drum roll, and the cave mouth at the free end
-of Right floods deep blue: a stranger stands in it. The Wanderer's great slow chords (17) sound on the trombones and
-tubas, and with every chord a wave of deep blue rolls in from the mouth over the whole house to the end of Side,
-while he comes in step by step, a tall figure of Wotan's blue, to the middle of Right.
+"""The Wanderer: Mime alone in his cave, sulphur yellow at the anvil, hammering in a fury at a sword he knows he
+cannot make whole ("Des Niblungen Neid, Not und Schweiss"), every blow throwing sparks. The orchestra sinks, and
+the cave mouth at the free end of Right floods deep blue: a stranger stands in it. "Heil dir, weiser Schmied!":
+the Wanderer's great slow chords sound on the trombones and tubas, and with every chord a wave of deep blue rolls
+in from the mouth over the whole house to the end of Side, while he comes in step by step, a tall figure of
+Wotan's blue, to the middle of Right.
 
-He grounds his spear: its motif (73) strides down the trombones and a pale steel shaft grows from him toward the
-anvil note by note, then strikes the floor, a blue-white flash over the whole house and a shock running out both
-ways that knocks the forge down to embers. Mime cowers (71), trembling. The chords come back softer as the
-Wanderer settles: a blue tint stays in the walls of the cave, and the stranger stays standing on Right with Mime
-shaking at the anvil, ready for the wager of heads.
+Mime tries to drive him out, shaking and flaring yellow, but the Wanderer sits down by the hearth and wagers his
+head: his spear's motif strides down the bass and a pale steel shaft grows from him toward the anvil note by
+note, then strikes the floor, a blue-white flash over the whole house and a shock running out both ways that
+knocks the forge down to embers. Mime cowers, trembling, while the Wanderer's chords sound on, and a blue tint
+stays in the walls of the cave.
+
+The music is Wagner's own: Act I, bars 1282 to 1299 (Mime's fury and the Wanderer's arrival) and 1366 to 1379
+(Mime's dismissal, the spear's descent and the wager), as Solti's 1958 Vienna Philharmonic recording takes them.
+The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and
+register: the Wanderer's chords on trombones, tubas and horns, the spear's descent on trombones, tuba and basses,
+Mime's agitation on violins and woodwinds. On stage: Mime's hammer ringing on the anvil, a drum roll as the
+stranger appears, a steady tread under the Wanderer's steps, and the spear striking the floor with a great blow and
+a roll of thunder; the effects stand back under the chords.
 
 compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF06'
 TITLE = 'The Wanderer'
@@ -26,16 +34,24 @@ VOICEOVER = ('A stranger in a blue cloak walks into the cave, leaning on a spear
              'He calls himself the Wanderer.')
 
 K = 5                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_OBST = [1.5, 5.0]                         # Mime's obstinate figure
-T_ROLL = 9.0                                # the drum roll; the mouth floods blue
-T_WAND = [11.0, 26.0, 55.0]                 # the Wanderer's chords
-W_BEAT = 0.55
-T_IN = 11.0                                 # he starts in from the mouth
-T_STAND = 24.0                              # he has reached the middle of Right
-T_SPEAR = 37.0                              # the spear motif; the shaft grows note by note
-S_BEAT = 0.45
-T_CRINGE = [45.0, 49.0]                     # Mime cowers
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 1282-1299 and 1366-1379, Solti 1958
+D = EX['seconds']
+_M = np.array([m for m, _ in EX['bars']], float)
+_T = np.array([t for _, t in EX['bars']])
+
+
+def bt(m):
+    """Seconds into the scene of measure position m (bar plus fraction)."""
+    return float(np.interp(m, _M, _T))
+
+
+T_ROLL = bt(1289)                           # the orchestra sinks; the mouth floods blue
+T_IN = bt(1290)                             # he starts in from the mouth
+T_STAND = bt(1298)                          # he has reached the middle of Right
+T_SHOO = bt(1366)                           # Mime tries to drive him out
+T_SPEAR = bt(1371.6)                        # the spear motif strides down the bass
+T_STRIKE = bt(1374)                         # it strikes the floor
+T_WAND = [T_IN, T_STRIKE]                   # the two runs of his chords
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -120,33 +136,44 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes, tagged: Mime's fury ('fury'),
+    the Wanderer's chords ('wanderer', k = which run), Mime's agitation ('shoo'), the spear's descent ('spear') and
+    the rest ('orch'); 'tap' and 'strike' mark the lights' moments."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_OBST):
-        for t, m, v, d in play('mime_obstinate', t0, 0.8, 0, 80 + 6 * k):
-            add(t, d, m, v, 'obstinate', k)
-    add(T_ROLL, 2.2, 'C1', 96, 'roll')
-    for k, t0 in enumerate(T_WAND):
-        for t, m, v, d in play('wanderer', t0, W_BEAT, 0, (112, 104, 84)[k]):
-            add(t, d, m, v, 'wanderer', k)
-    for t, m, v, d in play('spear', T_SPEAR, S_BEAT, 0, 112):
-        add(t, d, m, v, 'spear')
-    add(T_SPEAR + 10.0 * S_BEAT, 0.1, 'C1', 124, 'strike')
-    for k, t0 in enumerate(T_CRINGE):
-        for t, m, v, d in play('mime_frustrated', t0, 0.8, -12 * k, 92 - 8 * k):
-            add(t, d, m, v, 'cringe', k)
-    add(T_WAND[1] + 9, T_WAND[2] - T_WAND[1] - 9, 'Eb1', 58, 'pedal')
-    add(T_WAND[2] + 9, D - T_WAND[2] - 9, 'E1', 54, 'pedal')
+    for n in tidy(EX['notes']):
+        t, d, m, v, hand, trem = n
+        if t < T_ROLL:
+            part, k = 'fury', hand
+        elif T_SHOO <= t < T_SPEAR - 0.05:
+            part, k = 'shoo', hand
+        elif T_SPEAR - 0.05 <= t < T_STRIKE - 0.05 and hand == 1:
+            part, k = 'spear', None
+        elif d >= 0.8:
+            part, k = 'wanderer', 0 if t < T_SHOO else 1
+        else:
+            part, k = 'orch', hand
+        N.append((t, d, m, v, part, 'trem' if trem and part == 'orch' else k))
+    last = -9.0
+    for t, d, m, v, part, k in sorted(N):
+        if part == 'fury' and v >= 110 and t - last > 0.6:
+            N.append((t, 0.2, m, v, 'tap', None))
+            last = t
+    N.append((T_STRIKE, 0.1, 35, 127, 'strike', None))
     return sorted(N, key=lambda e: e[0])
 
 
 def chords():
-    """When each of the Wanderer's chords lands: [(time, which statement)]."""
-    return sorted({(e[0], e[5]) for e in compose() if e[4] == 'wanderer'})
+    """When each of the Wanderer's chords lands (at least three long notes together): [(time, which run)]."""
+    on = {}
+    for e in compose():
+        if e[4] == 'wanderer':
+            on.setdefault((round(e[0], 2), e[5]), []).append(e)
+    out, last = [], -9.0
+    for (t, k), es in sorted(on.items()):
+        if len(es) >= 2 and t - last > 2.2:
+            out.append((t, k))
+            last = t
+    return out
 
 
 def where_wanderer(G, t):
@@ -166,10 +193,11 @@ def render(G, seed=6):
     N = compose()
     ch = chords()
     spear_on = [e for e in N if e[4] == 'spear']
-    t_strike = T_SPEAR + 10.0 * S_BEAT
-    cringe = [e for e in N if e[4] == 'cringe']
-    taps = [(e[0], 0.35, anvil) for e in N if e[4] == 'obstinate']
+    t_strike = T_STRIKE
+    cringe = [e for e in N if e[4] == 'shoo' and e[3] >= 110 and e[5] == 0][::2]
+    taps = [(e[0], 0.7, anvil) for e in N if e[4] == 'tap']
     p_mime = at(G, 'Porch Front', MIME_AT)
+    tap_t = np.array([h[0] for h in taps])
     stand = at(G, 'Right', WAND_AT)
 
     for f in range(F):
@@ -184,7 +212,7 @@ def render(G, seed=6):
         present = smoothstep(T_ROLL, T_IN, t)
 
         # the mouth floods deep blue at the drum roll; a blue tint settles into the walls while he is there
-        gone = smoothstep(T_WAND[2] + 9, D - 1, t)
+        gone = 0.0
         fr += light(WOTAN, 0.85 * present * S['mouth'] * (1 - 0.4 * smoothstep(T_STAND, T_STAND + 6, t)) * (1 - gone))
         tint = smoothstep(T_STAND - 4, T_STAND + 4, t) * (1 - gone)
         fr += light(WOTAN, 0.35 * tint * (S['walls'] + 0.6 * (S['forge'] == 0) * (1 - S['mouth'])))
@@ -193,7 +221,7 @@ def render(G, seed=6):
         for c, k in ch:
             a = t - c
             if 0 <= a < 4.0:
-                g = (1.0, 0.85, 0.6)[k]
+                g = (1.0, 0.8)[k]
                 front = L - 750 * a
                 wave = np.exp(-((d - front) / 260) ** 2) + 0.55 * (d > front) * np.exp(-a / 1.1)
                 fr += light(WOTAN, g * np.exp(-a / 2.0) * wave)
@@ -202,7 +230,7 @@ def render(G, seed=6):
         # the spear: a pale shaft growing from him toward the anvil, a step on every note, then the strike
         if T_SPEAR <= t < t_strike + 3:
             n = sum(1 for e in spear_on if e[0] <= t)
-            tip = stand - min(n, 12) * 95
+            tip = stand - min(n, 12) * (stand - anvil) / 12
             shaft = (d <= stand) * (d >= tip) * (1 - smoothstep(t_strike + 0.5, t_strike + 3, t))
             j = n - 1
             hit = np.exp(-(t - spear_on[j][0]) / 0.18) if j >= 0 else 0.0
@@ -212,16 +240,22 @@ def render(G, seed=6):
             a = t - t_strike
             fr += light(SPEAR, min(1.0, 1.1 * np.exp(-a / 0.15)))
             fr += light(WOTAN, 0.9 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - stand) - 1600 * a) / 120) ** 2))
-        fr += light(SPARK, np.clip(sparks(S, taps, t, 60, n=6, reach=0.4), 0, 0.8))
+        fr += light(SPARK, np.clip(sparks(S, taps, t, 60, n=12, reach=0.8), 0, 1.0))
+        k = int(np.searchsorted(tap_t, t, side='right')) - 1
+        if k >= 0 and t - tap_t[k] < 0.8:                       # each of Mime's blows: a flash on the anvil
+            fr += light(HEAT, 0.9 * np.exp(-(t - tap_t[k]) / 0.1) * S['heat'] ** 0.5)
+            fr += light(FORGE, 0.6 * np.exp(-(t - tap_t[k]) / 0.4) *
+                        np.exp(-((np.abs(d - anvil) - 1200 * (t - tap_t[k])) / 80) ** 2))
 
         # Mime: tapping at first, then cowering and trembling when the spear comes down
         tremble = smoothstep(t_strike, t_strike + 0.5, t) * (0.12 + 0.08 * np.sin(2 * np.pi * 7 * t))
         for t0, dur, m, v, part, k in cringe:
             a = t - t0
-            if 0 <= a < 0.8:
-                fr += light(MIME, 0.5 * np.exp(-a / 0.3) * np.exp(-((np.abs(d - p_mime) - 400 * a) / 40) ** 2))
-        mlvl = keys(t, [(0, 0.6), (T_ROLL, 0.6), (T_ROLL + 1, 0.45), (t_strike, 0.45), (t_strike + 0.4, 0.3),
-                        (D - 10, 0.5)])
+            if 0 <= a < 1.2:                                    # Mime in a flap: yellow bursts out from him
+                fr += light(MIME, 0.9 * np.exp(-a / 0.4) * np.exp(-((np.abs(d - p_mime) - 700 * a) / 90) ** 2))
+                fr += light(FORGE, 0.4 * np.exp(-a / 0.3) * S['forge'])
+        mlvl = keys(t, [(0, 0.6), (T_ROLL, 0.6), (T_ROLL + 1, 0.45), (T_SHOO, 0.45), (T_SHOO + 0.5, 0.65),
+                        (t_strike, 0.65), (t_strike + 0.4, 0.3), (D, 0.35)])
         fr = figure(fr, S, p_mime + 8 * cow, MIME, mlvl + tremble * (t < D - 4))
 
         # the Wanderer: deep blue, tall (wide) and steady, a pale glint at the spear hand
@@ -234,79 +268,49 @@ def render(G, seed=6):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """The real music: the excerpt orchestrated from the piano reduction, and the staging: Mime's hammer, the
+    stranger's arrival and tread, the spear striking the floor."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
 
     def pan_at(dd):                         # path distance -> left/right across the facade, from the street
-        x = np.interp(min(dd, ds.max()), ds, xs)
+        x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('winds', 0.28, 0.3), ('brass', 0.3, 0.32), ('perc', 0.3, 0.25),
-                            ('mallet', 0.2, 0.3), ('warm', 0.26, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    bsn_st = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    mime = pan_at(at(G, 'Porch Front', MIME_AT))
+    S = stage(G)
+    forge = pan_at(S['anvil'])
     stand = pan_at(at(G, 'Right', WAND_AT))
-    mouth = pan_at(G.pd.max())
-    for t, d, m, v, part, k in compose():
-        wp = pan_at(where_wanderer(G, t))
-        if part == 'obstinate':
-            M.add('winds', bsn_st.play(m, v), t, 0.9, mime)
-            M.add('mallet', xylo.play(m + 12, v - 20), t, 0.5, mime)
-            M.add('perc', anvil.play(v - 35), t, 0.4, mime)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, pitch=-5, dur=d), t, 0.7, mouth)
-        elif part == 'wanderer':
-            if m >= note('E4'):
-                hold('brass', horn, m - 12, t, t + d, v, wp, rise=0.2, fall=0.8, gain=0.8)
-            elif m >= note('A3'):
-                hold('brass', tbn, m, t, t + d, v, wp, rise=0.2, fall=0.8, gain=0.75)
-            elif m >= note('C3'):
-                hold('brass', tbn, m, t, t + d, v - 6, wp, rise=0.2, fall=0.8, gain=0.7)
-            else:
-                hold('low', tuba, m + 12, t, t + d, v, wp, rise=0.2, fall=0.8, gain=0.85)
-                if k == 0:
-                    M.add('perc', timp.play(v - 30, pitch=(m % 12) - 6), t, 0.5, wp)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.95, stand)
-            M.add('low', tuba.play(m, v - 6, dur=d * 1.05, release=0.3), t, 0.8, stand)
-            M.add('low', cb.play(m - 12, v - 15, dur=d * 1.05, release=0.3), t, 0.6, stand)
-        elif part == 'strike':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, stand)
-            M.add('perc', gong.play(110), t, 0.6, stand)
-            M.add('perc', crash.play(v), t, 0.7, stand)
-        elif part == 'cringe':
-            M.add('winds', bsn.play(m, v, dur=d * 1.1, release=0.25), t, 0.9, mime)
-            M.add('low', vc.play(m, v - 12, dur=d * 1.1, release=0.25), t, 0.6, mime)
-        elif part == 'pedal':
-            hold('warm', cb, m + 12, t, t + d, v, stand * 0.5, rise=3.0, fall=2.0, gain=0.6)
+    o = Orchestra(M, level=1.6)
+    N = compose()
+    for t, d, m, v, part, k in N:
+        if part == 'wanderer':                                                  # his chords: trombones, tubas, horns
+            o.play('trombones' if m >= 48 else 'tuba', m, t, d, v, stand, 0.75)
+            if m >= 55:
+                o.play('horns', m, t, d, v - 8, stand, 0.5)
+            if m < 48:
+                o.play('basses', m, t, d, v - 10, stand, 0.4)
+        elif part == 'spear':                                                   # the spear strides down the bass
+            o.play('trombones', m, t, d, v, stand, 0.8)
+            o.play('tuba', m - 12 if m >= 40 else m, t, d, v - 6, stand, 0.6)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 10, stand, 0.45)
+        elif part == 'shoo':                                                    # Mime in a flap: strings, woodwinds
+            o.play('violins' if m >= 55 else 'violas', m, t, d, v - 12, forge, 0.5)
+            if m >= 72:
+                o.play('flutes' if d < 0.25 else 'oboes', m, t, d, v - 20, forge, 0.3)
+    o.tutti([e[:4] + (e[5] if e[5] in (0, 1) else 0, e[5] == 'trem') for e in N if e[4] in ('orch', 'fury')],
+            size=lambda t: 0.9 if t < T_ROLL else 0.6)
+    for t, d, m, v, part, k in N:
+        if part == 'tap':                                                       # Mime's hammer on the anvil
+            o.hit('anvil', t, min(127, v), gain=0.55, pan=forge)
+    o.hit('timpani roll', T_ROLL, 80, pitch=-6, gain=0.5, pan=pan_at(G.pd.max()))
+    for c, k in chords():
+        if k == 0 and c < T_STAND + 1:                                          # his tread, a step on each chord
+            o.hit('bass drum', c + 0.9, 70, gain=0.35, pan=stand)
+    o.boom(T_STRIKE, stand, 1.0)                                                # the spear strikes the floor
+    o.hit('metal', T_STRIKE, 110, gain=0.35, pan=stand)
+    o.thunder(T_STRIKE + 0.1, 0.55, stand, 0.8)
+    o.fire(0.0, D + 0.5, lambda tt: 0.4 - 0.25 * smoothstep(T_STRIKE, T_STRIKE + 1, tt) +
+           0.15 * smoothstep(T_STRIKE + 4, D, tt), forge, crackle=8, seed=606)
+    o.effects([(0, -3), (T_ROLL, -3), (T_IN + 1, -9), (T_SHOO, -9), (T_STRIKE - 0.3, -1), (T_STRIKE + 3, -1),
+               (T_STRIKE + 5, -9), (D, -9)])

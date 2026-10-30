@@ -2,21 +2,33 @@
 dark, and at the summit, the middle of Porch Front, a silver glow sleeps: an armed figure under a shield.
 Siegfried, emerald with a white-hot head, stands just short of it at Porch Front 0.35.
 
-The magic sleep (Donington 16) shimmers in the woodwinds in E major, and every chord of it rolls a violet ripple
-out from the sleeper over the whole house. He lifts the shield: a silver flash, and silver glints race to both
-ends of the roofline. He lifts the helmet, and her hair spills out in a burst of gold. He cuts the armour with
-Nothung, two strokes, each a white slash running out both ways along the roof. Then the brass cries out, "Das ist
-kein Mann!": the house flashes rose, and for the first time in his life Siegfried is afraid. The power of fate
-(84) sounds on the Wagner tubas, indigo waves roll out from the sleeper one after another, the whole house
-trembles, and his emerald shrinks and flickers like a candle. Innocent sleep (30) quiets it: her silver breathes,
-the violet sleep comes back, and he gathers himself, grows bright again and steps in beside her.
+The music is Wagner's own: Act III, bars 885-889, 894-899 and 921-935 of Siegfried, as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py). He finds the
+armour ("Helle Waffen? Heb' ich sie auf?") and lifts the shield; he loosens the helmet ("Leichter würd' ihm") and
+her hair spills out ("Ach! Wie schön!"); he cuts the rings of the armour in near silence; the orchestra bursts out
+as the breastplate falls, "Das ist kein Mann!", and fear takes him ("Brennender Zauber zückt mir in's Herz ...
+mir schwankt und schwindelt der Sinn"). The sleep music is on the woodwinds over soft strings, the cutting on the
+strings alone, the outburst on the full orchestra, and the fear's heavy chords on horns, trombones and tuba, as
+Wagner's tubas would play them. A production's sounds are added where the staging needs them: the low crackle of
+the fire round the rock, the scrape of the shield, a glint as the helmet comes away, each stroke of Nothung
+through the steel rings, a crash as the breastplate falls, and timpani under the fear; they are ridden down under
+the sleep music and her hair, and lead through the cutting.
+
+The magic sleep shimmers, and every chord of it rolls a violet ripple out from the sleeper over the whole house.
+He lifts the shield: a silver flash, and silver glints race to both ends of the roofline; "in Waffen ein Mann?",
+the steel flares again. He lifts the helmet, and her hair spills out in a burst of gold that swells again on "Ach!
+Wie schön!". He cuts the armour with Nothung, two strokes, each a white slash running out both ways along the roof.
+The orchestra breaks out: the house flashes rose and the strings' racing scales throw rose sparks racing out from
+her, and on "Das ist kein Mann!" it flashes again. Fear: on every heavy chord an indigo wave rolls out from the
+sleeper, the whole house trembles, and his emerald shrinks and flickers like a candle; but he is drawn to her, and
+inch by inch he comes in beside her.
 
 compose() holds every note; stage(), sky(), fire() and figure() are the rock and the sky, shared word for word by
 Act III's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.audio import whoosh
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF27'
 TITLE = 'Das ist kein Mann!'
@@ -27,17 +39,21 @@ VOICEOVER = ('At the top of the mountain, a sleeper in armour. He lifts the helm
              'And for the first time in his life, Siegfried is afraid.')
 
 K = 4                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_SLEEP = [0.5, 58.0]                       # the magic sleep, shimmering
-SBEAT = 0.8
-T_SHIELD = 14.0                             # he lifts the shield
-T_HELMET = 21.0                             # and the helmet: her hair
-T_CUT = [28.0, 30.5]                        # Nothung cuts the armour
-T_SHOCK = 35.0                              # "Das ist kein Mann!"
-T_FATE = [37.0, 45.0]                       # the power of fate, Wagner tubas
-FBEAT = 0.85
-T_INNOCENT = 52.0                           # innocent sleep
-T_STEP = (62.0, 72.0)                       # he gathers himself and steps in beside her
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 885-889, 894-899, 921-935, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SUNG = {s[3].split()[0].strip('!–,'): s[0] for s in EX['singing']}
+T_SHIELD = BAR[886]                         # he lifts the shield
+T_MAN = SUNG['Ha']                          # "Ha! - in Waffen ein Mann?"
+T_HELMET = accents(EX['notes'], BAR[896] - 3, BAR[896], 70, 3)[0]   # the helmet comes away
+T_SCHON = SUNG['Ach']                       # "Ach! Wie schön!"
+T_SLEEP_END = BAR[921]                      # the sleep music ends; the cutting begins
+T_CUT = [t for t, d, m, v, h in EX['notes'] if BAR[921] + 2 < t < BAR[924] and h == 1 and d > 2]   # two strokes
+T_SHOCK = BAR[924]                          # the breastplate falls: the orchestra breaks out
+T_WORDS = SUNG['Das']                       # "Das ist kein Mann!"
+FATE = accents(EX['notes'], T_WORDS, D, 70, 3, 1.2)                 # the fear's heavy chords
+SLEEPS = accents(EX['notes'], 0, T_SLEEP_END, 40, 2, 1.8)           # the sleep music's chords
+T_DRAWN = (FATE[1] if len(FATE) > 1 else T_WORDS + 8, D - 1.0)     # drawn to her, he comes in beside her
 
 STORM = hexc('#1a2ab0')
 CLOUD = hexc('#4a6aff')
@@ -136,39 +152,18 @@ def hero(fr, S, p, lvl, w=16.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, hand, part, trem). 'sleep' before the
+    cutting, 'cut' while he cuts, 'burst' for the outburst, 'fear' after his words."""
     N = []
+    for t, d, m, v, h, tr in tidy(EX['notes']):
+        part = ('sleep' if t < T_SLEEP_END else 'cut' if t < T_SHOCK - 0.01 else 'burst' if t < T_WORDS - 0.01
+                else 'fear')
+        N.append((t, d, m, v, h, part, tr))
+    return N
 
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
 
-    for k, t0 in enumerate(T_SLEEP):
-        for t, m, v, d in play('sleep', t0, SBEAT, -4, 84 - 8 * k):
-            add(t, d, m, v, 'sleep', k)
-    for m in ('E1', 'B1', 'E2'):
-        add(0.0, T_SHOCK, m, 60, 'bed')
-    for j, m in enumerate(('E5', 'Ab5', 'B5', 'E6', 'Ab6', 'B6')):
-        add(T_SHIELD + 0.07 * j, 1.2, m, 88 - 3 * j, 'shield')
-    for j, m in enumerate(('E3', 'B3', 'E4', 'Ab4', 'B4', 'E5', 'Ab5', 'B5')):
-        add(T_HELMET + 0.12 * j, 2.0, m, 80 + 2 * j, 'helmet')
-    add(T_HELMET + 0.9, 3.0, 'E4', 82, 'hornhair')
-    add(T_HELMET + 0.9, 3.0, 'B4', 78, 'hornhair')
-    for t0 in T_CUT:
-        add(t0, 0.3, 'C5', 118, 'cut')
-    for m in ('C3', 'Eb3', 'Gb3', 'A3', 'C4', 'Eb4'):
-        add(T_SHOCK, 1.6, m, 122, 'shock')
-    for k, t0 in enumerate(T_FATE):
-        for t, m, v, d in play('fate', t0, FBEAT, 0, 104 - 8 * k):
-            add(t, d, m, v, 'fate', k)
-    add(T_SHOCK + 1.0, T_INNOCENT - T_SHOCK - 1.0, 'D2', 92, 'trem')
-    add(T_SHOCK + 1.0, T_INNOCENT - T_SHOCK - 1.0, 'A2', 88, 'trem')
-    for t, m, v, d in play('innocent_sleep', T_INNOCENT, 0.9, 0, 82):
-        add(t, d, m, v, 'innocent')
-    for t, m, v, d in play('siegfried', T_STEP[0] + 4, 0.7, -12, 90):
-        add(t, d, m, v, 'courage')
-    for m in ('E2', 'B2', 'E3', 'Ab3'):
-        add(T_STEP[1] - 2, D - T_STEP[1] + 2, m, 58, 'warm')
-    return sorted(N, key=lambda e: e[0])
+def fear_at(t):
+    return smoothstep(T_SHOCK, T_SHOCK + 1.0, t) * (1 - 0.3 * smoothstep(T_DRAWN[0], T_DRAWN[1], t))
 
 
 def render(G, seed=27):
@@ -179,9 +174,9 @@ def render(G, seed=27):
     d, summit = S['d'], S['summit']
     L = d.max()
     N = compose()
-    sleeps = np.array(sorted({e[0] for e in N if e[4] == 'sleep'}))
-    fates = np.array(sorted({e[0] for e in N if e[4] == 'fate'}))
-    innocent = np.array(sorted({e[0] for e in N if e[4] == 'innocent'}))
+    sleeps = np.array(SLEEPS)
+    fates = np.array(FATE)
+    runs = np.array(sorted({e[0] for e in N if e[5] == 'burst' and e[4] == 0}))
     glint_at = rng.uniform(0, L, 40)
     glint_t = T_SHIELD + rng.uniform(0, 1.5, 40)
     shake = Flicker(rng, G.N, 4.0, 7.0)
@@ -194,20 +189,20 @@ def render(G, seed=27):
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        fear = smoothstep(T_SHOCK, T_SHOCK + 1.0, t) * (1 - smoothstep(T_INNOCENT, T_INNOCENT + 8, t))
+        fear = fear_at(t)
         lv = dict(SUMMIT)
         lv['fire'] = SUMMIT['fire'] * (1 + 0.5 * fear)
-        lv['sleeper'] = SUMMIT['sleeper'] + 0.25 * smoothstep(T_HELMET, T_HELMET + 2, t) * (1 - smoothstep(T_STEP[1], D, t))
+        lv['sleeper'] = SUMMIT['sleeper'] + 0.25 * smoothstep(T_HELMET, T_HELMET + 2, t)
         fr = sky(S, T, lv)
 
         # the magic sleep: each chord a violet ripple out from the sleeper over the whole house
         a = recent(sleeps, t, 3.0)
-        if a is not None:
+        if a is not None and t < T_SLEEP_END + 1:
             r = 1400 * (1 - np.exp(-a / 0.9))
             fr += light(VIOLET, 0.95 * np.exp(-a / 1.3) * np.exp(-((np.abs(d - summit) - r) / 320) ** 2))
             fr += light(VIOLET, 0.5 * np.exp(-a / 0.6) * np.exp(-((d - summit) / 200) ** 2))
-        dream = sum(smoothstep(t0, t0 + 2, t) * (1 - smoothstep(t0 + 14, t0 + 17, t)) for t0 in T_SLEEP)
-        fr += light(VIOLET, 0.5 * dream * S['sky'] * (0.75 + 0.25 * np.sin(2 * np.pi * (d / 600 - 0.15 * t))))
+        dream = smoothstep(0, 2, t) * (1 - smoothstep(T_SLEEP_END - 2, T_SLEEP_END + 2, t))
+        fr += light(VIOLET, 0.45 * dream * S['sky'] * (0.75 + 0.25 * np.sin(2 * np.pi * (d / 600 - 0.15 * t))))
 
         # the shield lifted: a silver flash, silver racing to both ends, and glints scattered over the house
         if T_SHIELD <= t < T_SHIELD + 3.0:
@@ -218,12 +213,22 @@ def render(G, seed=27):
                 g = t - tg
                 if 0 <= g < 0.5:
                     fr += light(STEEL, 0.9 * np.exp(-g / 0.12) * np.exp(-((d - p) / 8) ** 2))
+        if T_MAN <= t < T_MAN + 2.5:            # "in Waffen ein Mann?": the steel flares on the porch
+            a = t - T_MAN
+            fr += light(STEEL, 0.7 * np.exp(-a / 0.6) * S['porch'] * smoothstep(0, 0.1, a))
 
-        # the helmet: her hair spills out in a burst of gold
-        if T_HELMET <= t < T_HELMET + 6:
-            a = t - T_HELMET
-            w = 40 + 1400 * (1 - np.exp(-a / 1.2))
-            fr += light(HAIR, 1.0 * np.exp(-a / 2.2) * np.exp(-((d - summit) / w) ** 2))
+        # the helmet: her hair spills out in a burst of gold; "Ach! Wie schön!" swells it again
+        for t0, k in ((T_HELMET, 1.0), (T_SCHON, 0.8)):
+            if t0 <= t < t0 + 6:
+                a = t - t0
+                w = 40 + 1400 * (1 - np.exp(-a / 1.2))
+                fr += light(HAIR, k * np.exp(-a / 2.2) * np.exp(-((d - summit) / w) ** 2))
+
+        # the cutting: in the hush a cold steel glow gathers at the summit and creeps along the porch
+        if T_SLEEP_END <= t < T_SHOCK:
+            g = smoothstep(T_SLEEP_END, T_SHOCK, t)
+            fr += light(STEEL, (0.25 + 0.45 * g) * np.exp(-((d - summit) / (60 + 500 * g)) ** 2)
+                        * (0.8 + 0.2 * np.sin(2 * np.pi * 1.5 * t)))
 
         # Nothung cuts the armour: two white slashes out both ways, the porch flaring with each
         for t0 in T_CUT:
@@ -232,11 +237,18 @@ def render(G, seed=27):
                 fr += light(WHITE_STEEL, min(1.0, np.exp(-a / 0.6)) * np.exp(-((np.abs(d - summit) - 2000 * a) / 150) ** 2))
                 fr += light(STEEL, 0.75 * np.exp(-a / 0.15) * S['porch'] + 0.35 * np.exp(-a / 0.1))
 
-        # "Das ist kein Mann!": the house flashes rose
-        if T_SHOCK <= t < T_SHOCK + 2.0:
-            a = t - T_SHOCK
-            fr += light(ROSE, 0.9 * np.exp(-a / 0.35))
-            fr += light(HEAD, 0.5 * np.exp(-a / 0.1))
+        # the breastplate falls: the house flashes rose, the strings' scales throw rose sparks out from her
+        for t0, k in ((T_SHOCK, 1.0), (T_WORDS, 0.8)):
+            if t0 <= t < t0 + 2.0:
+                a = t - t0
+                fr += light(ROSE, 0.9 * k * np.exp(-a / 0.35))
+                fr += light(HEAD, 0.5 * k * np.exp(-a / 0.1))
+        if T_SHOCK <= t < T_WORDS + 1:
+            a = recent(runs, t, 0.6)
+            if a is not None:
+                r = 300 + 1500 * (t - T_SHOCK) / (T_WORDS - T_SHOCK)
+                fr += light(ROSE, 1.0 * np.exp(-a / 0.25) * np.exp(-((np.abs(d - summit) - r) / 110) ** 2))
+                fr += light(ROSE, 0.25 * np.exp(-a / 0.2) * S['sky'])
 
         # fear: indigo waves of fate roll out from her, and the whole house trembles
         a = recent(fates, t, 3.0)
@@ -248,28 +260,18 @@ def render(G, seed=27):
             fr = fr * (1 - 0.35 * fear * (0.5 + 0.5 * shake(T)))[:, None]
             fr += light(FATE_C, 0.35 * fear * S['sky'])
 
-        # innocent sleep: her silver breathes wide over the porch
-        a = recent(innocent, t, 3.5)
-        if a is not None:
-            fr += light(SILVER, 0.6 * np.exp(-a / 1.4) * smoothstep(0, 0.2, a) * np.exp(-((d - summit) / 260) ** 2))
-
-        # Siegfried: bright at first, shrinking and flickering in his fear, then himself again, stepping in
-        p = p0 + (p1 - p0) * smoothstep(*T_STEP, t)
+        # Siegfried: bright at first, shrinking and flickering in his fear, drawn in beside her all the same
+        p = p0 + (p1 - p0) * smoothstep(*T_DRAWN, t)
         flick = 0.55 + 0.45 * np.sin(2 * np.pi * 5.3 * t) * np.sin(2 * np.pi * 1.7 * t)
         lvl = 0.85 * (1 - fear) + fear * 0.55 * flick
-        lvl = lvl * (1 - 0.06 * smoothstep(*T_STEP, t))
         w = 16 - 8 * fear
         fr = hero(fr, S, p, lvl, w)
-        courage = smoothstep(T_STEP[0] + 4, T_STEP[0] + 5, t) * (1 - smoothstep(T_STEP[0] + 7, T_STEP[1], t))
-        if courage > 0:
-            fr += light(EMERALD, 0.85 * courage * np.exp(-((d - p) / 900) ** 2))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
-
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the staging's sounds ridden under the music."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -278,85 +280,45 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.28, 0.25), ('winds', 0.26, 0.38), ('brass', 0.28, 0.3), ('perc', 0.26, 0.3),
-                            ('harp', 0.24, 0.4), ('strings', 0.24, 0.32), ('fx', 0.08, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/stac/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    tri = M.hits('Percussion/Triangle3-Hit*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     her = pan_at(at(G, 'Porch Front', 0.5))
     him = pan_at(at(G, 'Porch Front', SIEG_FROM))
-    for t, d, m, v, part, k in compose():
-        if part == 'sleep':
-            s = fl if m >= note('Ab4') else clar if m >= note('E3') else vc
-            if d > 1.0:
-                hold('winds', s, m, t, t + d, v, her, rise=0.4, fall=1.2, gain=0.7)
-            else:
-                M.add('winds', s.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, her)
-        elif part == 'bed':
-            hold('low', cb, m + 12, t, t + d, v, her, rise=4.0, fall=2.0, gain=0.5)
-        elif part == 'shield':
-            M.add('harp', glock.play(m - 12, v), t, 0.6, her)
-            M.add('harp', harp.play(m - 12, v), t, 0.7, her)
-        elif part == 'helmet':
-            M.add('harp', harp.play(m, v), t, 0.9, her)
-        elif part == 'hornhair':
-            hold('brass', horn, m, t, t + d, v, her, rise=0.5, fall=1.5, gain=0.6)
-        elif part == 'cut':
-            M.add('brass', tpt.play(m - 12, v), t, 0.9, her)
-            M.add('perc', crash.play(105), t, 0.6, her)
-            M.add('fx', whoosh(0.5, 4000, 800, 0.7, seed=int(t * 10)), t - 0.1, 0.9, him)
-        elif part == 'shock':
-            s = tbn if m < note('C4') else horn
-            hold('brass', s, m if s is tbn else m - 12, t, t + d, v, her, rise=0.05, fall=1.0, gain=0.8)
-            if m == note('C3'):
-                M.add('perc', timp.play(v, pitch=-4), t, 1.0, her)
-                M.add('perc', crash.play(120), t, 0.8, her)
-        elif part == 'fate':
-            s = tuba if m < note('C3') else tbn if m < note('C4') else horn
-            hold('brass', s, m if s is not horn else m - 12, t, t + d, v, her, rise=0.3, fall=1.0, gain=0.75)
-            if m < note('E2'):
-                M.add('perc', timp.play(v - 10, pitch=-6), t, 0.7, her)
-        elif part == 'trem':
-            hold('strings', ctrem, m, t, t + d, v, 0.0, rise=0.3, fall=2.5, gain=0.6)
-        elif part == 'innocent':
-            s = vn if m >= note('Ab4') else ob if m >= note('Eb4') else vc
-            if d > 1.2:
-                hold('strings', s, m, t, t + d, v, her, rise=0.5, fall=1.5, gain=0.7)
-            else:
-                M.add('strings', s.play(m, v, dur=d * 1.1, release=0.4), t, 0.8, her)
-        elif part == 'courage':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, him)
-        elif part == 'warm':
-            hold('strings', vc, m, t, t + d, v, her * 0.5, rise=3.0, fall=1.5, gain=0.5)
-    for t0 in (T_SHIELD, T_HELMET):
-        M.add('perc', tri.play(90), t0, 0.6, her)
+    o = Orchestra(M, level=3.4)
+
+    def role(t, d, m, v, h):
+        if t < T_SLEEP_END:                 # the sleep: woodwinds over soft strings
+            if h == 0:
+                return ([('flutes', 0, -4, 0.55), ('oboes', -12, -12, 0.3)] if m >= 69 else
+                        [('clarinets', 0, -4, 0.6)])
+            return [('bassoons' if m >= 48 else 'cellos', 0, -6, 0.55)] + ([('basses', 0, -12, 0.35)] if m < 43 else [])
+        if t < T_SHOCK - 0.01:              # the cutting: strings alone, hushed
+            return [('violins' if m >= 60 else 'violas' if m >= 50 else 'cellos', 0, -4, 0.55)]
+        if t >= T_WORDS - 0.01 and h == 1:  # fear: the heavy chords on horns, trombones, tuba
+            if m < 43:
+                return [('tuba', 0, -4, 0.6), ('basses', 0, -8, 0.4)]
+            return [('horns', 0, 0, 0.7), ('trombones', 0, -8, 0.45)] if d >= 0.25 else [('cellos', 0, -6, 0.5)]
+        return None
+
+    notes = [(t, d, m, v, h, tr) for t, d, m, v, h, part, tr in compose()]
+    o.tutti(notes, size=lambda t: 1.0 if t >= T_SHOCK else 0.4, role=role, pan=lambda t, m: her * 0.6)
+
+    # the staging: the fire round the rock, the shield, the helmet, the cutting, the breastplate, the fear
+    o.fire(0.0, D, level=lambda tt: 0.25 + 0.25 * smoothstep(T_SHOCK, T_SHOCK + 2, tt), pan=her, crackle=6.0)
+    o.hit('scrape', T_SHIELD, 100, gain=0.55, pan=her)
+    o.hit('metal', T_SHIELD + 0.05, 80, gain=0.25, pan=her)
+    o.hit('triangle', T_SHIELD + 0.1, 90, gain=0.35, pan=her)
+    o.hit('metal', T_HELMET, 70, gain=0.2, pan=her)
+    o.hit('triangle', T_HELMET + 0.05, 80, gain=0.3, pan=her)
+    for k, t0 in enumerate(T_CUT):           # Nothung through the steel rings
+        M.add('fx', whoosh(0.45, 5000, 900, 0.7, seed=31 + k), t0 - 0.35, 0.8, him)
+        o.clash(t0, her, 112, 0.8)
+    o.hit('crash', T_SHOCK, 120, gain=0.6, pan=her)
+    o.hit('timpani', T_SHOCK, 120, pitch=-4, gain=0.7, pan=her)
+    o.hit('metal', T_SHOCK + 0.05, 100, gain=0.35, pan=her)   # the breastplate falls away
+    for k, t0 in enumerate(FATE):
+        o.hit('timpani roll', t0, 96, pitch=-5, gain=0.4, pan=her)
+        o.hit('timpani', t0, 110, pitch=-6, gain=0.5, pan=her)
+    o.hit('gong', FATE[0], 100, gain=0.35, pan=her)
+    # ride the effects: down under the sleep music and her hair, up for the cutting and the outburst
+    o.effects([(0.0, -9), (T_SHIELD - 0.5, -3), (T_SHIELD + 2.5, -9), (T_HELMET - 0.5, -5), (T_HELMET + 2.0, -12),
+               (T_SLEEP_END, -12), (T_SLEEP_END + 1.5, 0), (T_SHOCK + 1.0, 0), (T_WORDS - 1.0, -8),
+               (T_WORDS + 1.5, -5), (D, -5)])

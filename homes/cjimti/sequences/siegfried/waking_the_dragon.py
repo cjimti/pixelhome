@@ -1,41 +1,53 @@
-"""Waking the Dragon: night, after the stand-off, the Wanderer in blue at Left 0.7 and
-Alberich in red at Right 0.3. The Wanderer turns to the cave and calls into it: his spear motif (Donington 73)
-in the trombones throws pale blue beams down the front of the house into the porch, one per note. Alberich
-shouts too, red bursts flung into the cave mouth.
+"""Waking the Dragon: night outside Fafner's cave, after the stand-off, the Wanderer in blue at Left 0.7 and
+Alberich in red at Right 0.3.
 
-The dragon answers. Two red eyes snap open on Porch Front, the cave blazes ochre, and Fafner's motif (57)
-climbs in the tubas with every note a huge ochre shudder that shakes the whole house, run by run; the giants'
-motif (58) is his voice ("I lie here and I own it"), each word a stamp of stone and scale that floods the house
-from the cave out. Then he yawns ("let me sleep"): the eyes sink shut, the cave fades back to a smoulder.
+The music is Wagner's own, from Act II as Solti's 1958 Vienna Philharmonic recording takes it: the Wanderer's call
+into the cave and the dragon stirring (bars 388 to 401), Fafner's "Ich lieg' und besitz': laßt mich schlafen!"
+(440 to 448), and the storm in which the Wanderer rides away (474 to 487). The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py): the low tremolo on cellos and basses, the dragon's tritones (Eb and
+A) on tuba and basses, and the storm's rushing scales and chords on the full orchestra. Fafner's own voice,
+which the reduction leaves out, is played as written on tuba and trombones, the way his voice comes through a
+speaking-trumpet on stage: "Wer stört mir den Schlaf?" (A, A, A, G, C sharp) and "Ich lieg' und besitz': laßt
+mich schlafen!" (F, B, F, F, B; C, C, C, G flat), from the printed vocal score (Schirmer, archive.org
+31761034115105, pp. 165 and 167). A production adds the dragon: a deep growl as the eyes open, a slow breath
+out of the cave as he yawns and settles, and the wind and a thunderclap as the Wanderer rides off.
 
-The Wanderer laughs and goes: he turns into a blue storm-light again and sweeps the length of the house out the
-free end of Right, past Alberich, who shrinks into the dark (lvl 0.3) and hides, his curse grumbling low.
+The Wanderer calls into the cave: each call throws a pale blue beam down the front of the house into the porch.
+Alberich shouts too, red bursts flung into the cave mouth. The dragon stirs: every low note of his tritone heaves
+an ochre shudder out of the cave, run by run, and as the tremolo surges two red eyes snap open on Porch Front in
+a red flash over the whole house. Each word of his voice floods the house in stone and scale from the cave out.
+Then he yawns ("laßt mich schlafen"): the eyes sink shut and the cave fades back to a smoulder. The Wanderer
+laughs and goes: he turns into a blue storm-light and sweeps the length of the house out the free end of Right
+past Alberich, who shrinks into the dark and hides, his curse grumbling low.
 
-compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
-word by Act II's scenes on a clock that runs on from scene to scene."""
+compose() tags every note of the excerpt and Fafner's line; stage(), forest(), figure() and sparks() are the
+forest and the cave, shared word for word by Act II's scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'SF13'
 TITLE = 'Waking the Dragon'
 KIND = 'show'
-DESCRIPTION = ('The Wanderer and the dwarf shout into the cave. Two red eyes open, the dragon roars until the '
-               'house shakes, then yawns and goes back to sleep. The Wanderer vanishes in a gust of blue.')
+DESCRIPTION = ('The Wanderer and the dwarf shout into the cave. Two red eyes open, a huge voice asks who disturbs '
+               'its sleep, then yawns and goes back to sleep. The Wanderer vanishes in a gust of blue.')
 VOICEOVER = ('Wake up, dragon, they shout into the cave. And something very large opens its eyes.')
 
 K = 2                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_CALL = 4.0                                # the Wanderer calls into the cave: his spear motif
-T_SHOUT = [10.5, 12.0, 13.5]                # Alberich shouts
-T_EYES = 16.5                               # the eyes snap open
-T_DRAGON = 17.5                             # Fafner's motif in the tubas
-T_VOICE = [27.0, 35.0]                      # the giants' motif: his voice
-T_YAWN = 44.0                               # "let me sleep": the eyes close
-T_LAUGH = 52.0                              # the Wanderer laughs
-T_GO = 54.5                                 # and sweeps out as storm-light
-T_HIDE = 62.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 388-401, 440.5-448 and 474-487, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SUNG = {(s[2], s[3][:6]): s[0] for s in EX['singing']}
+T_SHOUT = [s[0] for s in EX['singing'] if s[2] == 'Alberich' and s[0] < BAR[402]]
+T_EYES = BAR[395]                           # the tremolo surges: the eyes snap open
+T_YAWN = BAR[447]                           # "schla-fen": the eyes sink shut
+T_GO = BAR[474]                             # the Wanderer rides off in the storm
+T_HIDE = [s[0] for s in EX['singing'] if s[2] == 'Alberich' and s[0] > T_GO]
+# Fafner's voice, from the vocal score: (bar, beat, beats, note), 3/4
+VOICE = [(398, 1, 2, 'A3'), (399, 0, 3, 'A3'), (400, 0, 2, 'A3'), (400, 2, 1, 'G3'), (401, 0, 3, 'C#3'),
+         (440, 2, 1, 'F3'), (441, 0, 4, 'B2'), (442, 2, 0.75, 'F3'), (442, 2.75, 0.25, 'F3'), (443, 0, 4, 'B2'),
+         (446, 0, 2, 'C3'), (446, 2, 1, 'C3'), (447, 0, 3, 'C3'), (448, 0, 1, 'Gb2')]
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -127,35 +139,50 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
     return out
 
 
+def when(pos):
+    """Measure position -> seconds in the excerpt, within whichever segment holds it."""
+    for seg in EX['segments']:
+        a, b = seg['measures']
+        if a <= pos <= b:
+            pts = [(a, seg['start'])] + [(m, t) for m, t in EX['bars'] if a < m <= b]
+            return float(np.interp(pos, [p[0] for p in pts], [p[1] for p in pts]))
+    return None
+
+
+def voice():
+    """Fafner's line in seconds: (time, seconds, midi)."""
+    out = []
+    for b, beat, n, name in VOICE:
+        t0, t1 = when(b + beat / 3), when(b + (beat + n) / 3)
+        if t0 is not None and t1 is not None:
+            out.append((t0, t1 - t0, note(name)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). 'spear' is the Wanderer's call
+    (the orchestra's long notes under it), 'dragon' a low note of the dragon's tritone, 'voice' Fafner's line,
+    'storm' the storm's music; 'laugh' and 'mutter' mark the Wanderer's laugh and Alberich's curse for the lights."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'F1', 58, 'pedal')
-    for t, m, v, d in play('spear', T_CALL, 0.42, -12, 106):
-        add(t, d, m, v, 'spear')
-    for i, t0 in enumerate(T_SHOUT):
-        add(t0, 0.5, ('F3', 'Gb3', 'C4')[i], 104, 'shout', i)
-    add(T_EYES, 0.1, 'C1', 125, 'eyes')
-    for t, m, v, d in play('fafner', T_DRAGON, 0.55, -12, 118):
-        add(t, d, m, v, 'dragon')
-    for k, t0 in enumerate(T_VOICE):
-        for t, m, v, d in play('giants', t0, 0.62, -12, 116 - 6 * k):
-            add(t, d, m, v, 'voice', k)
-    for j, m in enumerate(('Gb2', 'F2', 'E2', 'Eb2', 'D2', 'Db2', 'C2')):
-        add(T_YAWN + j * 0.9, 1.1, m, 104 - 6 * j, 'yawn')
-    for j in range(6):
-        add(T_LAUGH + j * 0.28, 0.25, ('D4', 'B3', 'G3', 'D3', 'B2', 'G2')[j], 96 - 4 * j, 'laugh')
-    add(T_GO - 0.5, 3.5, 'C1', 110, 'wind')
-    for t, m, v, d in play('wanderer', T_GO, 0.5, 0, 84):
-        add(t, d, m, v, 'wanderer')
-    for t, m, v, d in play('curse', T_HIDE, 0.85, -12, 76):
-        add(t, d, m, v, 'mutter')
-    for m in ('F2', 'Ab2', 'C3'):
-        add(T_HIDE, D - T_HIDE, m, 54, 'dark')
+    for t, d, m, v, h in sorted(EX['notes']):
+        if t < BAR[390] and h == 0 and d >= 0.5:
+            part = 'spear'
+        elif t < T_GO and h == 1 and d >= 0.5 and m < 50:
+            part = 'dragon'
+        elif t >= T_GO:
+            part = 'storm'
+        else:
+            part = 'bed'
+        N.append((t, d, m, v, part, None))
+    for t, d, m in voice():
+        N.append((t, d, m, 100, 'voice', None))
+    for t0 in (sg[0] for sg in EX['singing'] if sg[2] == 'Der Wanderer' and sg[0] < BAR[390]):
+        for k in range(3):                  # each call rings out three times down the front of the house
+            N.append((t0 + 0.45 * k, 0.4, 60, 0, 'spear', None))
+    for k in range(3):
+        N.append((T_GO + 0.35 * k, 0.2, 60, 0, 'laugh', None))
+    for t0 in T_HIDE:
+        N.append((t0, 1.0, 40, 0, 'mutter', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -167,7 +194,14 @@ def render(G, seed=13):
     L = d.max()
     N = compose()
     p_alb, p_wan = at(G, 'Right', ALB_AT), at(G, 'Left', WAN_AT)
-    spear_on = np.array(sorted({e[0] for e in N if e[4] == 'spear'}))
+    spear_on = np.array(sorted({round(e[0], 2) for e in N if e[4] == 'spear'}))
+    gusts = np.array(accents([(e[0], e[1], e[2], e[3]) for e in N if e[4] == 'storm'], vmin=100, n=2, space=0.45))
+    loud = np.zeros(nframes(D))
+    for e in N:
+        if e[4] == 'storm':
+            loud[min(len(loud) - 1, int(e[0] / DT))] += (e[3] / 127) ** 2
+    loud = np.convolve(loud, np.exp(-np.arange(60) / 20.0))[:len(loud)]
+    loud = np.clip(loud / (loud.max() + 1e-9) * 1.6, 0, 1)
     dragon = [e for e in N if e[4] == 'dragon']
     voice = np.array(sorted({e[0] for e in N if e[4] == 'voice'}))
     laugh = sorted({e[0] for e in N if e[4] == 'laugh'})
@@ -175,14 +209,14 @@ def render(G, seed=13):
     runs = ['Side', 'Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right']
     order = [3, 2, 4, 1, 5, 0]               # the shudder spreads from the cave out, run by run
     gust = Flicker(np.random.default_rng(seed + 1), G.N, 2.0, 6.0)
-    lo, hi = note('Eb1'), note('Gb2')
+    lo, hi = note('Eb2'), note('A2')
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
         lv = {k: START[k] for k in START}
-        awake = smoothstep(T_EYES - 0.05, T_EYES + 0.15, t) * (1 - smoothstep(T_YAWN, T_YAWN + 6, t))
-        lv['eyes'] = awake * (1.0 if t < T_YAWN else 1.0 - 0.3 * np.sin(np.pi * min(1, (t - T_YAWN) / 6)))
+        awake = smoothstep(T_EYES - 0.05, T_EYES + 0.15, t) * (1 - smoothstep(T_YAWN, T_GO, t))
+        lv['eyes'] = awake
         lv['cave'] += 0.45 * awake
         fr = forest(S, T, lv)
 
@@ -220,7 +254,7 @@ def render(G, seed=13):
 
         # his voice: each word of the giants' motif floods the house in stone and scale from the cave out
         j = int(np.searchsorted(voice, t, side='right')) - 1
-        if j >= 0 and t - voice[j] < 1.5 and t < T_YAWN:
+        if j >= 0 and t - voice[j] < 1.5 and t < T_GO:
             a = t - voice[j]
             reach = 1300 * min(1.0, a / 0.3)
             flood = smoothstep(reach + 80, reach - 80, np.abs(d - mid))
@@ -236,9 +270,9 @@ def render(G, seed=13):
                 fr += light(BLOOD, 0.6 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p_alb) - 450 * a) / 90) ** 2))
 
         # the yawn: a slow ochre breath out of the cave as the eyes sink shut
-        if T_YAWN <= t < T_YAWN + 7:
-            a = t - T_YAWN
-            fr += light(SCALE, 0.7 * np.sin(np.pi * a / 7) * S['mouth'])
+        if T_YAWN <= t < T_GO + 2:
+            a = (t - T_YAWN) / (T_GO + 2 - T_YAWN)
+            fr += light(SCALE, 0.8 * np.sin(np.pi * a) * S['mouth'])
 
         # the Wanderer laughs (blue flickers round him), then sweeps the length of the house as storm-light
         for t0 in laugh:
@@ -253,9 +287,20 @@ def render(G, seed=13):
             fr += light(WANDERER, 0.6 * body * (1 - smoothstep(4, 6, a)))
             fr += light(SPEAR, 0.9 * np.exp(-((d - front) / 40) ** 2))
 
+        # the storm he rides away in: the house flickers storm-blue with it, and every accent a gust of light
+        # racing after him to the free end of Right
+        if t >= T_GO:
+            fr += light(WANDER_SOFT, 0.6 * loud[f] * (0.6 + 0.4 * gust(T * 2)) * (d > p_wan - 300))
+            for t0 in gusts[(gusts <= t) & (gusts > t - 1.5)]:
+                a = t - t0
+                start = p_wan + (L - p_wan) * min(1.0, (t0 - T_GO) / 8.0) * 0.6
+                front = start + 1100 * a
+                fr += light(SPEAR, 1.0 * np.exp(-a / 0.6) * np.exp(-((d - front) / 110) ** 2))
+                fr += light(WANDERER, 0.9 * np.exp(-a / 0.7) * smoothstep(front + 40, front - 800, d) * (d > start))
+
         # Alberich: flinches at the dragon, shrinks into hiding at the end
-        alvl = keys(t, [(0, 0.7), (T_EYES, 0.7), (T_EYES + 0.5, 0.45), (T_YAWN + 4, 0.6), (T_GO + 2, 0.6),
-                        (T_HIDE + 4, 0.3)])
+        alvl = keys(t, [(0, 0.7), (T_EYES, 0.7), (T_EYES + 0.5, 0.45), (T_YAWN + 2, 0.6), (T_GO + 2, 0.6),
+                        (T_HIDE[0] + 4, 0.3)])
         for t0 in T_SHOUT:
             if 0 <= t - t0 < 0.6:
                 alvl += 0.3 * np.exp(-(t - t0) / 0.2)
@@ -270,7 +315,7 @@ def render(G, seed=13):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, Fafner's voice through the speaking-trumpet, and the dragon and the storm around them."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -279,78 +324,36 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.36, 0.25), ('brass', 0.3, 0.3), ('perc', 0.3, 0.3), ('winds', 0.26, 0.32),
-                            ('dark', 0.24, 0.4), ('fx', 0.14, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tbn_st = M.sampler('Brass/Tenor Trombone/stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    gong = M.hits('Percussion/gongHit_fff.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v7_*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    alb = pan_at(at(G, 'Right', ALB_AT))
-    wan = pan_at(at(G, 'Left', WAN_AT))
     cave = pan_at(at(G, 'Porch Front', 0.5))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v, cave, rise=3.0, fall=2.0, gain=0.45)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.2), t, 0.9, wan)
-            M.add('low', tuba.play(m, v - 12, dur=d * 1.05, release=0.2), t, 0.6, wan)
-        elif part == 'shout':
-            M.add('brass', tbn_st.play(m, v), t, 0.9, alb)
-            M.add('winds', bsn.play(m - 12, v), t, 0.8, alb)
-        elif part == 'eyes':
-            M.add('perc', gong.play(v), t, 0.9, cave)
-            M.add('perc', timp.play(v, pitch=-7), t, 0.9, cave)
-            M.add('perc', bd.play(v), t, 0.8, cave)
-        elif part == 'dragon':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.3), t, 1.0, cave)
-            M.add('low', cb.play(m + 12, v - 10, dur=d * 1.1, release=0.3), t, 0.7, cave)
-            M.add('perc', timp.play(v - 14, pitch=-6), t, 0.6, cave)
-        elif part == 'voice':
-            M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.25), t, 1.0, cave)
-            M.add('brass', tbn.play(m + 12, v - 8, dur=d * 1.05, release=0.25), t, 0.8, cave)
-            M.add('perc', bd.play(v), t, 0.7, cave)
-        elif part == 'yawn':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.4), t, 0.9, cave)
-        elif part == 'laugh':
-            M.add('brass', horn.play(m - 12, v, dur=d, release=0.1), t, 0.7, wan)
-        elif part == 'wind':
-            M.add('fx', whoosh(d, 300, 4000, 0.8, seed=31), t, 1.0, wan)
-            M.add('fx', whoosh(d, 2500, 300, 0.6, seed=32), t + 1.5, 1.0, 0.7)
-            M.add('perc', roll.play(96, dur=d), t, 0.6, 0.0)
-        elif part == 'wanderer':
-            p = wan + (0.85 - wan) * min(1.0, (t - T_GO) / 4)
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.3), t, 0.7, p)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.6, p)
-        elif part == 'mutter':
-            M.add('low', vc.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, alb)
-            M.add('low', cbs.play(m - 12, v - 10), t, 0.6, alb)
-        elif part == 'dark':
-            hold('dark', vc, m, t, t + d, v, alb * 0.5, rise=4.0, fall=1.5, gain=0.5)
+    wan = pan_at(at(G, 'Left', WAN_AT))
+    o = Orchestra(M, level=2.65)
+    parts = {(round(t, 4), m): part for t, d, m, v, part, k in compose()}
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m))
+        if part == 'dragon':
+            return [('tuba', 0, 8, 0.8), ('basses', -12 if m >= 40 else 0, 0, 0.55), ('cellos', 0, -6, 0.4)]
+        if part == 'spear':
+            return [('trombones', 0, 6, 0.7), ('horns', 0, 0, 0.45)]
+        return None
+
+    def pan(t, m):
+        if t < T_GO:
+            return cave * 0.6
+        return float(np.clip(wan + (1.0 - wan) * min(1.0, (t - T_GO) / 6.0), -0.9, 0.9))
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.5 if t < T_GO else 1.0, role=role, pan=pan)
+    for t, d, m in voice():                                 # Fafner, out of the cave
+        o.play('tuba', m, t, d, 112, cave, 0.95)
+        o.play('trombones', m, t, d, 104, cave, 0.6)
+        o.play('basses', m - 12, t, d, 96, cave, 0.4)
+    # the dragon and the storm: they lead where the staging needs them, and back off under his voice
+    o.effects([(0.0, -4), (T_EYES - 1.0, -2), (T_EYES, 2), (T_EYES + 4.0, -2), (BAR[398], -9), (BAR[402] - 0.5, -9),
+               (BAR[441] - 1.0, -10), (T_YAWN, -4), (T_GO - 0.5, 0), (T_GO + 1.0, 2), (T_HIDE[0], -6)])
+    o.thunder(T_EYES, near=0.15, pan=cave, gain=1.0)        # his growl as the eyes open
+    o.hit('timpani roll', T_EYES - 2.5, 96, gain=0.45, pan=cave)
+    o.wind(T_YAWN - 0.5, T_GO + 3.0, level=lambda tt: np.sin(np.pi * np.clip((tt - T_YAWN + 0.5) / (T_GO + 3.5 - T_YAWN), 0, 1)),
+           pan=cave, seed=13)                               # the yawn: a slow breath out of the cave
+    o.wind(T_GO - 0.5, D, level=lambda tt: 1.0 - 0.75 * np.clip((tt - T_GO - 6) / 10, 0, 1),
+           pan=lambda tt: float(np.clip(wan + (1.0 - wan) * (tt - T_GO) / 6.0, -0.9, 0.9)), seed=14)
+    o.thunder(T_GO + 0.1, near=0.6, pan=wan, gain=0.9)

@@ -1,45 +1,54 @@
 """Wotan's Wrath: the storm that gathered at the free end of Right comes on. A roaring blue-black thunderhead
 churns in along the Right wing, over the rock and on across the Left wing and Side until it holds the whole
-house, its leading edge a seething band of deep blue, lightning forking through it; the storm (Donington 74)
-races in the cellos and basses, and Wotan frustrated (70) groans in the trombones and tubas.
+house, its leading edge a seething band of deep blue, lightning forking through it on the music's hardest
+accents.
 
-The terrified sisters hide Brünnhilde among them: they rush together on Porch Front and close round her, a
-huddled, trembling knot of eight colours with her silver dimmed at its heart, crying out in panic (scraps of
-the trilling cry, 22a, on piccolo and trumpets).
+The music is Wagner's own: Act III, bars 568 to 624, as Solti's 1958 Vienna Philharmonic recording takes it, from
+Wotan's voice in the storm ("Steh! Brünnhild'!") through the sisters hiding her ("Hieher, Verlorne!"), their
+terror as he leaps from his horse and the storm climbs to its height, to his arrival ("Wo ist Brünnhild', wo die
+Verbrecherin?") and the sisters' plea ("Schrecklich ertost dein Toben!"), stopping just before he answers. The
+notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): its bass races in cellos, basses
+and tuba, the left hand's chords groan in trombones and horns, and the right hand's cries are violins with piccolo
+on top, softened to violins and horns for the sisters' plea. The stage is heard too: the storm's wind howls
+throughout, each bolt of lightning has its thunder, nearer and sooner as he comes, the surges racing in from the
+storm whoosh past, the sisters' hooves clatter as they rush together, Wotan's horse gallops in from the right and
+he lands with a thunderclap and a great boom. The storm leads, swelling to its height as he arrives; it eases
+while the sisters huddle and backs well off for their plea.
 
-Then a stroke of lightning across the whole house and Wotan is there, rising out of the left of the rock in
-deep blue, his spear a steel line beside him, the spear motif (73) slamming down in the trombones. "Where is
-Brünnhilde?" A declamation in trombones and tubas, every word a fork of lightning and a surge of blue rolling
-out from him over the knot; the sisters cry out, shiver, try to soothe him with the descending chords (22b),
-hushed; he rages again in his frustrated motif while the storm roars on. Three times he calls her name, each
-a thunderclap and a wave of blue breaking over the knot so that the silver inside it flickers. At the end the
-storm holds, roaring, and the knot trembles before him, waiting.
+His distant cry is a flash of blue at the storm's front. On "Hieher!" the terrified sisters rush together on
+Porch Front and close round her, a huddled, trembling knot of eight colours with her silver dimmed at its
+heart, each flaring on the cries above them. Then, on the storm's last great chord, a stroke of lightning
+across the whole house and Wotan is there, rising out of the left of the rock in deep blue, his spear a steel
+line beside him; every word he sings a surge of blue rolling out over the knot, every word that names her a
+crack of thunder so that the silver inside it flickers. The sisters plead, their colours swelling on each
+phrase, while the storm holds, roaring.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.audio import whoosh
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK23'
 TITLE = "Wotan's Wrath"
 KIND = 'show'
 DESCRIPTION = ('Wotan comes in a storm that swallows the whole house. The terrified Valkyries hide Brünnhilde in '
-               'the middle of a huddle on their rock, and three times, each with a crack of thunder, their father '
-               'calls her name.')
+               'the middle of a huddle on their rock, and every time their father calls for her, the thunder '
+               'cracks.')
 VOICEOVER = ('Here comes the storm, and the god inside it is furious. '
              'Her sisters have hidden her, but they cannot hide her for long.')
 
-T_SWEEP = 11.0                              # the thunderhead has the whole house
-T_HUDDLE = 1.2                              # the sisters close round her
-T_WOTAN = 11.6                              # he is there, in a stroke of lightning
-WO = [15.0, 17.6, 20.2]                     # "Wo ist Brünnhild'?"
-T_FRUST = [4.0, 26.0]                       # Wotan frustrated
-FBEAT = 0.5
-T_SOOTHE = 34.0                             # the sisters try to soothe him
-CALLS = [41.0, 48.0, 55.0]                  # "Brünnhilde!"
-T_HOLD = 62.0
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 568-624.5, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SING = EX['singing']
+D = EX['seconds']
+T_SWEEP = BAR[576]                          # the thunderhead has the whole house
+T_HUDDLE = next(x[0] for x in SING if x[3].startswith('Hieher, Verlorne'))   # the sisters close round her
+T_WOTAN = BAR[610]                          # he is there, in a stroke of lightning
+T_SOOTHE = next(x[0] for x in SING if x[3].startswith('Schrecklich'))       # the sisters plead
+WOTAN = [(x[0], x[1]) for x in SING if x[2] == 'Wotan']
+CALLS = [w[0] for w in WOTAN]               # his lines: "Steh! Brünnhild'!", "Wo ist Brünnhild'?", "Wagt ihr ..."
+SISTERS = [(x[0], x[1]) for x in SING if x[2] not in ('Wotan', 'Brünnhilde')]
 CLOCK = 80.0 * 22
 
 COLS = [hexc(h) for h in ('#ff4040', '#ff9a20', '#f0e040', '#40e070', '#40d0ff', '#6060ff', '#c050ff', '#ff60c0')]
@@ -47,11 +56,7 @@ SPOTS = [('Porch Left', 0.25), ('Porch Left', 0.65), ('Porch Front', 0.12), ('Po
          ('Porch Front', 0.63), ('Porch Front', 0.88), ('Porch Right', 0.35), ('Porch Right', 0.75)]
 KNOT = ('Porch Front', 0.66)                # where they hide her
 RING = [-60, -44, -28, -12, 12, 28, 44, 60]  # each sister's place in the knot, in path order
-STRIKES = [(2.5, 'Right'), (5.0, 'Porch Right'), (7.6, 'Left'), (9.6, 'Side'), (T_WOTAN, 'all'), (24.0, 'Right'),
-           (30.0, 'Left'), (36.4, 'Side'), (44.2, 'Right'), (51.2, 'Left'), (58.6, 'Side'), (65.0, 'Right'),
-           (70.6, 'Left'), (75.4, 'Side')]
-WOTAN_LINE = [(0, 0.5, 'D3'), (0.5, 0.5, 'D3'), (1, 1.5, 'F3'), (2.5, 1.5, 'A2')]  # "Wo ist Brünn-hild'?" (composed)
-NAME = [(0, 0.75, 'D3'), (0.75, 0.75, 'A3'), (1.5, 2.5, 'F3')]                    # "Brünn-hil-de!" (composed)
+WHERE = ['Right', 'Left', 'Side', 'Porch Right', 'Right', 'Left', 'Porch Left', 'Side']
 SILVER = hexc('#f4f8ff')
 GOLD = hexc('#ffd060')
 WBLUE = hexc('#1a3cff')
@@ -70,54 +75,57 @@ def at(G, seg, u):
     return float(s.min() + u * (s.max() - s.min()))
 
 
+def onsets(notes, win=0.06):
+    """Chords: (time, weight) where weight is the summed velocity of the notes struck together."""
+    out = []
+    for t, d, m, v, h in notes:
+        if out and t - out[-1][0] < win:
+            out[-1][1] += v / 127
+        else:
+            out.append([t, v / 127])
+    return np.array(out)
+
+
+def inside(spans, t):
+    return any(a <= t < b for a, b in spans)
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The bass below C3 is the storm
+    ('storm'), the left hand above it the brass ('brass'), the right hand the cries ('cry' while the sisters sing,
+    who = a sister; 'soothe' for their plea; 'high' otherwise). Silent markers (velocity 0): 'thunder' (who = where)
+    on the hardest accent of every few seconds, 'word' on his accented chords while Wotan sings, 'call' at each of
+    his lines."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    def panic(t0, beats, vel, k):
-        for t, m, v, d in play('valkyrie_cry', t0, 0.3, 0, vel):
-            if t < t0 + beats * 0.3:
-                add(t, d, m, v, 'panic', k)
-
-    add(0.0, T_SWEEP + 1.0, 'D1', 96, 'roll')
-    add(0.0, D, 'D2', 90, 'trem')
-    for k in range(int((D - 1.0) / 3.6)):                                       # the storm, racing in the low strings
-        t0 = k * 3.6 + 0.2
-        vel = 108 if t0 < T_SWEEP + 2 else (100 if t0 < T_HOLD else 94)
-        for t, m, v, d in play('storm', t0, 0.3, 0, vel):
-            add(t, d * 1.05, m, v, 'storm')
-    for k, tf in enumerate(T_FRUST):                                            # Wotan frustrated
-        for t, m, v, d in play('wotan_frustrated', tf, FBEAT, 0, 108 + 6 * k):
-            add(t, d * 1.05, m, v, 'frust')
-    for j, tp in enumerate((T_HUDDLE, 3.6, 6.2, 8.4)):                          # the sisters, panicking
-        panic(tp, 3, 90, (4, 0, 7, 2)[j])
-    add(T_WOTAN - 1.2, 1.2, 'D1', 110, 'surge')
-    add(T_WOTAN, 3.0, 'D1', 124, 'crash')
-    for t, m, v, d in play('spear', T_WOTAN + 0.2, 0.36, 0, 124):               # his spear
-        add(t, d * 1.1, m, v, 'spear')
-    for tw in WO:                                                               # "Wo ist Brünnhild'?"
-        for b, dd, n in WOTAN_LINE:
-            add(tw + b * 0.32, dd * 0.32 * 1.15, n, 116, 'wotan')
-        panic(tw + 1.5, 2, 84, int(tw) % 8)
-    for t, m, v, d in play('valkyries_descent', T_SOOTHE, 0.7, -12, 80):        # the sisters, soothing him
-        add(t, d * 1.2, m, v, 'soothe')
-    add(T_SOOTHE, 3.5, 'E2', 70, 'soothepad')
-    for i, tc in enumerate(CALLS):                                              # "Brünnhilde!"
-        add(tc - 0.8, 0.8, 'D1', 104 + 6 * i, 'surge')
-        for b, dd, n in NAME:
-            add(tc + b * 0.4, dd * 0.4 * 1.15, note(n) + i, 118 + 3 * i, 'call')
-        add(tc, 2.5, 'D1', 120, 'crash')
-        panic(tc + 1.8, 4, 92, (3, 6, 1)[i])
-    for t, m, v, d in play('wotan_frustrated', T_HOLD + 2.0, 0.65, 0, 100):
-        if t < D - 3.0:
-            add(t, d * 1.05, m, v, 'frust')
-    for m in ('D2', 'A2', 'F3'):                                                # the storm holds, waiting
-        add(T_HOLD, D - T_HOLD, m, 82, 'menace')
-    for ts, where in STRIKES:
-        add(ts, 2.0, 'D1', 124 if where == 'all' else 104, 'thunder', where)
+    k = 0
+    for t, d, m, v, h in EX['notes']:
+        if h == 1:
+            N.append((t, d, m, v, 'storm' if m < 48 else 'brass', None))
+        elif t >= T_SOOTHE:
+            N.append((t, d, m, v, 'soothe', None))
+        elif inside(SISTERS, t) and m >= 71:
+            N.append((t, d, m, v, 'cry', k % 8))
+            k += 3
+        else:
+            N.append((t, d, m, v, 'high', None))
+    ons = onsets(EX['notes'])
+    j = 0
+    w0 = 0.8
+    while w0 < D - 2.0:                                                         # lightning on the hardest accents,
+        span = 2.2 if T_HUDDLE + 8 <= w0 < T_WOTAN else 4.4                     # faster as he comes
+        sel = (ons[:, 0] >= w0) & (ons[:, 0] < w0 + span)
+        sel &= np.array([min(abs(x - c) for c in CALLS + [T_WOTAN]) > 1.2 for x in ons[:, 0]])
+        if sel.any():
+            t = float(ons[sel][np.argmax(ons[sel, 1]), 0])
+            N.append((t, 2.0, 26, 0, 'thunder', 'Right' if t < 6 else WHERE[j % len(WHERE)]))
+            j += 1
+        w0 += span
+    med = np.median(ons[:, 1])
+    for t, w in ons:
+        if t >= T_WOTAN and inside(WOTAN, t) and w > med:
+            N.append((float(t), 0.3, 50, 0, 'word', None))
+    for c in CALLS:
+        N.append((c, 2.5, 26, 0, 'call', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -196,10 +204,19 @@ def render(G, seed=23):
     jag = [0.55 + 0.45 * np.random.default_rng(100 + k).random(G.N) for k in range(8)]
     seg_d = {s: (G.pd[G.seg[s]].min(), G.pd[G.seg[s]].max()) for s in G.seg}
     K = at(G, *KNOT)
-    words = np.array([e[0] for e in N if e[4] in ('wotan', 'call', 'spear')])
+    words = np.array([e[0] for e in N if e[4] in ('word', 'call')])
     calls = np.array([e[0] for e in N if e[4] == 'call'])
-    panic = [np.array([e[0] for e in N if e[4] == 'panic' and e[5] == k and e[2] >= note('B4')]) for k in range(8)]
-    soothe = np.array([e[0] for e in N if e[4] == 'soothe'])
+    panic = [np.array([e[0] for e in N if e[4] == 'cry' and e[5] == k]) for k in range(8)]
+    soothe = np.array(sorted({e[0] for e in N if e[4] == 'soothe'}))
+    strikes = sorted([(T_WOTAN, 'all')] + [(e[0], e[5]) for e in N if e[4] == 'thunder'])
+    bars = np.array([b for _, b in EX['bars']])
+    ons = onsets(EX['notes'])                                                   # the music's loudness, 0..1
+    env = np.zeros(F)
+    for t0, w in ons:
+        f0 = int(t0 / DT)
+        n = min(F - f0, nframes(1.5))
+        env[f0:f0 + n] += w * np.exp(-np.arange(n) * DT / 0.3)
+    env = np.clip(env / np.percentile(env, 95), 0, 1.2)
     fl_ = Flicker(rng, 1, 4.0, 9.0)
 
     def blob(p, w):
@@ -225,7 +242,7 @@ def render(G, seed=23):
         pw, pb = C['wpos'][f], C['bpos'][f]
 
         # the thunderhead: rolling in from the free end of Right until it has the whole house, lighter on the rock
-        amt = (0.6 + 0.4 * smoothstep(0, T_SWEEP, t)) * (1 - 0.5 * porch * smoothstep(3.0, 7.0, t))
+        amt = ((0.45 + 0.4 * smoothstep(0, T_SWEEP, t) + 0.35 * env[f]) * (1 - 0.5 * porch * smoothstep(3.0, 7.0, t)))
         fr = thunderhead(fr, d, tt, C['front'][f], amt)
 
         # Wotan: rising out of the rock in lightning; every word a surge of blue rolling out over the knot
@@ -241,6 +258,10 @@ def render(G, seed=23):
                     age = t - tw_
                     r = 30 + 700 * smoothstep(0, 1.2, age)
                     fr += light(WBLUE, 0.6 * (1 - age / 1.4) * np.exp(-((np.abs(d - pw) - r) / 80) ** 2))
+        if CALLS[0] <= t < CALLS[0] + 1.5:                                      # his voice far off in the storm
+            age = t - CALLS[0]
+            fr += light(WBLUE, 0.9 * np.exp(-age / 0.4) * blob(C['front'][f], 160))
+            fr += light(WHITE, 0.5 * np.exp(-age / 0.12) * blob(C['front'][f], 40))
         if T_WOTAN <= t < T_WOTAN + 1.5:                                        # his arrival
             age = t - T_WOTAN
             fr += light(WHITE, 1.0 * np.exp(-age / 0.15) * blob(pw, 60)) + light(FLASH, 0.5 * np.exp(-age / 0.2) * np.ones(G.N))
@@ -257,17 +278,24 @@ def render(G, seed=23):
         for k in range(8):
             p = C['pos'][k][f]
             pn = last(panic[k], t, 0.15, 0.6)
-            b = 0.76 + 0.04 * hide + 0.3 * pn + 0.1 * sh - 0.15 * cl
+            b = 0.66 + 0.04 * hide + 0.3 * pn + 0.1 * sh - 0.15 * cl + 0.25 * env[f]
             fr += light(COLS[k], b * blob(p, 16 - 8 * hide) + (0.35 - 0.2 * hide) * b * blob(p, 75 - 45 * hide))
             fr += light(WHITE, 0.4 * pn * blob(p, 6))
         if hide > 0.5:                                                          # the knot's glow on the rock round it
             fr += light(SILVER * 0.4 + WBLUE * 0.2, 0.2 * hide * blob(K, 90) * (1 - 0.5 * cl))
-        sw = ((t - 0.2) / 3.6) % 1.0                                            # swells of the storm rolling out from him
-        src = pw if wv > 0 else C['front'][f]
-        fr += light(WBLUE, 0.5 * (1 - sw) * np.exp(-((np.abs(d - src) - 1600 * sw) / 160) ** 2) * (1 - 0.6 * porch))
+        ib = int(np.clip(np.searchsorted(bars, t, side='right') - 1, 0, len(bars) - 2))
+        sw = (t - bars[ib]) / (bars[ib + 1] - bars[ib])                         # a swell of the storm on every bar
+        if wv > 0:
+            fr += light(WBLUE, 0.5 * (1 - sw) * np.exp(-((np.abs(d - pw) - 1600 * sw) / 160) ** 2) * (1 - 0.6 * porch))
+        else:                                                                   # he is coming: surges race in from the storm
+            g = 0.5 + 0.6 * smoothstep(T_HUDDLE, T_WOTAN, t)
+            q = L + 100 - (L + 300) * sw
+            fr += light(WBLUE, g * (1 - 0.5 * sw) * np.exp(-((d - q) / 140) ** 2) * (1 - 0.6 * porch))
+            fr += light(SPEAR, 0.45 * g * (1 - sw) * np.exp(-((d - q) / 40) ** 2) * (1 - porch))
+            fr += light(STORM * 0.5 + WBLUE * 0.5, 0.55 * g * env[f] * np.exp(-sw * 4) * (1 - porch))
 
         # lightning
-        for i, (ts, where) in enumerate(STRIKES):
+        for i, (ts, where) in enumerate(strikes):
             age = t - ts
             if not 0 <= age < 1.0:
                 continue
@@ -283,7 +311,8 @@ def render(G, seed=23):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction: the storm in the low strings and tuba, the left hand's
+    chords in trombones and horns, the cries in violins and piccolo; thunder on the real accents."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -297,102 +326,60 @@ def score(M, G):
     def front_pan(t):
         return pan_at(float(np.clip(np.interp(t, C['t'], C['front']), 0, G.length)))
 
-    for name, gain, rev in (('brass', 0.21, 0.3), ('low', 0.21, 0.2), ('strings', 0.16, 0.3), ('winds', 0.14, 0.3),
-                            ('perc', 0.2, 0.28), ('fx', 0.1, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_ff*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=1.6)
     seg_mid = {s: float(G.pd[G.seg[s]].mean()) for s in G.seg}
     wp = pan_at(at(G, 'Porch Front', 0.3))
     kp = pan_at(at(G, *KNOT))
+    grow = lambda t: 0.75 + 0.25 * smoothstep(30.0, T_WOTAN, t)
     for t, d, m, v, part, who in compose():
-        if part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, front_pan(t))
-        elif part == 'trem':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=0.05, fall=1.5, gain=0.55)
-            hold('strings', vtrem, m + 24, t, t + d, v - 14, 0.0, rise=0.05, fall=1.5, gain=0.3)
-        elif part == 'storm':
-            pa = front_pan(t) if t < T_SWEEP else 0.0
-            M.add('low', cbs.play(m + 12, v), t, 0.8, pa - 0.15)
-            M.add('low', vcs.play(m + 12, v - 6), t, 0.7, pa + 0.15)
-            if d > 0.15:
-                M.add('low', vc.play(m + 12, v - 16, dur=d, release=0.2), t, 0.4, pa)
-        elif part == 'frust':
-            pa = wp if t > T_WOTAN else front_pan(t)
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.95, pa)
-            M.add('low', tuba.play(m - 12, v - 8, dur=d, release=0.3), t, 0.75, pa)
-        elif part == 'panic':
-            pa = pan_at(np.interp(t, C['t'], C['pos'][who]))
-            if m >= note('B4'):
-                M.add('winds', pic.play(m, v), t, 0.6, pa)
-                M.add('winds', fl.play(m - 12, v - 10), t, 0.4, pa)
+        pa = front_pan(t) if t < T_SWEEP else (wp if t >= T_WOTAN else 0.0)
+        if part == 'storm':
+            o.play('cellos', m + 12 if m < 36 else m, t, d, v, pa - 0.15, 0.75)
+            o.play('basses', m, t, d, v - 6, pa + 0.15, 0.6)
+            if d > 0.4:
+                o.play('tuba', m, t, d, v - 8, pa, 0.5 * grow(t))
+        elif part == 'brass':
+            if d >= 0.3:
+                o.play('trombones', m, t, d, v, pa, 0.75 * grow(t))
+                o.play('horns', m, t, d, v - 8, -pa, 0.55)
             else:
-                M.add('brass', tpt.play(m + 12, v - 16, dur=d, release=0.1), t, 0.4, pa)
-        elif part == 'surge':
-            M.add('perc', roll.play(v, dur=d + 0.2), t, 0.8, wp)
-            M.add('fx', whoosh(d + 0.2, 300, 3000, 0.6, seed=int(t * 10)), t, 0.7, wp)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9, wp)
-            M.add('perc', gong.play(v), t, 0.7, wp)
-            M.add('perc', timp.play(v, pitch=-5), t, 1.0, wp)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 1.0, wp)
-            M.add('low', tuba.play(m - 12, v - 6, dur=d, release=0.3), t, 0.85, wp)
-            M.add('brass', horn.play(m, v - 16, dur=d, release=0.3), t, 0.5, wp)
-        elif part in ('wotan', 'call'):
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 1.0, wp)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.3), t, 0.7, wp)
-            if part == 'call':
-                M.add('brass', horn.play(m + 12, v - 12, dur=d, release=0.3), t, 0.6, wp)
-                if t == min(abs(t - c) for c in CALLS) or any(abs(t - c) < 0.01 for c in CALLS):
-                    M.add('perc', timp.play(v, pitch=-6), t, 0.9, wp)
+                o.play('violas' if m >= 60 else 'cellos', m, t, d, v - 6, pa, 0.5)
+        elif part == 'cry':
+            pc = pan_at(np.interp(t, C['t'], C['pos'][who]))
+            o.play('violins', m, t, d, v - 4, pc, 0.55)
+            o.play('piccolo' if m >= 83 else 'flutes', m, t, 0.1, v - 12, pc, 0.45)
+        elif part == 'high':
+            o.play('violins', m, t, d, v - 6, 0.2, 0.55)
+            if d >= 0.4:
+                o.play('violas', m - 12, t, d, v - 14, -0.2, 0.3)
+            if m >= 84:
+                o.play('piccolo', m, t, 0.1, v - 14, -0.3, 0.35)
         elif part == 'soothe':
-            if m >= note('B3'):
-                M.add('strings', vn.play(m, v, dur=d, release=0.4), t, 0.6, kp)
-                M.add('brass', horn.play(m - 12 if m >= note('F4') else m, v - 10, dur=d, release=0.4), t, 0.5, kp)
-            else:
-                M.add('strings', va.play(m + 12, v - 10, dur=d, release=0.4), t, 0.5, kp)
-        elif part == 'soothepad':
-            hold('strings', vc, m + 12, t, t + d, v, kp, rise=0.5, fall=1.0, gain=0.5)
-        elif part == 'menace':
-            s = tbn if m >= note('A2') else tuba
-            hold('brass', s, m + (12 if s is tuba else 0), t, t + d, v, wp, rise=3.0, fall=1.0, gain=0.5)
-            hold('low', cb, m + 12, t, t + d, v - 10, 0.0, rise=3.0, fall=1.0, gain=0.3)
-        elif part == 'thunder':
-            pt = wp if who == 'all' else pan_at(seg_mid[who])
-            M.add('perc', bd.play(v), t, 0.8, pt)
-            M.add('perc', timp.play(v, pitch=-9), t, 0.7, pt)
-            M.add('perc', roll.play(v - 36, dur=d), t + 0.1, 0.4, pt)
-            M.add('fx', whoosh(1.2, 2500, 200, 0.6, seed=int(t * 10) + 5), t, 0.6, pt)
+            o.play('violins', m, t, d, v, kp, 0.6)
+            if d >= 0.3:
+                o.play('horns', m - 12, t, d, v - 10, kp, 0.45)
+        elif part == 'thunder':                                         # each bolt's thunder, nearer as he comes
+            o.thunder(t, near=0.35 + 0.65 * smoothstep(0.0, T_WOTAN, t), pan=pan_at(seg_mid[who]), gain=0.9)
+        elif part == 'call':
+            o.hit('timpani roll', t, 100, gain=0.5, pan=pa)
+            o.hit('timpani', t, 118, pitch=-6, gain=0.8, pan=pa)
+    o.hit('crash', T_WOTAN, 124, gain=0.9, pan=wp, fx=True)                     # he is there
+    o.hit('gong', T_WOTAN, 120, gain=0.7, pan=wp, fx=True)
+    o.hit('timpani', T_WOTAN, 124, pitch=-5, gain=1.0, pan=wp, fx=True)
+    # the stage: the storm howls, the surges race in, the sisters rush together, he gallops in and lands
+    o.wind(0.0, D, level=lambda tt: 0.55 + 0.45 * smoothstep(0.0, T_SWEEP, tt), pan=lambda t: 0.5 * front_pan(t))
+    bars = [b for _, b in EX['bars']]
+    for k, (b0, b1) in enumerate(zip(bars, bars[1:])):
+        if T_HUDDLE <= b0 < T_WOTAN - 0.5 and k % 2 == 0:
+            o.M.add('fx', whoosh(min(1.4, b1 - b0 + 0.4), 1600, 220, 0.6, seed=k),
+                    b0, 0.2 + 0.25 * smoothstep(T_HUDDLE, T_WOTAN, b0), 0.6)
+    for k, side in enumerate((-0.7, 0.7, 0.2)):
+        o.gallop(T_HUDDLE + 0.1 * k, T_HUDDLE + 2.3, beat=0.3, pan=side, v=90, gain=0.55)
+    o.gallop(T_WOTAN - 7.0, T_WOTAN - 0.4, beat=0.4, v=104, gain=1.1,
+             pan=lambda t: 0.85 + (wp - 0.85) * smoothstep(T_WOTAN - 7.0, T_WOTAN - 0.4, t))
+    o.thunder(T_WOTAN, near=1.0, pan=wp, gain=1.2)
+    o.boom(T_WOTAN + 0.05, wp, gain=0.9)
+    # the fader: the storm leads, swelling as he arrives; it eases for the sisters' huddle and backs right off
+    # for their plea
+    o.effects([(0.0, 0), (T_HUDDLE - 1.0, 0), (T_HUDDLE + 1.0, -4), (T_WOTAN - 8.0, -3), (T_WOTAN - 1.0, 2),
+               (T_WOTAN + 2.0, 2), (T_WOTAN + 5.0, -6), (T_SOOTHE - 1.0, -6), (T_SOOTHE + 1.0, -12), (D, -12)])

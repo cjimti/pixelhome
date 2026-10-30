@@ -52,7 +52,14 @@ loops, `candle_bed`.
 
 A show or an ambient loop may define `score(M, G)` that writes its soundtrack into the mix `M` (`pixelhome/audio.py`): Surge XT
 patches, VSCO2 CE samples, slide whistles, whooshes. Take every hit from the same timings render() uses,
-pan sounds to where they happen on the house, and compose something original (no existing songs).
+pan sounds to where they happen on the house. A piece we invent gets original music (no existing songs); a piece
+that recreates a real work (the Ring operas) plays that work's actual music (never invented substitutes).
+The Ring scenes take their notes from the Wagner Ring Dataset: `scripts/ring_excerpt.py` cuts bars of an act, timed
+like a recording, into `<name>.score.json` beside the sequence (committed), and `pixelhome/ring.py` loads it and
+orchestrates it (`Orchestra`). Pick the most dynamic passages that tell each scene's story; it's an entertaining
+interpretation, not a purist one. Augment the score as a staged production would: every event the lights show gets
+a sound (thunder with lightning, hoofbeats, clashes, fire; `Orchestra.thunder`, `gallop`, `clash`, `fire`...), and
+sung melodies that matter can come from a public-domain vocal score, played on an instrument.
 `homes/cjimti/sequences/halloween/bone_yard.py` is the reference. One-time setup: `scripts/audio-setup.sh`.
 For now the build leaves a sequence off the site until its MP3 exists (the module stays; `preview`, `list` and
 `music` still see it).

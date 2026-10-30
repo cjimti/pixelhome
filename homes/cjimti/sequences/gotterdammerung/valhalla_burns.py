@@ -1,26 +1,35 @@
 """Valhalla Burns: the pyre roaring on the porch as GD28 left it, its light thrown out over the valley, the
 torches drawn in round it, Brünnhilde standing silver before the fire with the Ring on her hand.
 
-"Grane, mein Ross!" The Valkyries' ride (Donington 47) breaks out in the horns and trumpets over galloping
-cellos: she mounts and gallops away from the fire along Porch Left and Left, every hoofbeat a silver flash and a
-ring of silver, wheels round and charges back, faster, and leaps into the middle of the pyre. A blinding white
-flash, and the fire explodes out of the porch: flames race outward along both wings and down the Side until every
-run on the house is burning, red at the roots and white-gold at the tips, the torches swallowed in it. Loge's fire
-(20) leaps on and on in the violins and harp, every figure a white-gold tongue racing the length of the roofline,
-his flickering (20a) scattering sparks.
+The music is Wagner's own, Act III as Solti's 1958 Vienna Philharmonic recording takes it: bars 1456 to 1460
+("Grane, mein Ross! Sei mir gegrüsst!") spliced to 1493 to 1513 ("Heiajaho! Grane! Grüss deinen Herren! Siegfried!
+Siegfried! Sieh! Selig grüsst dich dein Weib", her leap into the fire, and the orchestra's blaze as the flames take
+the hall and the Rhine begins to rise). The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py), orchestrated on full strings, brass and woodwinds, the fire on violins, harp and piccolo, the
+great chords on horns and Wagner tubas, the last rising strokes on trombones and tubas. Brünnhilde's lines are her
+own, from the Schott vocal score (archive.org gtterdmmerung00wagn_0, pp. 332, 335-336), played on trumpet and oboe.
+On stage: Grane's hooves under her as she rides, held back under her singing, the leap a great blow and a roar as
+the fire explodes out over the house, crackling and roaring through to the end, a crash on each of the castle's
+chords, and thunder as Valhalla cracks on the last strokes.
 
-Then Valhalla (63), in the Wagner tubas at full strength: the castle of the gods blazes gold-white on the porch
-inside the fire, and every chord throws a gold-white surge over the whole burning house with deep blue beneath.
-Twice. The Twilight of the Gods (5) answers in the trombones, and Valhalla burns and breaks: every stroke a black
-crack through the gold and a shower of embers flying out to both ends, the gold sinking as the gods go down in
-flames. The house is left burning from end to end with the ruin glowing in the middle.
+"Grane, mein Ross!" she greets the horse, every word a silver ring out from her. "Heiajaho!" she mounts and
+gallops away from the fire along Porch Left and Left, every hoofbeat a silver flash and a ring of silver, wheels
+round on "Sieh!" and charges back, faster, and on "Weib" leaps into the middle of the pyre. A blinding white flash,
+and the fire explodes out of the porch: flames race outward along both wings and down the Side until every run on
+the house is burning, red at the roots and white-gold at the tips, the torches swallowed in it, a white-gold tongue
+racing the length of the roofline on every stroke.
+
+On the great chords the castle of the gods blazes gold-white on the porch inside the fire, every chord a gold-white
+surge over the whole burning house with deep blue beneath. Then on the last rising strokes Valhalla burns and
+breaks: every stroke a black crack through the gold and a shower of embers flying out to both ends, the gold sinking
+as the gods go down in flames. The house is left burning from end to end with the ruin glowing in the middle.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD29'
 TITLE = 'Valhalla Burns'
@@ -31,17 +40,38 @@ VOICEOVER = ('Brünnhilde rides into the flames. The fire climbs to the sky, and
              'begins to burn.')
 
 K = 7                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_RIDE = [2.5, 6.9, 11.3]                   # the Ride, three times, each faster
-RBEAT = [0.42, 0.38, 0.32]
-T_TURN = 9.0                                # she wheels round at the end of Left
-T_LEAP = 15.0                               # into the fire
-T_SPREAD = (15.0, 26.0)                     # the flames race out over every run
-LOGES = [16.0 + 1.6 * j for j in range(40)] # Loge's figures, on and on
-T_VALHALLA = [31.0, 41.0]                   # Valhalla in the Wagner tubas, twice
-T_DOWN = 53.0                               # the Twilight of the Gods: Valhalla breaks
-T_DOWN2 = 66.5                              # and again, lower, as it falls
-DBEAT = 0.85
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1456-1460 and 1493-1513, Solti 1958
+D = EX['seconds']
+
+
+def when(m):
+    """Seconds into the excerpt at measure position m, in whichever spliced range holds it."""
+    for s in EX['segments']:
+        a, b = s['measures']
+        if a <= m < b:
+            bs = [(x, t) for x, t in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bs], [t for _, t in bs]))
+    return None
+
+
+T_RIDE = [when(1493)]                       # "Heiajaho! Grane!": she rides
+T_TURN = when(1496)                         # "Sieh!": she wheels round at the end of Left
+T_LEAP = when(1499)                         # on "Weib": into the fire
+T_SPREAD = (T_LEAP, 47.0)                   # the flames race out over every run
+LOGES = accents(EX['notes'], T_LEAP + 1.0, D - 2.0, vmin=104, n=1, space=1.2)    # a tongue on every stroke
+T_VALHALLA = [40.02, 44.28]                 # the great chords, twice
+T_DOWN = 69.42                              # the last rising strokes: Valhalla breaks
+# her lines, from the vocal score: (bar, start, length, note, units to the bar)
+VOICE = [(1457, 0, 1, 'F5', 4), (1457, 1, 1, 'A4', 4), (1457, 3.5, 0.5, 'A4', 4), (1458, 0, 4, 'F#5', 12),
+         (1459, 7, 1, 'F5', 12), (1459, 8, 3, 'F5', 12), (1459, 11, 1, 'F5', 12), (1460, 0, 3, 'Bb5', 12),
+         (1493, 0, 0.25, 'G#5', 4), (1493, 0.25, 0.5, 'E5', 4), (1493, 0.75, 0.25, 'G#4', 4), (1493, 1, 0.5, 'B4', 4),
+         (1493, 2, 0.5, 'G5', 4), (1493, 2.5, 0.5, 'E4', 4),
+         (1494, 0.5, 0.83, 'C5', 4), (1494, 1.33, 0.34, 'B4', 4), (1494, 1.67, 0.33, 'C5', 4), (1494, 2, 0.5, 'G5', 4),
+         (1494, 2.5, 0.5, 'C5', 4),
+         (1495, 0.5, 1, 'F5', 4), (1495, 1.5, 0.5, 'F4', 4), (1495, 2.5, 1, 'Ab5', 4), (1495, 3.5, 0.5, 'Ab4', 4),
+         (1496, 2, 8.5, 'Eb5', 12),
+         (1497, 1, 2, 'Ab5', 4), (1497, 3, 1, 'F5', 4), (1498, 1, 1.5, 'Gb5', 4), (1498, 2.5, 1, 'F5', 4),
+         (1498, 3.5, 0.5, 'Eb5', 4), (1499, 0, 2, 'Db5', 4)]
 
 SILVER = hexc('#f4f8ff')
 GLINT = hexc('#ffd060')
@@ -209,37 +239,27 @@ def panner(G):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, (t0, b) in enumerate(zip(T_RIDE, RBEAT)):
-        for t, m, v, d in play('ride', t0, b, 0, 104 + 6 * k):
-            add(t, d, m, v, 'ride', k)
-    for j in range(int((T_LEAP - 2.0) / 0.33)):            # the gallop under it, quickening
-        t = 2.0 + 0.33 * j * (1 - 0.15 * j / 40)
-        if t < T_LEAP:
-            add(t, 0.2, ('B1', 'Gb2')[j % 2], 84 + j // 2, 'hoof', j)
-    add(T_LEAP, 0.1, 'C1', 127, 'leap')
-    for j, t0 in enumerate(LOGES):
-        if t0 > D - 3:
-            break
-        for t, m, v, d in play('loge', t0, 0.2, 12 + (0, 3, 7, 12)[j % 4] - 5 * (t0 > T_DOWN), 100):
-            add(t, d, m, v, 'loge', j)
-        for t, m, v, d in play('loge_flicker', t0 + 0.8, 0.12, 0, 88):
-            add(t, d, m, v, 'flicker', j)
-    for k, t0 in enumerate(T_VALHALLA):
-        for t, m, v, d in play('valhalla', t0, 1.05, 0, 118 + 4 * k):
-            add(t, d, m, v, 'valhalla', k)
-        add(t0, 0.1, 'C1', 120, 'crash')
-    for t, m, v, d in play('downfall_b', T_DOWN, DBEAT, 0, 116):
-        add(t, d, m, v, 'down')
-    for t, m, v, d in play('downfall_b', T_DOWN2, 1.0, -5, 110):
-        add(t, d, m, v, 'down')
-    for m in ('Db1', 'Db2', 'Ab2', 'F3'):
-        add(T_LEAP, D - T_LEAP, m, 74, 'firebed')
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The left hand's strokes while she
+    rides are 'hoof' (k = the stroke), the great chords 'valhalla' (k = which time), the right hand once the fire
+    takes the house 'loge', the last rising strokes 'down'; the rest is 'tutti'. Her lines are 'voice'."""
+    N, last = [], -1.0
+    for t, d, m, v, h in sorted(EX['notes']):
+        if T_RIDE[0] <= t < T_LEAP and h == 1 and t - last >= 0.3:
+            part, k, last = 'hoof', h, t
+        elif T_VALHALLA[0] - 0.05 <= t < T_VALHALLA[1] - 0.05 and d >= 0.8:
+            part, k = 'valhalla', 0
+        elif T_VALHALLA[1] - 0.05 <= t < 50.0 and d >= 0.8:
+            part, k = 'valhalla', 1
+        elif t >= T_DOWN - 0.05 and h == 1 and d >= 0.95:
+            part, k = 'down', h
+        elif T_LEAP + 1.0 <= t and h == 0:
+            part, k = 'loge', h
+        else:
+            part, k = 'tutti', h
+        N.append((t, d, m, v, part, k))
+    for b, x, n, name, per in VOICE:
+        t0 = when(b + x / per)
+        N.append((t0, when(b + (x + n) / per) - t0, note(name), 104 if b < 1495 else 114, 'voice', b))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -266,7 +286,8 @@ def render(G, seed=29):
     d, L, pf = S['d'], S['L'], S['pf']
     N = compose()
     hooves = [e[0] for e in N if e[4] == 'hoof']
-    lstart = [t0 for t0 in LOGES if t0 <= D - 3]
+    lstart = [t0 for t0 in LOGES if t0 <= D - 2]
+    sung = sorted({e[0] for e in N if e[4] == 'voice'})
     valh = [sorted({e[0] for e in N if e[4] == 'valhalla' and e[5] == k}) for k in range(2)]
     downs = sorted({e[0] for e in N if e[4] == 'down' and e[2] < note('C3')})
     runs = ['Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right', 'Side']
@@ -300,6 +321,10 @@ def render(G, seed=29):
         fr += light(ORANGE, SPILL * (1 - spread) * (1 - S['porch']) * np.exp(-np.abs(d - pf) / 1500)
                     * (0.7 + 0.3 * S['fl'](T)))
 
+        # every word she sings a silver ring out from her
+        for t0 in sung:
+            if t0 < T_LEAP:
+                fr = ring(fr, S, t, t0, gallop(G, t0)[0], SILVER, 0.75, speed=1000, width=110, tau=0.7)
         # the gallop: a silver hoof-flash and ring on every beat, then the leap
         p, lb = gallop(G, t)
         for th in hooves:
@@ -363,68 +388,53 @@ def render(G, seed=29):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes orchestrated from the piano reduction, her lines on trumpet and oboe, and the stage's sounds."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.24, 0.25), ('strings', 0.2, 0.3), ('winds', 0.16, 0.32), ('brass', 0.24, 0.3),
-                            ('perc', 0.24, 0.3), ('fx', 0.1, 0.3), ('mallet', 0.1, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    picc = M.sampler('Woodwinds/Piccolo/Sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    pf = pan_at(at(G, 'Porch Front', 0.5))
-    for t, d, m, v, part, k in compose():
-        if part == 'ride':
-            pb = pan_at(gallop(G, t)[0])
-            if m >= note('B3'):
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.2), t, 0.85, pb)
-                M.add('brass', tpt.play(m, v - 10, dur=d * 1.1, release=0.2), t, 0.5, pb)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.1, release=0.2), t, 0.8, pb)
-        elif part == 'hoof':
-            pb = pan_at(gallop(G, t)[0])
-            M.add('strings', vcs.play(m + 12, v), t, 0.7, pb)
-            M.add('perc', timp.play(v - 20, pitch=-6), t, 0.35, pb)
-        elif part == 'leap':
-            M.add('perc', gong.play(v), t, 0.95, pf)
-            M.add('perc', crash.play(v), t, 0.95, pf)
-            M.add('perc', timp.play(v, pitch=-7), t, 1.0, pf)
-            M.add('perc', roll.play(115, pitch=-3, dur=4.0), t + 0.1, 0.8, pf)
-            M.add('fx', whoosh(3.0, 250, 7000, 0.9, seed=41), t - 0.1, 1.0, 0.0)
-        elif part == 'loge':
-            M.add('strings', vln.play(m, v, dur=d * 1.2, release=0.1), t, 0.6, 0.5 if k % 2 == 0 else -0.5)
-            M.add('mallet', harp.play(m, v - 10), t, 0.5, 0.0)
-        elif part == 'flicker':
-            M.add('winds', picc.play(m, v, dur=d * 1.1, release=0.1), t, 0.45, 0.0)
-            M.add('mallet', glock.play(m, v - 20), t, 0.4, 0.0)
-        elif part == 'valhalla':
-            if m >= note('Db4'):
-                hold('brass', horn, m - 12, t, t + d, v, pf, rise=0.06, fall=1.2, gain=0.85)
-                hold('brass', tpt, m - 12, t, t + d, v - 16, pf, rise=0.06, fall=1.2, gain=0.4)
-            else:
-                hold('low', tuba, m, t, t + d, v, pf, rise=0.06, fall=1.2, gain=0.85)
-                hold('brass', tbn, m + 12, t, t + d, v - 12, pf, rise=0.06, fall=1.2, gain=0.5)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.8, pf)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.9, pf)
-        elif part == 'down':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.3), t, 0.9, pf)
-                M.add('perc', timp.play(v - 10, pitch=-8), t, 0.7, pf)
-                M.add('perc', crash.play(90), t, 0.35, pf)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.1, release=0.3), t, 0.85, pf)
-        elif part == 'firebed':
-            hold('low', vc if m >= note('C3') else cb, m, t, t + d, v, pf, rise=2.0, fall=1.5, gain=0.5)
+    S = stage(G)
+    pf = pan_at(S['pf'])
+    o = Orchestra(M, level=1.15)
+    N = compose()
+    parts = {(round(t, 4), m, k): part for t, d, m, v, part, k in N}
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m, h)) or parts.get((round(t, 4), m, 0))
+        if part == 'valhalla':                              # the great chords: horns and Wagner tubas, full weight
+            if m < 60:
+                return [('horns', 0, 6, 0.8), ('tuba', -12, 0, 0.55), ('trombones', 0, 0, 0.5)]
+            return [('trumpets', -12, 0, 0.6), ('horns', -12, 0, 0.55), ('violins', 0, 0, 0.55)]
+        if part == 'down':                                  # the last rising strokes: trombones and tubas
+            return [('trombones', 12 if m < 48 else 0, 6, 0.8), ('tuba', 0, 0, 0.6), ('basses', 0, 0, 0.5)]
+        if part == 'loge' and d < 0.3:                      # the fire: violins, harp, piccolo
+            return [('violins', 0, -4, 0.5), ('harp', -12 if m > 84 else 0, -6, 0.4)] + \
+                ([('piccolo', 0, -12, 0.3)] if m >= 79 else [])
+        return None
+    o.tutti(tidy([(t, d, m, v, k) for t, d, m, v, part, k in N if part != 'voice']), role=role)
+    for t, d, m, v, part, k in N:                           # her lines
+        if part == 'voice':
+            p = pan_at(gallop(G, t)[0])
+            o.play('trumpets', m, t, max(d, 0.15), v, p, 0.65 if k < 1495 else 0.85)
+            o.play('oboes', m, t, max(d, 0.15), v - 4, p, 0.5)
+
+    # the stage
+    hooves = [t for t, d, m, v, part, k in N if part == 'hoof']
+    for j, t0 in enumerate(hooves):                         # Grane under her
+        o.hoof(t0, pan=pan_at(gallop(G, t0)[0]), v=96 + min(30, j), gain=1.4)
+        o.hit('hoof soft', t0 + 0.09, 90, gain=0.4, pan=pan_at(gallop(G, t0)[0]))
+    o.fire(0.0, T_LEAP + 0.5, 0.35, pan=pf, crackle=10, seed=29)     # the pyre waiting
+    o.hit('cymbal swell', T_LEAP - 3.0, 104, gain=0.45, pan=pf)
+    o.boom(T_LEAP, pf, 1.0)                                 # the leap
+    o.hit('crash', T_LEAP, 124, gain=0.7, pan=pf)
+    o.thunder(T_LEAP + 0.05, near=0.9, pan=pf, gain=0.8)
+    o.fire(T_LEAP - 0.1, D, lambda tt: 0.55 + 0.45 * smoothstep(T_LEAP, T_SPREAD[1], tt), pan=pf, crackle=30, seed=31)
+    o.fire(T_LEAP + 2.0, D, lambda tt: 0.6 * smoothstep(T_LEAP + 2, T_SPREAD[1], tt), pan=-0.8, crackle=14, seed=33)
+    o.fire(T_LEAP + 2.0, D, lambda tt: 0.6 * smoothstep(T_LEAP + 2, T_SPREAD[1], tt), pan=0.8, crackle=14, seed=35)
+    for k in range(2):                                      # the castle's chords
+        o.hit('crash', T_VALHALLA[k], 120, gain=0.55, pan=pf)
+    downs = sorted({t for t, d, m, v, part, k in N if part == 'down'})
+    for j, t0 in enumerate(downs):                          # Valhalla cracks
+        if j % 2 == 0:
+            o.thunder(t0, near=0.7 + 0.3 * (j == 0), pan=pf, gain=0.7)
+        else:
+            o.hit('scrape', t0, 110, gain=0.4, pan=pf)
+    o.effects([(0.0, -8.0), (T_RIDE[0] - 0.5, -8.0), (T_RIDE[0], -10.0), (when(1497.2), -12.0),
+               (T_LEAP - 3.0, -6.0), (T_LEAP, 0.0), (T_SPREAD[1], -2.0), (T_DOWN, 0.0)])

@@ -2,39 +2,49 @@
 request. If she must sleep defenceless on the mountain for any man who finds her, then let terror guard her:
 let fire ring the rock, so that only a hero who knows no fear can pass.
 
-Loge's fire (Donington 20) answers her words before Wotan does: four quick climbing figures on the harp and the
-violins, each one a scatter of little flames that flicker up at the corners of the porch and die away again.
-Then she foretells the hero. Siegfried's strength (Donington 53) on a trumpet: a white-gold streak comes in at
-the free end of Right and races along the wing toward her, twice, and the third time, broadly, with horns and a
-timpani stroke, it reaches the rock and the whole house flashes gold. For a moment the fire she asks for is
-sketched all round the porch, a flickering orange outline, and gone.
+The music is Wagner's own: Act III, bars 1446 to 1488, as Solti's 1958 Vienna Philharmonic recording takes them.
+Wotan refuses ("Zuviel begehrst du, zu viel der Gunst!"); she insists ("Dies eine mußt du gewähren!"), offers
+herself to his spear rather than to shame, and then asks for the fire: "Auf dein Gebot entbrenne ein Feuer; den
+Felsen umglühe lodernde Glut; es leck' ihre Zung', es fresse ihr Zahn den Zagen, der frech sich wagte dem
+freislichen Felsen zu nahn!" The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py):
+his refusal in trombones and tuba over the low strings, her plea in violins with horns under its long notes,
+and the fire's flickering figures on harp, violins and piccolo over horns and cellos. The stage is heard too: his
+refusal thuds, her accents ring like bells; then the fire catches with a whoomph and a boom, roars and crackles
+round the rock, flares with a rush at whichever porch corner leaps on each flicker, rushes out along both wings
+with their own roaring, and sinks to crackling embers. The effects back off for his refusal and her plea, lead as
+the fire catches and rings the rock, then sit under the music, rising once as it licks out along the wings.
 
-Wotan is moved. Love as fulfilment (Donington 90) in the cellos and trombones: his blue swells out of him and
-across the whole roof like an embrace, silver at its heart; the second time, an octave up in the violins and
-horns, it fills the house to the ends. He will do it. The theme a last time on a clarinet, softly, and the two
-of them stand together on the darkening rock.
+His refusal is a slow wave of hard blue rolling out from him on every heavy chord. Her plea: every long note a
+pulse of her silver swelling out over the house, every accent a ring of it with gold glints flying toward him.
+Then the fire she asks for answers her words: flames leap up at the corners of the porch on every flicker of
+the music, ring the whole rock, lick out along the wings to the ends of the house to devour the coward, and sink
+back to a glowing ring of embers round the rock as her phrase ends.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, colormap
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.audio import whoosh
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK26'
 TITLE = 'A Wall of Fire'
 KIND = 'show'
 DESCRIPTION = ('Brünnhilde makes one last request: if she must sleep on the mountain, let a wall of fire guard '
-               'her, so that only a true hero can ever reach her. She sees that hero coming, and her father, '
-               'moved at last, agrees.')
+               'her, so that only a true hero can ever reach her. As she sings of it, the fire leaps up around '
+               'the whole house.')
 VOICEOVER = ('If she must sleep, she will not sleep unguarded. '
-             'Listen to what she asks for, and to the hero she already hears coming.')
+             'Listen to what she asks her father for: a wall of fire.')
 
-LOGES = [(8.0, 0), (12.0, 3), (16.0, 6), (20.0, 9)]         # Loge's figure: (start, transpose)
-LGBEAT = 0.3
-SIEGS = [(24.0, 0.55, 0), (28.0, 0.55, 5), (33.0, 0.85, 0)]  # Siegfried foretold: (start, beat, transpose)
-T_SKETCH = 41.0                                             # the ring of fire, sketched and gone
-LOVES = [(47.0, 1.1, 'low'), (55.0, 1.1, 'high'), (64.0, 1.2, 'soft')]   # love as fulfilment
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1446-1488, Solti 1958
+SING = EX['singing']
+D = EX['seconds']
+line = lambda w: next(x for x in SING if x[3].startswith(w))
+T_NO = line('Zuviel')[0]                    # Wotan refuses
+T_PLEA = line('Dies eine')[0]               # she insists
+T_FIRE = line('Auf dein Gebot')[0]          # the fire
+T_RING = line('den Felsen')[0]              # it rings the rock
+T_LICK = line('es leck')[0]                 # it licks out to the ends of the house
+T_LAST = line('dem freislichen')[0]         # and sinks back
 T0 = 80.0 * 25                              # the opera's clock at our start
 
 WOTAN = hexc('#1a3cff')
@@ -80,43 +90,40 @@ def heat(d, ta):
             + 0.1 * np.sin(2 * np.pi * (d / 31 - 4.3 * ta) + 2.1))
 
 
+def onsets(notes, win=0.06):
+    """Chords: (time, weight) where weight is the summed velocity of the notes struck together."""
+    out = []
+    for t, d, m, v, h in notes:
+        if out and t - out[-1][0] < win:
+            out[-1][1] += v / 127
+        else:
+            out.append([t, v / 127])
+    return np.array(out)
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand): 'no' (his refusal), 'plea'
+    (her plea; the right hand's long notes are 'long'), 'flick' (the fire's high figures, right hand from E5) and
+    'fire' (the rest of the fire). Silent markers (velocity 0): 'chord' on his heavy chords, 'accent' on hers."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3'):              # the end of her plea, still ringing
-        add(0.0, 6.0, m, 52, 'bed')
-    for m in ('Bb1', 'F2', 'Bb2', 'D3'):                    # she asks: B flat, uneasy
-        add(5.0, 18.5, m, 54, 'bed')
-    add(5.0, 18.5, 'E3', 46, 'bed')
-    for k, (t0, tr) in enumerate(LOGES):
-        for t, m, v, d in play('loge', t0, LGBEAT, tr + 12, 80 + 4 * k):
-            add(t, d, m, v, 'loge', k)
-        add(t0, 0.15, 'C6', 70 + 4 * k, 'glock', k)
-    for k, (t0, beat, tr) in enumerate(SIEGS):
-        for t, m, v, d in play('siegfried', t0, beat, tr - 12 * (k == 2), 104 + 8 * k):
-            add(t, d, m, v, 'sieg', k)
-        root = ('G2', 'C3', 'G2')[k]
-        for m in (root, note(root) + 7, note(root) + 12, note(root) + 16):
-            add(t0, 4 * beat + 0.6, m, 70 + 10 * k, 'siegbed')
-    add(SIEGS[2][0] + 2 * SIEGS[2][1], 2.0, 'G2', 120, 'hit')
-    add(SIEGS[2][0], 2 * SIEGS[2][1], 'G2', 92, 'roll')
-    for t, m, v, d in play('loge', T_SKETCH, 0.25, 12, 82):
-        add(t, d, m, v, 'loge', 4)
-    for t, m, v, d in play('loge', T_SKETCH + 0.8, 0.25, 15, 78):
-        add(t, d, m, v, 'loge', 4)
-    for k, (t0, beat, kind) in enumerate(LOVES):
-        tr = 12 if kind == 'high' else 0
-        for t, m, v, d in play('love_fulfilled', t0, beat, tr, {'low': 98, 'high': 104, 'soft': 88}[kind]):
-            add(t, d, m, v, 'love', kind)
-        for b, ms, dur in ((0, ('C2', 'G2', 'E3', 'B3'), 3), (3, ('D2', 'A2', 'Gb3', 'C4'), 3),
-                           (6, ('G1', 'G2', 'D3', 'B3'), 2.5 if kind != 'soft' else 8)):
-            dur = min(dur, (D - 0.6 - t0) / beat - b)
-            for m in ms:
-                add(t0 + b * beat, dur * beat, m, {'low': 62, 'high': 72, 'soft': 60}[kind], 'lovebed')
+    for t, d, m, v, h in EX['notes']:
+        if t < T_PLEA:
+            part = 'no'
+        elif t < T_FIRE - 1.0:
+            part = 'long' if h == 0 and d >= 0.4 else 'plea'
+        else:
+            part = 'flick' if h == 0 and m >= 76 else 'fire'
+        N.append((t, d, m, v, part, h))
+    ons = onsets(EX['notes'])
+    med = np.median(ons[:, 1])
+    last = -9.0
+    for t, w in ons:
+        if t < T_PLEA and w > med and t - last > 0.8:
+            N.append((float(t), 3.0, 40, 0, 'chord', None))
+            last = t
+        elif T_PLEA <= t < T_FIRE - 1.0 and w > 1.2 * med and t - last > 0.6:
+            N.append((float(t), 1.0, 70, 0, 'accent', None))
+            last = t
     return sorted(N, key=lambda e: e[0])
 
 
@@ -132,7 +139,7 @@ def follow(target, rate):
 
 
 def choreography(G):
-    """Per frame: where Wotan, Brünnhilde and the foretold hero's streak are (path distance)."""
+    """Per frame: where Wotan and Brünnhilde are (path distance)."""
     F = nframes(D)
     t = np.arange(F) * DT
     tgt = {k: np.zeros(F) for k in 'wb'}
@@ -145,8 +152,8 @@ def choreography(G):
 
     set_('w', 0, D, at(G, 'Porch Front', 0.36), 2.0)
     set_('b', 0, D, at(G, 'Porch Front', 0.47), 2.0)
-    set_('b', SIEGS[0][0] - 1, LOVES[0][0], at(G, 'Porch Front', 0.5), 0.6)
-    set_('b', LOVES[0][0], D, at(G, 'Porch Front', 0.47), 0.4)
+    set_('b', T_PLEA, T_FIRE, at(G, 'Porch Front', 0.42), 0.8)                # pressing close to him
+    set_('b', T_FIRE, D, at(G, 'Porch Front', 0.5), 0.5)                      # turning to the fire
     pos = {k: follow(tgt[k], rate[k]) for k in 'wb'}
     pos['t'] = t
     return pos
@@ -157,17 +164,26 @@ def render(G, seed=26):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     d = G.pd
-    L = G.length
     C = choreography(G)
     N = compose()
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
-    corners = [d[G.path[i]] for i in (179, 260, 331, 380)]
+    corners = np.array([d[G.path[i]] for i in (179, 260, 331, 380)])
+    dc = np.min(np.abs(d[:, None] - corners[None, :]), axis=1)                 # distance to the nearest porch corner
+    p0, p1 = d[G.seg['Porch Left']].min(), d[G.seg['Porch Right']].max()
     tw = Flicker(np.random.default_rng(2501), G.N, 1.5, 5.0)            # shared with WK25
     fl = Flicker(np.random.default_rng(2601), G.N, 4.0, 11.0)
-    loges = [[e[0] for e in N if e[4] == 'loge' and e[5] == k] for k in range(5)]
-    sieg = [np.array([e[0] for e in N if e[4] == 'sieg' and e[5] == k]) for k in range(3)]
-    lnotes = np.array([e[0] for e in N if e[4] == 'love'])
-    t_hit = [e[0] for e in N if e[4] == 'hit'][0]
+    chords = [e[0] for e in N if e[4] == 'chord']
+    accents = [e[0] for e in N if e[4] == 'accent']
+    longs = sorted({e[0] for e in N if e[4] == 'long'})
+    flick = np.array(sorted({e[0] for e in N if e[4] == 'flick'}))
+    ons = onsets(EX['notes'])                                                   # the music's loudness, 0..1
+    env = np.zeros(F)
+    for t0, w in ons:
+        f0 = int(t0 / DT)
+        n = min(F - f0, nframes(1.5))
+        env[f0:f0 + n] += w * np.exp(-np.arange(n) * DT / 0.4)
+    env = np.clip(env / np.percentile(env, 95), 0, 1.2)
+    cflash = rng.integers(0, 4, len(flick))
 
     def recent(ts, t, tau, span=3.0):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -179,82 +195,74 @@ def render(G, seed=26):
         fr = stage(d, ta, porch)
         pw, pb = C['w'][f], C['b'][f]
         devo = 1 - smoothstep(0, 8, t)                    # the devotion glow from WK25, fading
-        emb = smoothstep(LOVES[0][0], LOVES[0][0] + 3, t) * (1 - 0.4 * smoothstep(LOVES[1][0] + 4, LOVES[2][0] + 2, t)
-                                                             ) * (1 - 0.6 * smoothstep(70, D, t))
-        soft = 0.55 + 0.2 * smoothstep(LOVES[0][0], LOVES[1][0], t)
-        warmth = 0.6 + 0.1 * smoothstep(LOVES[0][0], LOVES[1][0], t)
-
+        mid = 0.5 * (pw + pb)
         if devo > 0:
-            mid = 0.5 * (pw + pb)
             br = 0.55 + 0.45 * np.sin(2 * np.pi * (np.abs(d - mid) / 700 - 0.11 * ta))
             fr *= 1 - 0.45 * 0.65 * devo
             fr += light(ROSE, 0.65 * devo * 0.3 * br)
             fr += light(GLINT, 0.65 * devo * 0.2 * br ** 3 * (0.7 + 0.3 * tw(ta)))
-            lo, hi = min(pw, pb), max(pw, pb)
-            fr += light(mix(WOTAN_SOFT, WARM, 0.5),
-                        ((d > lo) & (d < hi)) * devo * (0.25 + 0.15 * np.sin(2 * np.pi * (d / 40 - 0.6 * ta))))
 
-        # Loge's flickers: flames that leap up at the corners of the porch and die back
-        hh = heat(d, ta)
-        cmask = np.clip(sum(np.exp(-((d - c) / 110) ** 2) for c in corners), 0, 1)
-        for k, ts in enumerate(loges[:4]):
-            if ts and ts[0] <= t < ts[0] + 2.6:
-                age = t - ts[0]
-                a = smoothstep(0, 0.4, age) * (1 - smoothstep(0.9, 2.6, age)) * (0.6 + 0.12 * k)
-                q = np.clip(hh + 0.12 * fl(ta) - 0.1 + 0.2 * smoothstep(0, 0.5, age) * (1 - age / 2.6), 0, 1)
-                fr += light(FIRE(q), a * cmask * (0.45 + 0.75 * q))
-        if loges[4] and T_SKETCH <= t < T_SKETCH + 4.5:
-            age = t - T_SKETCH
-            reach = 420 * smoothstep(0, 1.2, age)
-            dd = np.min(np.abs(d[:, None] - np.array(corners)[None, :]), axis=1)
-            a = smoothstep(reach + 40, reach - 40, dd) * porch * (1 - smoothstep(1.8, 4.5, age))
-            q = np.clip(hh + 0.12 * fl(ta) - 0.05, 0, 1)
-            fr += light(FIRE(q), 0.8 * a * (0.45 + 0.65 * q))
+        # his refusal: slow waves of hard blue rolling out from him
+        for tc in chords:
+            if tc <= t < tc + 3.0:
+                age = t - tc
+                r = 40 + 900 * smoothstep(0, 2.6, age)
+                fr += light(WOTAN, 0.8 * (1 - age / 3.0) * np.exp(-((np.abs(d - pw) - r) / 150) ** 2))
 
-        # Siegfried foretold: a white-gold streak from the free end of Right toward her
-        for k in range(3):
-            if not len(sieg[k]):
-                continue
-            t0, t1 = sieg[k][0], sieg[k][-1] + 0.6
-            if t0 <= t < t1 + 1.5:
-                u = np.clip((t - t0) / (t1 - t0), 0, 1)
-                target = pb if k == 2 else L - 520 * (k + 1)
-                q = L + (target - L) * u ** 0.8
-                head = np.exp(-((d - q) / 26) ** 2)
-                trail = (d > q) * np.exp(-(d - q) / (220 + 160 * k))
-                fade = 1 - smoothstep(t1, t1 + 1.5, t)
-                n = recent(sieg[k], t, 0.15)
-                fr += light(HERO, fade * ((0.95 + 0.1 * n) * head + (0.5 + 0.3 * n) * trail))
-                fr += light(GLINT, fade * 0.35 * np.exp(-((d - q) / 160) ** 2))
-        if t_hit <= t < t_hit + 2.0:
-            a = np.exp(-(t - t_hit) / 0.35)
-            fr += light(GLINT, 0.8 * a * np.ones(G.N)) + light(HERO, 0.5 * a * np.exp(-((d - pb) / 300) ** 2))
+        # her plea: long notes swell silver out over the house, accents ring out with gold glints toward him
+        for ts in longs:
+            if ts <= t < ts + 2.5:
+                age = t - ts
+                r = 800 * smoothstep(0, 2.0, age)
+                fr += light(SILVER, 0.5 * (1 - age / 2.5) * np.exp(-((np.abs(d - pb) - r) / 200) ** 2))
+        for ts in accents:
+            if ts <= t < ts + 1.4:
+                age = t - ts
+                r = 20 + 600 * age ** 0.7
+                fr += light(WARM, 0.7 * (1 - age / 1.4) * np.exp(-((np.abs(d - pb) - r) / 40) ** 2))
+                q = pb + (pw - pb) * min(1.0, age / 0.8)
+                fr += light(GLINT, 0.8 * (1 - age / 1.4) * np.exp(-((d - q) / 12) ** 2))
 
-        # Wotan's embrace: his blue swelling over the house, silver at its heart, pulsing with the theme
-        if emb > 0:
-            ln = recent(lnotes, t, 0.8)
-            wide = 300 + 1500 * smoothstep(LOVES[0][0], LOVES[1][0] + 3, t)
-            mid = 0.5 * (pw + pb)
-            g = np.exp(-((d - mid) / wide) ** 2)
-            fr *= (1 - 0.3 * emb * g)[:, None]
-            fr += light(EMBRACE, emb * (0.45 + 0.2 * ln) * g * (0.8 + 0.2 * np.sin(2 * np.pi * (d / 300 - 0.2 * ta))))
-            fr += light(SILVER, emb * (0.3 + 0.2 * ln) * np.exp(-((d - mid) / 70) ** 2))
+        # the fire: leaping at the corners of the porch on every flicker, ringing the rock, licking out along the
+        # wings to the ends of the house, sinking back to embers round the rock
+        grow = smoothstep(T_FIRE - 1, T_RING, t)
+        reach = (60 + 140 * smoothstep(T_FIRE, T_RING, t) + 260 * smoothstep(T_RING, T_LICK, t))
+        out_ = smoothstep(T_LICK - 1, T_LICK + 6, t) * (1 - smoothstep(T_LAST - 2, D - 1.0, t))
+        if grow > 0:
+            hh = heat(d, ta)
+            q = np.clip(hh + 0.12 * fl(ta) - 0.1 + 0.25 * env[f], 0, 1)
+            rock = smoothstep(reach + 60, reach - 60, dc) * porch
+            wing_out = np.where(d < p0, p0 - d, np.where(d > p1, d - p1, 0.0))
+            span = 1400 * out_
+            licks = (1 - porch) * smoothstep(span + 80, span - 80, wing_out) * (0.6 + 0.4 * np.sin(2 * np.pi * (d / 150 + 1.3 * ta)))
+            embers = 0.35 * smoothstep(T_LAST - 2, D - 1, t)
+            amt = grow * (0.75 + 0.4 * env[f]) * np.maximum(rock * (1 - embers), licks)
+            fr = fr * (1 - 0.6 * np.clip(amt, 0, 1))[:, None] + light(FIRE(q * (1 - 0.4 * embers)), amt * (0.6 + 0.8 * q))
+            i = int(np.searchsorted(flick, t, side='right')) - 1                 # each flicker: a flame leaping up
+            if i >= 0 and t - flick[i] < 0.7:
+                age = t - flick[i]
+                c = corners[cflash[i]]
+                tongue = np.exp(-((d - c) / (40 + 200 * age)) ** 2) * (1 - age / 0.7)
+                fr += light(FIRE(np.clip(q + 0.35, 0, 1)), 1.0 * grow * tongue)
 
         # Wotan
-        wc = mix(WOTAN, WOTAN_SOFT, soft)
-        fr += light(wc, 0.85 * np.exp(-((d - pw) / 24) ** 2) + (0.3 + 0.1 * soft) * np.exp(-((d - pw) / (90 + 40 * soft)) ** 2))
+        wc = mix(WOTAN, WOTAN_SOFT, 0.55 + 0.25 * smoothstep(T_FIRE, D, t))
+        wl = 0.85 + 0.25 * recent(np.array(chords), t, 0.4)
+        fr += light(wc, wl * np.exp(-((d - pw) / 24) ** 2) + 0.4 * np.exp(-((d - pw) / 110) ** 2))
 
-        # Brünnhilde
-        bc = mix(SILVER, WARM, warmth)
-        fr += light(bc, 0.85 * np.exp(-((d - pb) / 20) ** 2) + 0.32 * np.exp(-((d - pb) / 80) ** 2))
-        gl = (rng.random(G.N) < 0.13 - 0.04 * (1 - devo)) * np.exp(-((d - pb) / 40) ** 2)
-        fr += light(GLINT, (0.6 - 0.15 * (1 - devo)) * gl)
+        # Brünnhilde: flaring with her plea, warm in the firelight
+        bf = recent(np.array(accents), t, 0.3)
+        bc = mix(SILVER, WARM, 0.6 + 0.3 * grow)
+        fr += light(bc, (0.85 + 0.25 * bf) * np.exp(-((d - pb) / 20) ** 2) + 0.32 * np.exp(-((d - pb) / 80) ** 2))
+        gl = (rng.random(G.N) < 0.1) * np.exp(-((d - pb) / 40) ** 2)
+        fr += light(GLINT, 0.5 * gl)
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction: his refusal in trombones and tuba, her plea in violins
+    with horns under its long notes, the fire's flickering figures on harp, violins and piccolo over horns."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -266,79 +274,93 @@ def score(M, G):
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
     pl, pr = pan_at(at(G, 'Porch Left', 0.9)), pan_at(at(G, 'Porch Right', 0.1))
-    rend = pan_at(G.length)
 
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C[who]))
 
-    for name, gain, rev in (('strings', 0.19, 0.42), ('low', 0.19, 0.25), ('brass', 0.2, 0.38), ('winds', 0.22, 0.42),
-                            ('harp', 0.19, 0.45), ('perc', 0.17, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'bed':
-            s = cb if m < note('C3') else va if m < note('D4') else vn
-            hold('strings', s, m, t, t + d, v, -0.3 + 0.6 * ((m * 5) % 12) / 11, rise=1.5, fall=1.5, gain=0.7)
-        elif part == 'loge':
-            side = (pl, pr, pl, pr, pf)[who]
-            M.add('harp', harp.play(m, v), t, 0.9, side)
-            M.add('strings', vns.play(m, v - 12, dur=d, release=0.1), t, 0.6, -side)
-        elif part == 'glock':
-            M.add('perc', glock.play(m, v), t, 0.6, (pl, pr, pl, pr)[who])
-        elif part == 'sieg':
-            q = rend + (pf - rend) * min(1.0, (t - SIEGS[who][0]) / (4 * SIEGS[who][1]))
-            M.add('brass', tpt.play(m, v, dur=d * 1.1, release=0.3), t, 1.0, q)
-            if who == 2:
-                M.add('brass', horn.play(m - 12, v - 8, dur=d * 1.1, release=0.4), t, 0.9, q - 0.2)
-        elif part == 'siegbed':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d, release=0.6), t, 0.8, 0.0)
+    o = Orchestra(M, level=LEVEL)
+    k = 0
+    for t, d, m, v, part, h in compose():
+        if v == 0:
+            continue
+        pw, pb = pan_of('w', t), pan_of('b', t)
+        if part == 'no':
+            if h == 1 and m < 52:
+                o.play('cellos', m, t, d, v, pw, 0.7)
+                o.play('basses', m, t, d, v - 8, pw, 0.5)
+                if d >= 0.4:
+                    o.play('tuba', m, t, d, v - 6, pw, 0.5)
+            elif h == 1:
+                o.play('trombones', m, t, d, v, pw, 0.7)
+                o.play('horns', m, t, d, v - 10, pw, 0.4)
             else:
-                M.add('brass', horn.play(m, v - 10, dur=d, release=0.6), t, 0.6, 0.2)
-        elif part == 'hit':
-            M.add('perc', timp.play(v, pitch=-3), t, 1.0, pf)
-            M.add('perc', crash.play(v), t, 0.8, pf)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, pf)
-        elif part == 'love':
-            pw = pan_of('w', t)
-            if who == 'low':
-                M.add('low', vc.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pw)
-                M.add('brass', tbn.play(m, v - 10, dur=d * 1.05, release=0.6), t, 0.8, pw)
-            elif who == 'high':
-                M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pw - 0.2)
-                M.add('brass', horn.play(m - 12, v - 6, dur=d * 1.05, release=0.6), t, 0.9, pw + 0.2)
+                o.play('violins', m, t, d, v - 6, pw, 0.5)
+        elif part == 'long':
+            o.play('violins', m, t, d, v, pb, 0.65)
+            o.play('horns', m - 12, t, d, v - 6, pb, 0.6)
+        elif part == 'plea':
+            if h == 0:
+                o.play('violins', m, t, d, v - 4, pb, 0.55)
+            elif m >= 52:
+                o.play('violas' if d < 0.3 else 'horns', m, t, d, v - 4, pf, 0.55)
             else:
-                M.add('winds', cl.play(m + 12, v, dur=d * 1.05, release=0.6), t, 1.0, pan_of('b', t))
-        elif part == 'lovebed':
-            s = cb if m < note('C3') else va if m < note('C4') else vn
-            hold('strings', s, m, t, t + d, v, pf + 0.25 * ((m % 3) - 1), rise=0.8, fall=1.5, gain=0.7)
+                o.play('cellos', m, t, d, v, pf, 0.65)
+                o.play('basses', m, t, d, v - 8, pf, 0.45)
+        elif part == 'flick':
+            side = (pl, pr)[k % 2]
+            k += 1
+            o.play('harp', m, t, d, v, side, 0.8)
+            o.play('violins', m, t, d, v - 8, -side, 0.5)
+            if m >= 84:
+                o.play('piccolo', m, t, 0.1, v - 14, side, 0.35)
+        else:
+            if h == 0:
+                o.play('violins', m, t, d, v - 4, pb, 0.55)
+                if d >= 0.4:
+                    o.play('clarinets', m - 12, t, d, v - 12, pb, 0.4)
+            elif m >= 52:
+                if d >= 0.3:
+                    o.play('horns', m, t, d, v, pf, 0.65)
+                    o.play('trombones', m, t, d, v - 10, pf, 0.4)
+                else:
+                    o.play('violas', m, t, d, v - 4, pf, 0.5)
+            else:
+                o.play('cellos', m, t, d, v, pf, 0.7)
+                o.play('basses', m, t, d, v - 8, pf, 0.5)
+                if d >= 0.5:
+                    o.play('tuba', m, t, d, v - 12, pf, 0.4)
+    o.hit('cymbal swell', T_FIRE - 2.0, 90, gain=0.35, pan=pf)
+    o.hit('timpani roll', T_RING - 1.0, 90, gain=0.4, pan=pf)
+    # the stage: his refusal thuds, her accents ring; then the fire roars up, flares at the corners, rings the rock,
+    # licks out along the wings and sinks to embers
+    N = compose()
+    pw0 = pan_of('w', 0.0)
+    for t in [e[0] for e in N if e[4] == 'chord']:
+        o.hit('bass drum', t, 92, gain=0.3, pan=pw0, fx=True)
+    for j, t in enumerate(e[0] for e in N if e[4] == 'accent'):
+        o.play('glock', (86, 89, 91, 93)[j % 4], t, 0.4, 70, pan_of('b', t), 0.16)
+    o.M.add('fx', whoosh(1.6, 90, 900, 0.9, seed=26), T_FIRE - 0.3, 0.9, pf)       # the fire catches: a whoomph
+    o.boom(T_FIRE + 0.2, pf, gain=0.7)
+    rock = lambda tt: (smoothstep(T_FIRE - 1, T_RING, tt) * (0.6 + 0.4 * smoothstep(T_FIRE, T_RING, tt))
+                       * (1 - 0.5 * smoothstep(T_LAST - 2, D - 1.0, tt)))
+    wings = lambda tt: (smoothstep(T_LICK - 1, T_LICK + 6, tt) * (1 - smoothstep(T_LAST - 2, D - 1.0, tt)))
+    o.fire(T_FIRE - 1.0, D, level=rock, pan=pf, crackle=14, seed=261)
+    o.fire(T_LICK - 1.0, D, level=wings, pan=-0.85, crackle=10, seed=262)
+    o.fire(T_LICK - 1.0, D, level=wings, pan=0.85, crackle=10, seed=263)
+    o.M.add('fx', whoosh(2.5, 200, 2200, 0.8, seed=27), T_LICK - 0.5, 0.5, -0.6)    # licking out along the wings
+    o.M.add('fx', whoosh(2.5, 200, 2200, 0.8, seed=28), T_LICK - 0.3, 0.5, 0.6)
+    flick = np.array(sorted({e[0] for e in N if e[4] == 'flick'}))
+    cflash = np.random.default_rng(26).integers(0, 4, len(flick))              # the same corners render() lights
+    cpan = [pan_at(G.pd[G.path[i]]) for i in (179, 260, 331, 380)]
+    last = -9.0
+    for i, t in enumerate(flick):                                              # each flame leaping at a corner
+        if t - last >= 0.25:
+            o.M.add('fx', whoosh(0.5, 400, 3000, 0.7, seed=300 + i), t - 0.05, 0.3, cpan[cflash[i]])
+            last = t
+    # the fader: back off for the refusal and her plea; the fire leads as it catches and rings the rock, then
+    # sits under the music, rising once as it licks out along the wings, and sinks with the embers
+    o.effects([(0.0, -12), (T_FIRE - 1.5, -12), (T_FIRE - 0.4, 3), (T_RING + 2.0, 1), (T_RING + 5.0, -8),
+               (T_LICK - 1.0, -8), (T_LICK + 0.5, -2), (T_LICK + 4.0, -9), (D, -10)])
+
+
+LEVEL = 1.6

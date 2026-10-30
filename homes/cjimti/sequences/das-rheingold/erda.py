@@ -1,29 +1,31 @@
-"""Erda: the standoff over the ring hangs on a C minor tremolo, and then the light goes out of the mountain.
-Everything sinks to a deep dusk; only the gold keeps a dull glow. Out of the back corner of the porch (the
-deepest point of the scene) a deep earth light seeps up: moss green, churning slowly like soil turning over, on
-a contrabass D flat so low it is more felt than heard. This is Erda, the ancient earth itself, rising to warn
-Wotan, and nothing else on the mountain moves while she is there.
+"""Erda: the light goes out of the mountain and the ancient earth itself rises out of the back corner of the porch
+to warn Wotan; then he gives up the ring, Freia bursts out of the gold, and colour floods back over the gods.
 
-Her motif (Donington 3, the Nature arpeggio turned into C sharp minor) climbs twice in the low winds, the first
-time in the bassoons and clarinets, the second with horns, and every chord of it swells her light up and out
-along the porch until it fills the battlements and seeps across the meadow. Then her warning, the downfall of
-the gods (Donington 4), on soft trombones over a G flat pedal: a shadow sweeps out from the castle to both ends
-of the house and the gods on the wings go grey to the bone. Her light draws back into the corner and sinks
-away with the first chords of her motif, very low, and the dark holds for a breath.
+The music is Wagner's own: three passages of the last scene of Das Rheingold (bars 3458-3464, 3499-3504 and
+3564-3575) as Solti's 1958 Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's piano
+reduction (pixelhome/ring.py). Erda's motif climbs bar after bar in the bassoons, clarinets and horns over the
+low strings, and her own voice sings over it, played on a horn doubled by a clarinet: "Weiche, Wotan! Weiche! Flieh'
+des Ringes Fluch!" and, after her vision, "Alles was ist, endet! Ein düstrer Tag dämmert den Göttern", the
+downfall of the gods on soft trombones beneath the monotone. Her lines come from the printed vocal score (Schott,
+archive.org dasrheingold00wagn2, pp. 192-194). Then the full orchestra with harps for Freia's release. The
+staging's sounds: the earth groaning as she rises, a gong for the end of all things, a scrape and a rumble as she
+sinks; then the ring clinking down, the staves wrenched out, the heap bursting with a rush and a cymbal as Freia
+reaches the gods. They stay low under her voice.
 
-Wotan has heard. The light comes back to the mountain and he gives up the ring: the Ring motif (Donington 8),
-quiet now in the woodwinds and a horn, as the small gold point with its red glint travels from his hand along
-Porch Front and drops into the gap where Freia's eye showed. The gap closes with a flash. The giants pull out
-their staves, the heap bursts open, and Freia leaps out in a spray of pink to her joyful music (Donington 7),
-running down Porch Left and along Left to the gods. As she reaches them their colours come flooding back, bold
-and bright, in a wave across the whole house, to a full orchestral statement of Freia's love (Donington 6)
-with harps and cymbals, while the giants push their gold back into one pile with the ring on top.
+Out of the back corner of the porch a deep earth light seeps up, moss green and churning like soil turning over,
+and every chord of her motif and every note she sings swells it out along the porch in rings until it fills the
+battlements and seeps across the meadow. At "Alles was ist, endet" a shadow sweeps out from the castle to both
+ends of the house and the gods go grey to the bone; on "den Göttern" her light draws back into the corner and
+sinks away. The light comes back to the mountain and Wotan gives up the ring: the small gold point travels from
+his hand along Porch Front and drops into the gap where Freia's eye showed. The staves come out, the heap bursts
+open, and Freia leaps out in a spray of pink and runs down Porch Left and along Left to the gods; as she reaches
+them their colours flood back in a wave across the whole house, while the giants push the gold back into a pile.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags the music's moments, choreography() every position; render() and score() read both."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG22'
 TITLE = 'Erda'
@@ -34,25 +36,35 @@ DESCRIPTION = ('The mountain goes dark, and the ancient earth itself rises out o
 VOICEOVER = ('Something older than the gods is waking under the mountain. '
              'When the earth itself tells you to let go, you let go.')
 
-T_DARK = 2.5                                # the light drains out of the mountain
-T_RISE = 7.0                                # the earth light seeps up
-T_ERDA = [12.0, 21.0]                       # her motif, twice
-EBEAT = 1.0
-T_DOWN = 30.0                               # the downfall of the gods
-DBEAT = 0.95
-T_SINK = 38.0                               # she sinks back
-T_LIGHT = 46.0                              # light returns
-T_YIELD = 47.5                              # Wotan gives up the ring
-RBEAT = 0.6
-T_LAND = 53.2                               # the ring fills the gap
-T_PULL = [54.3, 54.9]                       # the staves pulled out
-T_FREE = 55.2                               # the heap bursts, Freia runs
-T_ARRIVE = 59.4                             # she reaches the gods: colour floods back
-T_LOVE = 60.0                               # Freia's love, full orchestra
-T_CODA = 65.5
-T_CLOSE = 66.0                              # the giants push the gold back into one pile
-D = 80.0
+EX = excerpt(__file__)                      # bars 3458-3464, 3499-3504, 3564-3575, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [g['start'] for g in EX['segments']] + [EX['seconds']]
+T_DARK = 0.0                                # the light drains out of the mountain
+T_RISE = 3.0                                # the earth light has seeped up
+T_ERDA = [0.0, BAR[3459]]                   # her motif climbing, bar after bar
+T_DOWN = SEG[1]                             # "Alles was ist, endet!": the downfall of the gods
+T_SINK = BAR[3504]                          # "...den Göttern": she sinks back
+T_LIGHT = SEG[2]                            # light returns
+T_YIELD = SEG[2]                            # Wotan gives up the ring
+T_LAND = 68.69                              # the ring fills the gap
+T_PULL = [BAR[3566], 70.3]                  # the staves pulled out
+T_FREE = 70.3                               # the heap bursts, Freia runs
+T_ARRIVE = 74.24                            # she reaches the gods: colour floods back
+T_LOVE = BAR[3569]                          # Freia's love, full orchestra
+T_CODA = BAR[3572]
+T_CLOSE = BAR[3572] + 0.6                   # the giants push the gold back into one pile
+D = EX['seconds']
 T0 = 80.0                                  # the opera's clock at our start: steady motion carries across the cuts
+
+# Erda's two lines, from the vocal score: (bar, beat, beats, note), 4/4
+VOICE = [(3461, 0, 1.5, 'G#4'), (3461, 1.5, 0.5, 'E4'), (3461, 2, 1, 'E4'), (3461, 3, 1, 'C#4'),
+         (3462, 0, 2, 'C#5'), (3462, 2, 0.5, 'C#4'),
+         (3463, 0, 1.5, 'C#5'), (3463, 1.5, 0.5, 'C#5'), (3463, 2, 1.5, 'A4'), (3463, 3.5, 0.5, 'F#4'),
+         (3464, 0, 2, 'C5'),
+         (3499, 0, 1, 'G#4'), (3499, 1, 0.5, 'G#4'), (3499, 1.5, 0.5, 'G#4'), (3499, 2, 2, 'E5'),
+         (3500, 0, 2, 'C#5'), (3500, 2, 1, 'C#4'), (3501, 3, 1, 'A4'), (3502, 0, 3, 'A4'), (3502, 3, 1, 'A4'),
+         (3503, 0, 2, 'A4'), (3503, 2, 1, 'A4'), (3503, 3, 0.5, 'A4'), (3503, 3.5, 0.5, 'A4'),
+         (3504, 0, 2, 'A4'), (3504, 2, 1, 'A#3')]
 
 HEAP = 92                                   # half-width of the pile (as in Freia Ransomed)
 
@@ -113,59 +125,48 @@ def sep(t):
             - 85 * smoothstep(T_CLOSE, T_CLOSE + 6, t))
 
 
+def voice():
+    """Erda's lines in seconds: (time, seconds, midi)."""
+    out = []
+    for b, x, n, name in VOICE:
+        seg = next(g for g in EX['segments'] if g['measures'][0] <= b < g['measures'][1])
+        bars = [(m, t) for m, t in EX['bars'] if seg['measures'][0] <= m <= seg['measures'][1]]
+        bars = sorted({m: t for m, t in bars if t >= seg['start'] - 1e-6}.items())
+        when = lambda pos: float(np.interp(pos, [q[0] for q in bars], [q[1] for q in bars]))
+        t0 = when(b + x / 4)
+        out.append((t0, when(b + (x + n) / 4) - t0, note(name)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """The music's moments, from the excerpt's real notes and Erda's voice: (time, seconds, midi, velocity, part,
+    who). 'erda' is a chord of her motif or a note she sings (her light swells), 'down' a chord of the downfall,
+    'ring' the ring on its way, 'pull' a staff pulled out, 'freia' her running music, 'love' the love music."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('C3', 'Eb3', 'G3', 'C4'):                    # the standoff's tremolo, dying away
-        add(0.0, T_RISE - 1.5, m, 70, 'trem')
-    add(T_DARK, 4.0, 'C2', 70, 'roll')
-    add(T_RISE - 1.0, T_SINK + 6.0 - T_RISE, 'Db1', 82, 'earth')
-    add(T_RISE, 6.0, 'C2', 60, 'scrape')
-
-    for i, t0 in enumerate(T_ERDA):                         # Erda: low winds, the second time with horns
-        for t, m, v, d in play('erda', t0, EBEAT, -12 if i == 0 else 0, 84 + 10 * i):
-            if d >= 7:
-                add(t, d, m - (0 if i == 0 else 12), v, 'pedal')
-            else:
-                add(t, d, m, v, 'erda', i)
-        add(t0, 0.1, 'C2', 50, 'swell')
-    for b, d, m in ((0, 1.5, 'Ab3'), (1.5, .5, 'Gb3'), (2, 1, 'E3'), (3, 1, 'Eb3'), (4, 3, 'Db3')):
-        add(T_ERDA[1] + 8.0 + b * 0.5, d * 0.5, m, 92, 'warn')       # "Weiche, Wotan!"
-    for t, m, v, d in play('downfall', T_DOWN, DBEAT, -12, 92):
-        add(t, d, m, v, 'down' if m >= note('C3') else 'downpedal')
-    for t, m, v, d in play('erda', T_SINK + 0.5, 1.2, -12, 70):
-        if t < T_SINK + 6.0 and d < 7:
-            add(t, d, m - 12, v - 6 * int((t - T_SINK) / 1.5), 'sink')
-    add(T_SINK + 6.5, 1.5, 'Db2', 50, 'roll')
-
-    # Wotan yields the ring
-    for t, m, v, d in play('ring', T_YIELD, RBEAT, 0, 78):
-        add(t, d, m, v, 'ring' if m >= note('C3') else 'ringbass')
-    add(T_LAND, 1.0, 'G5', 96, 'land')
+    seen = set()
+    for t, d, m, v, h in EX['notes']:
+        key = round(t, 2)
+        if t < SEG[1]:
+            if d >= 0.3 and (key, 'e') not in seen:
+                seen.add((key, 'e'))
+                N.append((t, d, m, v, 'erda', 0 if t < T_ERDA[1] else 1))
+        elif t < SEG[2]:
+            if d >= 0.3 and (key, 'd') not in seen:
+                seen.add((key, 'd'))
+                N.append((t, d, m, v, 'down', None))
+        elif t < T_FREE:
+            if h == 0 and d >= 0.3:
+                N.append((t, d, m, v, 'ring', None))
+        elif t < T_LOVE:
+            if h == 0:
+                N.append((t, d, m, v, 'freia', None))
+        elif d >= 0.3 and (key, 'l') not in seen:
+            seen.add((key, 'l'))
+            N.append((t, d, m, v, 'love', None))
+    for t, d, m in voice():
+        N.append((t, d, m, 0, 'erda', 1))
     for i, tp in enumerate(T_PULL):
-        add(tp, 0.6, 'C2' if i == 0 else 'G1', 112, 'pull', ('fafner', 'fasolt')[i])
-    add(T_FREE, 1.2, 'D3', 116, 'burst')
-    for k, t0 in enumerate((T_FREE + 0.3, T_FREE + 0.3 + 8 * 0.45)):
-        for t, m, v, d in play('freia', t0, 0.45, 0, 96 + 6 * k):
-            add(t, d, m, v, 'freia' if m >= note('C4') else 'freialow')
-    add(T_ARRIVE - 0.8, 0.8, 'D3', 100, 'gliss')
-    add(T_ARRIVE, 1.5, 'D2', 120, 'crash')
-    for t, m, v, d in play('freia_love', T_LOVE, 0.75, 0, 112):
-        add(t, d, m, v, 'love' if m >= note('D4') else 'lovemid' if m >= note('D3') else 'lovebass')
-    for t, m, v, d in play('freia', T_CODA, 0.6, 0, 90):
-        add(t, d, m, v, 'freia' if m >= note('C4') else 'freialow')
-    for k in range(6):
-        add(T_CODA + 4.8 + k * 0.5, 0.4, ('D4', 'Gb4', 'A4', 'D5', 'A4', 'Gb4')[k], 80, 'harp')
-    for m in ('D3', 'A3', 'D4', 'Gb4', 'A4'):
-        add(70.5, D - 70.5, m, 72, 'chord')
-    add(70.5, D - 70.5, 'D2', 74, 'chordbass')
-    for t, m, v, d in play('giants', 75.5, 0.55, -12, 84):     # Fafner grumbles: the gold is theirs now
-        if t < D - 0.8:
-            add(t, d, m, v, 'giants')
+        N.append((tp, 0.6, 36, 0, 'pull', ('fafner', 'fasolt')[i]))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -332,7 +333,7 @@ def render(G, seed=22):
         fr *= (lit * (1 - 0.35 * sweep) * np.ones(G.N))[:, None] ** 2.2
 
         # Erda: the ancient earth, rising out of the back corner of the porch, swelling with every chord
-        rise = smoothstep(T_RISE, T_ERDA[0] + 1, t) * (1 - smoothstep(T_SINK, T_SINK + 6, t))
+        rise = smoothstep(T_DARK, T_RISE, t) * (1 - smoothstep(T_SINK, T_SINK + 6, t))
         if rise > 0:
             ch = recent(chords, t, 1.2, 3)
             W = 60 + 380 * smoothstep(T_RISE, T_ERDA[1] + 4, t) * (1 - smoothstep(T_SINK, T_SINK + 6, t)) + 60 * ch
@@ -404,7 +405,7 @@ def render(G, seed=22):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, Erda's voice on a horn, the staging's sounds over it."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -420,141 +421,42 @@ def score(M, G):
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C[who]))
 
-    for name, gain, rev in (('strings', 0.14, 0.32), ('low', 0.18, 0.2), ('winds', 0.17, 0.35),
-                            ('brass', 0.16, 0.3), ('perc', 0.2, 0.25), ('harp', 0.18, 0.4), ('glock', 0.08, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbtrem = M.sampler('Strings/Solo Contrabass/Trem/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    scrape = M.hits('Percussion/gongscrape_pp.wav')
-    gong = M.hits('Percussion/gongHit_p.wav')
+    o = Orchestra(M, level=2.6)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        if t < SEG[1]:                                  # her motif: low winds and horns over the low strings
+            if h == 1 or m < 52:
+                return [('cellos', 0, 10, 0.6), ('bassoons', 0, 8, 0.5), ('basses', -12 if m >= 40 else 0, 0, 0.4)]
+            return [('clarinets', 0, 14, 0.55), ('horns', 0, 6, 0.45 if t >= T_ERDA[1] else 0.0),
+                    ('violas', 0, 4, 0.35)]
+        if t < SEG[2]:                                  # the downfall: soft trombones, the strings trembling
+            if h == 1 or m < 52:
+                return [('trombones', 0, 12, 0.55), ('tuba', 0, 4, 0.4 if m < 48 else 0.0), ('cellos', 0, 6, 0.45)]
+            return [('violas', 0, 8, 0.45), ('clarinets', 0, 4, 0.35)]
+        if h == 0 and t >= T_FREE:                      # Freia free: the harps with the violins
+            return [('violins', 0, 0, 0.55), ('harp', 0, 4, 0.4), ('flutes', 0, -8, 0.35 if m >= 72 else 0.0)]
+        return None
 
-    for t, d, m, v, part, who in compose():
-        if part == 'trem':
-            hold('strings', vtrem if m >= note('C4') else trem, m, t, t + d, v, 0.0, rise=0.05, fall=2.5, gain=1.0)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.5), t, 0.7, 0.0)
-        elif part == 'earth':
-            hold('low', cbtrem, m + 12, t, t + d, v, pe, rise=4.0, fall=4.0, gain=0.7)
-            hold('low', cb, m + 12, t, t + d, v - 10, pe, rise=5.0, fall=4.0, gain=0.55)
-        elif part == 'scrape':
-            M.add('perc', scrape.play(100), t, 0.8, pe)
-        elif part == 'pedal':
-            hold('low', cb, m, t, t + d, v, pe, rise=1.0, fall=1.5, gain=0.7)
-            hold('low', vc, m + 12, t, t + d, v - 10, pe, rise=1.0, fall=1.5, gain=0.45)
-            M.add('brass', tuba.play(m, v - 16, dur=d, release=1.0), t, 0.4, pe)
-        elif part == 'erda':
-            if who == 0:
-                s = bsn if m < note('Ab3') else cl
-                M.add('winds', s.play(m, v, dur=d * 1.05, release=0.4), t, 0.7, pe)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 0.65, pe)
-                M.add('winds', cl.play(m, v - 10, dur=d * 1.05, release=0.4), t, 0.6, pe)
-                M.add('winds', bsn.play(m - 12, v - 6, dur=d * 1.05, release=0.4), t, 0.55, pe)
-        elif part == 'swell':
-            M.add('perc', gong.play(90), t, 0.6, pe)
-        elif part == 'warn':
-            M.add('winds', bsn.play(m, v, dur=d, release=0.3), t, 1.0, pe)
-            M.add('brass', horn.play(m, v - 14, dur=d, release=0.3), t, 0.7, pe)
-        elif part == 'down':
-            M.add('brass', tbn.play(m - 12, v, dur=d * 1.05, release=0.5), t, 0.9, hc)
-            M.add('brass', horn.play(m, v - 8, dur=d * 1.05, release=0.5), t, 0.7, hc)
-            hold('strings', va, m, t, t + d, v - 18, hc, rise=0.4, fall=0.8, gain=0.4)
-        elif part == 'downpedal':
-            hold('low', cb, m, t, t + d, v, hc, rise=1.0, fall=1.5, gain=0.9)
-            M.add('brass', tuba.play(m, v - 10, dur=d, release=1.0), t, 0.8, hc)
-        elif part == 'sink':
-            M.add('winds', bsn.play(m + 12, v, dur=d, release=0.5), t, 0.9, pe)
-            hold('low', cb, m + 12, t, t + d, v, pe, rise=0.3, fall=1.0, gain=0.7)
-        elif part == 'ring':
-            p = pan_at(np.interp(t, C['t'], C['ring']))
-            M.add('winds', (cl if m < note('E4') else ob).play(m, v, dur=d * 1.05, release=0.3), t, 0.9, p)
-            M.add('brass', horn.play(m - 12, v - 16, dur=d * 1.05, release=0.3), t, 0.4, p)
-        elif part == 'ringbass':
-            hold('low', vc, m + 12, t, t + d, v - 8, hc, rise=0.6, fall=1.0, gain=0.7)
-        elif part == 'land':
-            M.add('glock', glock.play(m, v), t, 1.0, hc)
-            M.add('perc', timp.play(100, pitch=-3), t, 0.7, hc)
-            M.add('harp', harp.play(m - 12, v), t, 0.8, hc)
-        elif part == 'pull':
-            p = pan_of(who, t)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, p)
-            M.add('perc', bd.play(v - 8), t, 0.7, p)
-            M.add('brass', tuba.play(m + 12, v, dur=d, release=0.3), t, 0.8, p)
-        elif part == 'burst':
-            M.add('perc', crash.play(v), t, 0.8, hc)
-            M.add('perc', timp.play(v, pitch=-1), t, 0.8, hc)
-            gl = [x for x in range(m, m + 31) if (x - m) % 12 in (0, 4, 7)]
-            for i, x in enumerate(gl):
-                M.add('harp', harp.play(x, 90 + i), t + i * 0.06, 1.0, hc - 0.8 * i / len(gl))
-            M.add('winds', whoosh(0.9, 500, 5000, 0.4, seed=5), t, 0.6, hc)
-        elif part == 'freia':
-            p = pan_of('freia', t)
-            M.add('strings', vn.play(m + 12, v, dur=d * 1.05, release=0.25), t, 1.0, p)
-            M.add('winds', fl.play(m + 12, v - 14, dur=d * 1.05, release=0.25), t, 0.6, p)
-        elif part == 'freialow':
-            M.add('low', pizz.play(m + 12, v - 6), t, 0.8, pan_of('freia', t))
-            M.add('strings', va.play(m + 12, v - 20, dur=d, release=0.2), t, 0.5, pan_of('freia', t))
-        elif part == 'gliss':
-            gl = [x for x in range(m, m + 31) if (x - m) % 12 in (2, 6, 9)]
-            for i, x in enumerate(gl):
-                M.add('harp', harp.play(x, 92 + i), t + i * d / len(gl), 1.0, -0.7 + 1.4 * i / len(gl))
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9, 0.0)
-            M.add('perc', timp.play(v, pitch=-2), t, 0.9, 0.0)
-            M.add('perc', bd.play(v), t, 0.6, 0.0)
-        elif part == 'love':
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.4), t, 1.5, -0.3)
-            M.add('strings', vn.play(m - 12, v - 6, dur=d * 1.05, release=0.4), t, 1.1, 0.3)
-            M.add('winds', fl.play(m, v - 10, dur=d * 1.05, release=0.4), t, 0.8, 0.0)
-            M.add('brass', tpt.play(m - 12, v - 14, dur=d * 1.05, release=0.4), t, 0.5, 0.1)
-        elif part == 'lovemid':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.1, -0.1)
-            hold('strings', va, m, t, t + d, v - 8, 0.1, rise=0.2, fall=0.6, gain=0.8)
-        elif part == 'lovebass':
-            M.add('low', tuba.play(m, v - 6, dur=d, release=0.5), t, 1.0, 0.0)
-            hold('low', cb, m, t, t + d, v, 0.0, rise=0.2, fall=0.8, gain=1.0)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, -0.4 + 0.15 * (m % 7))
-        elif part == 'chord':
-            hold('strings', vn if m >= note('D4') else va, m, t, t + d, v, 0.0, rise=1.0, fall=2.0, gain=0.6)
-            M.add('winds', (fl if m >= note('D4') else cl).play(m, v - 20, dur=3.0, release=1.0), t, 0.4, 0.0)
-        elif part == 'chordbass':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=1.0, fall=2.0, gain=0.7)
-        elif part == 'giants':
-            p = pan_of('fafner', t)
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, p)
-            M.add('brass', tbn.play(m + 12, v - 16, dur=d * 1.05, release=0.2), t, 0.5, p)
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if t >= T_FREE else 0.55, role=role)
+    for t, d, m in voice():                             # Erda: a horn, a clarinet with it
+        o.play('horns', m, t, d, 100, pe, 0.85)
+        o.play('clarinets', m, t, d, 84, pe, 0.4)
+
+    o.effects([(0.0, 0.0), (12.0, -2.0), (15.0, -14.0), (SEG[2] - 4.0, -14.0), (SEG[2] - 1.0, 0.0)])
+    o.thunder(0.2, near=0.05, pan=pe, gain=0.9)        # the earth groans as she rises
+    o.hit('gong scrape', 0.5, 100, gain=0.45, pan=pe)
+    o.hit('gong', T_DOWN, 96, gain=0.45, pan=hc)        # the end of all things
+    o.hit('timpani roll', T_DOWN, 84, pitch=-5, gain=0.35)
+    o.hit('gong scrape', T_SINK, 92, gain=0.4, pan=pe)  # she sinks
+    o.thunder(T_SINK + 1.0, near=0.0, pan=pe, gain=0.6)
+    o.play('glock', 88, T_LAND, 0.1, 96, hc, 0.4)      # the ring drops into the gap
+    o.hit('triangle', T_LAND, 92, gain=0.35, pan=hc)
+    for i, tp in enumerate(T_PULL):                     # the staves wrenched out
+        o.hit('bass drum', tp, 112, gain=0.5, pan=pan_of(('fafner', 'fasolt')[i], tp))
+        o.hit('brake drum', tp, 96, gain=0.2, pan=pan_of(('fafner', 'fasolt')[i], tp))
+    from pixelhome.audio import whoosh
+    o._sfx(whoosh(0.9, 400, 4000, 0.6, seed=22)[0], T_FREE - 0.2, 0.9, hc)   # the heap bursts
+    o.hit('crash', T_FREE, 112, gain=0.45, pan=hc)
+    o.hit('crash', T_ARRIVE, 118, gain=0.55, pan=pan_of('freia', T_ARRIVE))  # she reaches the gods
+    o.hit('timpani', T_ARRIVE, 112, pitch=-3, gain=0.5)
+    o.hit('scrape', T_CLOSE, 96, gain=0.35, pan=pan_of('fafner', T_CLOSE))   # the gold pushed back together

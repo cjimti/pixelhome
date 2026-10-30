@@ -1,28 +1,37 @@
-"""Nothung!: the moonlit spring night, the lovers beside the ash tree on Porch Front. Sieglinde asks him: was his
-father truly Wälse? The love of the twins in its second form (Donington 37a) on the oboe; then the Wälsungs'
-own music, Siegmund's motif (Donington 35) and their tragic destiny (Donington 66), deep in the cellos and horns,
-and her amber flares and sends two waves of recognition over the house. She knows him. "Siegmund: so nenn ich
-dich!" One great chord: his blue blazes and a ring of blue and amber runs out over the whole roof.
+"""Nothung!: the moonlit spring night, the lovers beside the ash tree on Porch Front. Sieglinde knows him at last:
+"Siegmund: so nenn' ich dich!" Her amber flares and sends a wave of recognition over the house, and the orchestra
+blazes up in B major: his blue blazes, a ring of blue and amber runs out over the whole roof and sparks of both fly
+on every note of the strings' arpeggios. "Siegmund heiss' ich, und Siegmund bin ich!"
 
-He springs to the trunk and lays his hand on the hilt. "Nothung! Nothung!" (Donington 43) on horns and cellos
-with a trumpet over them, each note flaring the hilt, while the spring dims around the tree and the strings
-tremble and climb. Three heaves, three jolts of white-gold up out of the trunk, each wider than the last; and on
-the fourth the sword comes out. The Sword (Donington 45) on the trumpets, fortissimo, and a flash of white steel
-bursts out of the trunk and races to both ends of the house, the whole roof white for an instant, cymbals and
-gong and timpani, then steel-blue light shivering everywhere. He holds Nothung up: a blade of white steel beside
-his blue. The tree is left with a gash, dark with pale edges where the hilt was.
+He springs to the trunk and lays his hand on the hilt: "ich fass' es nun!", and the hilt jolts white-gold up out of
+the trunk while the spring dims around the tree and the strings tremble. "Nothung! Nothung!": each phrase flares the
+hilt and the porch while the strings climb beneath; then three heaves on "Heraus aus der Scheide zu mir!", three
+jolts of white-gold, each wider than the last, and the sword comes out. The Sword blazes in C major on the trumpets
+and a flash of white steel bursts out of the trunk and races to both ends of the house, the whole roof white for an
+instant, then steel-blue light shivering everywhere. He holds Nothung up: a blade of white steel beside his blue,
+flaring with every note of the Sword. The tree is left with a gash, dark with pale edges where the hilt was.
 
-She is his sister and his bride: the love of the twins (37) at full strength, and the house goes wild, blue
-and amber and steel bands chasing each other round the roof while the blossoms pour down. They run: along
-Porch Right and Right, trailing light, and out through the open door at the free end of Right, into the spring
-night, with racing strings and blaring brass. The act ends on three huge G major chords, three flashes of
-the whole house, and the hut is left empty in the moonlight: the gashed tree, the open door, the embers.
+Then the act's last pages break loose, and the house goes wild: blue and amber and steel bands chasing each other
+round the roof while the blossoms pour down. They run: along Porch Right and Right, trailing light, and out through
+the open door at the free end of Right, into the spring night, with racing strings and blaring brass. The act ends
+on two huge chords, two flashes of the whole house, and the hut is left empty in the moonlight: the gashed tree,
+the open door, the embers.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+The music is Wagner's own: Act I, bars 1375-1383, 1392-1399, 1417-1443 and 1504 to the end, as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py). The naming's
+arpeggios are violins, flutes and harp over horns and trombones; "Nothung!" is horns and a trumpet over climbing
+violas and cellos; the Sword is the trumpets and trombones under the violins and harp; the ending is the full
+orchestra; the rest is the reduction orchestrated by hand and register. The stage adds its sounds: the spring breeze
+through the open door, sparks crackling with the blaze of the naming, steel grinding in the wood as he grips the hilt
+and at every heave, the sword wrenched out with a shriek of steel racing to both ends of the house and a great blow,
+their running feet and the rush of the night as they flee, and a blow on each of the last chords. The effects keep
+back through the naming, lead from the grip to the drawing of the sword, ease off under the Sword's melody, and lead
+again for the flight through the door before settling under the last chords.
+
+compose() tags every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK10'
 TITLE = 'Nothung!'
@@ -33,22 +42,22 @@ DESCRIPTION = ('Sieglinde knows him at last and names him Siegmund. He takes hol
 VOICEOVER = ('She knows who he is now, and he knows what is waiting for him in that tree. '
              'This is the moment the whole act has been building to.')
 
+EX = excerpt(__file__)                      # Act I, bars 1375-1383, 1392-1399, 1417-1443, 1504-1524, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
 K = 9                                       # this scene's place in the shared clock (t + 80 * K)
-T_ASK = 1.0                                 # was Wälse your father?
-T_WALSUNG = 6.5                             # the Wälsungs' music
-T_FATE = 11.0
-T_NAME = 15.0                               # "Siegmund: so nenn ich dich!"
-T_SPRING = 17.5                             # he springs to the tree
-T_NOTHUNG = 19.0
-NBEAT = 0.6
-HEAVES = [27.2, 29.2, 31.2]
-T_DRAW = 33.2                               # the sword comes out
-T_SWORD2 = 38.0
-T_BRIDE = 45.5                              # bride and sister
-T_RUN = 60.0                                # out into the night
-T_OUT = 69.5
-CHORDS = [70.4, 71.5, 72.9]                 # the act's last chords
-D = 80.0
+T_NAME = BAR[1376]                          # "Siegmund: so nenn' ich dich!"
+T_BLAZE = BAR[1378]                         # the orchestra blazes up in B major
+T_REPLY = BAR[1380]                         # "Siegmund heiss' ich"
+T_SPRING = BAR[1392]                        # he springs to the tree
+T_GRASP = BAR[1395]                         # the chord after "ich fass' es nun!"
+T_NOTHUNG = BAR[1417]                       # "Nothung! Nothung!"
+HEAVES = [T_GRASP, BAR[1396], BAR[1433], BAR[1435], BAR[1436]]   # jolts of the hilt, each wider
+T_DRAW = BAR[1437]                          # the sword comes out
+T_BRIDE = BAR[1504]                         # the act's last pages: the house goes wild
+T_RUN = BAR[1510]                           # out into the night
+T_OUT = BAR[1518]
+CHORDS = sorted({n[0] for n in EX['notes'] if n[0] >= BAR[1521] - 0.01})   # the act's last two chords
+D = EX['seconds'] + 2.0                     # the last chord rings on past the recording's end
 
 BLUE = hexc('#30a8ff')
 AMBER = hexc('#ffa860')
@@ -78,76 +87,28 @@ def at(G, seg, u):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). 'name' and 'name_low' the
+    naming; 'tension' and 'grip' at the hilt; 'nothung' the right hand's long notes as he names the sword, 'climb'
+    the left hand under them, 'heave' the left hand's tremolo as he pulls; 'sword' the left hand once it is out,
+    'blaze' the right hand over it; 'race' and 'drive' the ending, 'final' its last chords."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('Bb2', 'F3', 'D4', 'F4'):                                         # WK09's last chord, still ringing
-        add(0.0, 3.0, m, 62, 'pad')
-    for t, m, v, d in play('twins_love_b', T_ASK, 0.55, 0, 90):                # "Wälse your father?"
-        add(t, d, m, v, 'ask' if m >= note('Eb4') else 'ask_low', 'linde')
-    for t, m, v, d in play('siegmund', T_WALSUNG, 0.3, 0, 92):                 # the Wälsungs
-        add(t, d, m, v, 'walsung', 'sieg')
-    for t, m, v, d in play('volsung_fate', T_FATE, 0.5, 0, 88):
-        add(t, d, m, v, 'fate')
-
-    for m in ('Bb1', 'F2', 'Bb2', 'D3', 'F3', 'Bb3', 'D4', 'F4'):               # "Siegmund: so nenn ich dich!"
-        add(T_NAME, 2.4, m, 112, 'name')
-    add(T_NAME, 1.0, 'Bb1', 118, 'hit')
-    for b, d, n in ((0, .5, 'F4'), (.5, .5, 'Bb4'), (1, 1, 'D5'), (2, 1.5, 'Bb4')):
-        add(T_NAME + b * 0.6, d * 0.6, n, 106, 'cry', 'linde')
-
-    add(T_SPRING, T_DRAW - T_SPRING, 'D2', 80, 'tension')
-    for t, m, v, d in play('nothung', T_NOTHUNG, NBEAT, -12, 110):            # "Nothung! Nothung!"
-        add(t, d, m, v, 'nothung', 'sieg')
-        add(t, d, m + 12, v - 16, 'nothung_tpt')
-    for j in range(24):                                                         # the strings climb
-        add(T_NOTHUNG + 6.0 + j * (T_DRAW - T_NOTHUNG - 6.0) / 24, 0.4, note('D3') + j, 70 + j, 'climb')
-    for k, th in enumerate(HEAVES):
-        add(th, 0.6, note('D2') + 3 * k, 104 + 6 * k, 'heave')
-        for m in ('D3', 'A3', 'D4'):
-            add(th, 0.7, note(m) + 3 * k, 96 + 6 * k, 'jolt')
-
-    add(T_DRAW, 2.0, 'C2', 127, 'draw')
-    for t, m, v, d in play('sword', T_DRAW, 0.45, 0, 124):                     # the Sword, drawn
-        add(t, d, m, v, 'sword')
-        add(t, d, m - 12, v - 6, 'sword_horn')
-    for m in ('C2', 'G2', 'C3', 'E3', 'G3', 'C4', 'E4', 'G4'):
-        add(T_DRAW, T_SWORD2 - T_DRAW + 0.5, m, 104, 'blaze')
-    for t, m, v, d in play('sword', T_SWORD2, 0.5, 0, 112):                    # held aloft
-        add(t, d, m, v, 'sword')
-        add(t, d, m - 12, v - 10, 'sword_horn')
-    for t, m, v, d in play('nothung', T_SWORD2 + 4.2, 0.45, -12, 100, line='melody'):
-        add(t, d, m, v, 'nothung', 'sieg')
-
-    for t, m, v, d in play('twins_love', T_BRIDE, 0.5, -3, 112):              # bride and sister, in G
-        if m >= note('C4'):
-            add(t, d, m, v, 'bride', 'linde')
-            add(t, d, m - 12, v - 6, 'bride_horn', 'sieg')
+    for t, d, m, v, h in EX['notes']:
+        if t < T_SPRING:
+            part = 'name' if h == 0 else 'name_low'
+        elif t < T_NOTHUNG:
+            part = 'tension' if h == 0 else 'grip'
+        elif t < HEAVES[2]:
+            part = ('nothung' if d >= 0.4 else 'note') if h == 0 else 'climb'
+        elif t < T_DRAW:
+            part = 'note' if h == 0 else 'heave'
+        elif t < T_BRIDE:
+            part = 'blaze' if h == 0 else 'sword' if d >= 0.4 else 'note'
+        elif t >= CHORDS[0] - 0.05:
+            part = 'final'
         else:
-            add(t, d, m, v - 4, 'bride_low')
-    for t, m, v, d in play('twins_love_b', T_BRIDE + 8.0, 0.42, -3, 108):
-        add(t, d, m, v, 'bride' if m >= note('C4') else 'bride_low', 'linde')
-    for k in range(int((T_RUN - T_BRIDE) / 0.25)):                              # frenzied: the bass drives
-        m = ('G1', 'G2', 'D2', 'G2', 'B1', 'G2', 'D2', 'G2')[k % 8]
-        add(T_BRIDE + k * 0.25, 0.2, m, 92 + 10 * (k % 4 == 0), 'drive')
-
-    for k in range(int((T_OUT - T_RUN) / 1.0)):                                 # the run: racing scales
-        base = note('G3') + (0, 2, 4, 5)[k % 4]
-        for j in range(8):
-            add(T_RUN + k * 1.0 + j * 0.0625 * 2, 0.15, base + (0, 2, 4, 5, 7, 9, 11, 12)[j], 92 + 2 * j, 'race')
-        add(T_RUN + k * 1.0, 0.9, ('G1', 'D2', 'E2', 'B1')[k % 4], 100, 'drive')
-    for t, m, v, d in play('twins_love', T_RUN + 0.5, 0.35, -3, 112, line='melody'):
-        add(t, d, m, v, 'bride_horn', 'sieg')
-    add(T_OUT - 2.5, CHORDS[0] - T_OUT + 2.5, 'G1', 100, 'roll')
-    for k, tc in enumerate(CHORDS):                                             # the curtain
-        dur = 0.9 if k < 2 else D - tc - 0.6
-        for m in ('G1', 'G2', 'D3', 'G3', 'B3', 'D4', 'G4'):
-            add(tc, dur, m, 118 - 2 * k, 'final')
-        add(tc, 1.0, 'G1', 124, 'hit')
-    return sorted(N, key=lambda e: e[0])
+            part = 'race' if h == 0 else 'drive'
+        N.append((t, d, m, v, part, h))
+    return N
 
 
 def follow(target, rate):
@@ -270,16 +231,23 @@ def render(G, seed=10):
     rng_g = np.random.default_rng(9)                                            # WK09's flickers, in its order
     tw = Flicker(rng_g, G.N, 2.0, 6.0)
     grass = Flicker(rng_g, G.N, 0.1, 0.4)
-    sung = np.array([e[0] for e in N if e[5] == 'sieg' and e[1] >= 0.2])
-    linde_n = np.array([e[0] for e in N if e[5] == 'linde' and e[1] >= 0.2])
-    nth = np.array([e[0] for e in N if e[4] == 'nothung' and e[0] < T_DRAW])
+    sung = np.array([e[0] for e in N if (e[4] == 'nothung') or (e[4] == 'name' and e[0] >= T_REPLY and e[1] >= 0.3)])
+    linde_n = np.array([T_NAME] + [e[0] for e in N if e[4] == 'name' and e[0] < T_BLAZE and e[1] >= 0.3])
+    nth = np.array([e[0] for e in N if e[4] == 'nothung'])
     swd = np.array([e[0] for e in N if e[4] == 'sword'])
+    spark = [e for e in N if e[4] == 'name' and T_BLAZE <= e[0] < T_SPRING]
+    spark_t = np.array([e[0] for e in spark])
+    spark_p = np.random.default_rng(10).normal(0, 1, len(spark))
+    climb = [e for e in N if e[4] in ('climb', 'heave', 'grip') and e[1] < 0.4]
+    climb_t = np.array([e[0] for e in climb])
+    climb_s = np.where(np.arange(len(climb)) % 2, 1.0, -1.0)     # alternate sides of the trunk
 
     for f in range(F):
         t = f * DT
         tt = t + 80 * K
         sp, lp = C['sieg'][f], C['linde'][f]
-        focus = smoothstep(T_NOTHUNG, T_DRAW - 0.5, t) * (1 - smoothstep(T_DRAW, T_DRAW + 1.5, t))
+        focus = (0.6 * smoothstep(T_GRASP - 0.5, T_GRASP + 1, t) + 0.4 * smoothstep(T_NOTHUNG, T_DRAW - 0.5, t)) * \
+            (1 - smoothstep(T_DRAW, T_DRAW + 1.5, t))
         frenzy = smoothstep(T_BRIDE - 0.5, T_BRIDE + 1.5, t) * (1 - smoothstep(T_OUT, T_OUT + 2, t))
         drawn = smoothstep(T_DRAW - 0.02, T_DRAW + 0.02, t)
         k = int(np.searchsorted(nth, t, side='right')) - 1
@@ -292,29 +260,44 @@ def render(G, seed=10):
         fr += light(BLOSSOM, 0.45 * dens * draw_blossoms(G, B, tt) * (0.8 + 0.2 * tw(tt)))
 
         # recognition: two amber waves out from her; the naming: a ring of blue and amber over the whole house
-        for t0 in (T_WALSUNG, T_FATE):
+        for t0 in (0.0, T_NAME):
             if t0 <= t < t0 + 3.5:
                 a = t - t0
                 r = 30 + 700 * a ** 0.7
                 dist = np.abs(d - lp)
                 fr += light(AMBER, (1 - a / 3.5) * (0.7 * np.exp(-((dist - r) / 120) ** 2) +
                                                     0.25 * smoothstep(r + 60, r - 60, dist)))
-        if T_NAME <= t < T_NAME + 3.5:
-            a = t - T_NAME
+        if T_BLAZE <= t < T_BLAZE + 3.5:
+            a = t - T_BLAZE
             r = 30 + 1500 * a ** 0.6
             ring = np.exp(-((np.abs(d - sp) - r) / 110) ** 2) * (1 - a / 3.5)
             fill = smoothstep(r + 80, r - 80, np.abs(d - sp)) * (1 - a / 3.5)
             fr += light(BLUE, 0.9 * ring + 0.4 * fill) + light(AMBER, 0.6 * np.exp(-((np.abs(d - lp) - r * 0.92) / 60) ** 2) * (1 - a / 3.5))
             fr += light(WHITE, 0.5 * np.exp(-a / 0.25) * np.exp(-((d - sp) / 120) ** 2))
 
+        ks = int(np.searchsorted(spark_t, t, side='right'))                     # the arpeggios: sparks of both
+        for j in range(max(0, ks - 8), ks):
+            a = t - spark_t[j]
+            if a < 0.45:
+                c = (sp + lp) / 2 + 420 * spark_p[j]
+                fr += light(BLUE if j % 2 else AMBER, 0.8 * np.exp(-a / 0.14) * np.exp(-((d - c) / 16) ** 2))
+
+        kc = int(np.searchsorted(climb_t, t, side='right'))                     # the strings climb: sparks fly
+        for j in range(max(0, kc - 6), kc):                                     # out of the trunk, higher notes
+            a = t - climb_t[j]                                                  # farther
+            if a < 0.35:
+                q = pf + climb_s[j] * (40 + 14 * (climb[j][2] - 40))
+                fr += light(HILT, 0.95 * min(1.0, focus + 0.3) * np.exp(-a / 0.14) * np.exp(-((d - q) / 14) ** 2))
+
         # the heaves: white-gold jolts up out of the trunk, each wider
         for j, th in enumerate(HEAVES):
             if th <= t < th + 1.5:
                 a = t - th
-                fr += light(HILT, (0.6 + 0.15 * j) * np.exp(-a / 0.35) * np.exp(-((d - pf) / (70 + 70 * j)) ** 2))
-                fr += light(WHITE, 0.6 * np.exp(-a / 0.2) * np.exp(-((d - pf) / (20 + 15 * j)) ** 2))
+                fr += light(HILT, (0.6 + 0.1 * j) * np.exp(-a / 0.35) * np.exp(-((d - pf) / (70 + 55 * j)) ** 2))
+                fr += light(WHITE, 0.6 * np.exp(-a / 0.2) * np.exp(-((d - pf) / (20 + 12 * j)) ** 2))
         if nf > 0:                                                              # each "Nothung!" flares the porch
-            fr += light(HILT, 0.45 * nf * np.exp(-((d - pf) / 260) ** 2))
+            fr += light(HILT, 0.6 * nf * np.exp(-((d - pf) / 300) ** 2))
+            fr += light(BLUE, 0.4 * nf * np.exp(-((np.abs(d - pf) - 120 - 900 * (t - nth[k])) / 80) ** 2))
         if focus > 0:                                                           # the strain round the hilt
             fr += light(HILT, focus * 0.35 * (0.6 + 0.4 * np.sin(2 * np.pi * 7 * t)) * np.exp(-((d - pf) / 45) ** 2))
 
@@ -351,7 +334,7 @@ def render(G, seed=10):
         for j, tc in enumerate(CHORDS):
             if tc <= t < tc + 2.5:
                 a = t - tc
-                fr += light(WARM, (0.9 - 0.1 * j) * np.exp(-a / (0.25 + 0.3 * (j == 2))) * np.ones(G.N))
+                fr += light(WARM, (0.9 - 0.1 * j) * np.exp(-a / (0.25 + 0.3 * (j == len(CHORDS) - 1))) * np.ones(G.N))
                 fr += light(WHITE, 0.5 * np.exp(-a / 0.12) * np.ones(G.N))
 
         # the lovers, and the trails they leave as they run
@@ -378,7 +361,8 @@ def render(G, seed=10):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes from the piano reduction: the naming on violins, flutes and harp over horns and trombones,
+    "Nothung!" on horns and a trumpet, the Sword on trumpets and trombones, the ending on the full orchestra."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -389,137 +373,90 @@ def score(M, G):
 
     C = choreography(G)
     pf = pan_at(at(G, 'Porch Front', 0.5))
+    o = Orchestra(M, level=2.0)
 
     def pt(key, t):
         return pan_at(np.interp(t, C['t'], C[key]))
 
-    for name, gain, rev in (('strings', 0.19, 0.32), ('low', 0.2, 0.2), ('brass', 0.2, 0.3), ('winds', 0.2, 0.3),
-                            ('perc', 0.2, 0.3), ('fx', 0.12, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*_v5_*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_ff*.wav')
-    gong = M.hits('Percussion/gongHit_fff.wav')
+    def size(t):
+        return 0.5 if T_SPRING <= t < HEAVES[2] else 1.0
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    def chord_inst(m):
-        if m < note('C2'):
-            return 'low', tuba, m + 12
-        if m < note('C3'):
-            return 'brass', tbn, m
-        if m < note('C4'):
-            return 'brass', horn, m
-        return 'brass', tpt, m
-
-    for t, d, m, v, part, who in compose():
-        if part == 'pad':
-            hold('strings', vn if m >= note('D4') else va, m, t, t + d, v, -0.3 + 0.2 * (m % 4), rise=0.05, fall=2.0,
-                 gain=0.45)
-        elif part == 'ask':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.4), t, 0.9, pt('linde', t))
-        elif part == 'ask_low':
-            M.add('strings', (vc if m < note('C3') else va).play(m, v - 12, dur=d * 1.02, release=0.4), t, 0.6, pf)
-        elif part == 'walsung':
-            pa = pt('sieg', t)
-            if m >= note('D3') and d > 0.3:
-                hold('brass', horn, m, t, t + d, v, pa, rise=0.2, fall=0.8, gain=0.5)
-            else:
-                M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.4), t, 0.7, pa)
-                M.add('low', cb.play(m + 12, v - 10, dur=d * 1.05, release=0.4), t, 0.45, pa)
-        elif part == 'fate':
-            s = tuba if m < note('G2') else tbn if m < note('G3') else horn
-            M.add('brass', s.play(m + (12 if s is tuba and m < note('C2') else 0), v, dur=d * 1.02, release=0.5), t,
-                  0.42, pf)
-        elif part == 'name':
-            bus, s, mm = chord_inst(m)
-            hold(bus, s, mm, t, t + d, v, -0.4 + 0.1 * (m % 9), rise=0.05, fall=1.5, gain=0.38)
-            hold('strings', vtrem if m >= note('F3') else vatrem, m, t, t + d, v, 0.0, rise=0.05, fall=1.5, gain=0.3)
-        elif part == 'hit':
-            M.add('perc', timp.play(v, pitch=-3), t, 1.0, pf)
-            M.add('perc', crash.play(v), t, 0.8, pf)
-        elif part == 'cry':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.3), t, 1.0, pt('linde', t))
-            M.add('strings', vn.play(m, v - 6, dur=d * 1.05, release=0.3), t, 0.8, pt('linde', t))
+    for t, d, m, v, part, h in compose():
+        if part == 'name':
+            o.play('violins', m, t, d, v - 6, None, 0.45)
+            if m >= 74:
+                o.play('flutes', m, t, d, v - 14, None, 0.35)
+            if d >= 0.3 or m in (71, 74, 83, 86):
+                o.play('harp', m - 12, t, d, v - 10, 0.3, 0.3)
+        elif part == 'name_low':
+            o.play('horns', m if m >= 50 else m + 12, t, d, v, pt('sieg', t), 0.7)
+            o.play('trombones', m, t, d, v - 6, pt('sieg', t), 0.5)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 8, None, 0.4)
         elif part == 'tension':
-            hold('strings', vatrem, m + 12, t, t + d, v, pf, rise=d * 0.9, fall=0.3, gain=0.6)
-            hold('low', cb, m + 12, t, t + d, v, pf, rise=2.0, fall=0.3, gain=0.6)
+            o.play('violins trem', m, t, max(d, 0.4), v, pf, 0.4)
+        elif part == 'grip' and d >= 1.0:
+            o.play('tuba', m + 12, t, d, v, pf, 0.7)
+            o.play('basses', m + 12, t, d, v, pf, 0.5)
+            o.play('trombones', m + 24, t, d, v - 6, pf, 0.5)
         elif part == 'nothung':
-            pa = pt('sieg', t)
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 0.7, pa)
-            M.add('strings', vc.play(m - 12, v - 8, dur=d * 1.05, release=0.4), t, 0.55, pa)
-        elif part == 'nothung_tpt':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.4), t, 0.6, pf)
-        elif part == 'climb':
-            M.add('strings', vtrem.play(m + 12, v, dur=d * 1.3, release=0.1), t, 0.5, pf)
+            o.play('horns', m - 12, t, d, v + 6, pt('sieg', t), 0.75)
+            o.play('trumpets', m, t, d, v - 4, pf, 0.5)
+            o.play('cellos', m - 24, t, d, v - 8, pt('sieg', t), 0.4)
         elif part == 'heave':
-            M.add('perc', timp.play(v, pitch=-4), t, 1.0, pf)
-            M.add('low', tuba.play(m + 12, v, dur=d, release=0.2), t, 0.8, pf)
-            M.add('fx', whoosh(0.6, 400, 3000, 0.5, seed=int(t * 10)), t - 0.3, 0.6, pf)
-        elif part == 'jolt':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.2), t, 0.6, pf)
-        elif part == 'draw':
-            M.add('perc', timp.play(v, pitch=-5), t, 1.4, pf)
-            M.add('perc', crash.play(v), t, 1.3, -0.4)
-            M.add('perc', crash.play(v), t + 0.02, 1.3, 0.4)
-            M.add('perc', gong.play(v), t, 0.8, pf)
-            M.add('fx', whoosh(1.4, 600, 6000, 0.9, seed=101), t - 0.2, 1.0, pf)
+            o.play('cellos trem', m, t, max(d, 0.4), v + 10, pf, 0.4)
+            o.play('basses', m, t, d, v, pf, 0.35)
         elif part == 'sword':
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.5), t, 1.4, pt('sieg', t))
-        elif part == 'sword_horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.5), t, 0.8, pt('sieg', t))
+            o.play('trumpets', m if m >= 55 else m + 12, t, d, v + 10, pt('sieg', t), 0.8)
+            o.play('trombones', m if m < 60 else m - 12, t, d, v, pt('sieg', t), 0.55)
         elif part == 'blaze':
-            bus, s, mm = chord_inst(m)
-            hold(bus, s, mm, t, t + d, v - 14, -0.5 + 0.12 * (m % 9), rise=0.05, fall=1.5, gain=0.4)
-            hold('strings', vtrem if m >= note('C3') else vatrem, m + (12 if m < note('C3') else 0), t, t + d, v,
-                 -0.4 + 0.1 * (m % 9), rise=0.05, fall=1.5, gain=0.45)
-        elif part == 'bride':
-            pa = pt('linde', t)
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.3), t, 0.8, pa)
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-        elif part == 'bride_horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pt('sieg', t))
-        elif part == 'bride_low':
-            s = vc if m < note('C3') or m >= note('F3') else va
-            M.add('strings', s.play(m, v - 6, dur=d * 1.02, release=0.3), t, 0.7, -0.2 + 0.4 * (m % 2))
-            if d >= 2:
-                M.add('brass', tbn.play(m if m >= note('E2') else m + 12, v - 16, dur=d, release=0.4), t, 0.5, 0.0)
-        elif part == 'drive':
-            M.add('low', cbs.play(m + 12, v), t, 0.8, -0.2)
-            M.add('low', vcs.play(m + 12, v - 10), t, 0.6, 0.2)
-        elif part == 'race':
-            pa = pt('linde', t)
-            M.add('strings', vns.play(m, v), t, 0.7, pa)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.2), t, 0.8, 0.0)
+            o.play('violins', m, t, 0.1, v - 8, None, 0.4)
+            if m in (72, 76, 79, 84):
+                o.play('harp', m - 12, t, d, v - 10, 0.3, 0.3)
         elif part == 'final':
-            bus, s, mm = chord_inst(m)
-            hold(bus, s, mm, t, t + d, v, -0.5 + 0.15 * (m % 7), rise=0.03, fall=0.5 if d < 1 else 2.0, gain=0.5)
-            hold('strings', vtrem if m >= note('G3') else vatrem, m + (12 if m < note('C3') else 0), t, t + d, v,
-                 -0.4 + 0.12 * (m % 7), rise=0.03, fall=0.5 if d < 1 else 2.0, gain=0.45)
+            o.tutti([(t, d, m, v, h)], size=size)
+            o.play('trombones', m if m < 60 else m - 12, t, d, v, 0.0, 0.5)
+            o.play('trumpets', m if m >= 60 else m + 12, t, d, v - 6, 0.0, 0.4)
+        else:
+            o.tutti([(t, d, m, v, h)], size=size, pan=lambda t, m: pt('sieg', t) if t >= T_RUN else None)
+    o.hit('crash', T_BLAZE, 105, gain=0.45)
+    o.hit('timpani', T_BLAZE, 105, pitch=-3, gain=0.5)
+    o.hit('timpani', T_GRASP, 115, pitch=-6, gain=0.7, pan=pf)
+    o.hit('gong', T_GRASP, 90, gain=0.35, pan=pf)
+    for th in HEAVES[1:]:
+        o.hit('timpani', th, 100, pitch=-4, gain=0.5, pan=pf)
+    o.hit('timpani roll', HEAVES[2], 100, gain=0.4, pan=pf)
+    o.hit('crash', T_DRAW, 120, gain=0.6, pan=-0.4)
+    o.hit('crash', T_DRAW + 0.02, 120, gain=0.6, pan=0.4)
+    o.hit('gong', T_DRAW, 110, gain=0.45, pan=pf)
+    o.hit('timpani', T_DRAW, 120, pitch=-5, gain=0.7, pan=pf)
+    o.hit('crash', T_BRIDE, 110, gain=0.45)
+    for tc in CHORDS:
+        o.hit('timpani', tc, 120, pitch=-5, gain=0.7)
+        o.hit('crash', tc, 115, gain=0.5)
+        o.boom(tc, 0.0, gain=0.8)
+    # the stage: the breeze, the sparks, the grip and the heaves, the drawing, the flight
+    from pixelhome.audio import whoosh
+    pdoor = pan_at(G.length)
+    o.wind(0.0, D, lambda tt: 0.4 + 0.3 * smoothstep(T_RUN, T_OUT, tt), pan=pdoor, seed=101)
+    o.fire(0.0, D, 0.15, pan=pan_at(at(G, 'Left', 0.6)), crackle=4, seed=102)
+    o.fire(T_BLAZE, T_REPLY + 1.0, 0.1, pan=0.0, crackle=50, seed=103)
+    o.clash(T_GRASP, pf, 110, gain=0.7)
+    o.hit('scrape', T_GRASP, 105, gain=0.5, pan=pf, fx=True)
+    for k, th in enumerate(HEAVES[1:]):
+        o.hit('gong scrape', th, 80 + 12 * k, gain=0.3 + 0.1 * k, pan=pf, fx=True)
+        o.hit('scrape', th, 90 + 8 * k, gain=0.35 + 0.08 * k, pan=pf, fx=True)
+        if k >= 1:
+            o.hit('bass drum', th, 105 + 7 * k, gain=0.4 + 0.1 * k, pan=pf, fx=True)
+    o.clash(T_DRAW, pf, 127, gain=1.2)
+    o.boom(T_DRAW, pf, gain=1.0)
+    o.hit('scrape', T_DRAW, 120, gain=0.6, pan=pf, fx=True)
+    for k, pp in enumerate((-0.75, 0.75)):                                      # steel racing to both ends
+        M.add('fx', whoosh(1.4, 900, 9000, 0.8, seed=104 + k), T_DRAW, 0.8, pp)
+    ts, k = T_RUN, 0
+    while ts < T_OUT + 0.4:                                                     # running feet
+        o.M.add('fx', o.hits['hoof soft'].play(90 if k % 2 else 80), ts, 0.2, pt('sieg', ts))
+        ts, k = ts + 0.22, k + 1
+    M.add('fx', whoosh(T_OUT - T_RUN + 1.0, 300, 2800, 0.7, seed=106), T_RUN, 0.7, pdoor)
+    o.effects([(0, -8), (T_BLAZE - 0.3, -8), (T_BLAZE, -4), (T_REPLY + 1.0, -8), (T_SPRING - 0.5, -8),
+               (T_GRASP, 0), (T_DRAW, 2), (T_DRAW + 2.5, 1), (T_DRAW + 4.0, -6), (T_BRIDE, -4), (T_RUN - 0.5, -4),
+               (T_RUN, 1), (T_OUT + 1.0, 0), (CHORDS[0] - 0.5, -5), (D, -5)])

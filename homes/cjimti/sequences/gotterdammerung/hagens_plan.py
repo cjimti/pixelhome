@@ -1,23 +1,26 @@
-"""Hagen's Plan: the same torchlit hall. Gunther has no wife and Gutrune no husband, and Hagen has the answer:
-Brünnhilde for Gunther, asleep on a rock behind a wall of fire, and for Gutrune the hero who can walk through
-it. His tritone (Donington 61a) knocks the hall dark again, and then the potion (19) seeps out of the shadows on
-the clarinets and low strings: a sickly violet glow creeping out from Hagen along the roofline both ways, its
-edge ragged, every chord of the motif a pulse through everything it has reached.
+"""Hagen's Plan: the same torchlit hall. Gunther has no wife and Gutrune no husband, and Hagen has the answer.
 
-Gutrune's motif (40) pushes back in rose, a wave that drives the violet into the corners, and for a moment the
-hall is warm again. Then Hagen names the Ring (8): gold streaks come racing in from both ends of the house and
-pour into him, the hoard he means to have. The potion comes back louder and this time floods the whole house,
-Gunther's gold and Gutrune's rose drowning in violet, while Hagen's blows fall twice. Gunther's fanfare tries to
-take the hall back and gold and violet fight over the runs, one run after another; Hagen's tritone falls three
-times more and the violet drains back into him, leaving the hall in torchlight, the three of them where they
-were, and the plan made.
+The music is Wagner's own, Act I as Solti's 1958 recording takes it: Hagen telling of a woman, the most glorious
+in the world, on a rock behind a wall of fire that only the bravest can break through, and Gunther wondering if
+he dares (bars 72-89); Hagen reminding Gutrune of the potion in the chest that will bind the hero to her and make
+him forget every woman before her, to its fortissimo "Träte nun Siegfried ein" (193-206); and Gunther's "Gepriesen
+sei Grimhild'" (227-232). The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+fire's shimmer on violins and harp over horns, the potion on clarinets, bassoons and cellos, swelling to the
+trombones, Gunther's thanks on violins and trumpets. A roar of fire rises under the fire music, kept under
+Hagen's voice; his blows land on timpani and gong, a gong scrape as the potion floods, a crash at the end.
 
-compose() holds every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
+As Hagen tells of the bride, fire licks up over the whole house in moving tongues, rising and falling with the
+music, and far off on Left a silver figure sleeps in it; Gunther's doubts flash gold from his throne. Then the
+potion seeps out of the shadows: a sickly violet glow creeping out from Hagen with a ragged edge, pulsing on
+every chord, while gold streaks race in from both ends and pour into him, the hoard he means to have. Gutrune's
+rose pushes it back for a moment; then the violet floods the whole house. Gunther's gold takes the hall back one
+run after another and the violet drains back into Hagen, leaving the hall in torchlight and the plan made.
+
+compose() tags every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
 Act I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play, melody
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD08'
 TITLE = "Hagen's Plan"
@@ -28,15 +31,17 @@ VOICEOVER = ('A sleeping bride for the king, and a hero for his sister. '
              'All it takes, says Hagen, is a drink.')
 
 K = 1                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
-FANFARE = [('Bb2', 1.0), ('F3', 0.5), ('Bb3', 0.5), ('D4', 1.0), ('C4', 0.5), ('Bb3', 0.5), ('F3', 2.0)]
-T_HAGEN = [1.0, 46.0, 49.0, 66.0, 69.5, 73.0]   # Hagen's tritone, each a blow
-T_POTION = [5.0, 37.0]                       # the potion creeping out, then flooding
-PBEAT = [0.7, 0.55]
-T_GUT = 18.0                                 # Gutrune pushes it back
-T_RING = 27.0                                # the Ring: gold pours into Hagen
-T_GUN = 55.0                                 # Gunther's fanfare, fighting the violet
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 72-89, 193-206 and 227-232, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_FIRE = (BAR[72], BAR[88])                 # "Ein Weib weiß ich": the bride on her rock behind the fire
+T_ASK = BAR[85]                             # "Vermag das mein Mut zu besteh'n?": Gunther's gold
+T_HAGEN = [BAR[88], BAR[193], BAR[204]]     # Hagen's blows
+T_POTION = (BAR[193], BAR[206])             # "Gedenk' des Trankes": the potion creeping out, then flooding
+T_RING = [BAR[195], BAR[197]]               # gold pouring into Hagen: the hoard he means to have
+T_GUT = BAR[201]                            # "bindet er liebend an dich": Gutrune's rose pushes back
+T_FLOOD = BAR[203]                          # the potion floods the house
+T_GUN = BAR[227]                            # "Gepriesen sei Grimhild'": Gunther's gold takes the hall back
 
 AMBER = hexc('#ff8a20')
 PURPLE = hexc('#6a10c0')
@@ -139,37 +144,22 @@ def blow(fr, S, p, a, s=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k, trem). Hagen's tale of the fire is
+    'fire', the potion 'potion', Gunther's thanks 'fanfare'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'Bb1', 60, 'pedal')
-    for k, t0 in enumerate(T_HAGEN):
-        for t, m, v, d in play('hagen', t0, 0.7, 0, 112 + 4 * (k % 2)):
-            add(t, d, m, v, 'hagen', k)
-    for k, t0 in enumerate(T_POTION):
-        for t, m, v, d in play('potion', t0, PBEAT[k], -12 + 12 * k, 86 + 18 * k):
-            add(t, d, m, v, 'potion', k)
-    for t, m, v, d in play('gutrune', T_GUT, 0.65, 0, 88):
-        add(t, d, m, v, 'gutrune')
-    for t, m, v, d in play('ring', T_RING, 0.6, -12, 100):
-        add(t, d, m, v, 'ring')
-    t = T_GUN
-    for m, b in FANFARE * 2:
-        add(t, b * BEAT * 1.05, m, 104, 'fanfare')
-        t += b * BEAT
+    for t, d, m, v, h, trem in tidy(EX['notes']):
+        part = 'fire' if t < T_POTION[0] else 'potion' if t < T_GUN else 'fanfare'
+        N.append((t, d, m, v, part, h, trem))
     return sorted(N, key=lambda e: e[0])
 
 
 def potion_reach(t):
     """How far the violet has crept from Hagen (path units) and how strongly."""
     a0, a1 = T_POTION
-    reach = keys(t, [(a0, 0.0), (a0 + 11.0, 650.0), (T_GUT, 650.0), (T_GUT + 3, 120.0), (a1, 120.0),
-                     (a1 + 8.0, 2600.0), (T_HAGEN[3], 2600.0), (T_HAGEN[5] + 2.0, 0.0)])
-    level = keys(t, [(a0, 0.0), (a0 + 1.0, 0.65), (T_GUT, 0.65), (T_GUT + 3, 0.3), (a1, 0.35), (a1 + 4, 0.85),
-                     (T_HAGEN[3], 0.85), (T_HAGEN[5] + 2.5, 0.0)])
+    reach = keys(t, [(a0, 0.0), (a0 + 12.0, 700.0), (T_GUT, 700.0), (T_GUT + 2, 150.0), (T_FLOOD, 150.0),
+                     (T_FLOOD + 6.0, 2600.0), (T_GUN, 2600.0), (T_GUN + 6.0, 0.0)])
+    level = keys(t, [(a0, 0.0), (a0 + 1.0, 0.65), (T_GUT, 0.7), (T_GUT + 2, 0.35), (T_FLOOD, 0.4), (T_FLOOD + 3, 0.9),
+                     (T_GUN, 0.85), (T_GUN + 6.5, 0.0)])
     return float(reach), float(level)
 
 
@@ -180,11 +170,17 @@ def render(G, seed=8):
     d = S['d']
     L = d.max()
     N = compose()
-    hag = [e for e in N if e[4] == 'hagen']
-    pot = np.array(sorted({e[0] for e in N if e[4] == 'potion'}))
-    gut = [(T_GUT + b * 0.65, dd * 0.65, m) for b, dd, m in melody('gutrune')]
-    ring = [e for e in N if e[4] == 'ring']
-    fan = [e for e in N if e[4] == 'fanfare']
+    pot = np.array(accents([e for e in N if e[4] == 'potion'], n=2, space=0.5))
+    gut = [e for e in N if T_GUT <= e[0] < T_FLOOD and e[5] == 0 and e[1] >= 0.3]
+    ring = [(t0, 1.0) for t0 in T_RING]
+    fan = accents([e for e in N if e[4] == 'fanfare'], n=3, space=0.4)
+    ask = accents([e for e in N if T_ASK <= e[0] < T_HAGEN[0]], n=3, space=0.5)
+    loud = np.zeros(F)
+    for e in N:
+        loud[min(F - 1, int(e[0] / DT))] += (e[3] / 127) ** 2
+    loud = np.convolve(loud, np.exp(-np.arange(int(1.0 / DT)) * DT / 0.4))[:F]
+    loud = np.clip(loud / np.percentile(loud[loud > 0], 97), 0, 1)
+    p_bride = at(G, 'Left', 0.2)
     p_gun, p_gut, p_hag = at(G, *GUNTHER_AT), at(G, *GUTRUNE_AT), at(G, *HAGEN_AT)
     rng = np.random.default_rng(seed)
     ragged = smooth_noise(rng, d, 25.0)
@@ -196,6 +192,22 @@ def render(G, seed=8):
         t = f * DT
         T = t + 80 * K
         fr = hall(S, T, START)
+
+        # the bride Hagen tells of: fire licking up over the whole house with the strings' shimmer, rising with the
+        # music, and in it, far off on Left, a silver figure asleep
+        if t < T_FIRE[1] + 2.0:
+            g = smoothstep(0.0, 2.5, t) * (1 - smoothstep(T_FIRE[1] - 0.5, T_FIRE[1] + 2.0, t)) * (0.35 + 0.65 * loud[f])
+            q = (0.45 + 0.24 * np.sin(2 * np.pi * (d / 173 - 0.9 * t)) + 0.2 * np.sin(2 * np.pi * (d / 109 + 1.2 * t) + 1.3)
+                 + 0.13 * np.sin(2 * np.pi * (d / 67 - 2.1 * t) + 2.1) + 0.06 * S['fl'](T))
+            q = np.clip((q - 0.2) * 1.6, 0, 1)
+            fr = fr * (1 - 0.5 * g)
+            fr += light(TORCH + (HEAT - TORCH) * q[:, None], g * (0.35 + 0.75 * q) * (1 - 0.6 * S['porch']))
+            fr += light(BLOOD, 0.5 * g * (1 - q) * (1 - S['porch']))
+            fr = figure(fr, S, p_bride, WHITE, 0.7 * smoothstep(1.0, 4.0, t) * (1 - smoothstep(T_FIRE[1] - 1, T_FIRE[1] + 1, t)))
+        for t0 in ask:                      # Gunther: can I dare it? gold flashes from his throne
+            a = t - t0
+            if 0 <= a < 1.4:
+                fr += light(GUNTHER, 0.9 * wave(S, p_gun, a, 1200.0, 200.0, 0.8))
 
         # the potion: a sickly violet creeping out from Hagen with a ragged edge, pulsing on every chord
         reach, plev = potion_reach(t)
@@ -209,7 +221,7 @@ def render(G, seed=8):
             fr += light(WHITE, 0.25 * plev * pulse * np.exp(-((dist - reach) / 30) ** 2))
 
         # Gutrune pushes back: a rose wave from her driving the violet off, every note a ripple
-        for tn, dn, m in gut:
+        for tn, dn, m, v, part, h, _ in gut:
             a = t - tn
             if 0 <= a < 2.0:
                 fr += light(GUTRUNE, 0.95 * wave(S, p_gut, a, 800.0, 220.0, 0.9))
@@ -217,7 +229,7 @@ def render(G, seed=8):
                     fr += light(GUTRUNE, 0.5 * np.exp(-a / (dn + 0.3)) * smoothstep(0, 0.1, a))
 
         # the Ring: gold streaks race in from the ends of the house and pour into Hagen
-        for j, (t0, dur, m, v, part, k) in enumerate(ring):
+        for j, (t0, dur) in enumerate(ring):
             a = t - t0
             if 0 <= a < 1.4:
                 p0 = streak_from[j]
@@ -229,7 +241,7 @@ def render(G, seed=8):
                     fr += light(HEAT, 0.9 * np.exp(-(a - 1.0) / 0.12) * np.exp(-((d - p_hag) / 25) ** 2))
 
         # Gunther's fanfare against the violet: gold takes one run after another
-        for i, (t0, dur, m, v, part, k) in enumerate(fan):
+        for i, t0 in enumerate(fan):
             a = t - t0
             if 0 <= a < 1.4:
                 run = G.seg_of == runs[i % len(runs)]
@@ -242,14 +254,15 @@ def render(G, seed=8):
         fr = fr * (1 - 0.45 * np.exp(-((d - p_hag) / 70) ** 2))[:, None]
         fr = figure(fr, S, p_hag, HAGEN, 0.75 + 0.2 * plev)
         fr += light(SPEAR, 0.45 * np.exp(-((d - p_hag + 18) / 6) ** 2))
-        for t0, dur, m, v, part, k in hag:
-            fr = blow(fr, S, p_hag, t - t0, 1.0 if m < note('C3') else 0.6)
+        for k, t0 in enumerate(T_HAGEN):
+            fr = blow(fr, S, p_hag, t - t0, 1.0 if k == 1 else 0.75)
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction: harp and violins for the fire Hagen describes, clarinets
+    and bassoons for the potion, Gunther's brass at the end; Hagen's blows on timpani and gong."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -258,66 +271,34 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.3, 0.25), ('brass', 0.28, 0.3), ('winds', 0.26, 0.32), ('strings', 0.24, 0.35),
-                            ('perc', 0.28, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
+    o = Orchestra(M, level=2.15)
+    gun, hag = pan_at(at(G, *GUNTHER_AT)), pan_at(at(G, *HAGEN_AT))
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        if t < T_POTION[0]:
+            if h == 0 and d < 0.3:                          # the fire's shimmer: violins and harp
+                return [('violins', 0, -10, 0.45), ('harp', 0, -6, 0.35)] + \
+                    ([('flutes', 0, -16, 0.3)] if m >= 77 else [])
+            if h == 1 and d >= 0.4:                         # under it, the horns
+                return [('horns', 0, -4, 0.7)] + ([('trombones', 0, -8, 0.5)] if v >= 110 else [])
+        elif t < T_GUN:
+            if h == 1:                                      # the potion creeping: bassoons, clarinets, cellos
+                return [('bassoons', 0, 0, 0.6), ('cellos', 0, -6, 0.5)] + \
+                    ([('trombones', 0, -6, 0.55), ('tuba', -12, -10, 0.4)] if v >= 115 else [])
+            return [('clarinets', 0, 0, 0.6), ('violas', 0, -8, 0.4)] + \
+                ([('horns', 0, -6, 0.55)] if v >= 115 else [])
+        elif h == 0:                                        # Gunther's thanks: violins, trumpets on the top
+            return [('violins', 0, -4, 0.55)] + ([('trumpets', 0, -10, 0.4)] if d >= 0.3 else [])
+        return None
 
-    gun, gut, hag = (pan_at(at(G, *x)) for x in (GUNTHER_AT, GUTRUNE_AT, HAGEN_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=4.0, fall=2.0, gain=0.55)
-        elif part == 'hagen':
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.2, release=0.4), t, 1.0, hag)
-            M.add('low', tbn.play(m, v - 10, dur=d * 1.2, release=0.4), t, 0.7, hag)
-            M.add('perc', timp.play(v, pitch=-7 if m < note('C3') else -3), t, 0.9, hag)
-            if m < note('C3'):
-                M.add('perc', gong.play(90), t, 0.45, hag)
-        elif part == 'potion':
-            if m >= note('C4'):
-                hold('winds', clar, m - 12, t, t + d, v, hag * 0.5, rise=0.4, fall=1.0, gain=0.75)
-            elif m >= note('E3'):
-                hold('strings', vla, m, t, t + d, v - 6, hag * 0.5, rise=0.5, fall=1.0, gain=0.7)
-            else:
-                hold('low', vc, m, t, t + d, v - 6, hag * 0.5, rise=0.5, fall=1.0, gain=0.7)
-        elif part == 'gutrune':
-            if m >= note('E5'):
-                M.add('strings', vln.play(m - 12, v, dur=d * 1.1, release=0.3), t, 0.8, gut)
-            elif m >= note('D4'):
-                M.add('winds', oboe.play(m, v, dur=d * 1.1, release=0.3), t, 0.85, gut)
-            else:
-                M.add('low', bsn.play(m, v - 10, dur=d * 1.1, release=0.3), t, 0.6, gut)
-        elif part == 'ring':
-            if d > 1.2:
-                hold('winds', bsn, m, t, t + d, v, hag, rise=0.3, fall=0.8, gain=0.85)
-            else:
-                M.add('winds', bsn.play(m, v, dur=d * 1.05, release=0.25), t, 0.9, hag)
-        elif part == 'fanfare':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.25), t, 0.95, gun)
-            if m < note('C3'):
-                M.add('perc', timp.play(v, pitch=-2), t, 0.7, gun)
+    o.tutti([[t, d, m, v, h, tr] for t, d, m, v, part, h, tr in compose()], size=lambda t: 0.9, role=role,
+            pan=lambda t, m: hag if T_POTION[0] <= t < T_GUN else gun if t >= T_GUN else 0.0)
+    # the fire Hagen conjures: a roar that rises with the music, kept under his voice
+    o.fire(0.5, T_FIRE[1] + 1.5, level=lambda tt: 0.4 + 0.6 * ((tt > BAR[79]) & (tt < BAR[86])), pan=0.0, crackle=8)
+    for k, t0 in enumerate(T_HAGEN):
+        o.hit('timpani', t0, 122, pitch=-7, gain=0.75, pan=hag)
+        o.hit('gong', t0 + 0.02, 104 + 10 * (k == 1), gain=0.5, pan=hag)
+    o.hit('gong scrape', T_FLOOD, 110, gain=0.6, pan=hag)
+    o.hit('cymbal swell', T_FLOOD - 1.2, 100, gain=0.4)
+    o.hit('crash', BAR[231], 118, gain=0.5, pan=gun)
+    o.effects([(0, -10), (BAR[79], -10), (BAR[80], -3), (BAR[85], -3), (BAR[86], -12), (D, -12)])

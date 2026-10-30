@@ -1,24 +1,29 @@
-"""Waltraute: back on Brünnhilde's rock, a bright afternoon. She sits on the summit in silver, the Ring gold on her
-hand, and every phrase of her love (Donington 87) sends a soft silver ripple over a calm gold-blue sky.
+"""Waltraute: back on Brünnhilde's rock, a bright afternoon, Brünnhilde in silver on the summit with the Ring
+gold on her hand. Thunder rolls far off in the east: "Ein Luftroß jagt im Laufe daher."
 
-Thunder rolls far off. Out of the east, at the free end of Right, a storm cloud comes on the Ride (47): each phrase
-a dark front of cloud racing the whole length of the house, every note of it an orange Valkyrie streak and the
-runs cracking white with lightning, and on the Valkyries' cry (22a) Waltraute herself gallops in, a blaze of
-Valkyrie orange over storm cloud, and lands below the summit in a burst.
+The music is Wagner's own, four passages of Act I as Solti's 1958 Vienna Philharmonic recording takes them: the
+storm coming on and Waltraute's arrival (bars 1052-1067), "Den Ring - von mir?" (1406-1413), Brünnhilde's refusal,
+"stürzt' auch in Trümmern Walhall's strahlende Pracht!" (1489-1494), and Waltraute's flight, "Walhall's Göttern
+Weh'!" (1509-1527). The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+Valkyries' figures on horns, trumpets and violins, the Ring on flutes and clarinets, the refusal and Valhalla's
+glory on the full brass with cymbals and timpani. The stage adds the storm: far thunder, then thunder with every
+bolt, the wind, a horse galloping on the clouds, a blow as she lands; and the same storm carrying her off. While
+the sisters plead and refuse, the stage keeps quiet.
 
-She tells what has become of Wotan: the sky turns deep blue and every chord of Valhalla (63) slams a whole run
-gold-white, while his grief (82) breathes slow blue waves out over the house. Then the Ring (8): she begs, and
-gold surges run from Brünnhilde's hand to her and teal streaks of the Rhine pull at it from the east. Brünnhilde
-refuses on her own motif (88): two silver shocks over the whole house and the Ring blazing. Waltraute flees on
-the Ride with the storm behind her, racing out of the free end of Right, the clouds clear, and the afternoon sinks
-toward a red dusk with Brünnhilde alone on the summit.
+Out of the east, at the free end of Right, a storm cloud comes on, wave on wave, every loud note an orange Valkyrie
+streak racing the length of the house and the runs cracking white with lightning; on "Brünnhilde!" Waltraute
+herself lands below the summit in a burst of orange. The cloud thins. She begs for the Ring: gold surges run from
+Brünnhilde's hand to her and teal streaks of the Rhine pull at it from the east. Brünnhilde refuses: two silver
+shocks over the whole house and the Ring blazing, the sky going deep blue for the Valhalla she would let fall.
+Waltraute flees on the storm, every note of her flight an orange streak racing out of the free end of Right, the
+clouds roll away behind her, and the afternoon sinks toward a red dusk with Brünnhilde alone on the summit.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
+compose() tags every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
 the Prologue's scenes (see GD01)."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD13'
 TITLE = 'Waltraute'
@@ -29,19 +34,21 @@ VOICEOVER = ('A storm comes racing over the mountain, and out of it rides a Valk
              'She has come to beg her sister for the Ring.')
 
 K = 6                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-T_LOVE = [0.5, 6.0]                         # Brünnhilde's love, softly
-T_THUNDER = 9.0
-T_RIDE = [11.0, 14.6, 18.2]                 # the storm comes on the Ride
-RBEAT = 0.3
-T_CRY = 21.5                                # the Valkyries' cry: Waltraute lands
-T_LAND = 23.0
-T_VAL = [26.0, 31.5]                        # Valhalla
-T_GRIEF = 37.0                              # Wotan's grief
-T_RING = 46.0                               # she begs for the Ring
-T_REFUSE = [54.0, 58.5]                     # Brünnhilde refuses
-T_FLEE = 64.0                               # Waltraute flees on the Ride
-T_GONE = 69.0
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 1052-1067, 1406-1413, 1489-1494 and 1509-1527, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SEG = [s['start'] for s in EX['segments']] + [D]
+T_THUNDER = 0.5                             # "Ein Luftroß jagt im Laufe daher": a storm far off in the east
+T_RIDE = [BAR[1056], BAR[1059], BAR[1061]]  # the storm comes on, wave on wave
+T_CRY = BAR[1062]
+T_LAND = BAR[1063]                          # "Brünnhilde!": Waltraute lands
+T_CLEAR = BAR[1066]                         # the cloud thins round them
+T_RING = SEG[1]                             # "Den Ring - von mir?"
+T_REFUSE = [BAR[1491], BAR[1493]]           # "stürzt' auch in Trümmern Walhall's strahlende Pracht!"
+T_VAL = [BAR[1493], BAR[1495] - 0.3]        # the glory of Valhalla she will let fall
+T_FLEE = SEG[3]                             # "Wehe! Wehe!": Waltraute flees on the storm
+T_GONE = BAR[1525]
+RBEAT = 0.3                                 # her halo flickers at the gallop
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -164,42 +171,28 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def part_of(t, d, m, v, h):
+    """What a note of the excerpt is: (part, k), see compose()."""
+    if T_RIDE[0] <= t < SEG[1] and h == 0 and v >= 85 and m >= note('B3'):
+        return 'ride', sum(t >= r for r in T_RIDE[1:])
+    if T_RING <= t < SEG[2] and h == 0 and v >= 85:
+        return 'ring', None
+    if T_REFUSE[0] <= t < T_VAL[0] and v >= 98:
+        return 'refuse', None
+    if T_VAL[0] <= t < SEG[3] and v >= 100:
+        return 'valhalla', None
+    if BAR[1512] <= t < T_GONE and h == 0 and v >= 110 and m >= note('B3'):
+        return 'ride', 3
+    return 'music', None
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_LOVE):
-        for t, m, v, d in play('brunnhilde_love', t0, 0.42, 0, 70 + 4 * k):
-            add(t, d, m, v, 'love', k)
-    add(T_THUNDER, 3.0, 'B1', 96, 'thunder')
-    for k, t0 in enumerate(T_RIDE):
-        for t, m, v, d in play('ride', t0, RBEAT, 0, 96 + 8 * k):
-            add(t, d, m, v, 'ride', k)
-        for j in range(12):
-            add(t0 + j * RBEAT, 0.25, ('B1', 'Gb2')[j % 2], 90 + 6 * k, 'gallop', k)
-    for t, m, v, d in play('valkyrie_cry', T_CRY, 0.45, -12, 112):
-        add(t, d, m, v, 'cry')
-    add(T_LAND, 0.1, 'B1', 124, 'land')
-    for k, t0 in enumerate(T_VAL):
-        for t, m, v, d in play('valhalla', t0, 0.7, 0, 104 + 6 * k):
-            add(t, d, m, v, 'valhalla', k)
-    for t, m, v, d in play('wotan_grief', T_GRIEF, 0.3, -12, 96):
-        add(t, d, m, v, 'grief')
-    for t, m, v, d in play('ring', T_RING, 0.6, -5, 104):
-        add(t, d, m, v, 'ring')
-    for k, t0 in enumerate(T_REFUSE):
-        for t, m, v, d in play('brunnhilde', t0, 0.5, 0, 112 + 6 * k):
-            add(t, d, m, v, 'refuse', k)
-    for t, m, v, d in play('ride', T_FLEE, RBEAT, 0, 108):
-        add(t, d, m, v, 'ride', 3)
-    for j in range(16):
-        add(T_FLEE + j * RBEAT, 0.25, ('B1', 'Gb2')[j % 2], 100 - 3 * j, 'gallop', 3)
-    for m in ('B2', 'D3', 'Gb3'):
-        add(T_GONE + 1.0, D - T_GONE - 1.0, m, 54, 'dusk')
-    return sorted(N, key=lambda e: e[0])
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The right hand's loud notes as
+    the storm comes on are its waves ('ride', k = which wave), and as Waltraute flees, her flight ('ride', k 3); the
+    melody of "Den Ring - von mir?" is the Ring ('ring'); the loud notes of "stürzt' auch in Trümmern" are
+    Brünnhilde's refusal ('refuse') and those of "Walhall's strahlende Pracht" Valhalla's glory ('valhalla').
+    Everything else is 'music'."""
+    return [(float(t), float(d), int(m), int(v)) + part_of(t, d, m, v, h) for t, d, m, v, h, _ in tidy(EX['notes'])]
 
 
 def bolts():
@@ -242,9 +235,9 @@ def render(G, seed=13):
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        storm = smoothstep(T_THUNDER, T_RIDE[2], t) * (1 - smoothstep(T_VAL[0] - 1, T_VAL[0] + 3, t)) \
+        storm = smoothstep(T_THUNDER, T_RIDE[2], t) * (1 - smoothstep(T_CLEAR, T_RING, t)) \
             + smoothstep(T_FLEE - 1, T_FLEE + 1, t) * (1 - smoothstep(T_GONE - 1, T_GONE + 4, t))
-        gods = smoothstep(T_VAL[0] - 1, T_VAL[0] + 1, t) * (1 - smoothstep(T_RING + 4, T_REFUSE[0], t))
+        gods = smoothstep(T_VAL[0] - 0.4, T_VAL[0] + 0.4, t) * (1 - smoothstep(T_VAL[1], T_VAL[1] + 1.5, t))
         lv = {k: keys(t, [(0, START[k]), (T_GONE, START[k]), (D - 2, END[k])]) for k in START}
         lv['day'] *= 1 - 0.75 * min(1.0, storm + gods)
         lv['dawn'] *= 1 - 0.7 * min(1.0, storm + gods)
@@ -252,7 +245,7 @@ def render(G, seed=13):
 
         # the storm cloud: dark rolling cloud over the sky, lightning cracking whole runs
         if storm > 0:
-            if t < T_VAL[0]:
+            if t < T_RING:
                 front = L - (L + 300) * smoothstep(T_THUNDER, T_RIDE[2] + 2, t)
                 cover = smoothstep(front - 150, front + 150, d) * storm
             elif t < T_FLEE:
@@ -263,7 +256,7 @@ def render(G, seed=13):
             u = 0.5 + 0.5 * np.sin(2 * np.pi * (d / 300 + 0.6 * t))
             fr = fr * (1 - 0.7 * cover * S['sky'])[:, None]
             fr += light(CLOUD + (BOLT - CLOUD) * 0.2 * u[:, None], 0.85 * cover * (0.7 + 0.3 * u) * S['sky'])
-            if t < T_VAL[0] and 0 < front < L:
+            if t < T_RING and 0 < front < L:
                 fr += light(BOLT, 0.5 * storm * np.exp(-((d - front) / 40) ** 2))
         for tb, run in bolts():
             a = t - tb
@@ -354,7 +347,7 @@ def render(G, seed=13):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, and the storm Waltraute rides in on and out on."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -363,96 +356,47 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.3, 0.25), ('strings', 0.26, 0.32), ('brass', 0.28, 0.3), ('perc', 0.28, 0.3),
-                            ('winds', 0.24, 0.35), ('fx', 0.08, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susNV/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     S = stage(G)
     sb = pan_at(at(G, *BRUNNHILDE_AT))
     east = pan_at(S['L'] - 60)
+    land = pan_at(at(G, *WALTRAUTE_AT))
 
     def pan_w(t):
         p = flight(G, t)
         return pan_at(p) if p is not None else east
 
-    for t, d, m, v, part, k in compose():
-        if part == 'love':
-            if d > 1.0:
-                hold('strings', vln, m, t, t + d, v, sb, rise=0.4, fall=1.0, gain=0.6)
-            else:
-                M.add('strings', vln.play(m, v, dur=d * 1.1, release=0.3), t, 0.6, sb)
-        elif part == 'thunder':
-            M.add('perc', roll.play(v, pitch=-6, dur=3.5), t, 0.8, east)
-        elif part == 'ride':
-            p = pan_w(t)
-            if m >= note('D4'):
-                M.add('brass', tpt.play(m - 12, v, dur=d * 1.05, release=0.2), t, 0.75, p)
-            M.add('brass', horn.play(m, v - 6, dur=d * 1.05, release=0.2), t, 0.8, p)
-            M.add('low', tbn.play(m - 12, v - 12, dur=d * 1.05, release=0.2), t, 0.6, p)
-        elif part == 'gallop':
-            M.add('strings', vcs.play(m + 12, v), t, 0.7, pan_w(t))
-        elif part == 'cry':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.2), t, 0.8, pan_w(t))
-        elif part == 'land':
-            M.add('perc', crash.play(v), t, 0.9, pan_w(t))
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, pan_w(t))
-            M.add('fx', whoosh(1.0, 4000, 500, 0.7, seed=13), t - 0.6, 1.0, pan_w(t))
-        elif part == 'valhalla':
-            if m >= note('Db4'):
-                hold('brass', horn, m - 12, t, t + d, v - 4, 0.0, rise=0.2, fall=1.0, gain=0.7)
-            elif m >= note('Db3'):
-                hold('brass', tbn, m, t, t + d, v, 0.0, rise=0.2, fall=1.0, gain=0.75)
-            else:
-                hold('low', tuba, m, t, t + d, v, 0.0, rise=0.2, fall=1.0, gain=0.8)
-                M.add('perc', timp.play(v - 20, pitch=-4), t, 0.5, 0.0)
-        elif part == 'grief':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, sb * 0.5, rise=0.5, fall=1.0, gain=0.75)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.1, release=0.3), t, 0.75, sb * 0.5)
-            M.add('low', cb.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, 0.0)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('winds', fl, m, t, t + d, v, sb, rise=0.2, fall=0.8, gain=0.75)
-            else:
-                M.add('winds', fl.play(m, v, dur=d * 1.05, release=0.25), t, 0.8, sb)
-            M.add('strings', vc.play(m - 12, v - 16, dur=d * 1.05, release=0.25), t, 0.5, sb)
-        elif part == 'refuse':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, sb, rise=0.15, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, sb)
-            if t in T_REFUSE:
-                M.add('perc', crash.play(110), t, 0.7, sb)
-                M.add('perc', timp.play(118, pitch=-3), t, 0.9, sb)
-        elif part == 'dusk':
-            hold('strings', vc, m, t, t + d, v, sb * 0.6, rise=3.0, fall=1.5, gain=0.55)
+    o = Orchestra(M, level=1.4)
+
+    def role(t, d, m, v, h):
+        part, k = part_of(t, d, m, v, h)
+        if part == 'ride':                                  # the Valkyries' figures: horns and trumpets, violins
+            return [('horns', 0, 0, 0.75), ('trumpets', 0 if m < 72 else -12, -8, 0.45), ('violins', 0, -6, 0.45)]
+        if part == 'ring':                                  # the Ring: flutes and clarinets
+            return [('flutes', 0, 0, 0.6), ('clarinets', -12, -6, 0.5)]
+        if part in ('refuse', 'valhalla'):                  # her refusal and Valhalla's glory: the full brass
+            if m < 55:
+                return [('trombones', 0, 0, 0.85), ('tuba', -12 if m >= 40 else 0, -4, 0.7)]
+            return [('horns', 0, 0, 0.85), ('trumpets', 0, -6, 0.6)]
+        return None
+
+    def pan(t, m):
+        if t < T_LAND or t >= T_FLEE:
+            return pan_w(t) * 0.6
+        return sb * 0.5
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.5 if T_RING <= t < T_REFUSE[0] else 1.0, role=role, pan=pan)
+    for t0 in T_REFUSE:
+        o.hit('crash', t0, 118, gain=0.7, pan=sb)
+        o.hit('timpani', t0, 120, pitch=-3, gain=0.8, pan=sb)
+
+    # the storm: far thunder, then a horse galloping on the clouds, a burst as she lands, and the same storm
+    # carrying her off; between, while the sisters plead and refuse, the stage keeps quiet
+    o.wind(0.0, T_RING + 2.0, level=lambda tt: 0.2 + 0.7 * smoothstep(0, T_LAND, tt), pan=east)
+    o.wind(T_FLEE - 1.0, D, level=lambda tt: 0.9 - 0.6 * smoothstep(T_GONE - 3, D, tt), pan=lambda t: pan_w(t))
+    o.thunder(T_THUNDER, near=0.1, pan=east, gain=0.8)
     for tb, run in bolts():
-        M.add('perc', roll.play(88, pitch=-2, dur=1.4), tb, 0.45, pan_at(at(G, run, 0.5)))
+        o.thunder(tb, near=0.45 + 0.4 * (T_LAND - 3 < tb < T_FLEE + 3), pan=pan_at(at(G, run, 0.5)), gain=0.7)
+    o.gallop(T_RIDE[0] + 3.0, T_LAND, beat=0.36, pan=pan_w, v=104)
+    o.boom(T_LAND, land, 0.8)
+    o.gallop(T_FLEE + 0.5, T_GONE, beat=0.34, pan=pan_w, v=108)
+    o.effects([(0, 0), (T_CLEAR, 0), (T_RING - 0.5, -16), (T_FLEE - 1.5, -16), (T_FLEE, 0), (D, 0)])

@@ -1,23 +1,29 @@
 """Freia's Flight: the meadow is quiet at dawn, the castle gleams across the porch, Wotan (blue) stands
 turned away on Left and Fricka (rose) a little apart from him. Then Freia bursts in from the free end of Right,
-apple-blossom pink with her golden apples bobbing round her and flecks of leaf green, running for her life:
-her motif (Donington 7), joyful by nature but here breathless, on violins and flute, three times and higher
-each time, over scrambling cellos. She streaks the length of the house, stumbling and glancing back, and the
-castle's walls blush pink as she runs under them, petals falling behind her.
+apple-blossom pink with her golden apples bobbing round her and flecks of leaf green, running for her life in
+bursts, stumbling and glancing back, and the castle's walls blush pink as she runs under them, petals falling
+behind her. She reaches Fricka and Wotan on "Hilf mir, Schwester!" and shelters between them, Fricka's rose
+round her.
 
-She reaches Fricka and Wotan and shelters between them. Fricka holds her: Freia in love (6), warm, on violins
-and flute over the harp, and their rose and pink glow together over the wing. But far off at the right end of
-the house something is stamping: thuds in the bass drum, each a dull flash of grey and ochre and a shudder
-through the whole roof, coming closer. The giants' motif (58) breaks out on tubas, trombones and timpani and
-the giants arrive from the free end of Right, Fasolt in stone grey and Fafner in ochre, two big heavy masses
-that lurch forward one step for every beat. They plant themselves on the Right wing; their motif comes again,
-louder, every stamp shaking the house, while Freia cowers, trembling, between her sister and Wotan.
+The music is Wagner's own, as Solti's 1958 Vienna Philharmonic recording takes it: Freia's flight, from her
+motif bursting into the end of Wotan's line through "Hilf mir, Schwester! Schütze mich, Schwäher!" to "Vom
+Felsen drüben drohte mir Fasolt" (bars 912-932); then Fricka's "Wo harren meine Brüder" and "Zu Hilfe, Donner!"
+over Freia's frightened music, and the giants' motif breaking out as Fasolt and Fafner come in (966-988). The
+notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): Freia's motif on violins and
+flute over scrambling violas and cellos, the shelter on violins and flute over the harp, the giants' motif on
+trombones, horns and tubas over basses and timpani. The reduction carries the giants' dynamics in one hand
+only, so their whole motif is played fortissimo. Far off, before their motif, the giants' tread is heard coming
+closer, and every heavy beat of the motif is a stamp on the bass drum.
+
+Far off at the right end of the house something starts stamping: each a dull flash of grey and ochre and a
+shudder through the whole roof, coming closer. The giants' motif breaks out and the giants arrive from the free
+end of Right, Fasolt in stone grey and Fafner in ochre, two big heavy masses that lurch forward one step for
+every stamp, and plant themselves on the Right wing while Freia cowers, trembling, between her sister and Wotan.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, accents, excerpt
 
 CODE = 'RG08'
 TITLE = "Freia's Flight"
@@ -27,20 +33,18 @@ DESCRIPTION = ('Freia, goddess of youth with her golden apples, runs the whole l
                'come stamping in to collect their wages.')
 VOICEOVER = ('Here comes Freia, running as fast as she can. Listen to what is following her.')
 
-RUNS = [1.0, 4.0, 7.0]                      # her motif, breathless, three times
-RBEAT = 0.36
-T_SHELTER = 11.0
-T_LOVE = [12.5, 17.0]                       # Freia in love, as Fricka holds her
-LBEAT = 0.62
-T_FAR = 23.0                                # the first far-off stamps
-FAR_STAMPS = [23.0, 25.0, 26.8, 28.4, 29.8, 31.0, 32.0, 32.9, 33.7, 34.4, 35.0]
-T_GIANTS = 35.6                             # their motif, as they come in
-GBEAT = 0.75
-T_GIANTS2 = 48.0                            # again, louder, planted
-G2BEAT = 0.8
-T_STANDOFF = T_GIANTS2 + 12 * G2BEAT
-T_TAIL = 68.0
-D = 80.0
+EX = excerpt(__file__)                      # bars 912-932, 966-988, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [sg['start'] for sg in EX['segments']] + [EX['seconds']]
+RUNS = [BAR[912], BAR[915], BAR[921]]       # her motif, breathless, three times
+T_SHELTER = BAR[925]                        # "Hilf mir, Schwester!"
+T_LOVE = [BAR[928], BAR[931]]               # sheltered, as Fricka holds her
+T_FAR = 50.0                                # the first far-off stamps
+FAR_STAMPS = [50.0, 51.8, 53.4, 54.8, 56.1, 57.3, 58.4, 59.4, 60.3, 61.1, 61.8, 62.5, 63.2, 63.9, 64.6, 65.3]
+T_GIANTS = 66.15                            # their motif, as they come in
+T_GIANTS2 = BAR[986]                        # again, louder, planted
+D = EX['seconds']
+LEVEL = 2.65
 
 WOTAN, FRICKA, FREIA, FASOLT, FAFNER = range(5)
 BLUE = hexc('#1a3cff')
@@ -65,74 +69,31 @@ def at(G, seg, u):
 
 
 def stamps():
-    """Every footfall: (time, who, strength 0..1). Far off first, then theirs on the giants' beats."""
+    """Every footfall: (time, who, strength 0..1). Far off first, then theirs on the heavy beats of their motif."""
     out = [(t, FASOLT, 0.25 + 0.45 * i / len(FAR_STAMPS)) for i, t in enumerate(FAR_STAMPS)]
-    for k in range(8):
-        out.append((T_GIANTS + k * GBEAT, (FASOLT, FAFNER)[k % 2], 0.85))
-    for k in range(8):
-        out.append((T_GIANTS2 + k * G2BEAT, (FASOLT, FAFNER)[k % 2], 1.0))
-    out.append((T_TAIL + 6 * 0.7, FAFNER, 1.0))
-    out.append((T_TAIL + 6 * 0.7, FASOLT, 1.0))
+    beats = sorted({round(n[0], 3) for n in EX['notes'] if n[0] >= T_GIANTS - 0.05 and n[4] == 1 and n[2] <= 43
+                    and n[1] >= 0.4})
+    for k, t in enumerate(beats):
+        out.append((t, (FASOLT, FAFNER)[k % 2], 0.85 if t < T_GIANTS2 else 1.0))
     return sorted(out)
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). Freia's flight is 'run' (her
+    motif, the right hand) over 'chase'; sheltered she is 'love' over Fricka's 'lovepad'; then 'fear' over 'dread',
+    and from the giants' entrance everything is 'giants'. 'stamp' marks each footfall."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('D3', 'F3', 'A3'):                                                # RG07's unease, cut off by her
-        add(0.0, 1.2, m, 66, 'uneasy')
-    for k, t0 in enumerate(RUNS):                                               # Freia, running
-        tr = (0, 3, 5)[k]
-        for t, m, v, d in play('freia', t0, RBEAT, tr, 100 + 6 * k, line='melody'):
-            add(t, d, m, v, 'run', FREIA)
-        for t, m, v, d in play('freia', t0, RBEAT, tr, 92, line='bass'):
-            add(t, d, m, v, 'chase')
-        for j in range(16):
-            add(t0 + j * RBEAT / 2, RBEAT / 2 * 0.8, note('A2') + tr + (0, 3, 5, 7, 5, 3, 0, -2)[j % 8], 90, 'scramble')
-    add(RUNS[0], T_SHELTER - RUNS[0], 'A2', 70, 'trem')
-    add(T_SHELTER - 0.4, 0.8, 'D5', 104, 'gasp', FREIA)                        # "help me, sister!"
-    add(T_SHELTER + 0.4, 1.0, 'A4', 96, 'gasp', FREIA)
-    for k, t0 in enumerate(T_LOVE):                                             # Freia in love; Fricka holds her
-        for t, m, v, d in play('freia_love', t0, LBEAT, 0 if k == 0 else -5, 86):
-            if m >= note('D4'):
-                add(t, d, m, v, 'love', FREIA)
-            else:
-                add(t, d * 1.1, m, v - 10, 'lovepad', FRICKA)
-        for j, m in enumerate(('D3', 'A3', 'D4', 'F#4', 'A4', 'D5')):
-            add(t0 + j * 0.18, 1.5, note(m) - 5 * k, 70, 'harp')
-    for b, d, n in ((0, 1.5, 'F#4'), (1.5, .5, 'E4'), (2, 1, 'D4'), (3, 1, 'A3'), (4, 2, 'D4'), (6, 1, 'B3'),
-                    (7, 1, 'C#4'), (8, 3, 'D4')):                               # Fricka, soothing her
-        add(T_LOVE[1] + 4.0 + b * 0.55, d * 0.55, n, 84, 'soothe', FRICKA)
-    for m in ('D3', 'A3', 'F#4'):
-        add(T_LOVE[1] + 4.0, 5.5, m, 64, 'lovepad', FRICKA)
-    add(T_FAR - 1.0, T_GIANTS - T_FAR + 1.0, 'D2', 80, 'dread')
-    for m in ('A4', 'Bb4'):
-        add(T_FAR + 1.0, T_GIANTS - T_FAR - 1.0, m, 70, 'shiver')
-    for t, who, s in stamps():
-        add(t, 0.6, 'C2', int(60 + 64 * s), 'stamp', who)
-    for k, (t0, gb, vel) in enumerate(((T_GIANTS, GBEAT, 104), (T_GIANTS2, G2BEAT, 116))):
-        for t, m, v, d in play('giants', t0, gb, 0, vel):                      # the giants' strength
-            add(t, d, m, v, 'giants', (FASOLT, FAFNER)[k])
-        for j in range(4):
-            for m in ('C2', 'G2'):
-                add(t0 + j * 2 * gb, 2 * gb * 1.05, m, vel - 14, 'weight')
-    add(T_GIANTS + 12 * GBEAT, T_GIANTS2 - T_GIANTS - 12 * GBEAT, 'C2', 90, 'roll')
-    for m in ('C3', 'G3', 'Db4'):
-        add(T_GIANTS + 12 * GBEAT - 0.2, T_GIANTS2 - T_GIANTS - 12 * GBEAT, m, 80, 'menace')
-    for m in ('C3', 'Eb3', 'G3', 'Db4'):
-        add(T_STANDOFF, T_TAIL - T_STANDOFF + 0.5, m, 64, 'menace')
-    add(T_STANDOFF, T_TAIL - T_STANDOFF, 'C2', 66, 'roll')
-    for b, d, n in ((0, 1.5, 'D4'), (1.5, .5, 'E4'), (2, 1, 'F4'), (3, 1, 'D4'), (4, 2, 'C#4')):
-        add(T_STANDOFF + 2.0 + b * 0.6, d * 0.6, n, 76, 'fear', FREIA)          # her tune, in the minor, afraid
-    for b, d, n in [x for x in MOTIFS['giants']['notes'] if x[0] >= 8]:         # their tail, a heavy cadence
-        add(T_TAIL + (b - 8) * 0.7, d * 0.7 * 1.3, n, 112, 'giants', FAFNER)
-    add(T_TAIL + 6 * 0.7, D - T_TAIL - 6 * 0.7, 'C2', 90, 'endchord')
-    add(T_TAIL + 6 * 0.7, D - T_TAIL - 6 * 0.7, 'G2', 84, 'endchord')
-    add(T_TAIL + 6 * 0.7, D - T_TAIL - 6 * 0.7, 'C3', 80, 'endchord')
+    for t, d, m, v, h in EX['notes']:
+        if t < T_SHELTER:
+            N.append((t, d, m, v, 'run' if h == 0 else 'chase', FREIA if h == 0 else None))
+        elif t < SEG[1]:
+            N.append((t, d, m, v, 'love' if h == 0 else 'lovepad', FREIA if h == 0 else FRICKA))
+        elif t < T_GIANTS - 0.05:
+            N.append((t, d, m, v, 'fear' if h == 0 else 'dread', FREIA if h == 0 else None))
+        else:
+            N.append((t, d, m, 113, 'giants', (FASOLT, FAFNER)[int(t >= T_GIANTS2)]))
+    for t, who, st in stamps():
+        N.append((t, 0.6, 36, int(60 + 64 * st), 'stamp', who))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -165,15 +126,16 @@ def choreography(G):
     set_(WOTAN, T_SHELTER, T_FAR, W - 8, 1.5)                                   # turning to her
     set_(FRICKA, T_SHELTER - 1, T_FAR, Fr + 14, 2.0)
     # Freia: a run in bursts, with stumbles and a glance back, from beyond the end of Right to between them
-    marks = [(0.0, L + 60), (1.0, L + 40), (3.6, at(G, 'Right', 0.5)), (4.0, at(G, 'Right', 0.56)),
-             (6.6, at(G, 'Porch Right', 0.2)), (7.0, at(G, 'Porch Right', 0.28)), (9.4, at(G, 'Porch Left', 0.3)),
-             (10.2, at(G, 'Left', 0.85)), (T_SHELTER + 0.5, Fy - 15), (T_FAR, Fy - 6), (D, Fy)]
+    marks = [(0.0, L + 60), (RUNS[0] + 0.8, L + 40), (RUNS[1] - 0.6, at(G, 'Right', 0.5)),
+             (RUNS[1], at(G, 'Right', 0.56)), (RUNS[2] - 0.8, at(G, 'Porch Right', 0.2)),
+             (RUNS[2], at(G, 'Porch Right', 0.28)), (T_SHELTER - 2.6, at(G, 'Porch Left', 0.3)),
+             (T_SHELTER - 1.2, at(G, 'Left', 0.85)), (T_SHELTER + 0.5, Fy - 15), (T_FAR, Fy - 6), (D, Fy)]
     ts, ds = zip(*marks)
     set_(FREIA, 0, D, np.interp(t, ts, ds), 9.0)
     set_(FREIA, T_FAR, D, Fy + 3 * np.sin(2 * np.pi * t * 2.3), 6.0)            # hiding, trembling
     # the giants: a lurch forward on every one of their own stamps
     for k, home, start in ((FASOLT, at(G, 'Right', 0.55), L + 90), (FAFNER, at(G, 'Right', 0.8), L + 190)):
-        mine = [s for s in stamps() if s[1] == k and s[0] >= T_GIANTS and s[0] < T_GIANTS2]
+        mine = [s for s in stamps() if s[1] == k and s[0] >= T_GIANTS - 0.1 and s[0] < T_GIANTS2]
         set_(k, 0, D, start, 3.0)
         for i, (ts_, _, _) in enumerate(mine):
             set_(k, ts_, D, start + (home - start) * (i + 1) / len(mine), 7.0)
@@ -203,11 +165,13 @@ def render(G, seed=8):
     love = np.array([e[0] for e in N if e[4] == 'love'])
     gnotes = np.array([e[0] for e in N if e[4] == 'giants'])
     steps = stamps()
+    panic = accents([e for e in N if e[4] in ('love', 'fear')], n=1, space=0.9, vmin=80)
+    calls = [x[0] for x in EX['singing'] if x[2] == 'Fricka' and x[0] >= SEG[1] - 0.1]
     tw = Flicker(rng, G.N, 0.3, 1.2)
     grass = Flicker(rng, G.N, 0.1, 0.5)
     sp = Flicker(rng, G.N, 3.0, 9.0)
     np_ = 60                                                    # petals she sheds
-    pet_t = np.sort(rng.uniform(RUNS[0] + 0.5, T_SHELTER, np_))
+    pet_t = np.sort(rng.uniform(RUNS[0] + 1.0, T_SHELTER, np_))
     pet_d = np.interp(pet_t, C['t'], C['pos'][FREIA]) + rng.uniform(-15, 15, np_)
     pet_c = rng.random(np_)
 
@@ -273,6 +237,21 @@ def render(G, seed=8):
             fr += light(ROSE, held * (0.3 + 0.2 * lp) * np.exp(-((d - fy) / 110) ** 2))
             fr += light(PINK, held * (0.2 + 0.15 * lp) * np.exp(-((d - fy) / 200) ** 2) * wing)
 
+        # her terror: a pink ripple out from her on every accent of her frightened music
+        for tp in panic:
+            if tp <= t < tp + 1.3:
+                age = t - tp
+                r = 30 + 700 * smoothstep(0, 1.3, age)
+                ring = np.exp(-((np.abs(d - fy) - r) / 80) ** 2) * (1 - age / 1.3)
+                fr += light(PINK, 0.75 * ring) + light(WHITE, 0.25 * ring ** 3)
+        # Fricka calling for her brothers: rose streaks racing to the far end of the house
+        for tc in calls:
+            if tc <= t < tc + 2.0:
+                age = t - tc
+                q = C['pos'][FRICKA][f] - 900 * smoothstep(0, 1.6, age)
+                fr += light(ROSE, 0.9 * np.exp(-((d - q) / 90) ** 2) * (1 - age / 2.0))
+                fr += light(WHITE, 0.5 * np.exp(-((d - q) / 25) ** 2) * (1 - age / 2.0))
+
         # Wotan and Fricka
         for k, col in ((WOTAN, BLUE), (FRICKA, ROSE)):
             p = C['pos'][k][f]
@@ -312,7 +291,8 @@ def render(G, seed=8):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes: Freia's flight on violins and flute over scrambling low strings, the giants' motif on brass
+    over basses and timpani; the giants' tread on the bass drum, far off at first."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -326,98 +306,59 @@ def score(M, G):
     def pan_of(who, t):
         return pan_at(min(np.interp(t, C['t'], C['pos'][who]), G.length))
 
-    for name, gain, rev in (('strings', 0.23, 0.3), ('low', 0.3, 0.18), ('brass', 0.3, 0.28), ('winds', 0.23, 0.32),
-                            ('perc', 0.28, 0.25), ('harp', 0.2, 0.45)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[3-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
+    o = Orchestra(M, level=LEVEL)
+    N = compose()
+    # the reduction carries the dynamics in one hand: give each note the loudest velocity sounding around it
+    tv = np.array([(e[0], e[3]) for e in N if e[4] != 'stamp'])
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def loud(t, v):
+        near = tv[np.abs(tv[:, 0] - t) < 0.6, 1]
+        return int(max(v, near.max() - 8)) if len(near) else v
 
-    right = pan_at(G.length)
-    for t, d, m, v, part, who in compose():
-        if part == 'uneasy':
-            hold('strings', vatrem, m, t, t + d, v, 0.0, rise=0.05, fall=0.5, gain=0.9)
-        elif part == 'run':
-            pa = pan_of(who, t)
-            M.add('strings', vn.play(m + 12, v, dur=d * 1.05, release=0.12), t, 0.8, pa)
-            M.add('winds', fl.play(m + 12, v - 6, dur=d * 1.05, release=0.12), t, 0.8, pa)
-        elif part == 'chase':
-            M.add('low', vc.play(m + 12, v, dur=d, release=0.15), t, 0.6, pan_of(FREIA, t))
-        elif part == 'scramble':
-            M.add('low', vcs.play(m, v), t, 0.7, pan_of(FREIA, t))
-        elif part == 'trem':
-            hold('strings', vtrem, m + 24, t, t + d, v, 0.3, rise=1.5, fall=0.8, gain=0.5)
-        elif part == 'gasp':
-            M.add('winds', fl.play(m, v, dur=d, release=0.2), t, 1.0, pan_of(who, t))
-            M.add('strings', vn.play(m, v - 10, dur=d, release=0.2), t, 0.6, pan_of(who, t))
+    for t, d, m, v, part, who in N:
+        if part == 'stamp':
+            continue
+        v = loud(t, v)
+        if part == 'run':                                   # Freia's motif, breathless
+            o.play('violins' if m >= 55 else 'violas', m, t, d, v, pan_of(FREIA, t), 0.6)
+            if m >= 72:
+                o.play('flutes', m, t, d, v - 8, pan_of(FREIA, t), 0.45)
+        elif part == 'chase':                               # scrambling under her
+            o.play('cellos' if m < 55 else 'violas', m, t, d, v - 2, -0.2, 0.55)
+            if m < 45 and d >= 0.3:
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 8, 0.2, 0.4)
         elif part == 'love':
-            pa = pan_of(FREIA, t)
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.4), t, 0.8, pa)
-            M.add('winds', fl.play(m, v - 10, dur=d * 1.05, release=0.4), t, 0.6, pa)
+            o.play('violins', m, t, d, v - 4, pan_of(FREIA, t), 0.55)
+            if d >= 0.3 and m >= 67:
+                o.play('flutes', m, t, d, v - 12, pan_of(FREIA, t), 0.4)
         elif part == 'lovepad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, pan_of(who, t), rise=0.3, fall=0.8, gain=0.5)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, pan_of(FREIA, t) + 0.3 * (m - 55) / 20)
-        elif part == 'dread':
-            hold('low', trem, m + 12, t, t + d, v, 0.5, rise=4.0, fall=0.5, gain=1.0)
-        elif part == 'shiver':
-            hold('strings', vtrem, m, t, t + d, v, -0.2 if m % 2 else 0.2, rise=4.0, fall=0.2, gain=0.6)
-        elif part == 'soothe':
-            M.add('strings', va.play(m, v, dur=d * 1.05, release=0.35), t, 0.9, pan_of(who, t))
-        elif part == 'stamp':
-            pa = pan_of(who, t) if t >= T_GIANTS else right
-            M.add('perc', bd.play(v), t, 1.0, pa)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.7, pa)
-            if v > 110:
-                M.add('low', tuba.play(note('C2'), v - 20, dur=0.4, release=0.2), t, 0.5, pa)
-        elif part == 'giants':
-            pa = pan_of(who, t)
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.9, pa)
-            M.add('low', tuba.play(m - 12, v, dur=d, release=0.3), t, 0.9, pa)
-            M.add('low', bsn.play(m - 12, v - 10, dur=d, release=0.3), t, 0.5, pa)
-            if v > 110:
-                M.add('brass', horn.play(m, v - 12, dur=d, release=0.3), t, 0.5, pa)
-        elif part == 'weight':
-            hold('low', cb, m + 12, t, t + d, v, right * 0.8, rise=0.1, fall=0.4, gain=0.6)
-        elif part == 'menace':
-            s = horn if m >= note('G3') else tbn
-            hold('brass', s, m, t, t + d, v, 0.6 if m % 2 else 0.3, rise=2.0, fall=1.0, gain=0.8)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.6, right * 0.7)
+            o.play('harp', m, t, d, v, pan_of(FRICKA, t), 0.5)
+            o.play('cellos', m, t, max(d, 0.3), v - 10, -0.2, 0.35)
         elif part == 'fear':
-            M.add('winds', fl.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pan_of(who, t))
-        elif part == 'endchord':
-            s = tuba if m < note('G2') else tbn
-            hold('brass', s, m + (12 if m < note('C2') else 0), t, t + d - 1.0, v, right * 0.7, rise=0.05, fall=1.0,
-                 gain=0.6)
-            if m == note('C2'):
-                M.add('perc', crash.play(96), t, 0.6, right * 0.7)
+            o.play('violins' if m >= 55 else 'violas', m, t, d, v, pan_of(FREIA, t), 0.55)
+            if d >= 0.3 and m >= 67:
+                o.play('oboes', m, t, d, v - 10, pan_of(FREIA, t), 0.4)
+        elif part == 'dread':
+            o.play('cellos' if m < 55 else 'violas', m, t, d, v - 4, -0.2, 0.55)
+            if m < 45:
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 8, 0.2, 0.4)
+        elif part == 'giants':                              # the giants' strength
+            gp = pan_of(who, t)
+            if m >= 55:
+                o.play('horns', m, t, d, v, gp, 0.65)
+                o.play('violins', m, t, d, v - 10, gp, 0.3)
+            elif m >= 45:
+                o.play('trombones', m, t, d, v, gp, 0.75)
+                o.play('horns', m + 12, t, d, v - 10, gp, 0.4)
+            else:
+                o.play('tuba', m + 12 if m < 33 else m, t, d, v, gp, 0.7)
+                o.play('basses', m, t, d, v - 6, gp, 0.55)
+    for t, who, st in stamps():                             # their tread: far off, then on their heavy beats
+        p = pan_of(who, t)
+        if t < T_GIANTS - 0.1:
+            o.hit('bass drum', t, int(70 + 50 * st), gain=0.25 + 0.5 * st, pan=0.8)
+        else:
+            o.hit('bass drum', t, 124, gain=0.7 * st, pan=p)
+            o.hit('timpani', t, 112, pitch=-8, gain=0.45 * st, pan=p)
+    o.hit('crash', T_GIANTS + 0.2, 110, gain=0.5, pan=0.6)
+    o.hit('timpani roll', T_GIANTS - 2.5, 96, pitch=-6, gain=0.4, pan=0.7)

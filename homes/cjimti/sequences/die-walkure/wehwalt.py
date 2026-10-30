@@ -1,28 +1,38 @@
 """Wehwalt: Hunding has asked the stranger who he is, and Siegmund tells his story while the room darkens round
-the three of them and his memories play over the whole house. He may not call himself Friedmund, peaceful, he
-says, only Wehwalt, woeful; and the tragic destiny of the Volsungs (Donington 66) sounds low in the horns.
+the three of them and his memories play over the whole house.
 
 Wolf was his father. A grey wolf-light with a core of deep god's blue runs with a small blue cub over the house,
-out hunting through a forest of green dapples, horn calls and galloping basses. They come home to find the hall
-burned: fire races out from the middle of the porch over the whole house, his mother, a pale light in the middle
-of it, is snuffed out in a collapse of indigo while the Volsung motif breaks out in full, and his twin sister, a
-small amber light, is carried off into the dark; by the fire on Left the real Sieglinde's light trembles. Father
-and son lived wild in the forest after that, hunted by enemies like red sparks that they turned on and put out
-in flashes of blue, until one day the father was gone: the wolf-light runs to the top of the porch and vanishes,
-and for a moment a glow of deep blue and gold hangs there with a phrase of Valhalla (63) on the horns, for the
-father was more than a wolf, and then only an empty grey pelt is left. He went among men and was hated. He fought
-for a girl forced to marry against her will and killed her brothers, but her kinsmen came in their crowds, red
-from both sides; she was killed before his eyes, his spear and shield were hacked to pieces in a spray of blue
-shards and an anvil's ring, and he fled unarmed into the storm. "Now you know why I am not Friedmund": his weary
-motif (35a) in the cellos, Sieglinde's sympathy in the oboe, the room returns, and across it Hunding's light
-smoulders darker as his motif begins to stir in the tubas.
+out hunting through a forest of green dapples to the strings' galloping figure. They come home to find the nest
+empty and the hall burned: fire races out from the middle of the porch over the whole house, his mother, a pale
+light in the middle of it, is snuffed out in a collapse of indigo on the orchestra's great cry, and his twin
+sister, a small amber light, is carried off into the dark; by the fire on Left the real Sieglinde's light
+trembles. Father and son lived wild in the forest after that, hunted by the Neidings like red sparks that they
+turned on and scattered like chaff in flashes of blue, until one day the father was gone: for a moment a glow of
+deep blue and gold hangs over the porch, for the father was more than a wolf, and then only an empty grey pelt is
+left. Years later he fought for a girl forced to marry against her will and struck down her brothers, one on each
+blow of the orchestra; but their kinsmen came storming in their crowds, red from both sides, over the basses'
+surging tremolo. He shielded her with spear and shield, parrying blow after blow, until spear and shield were
+hacked to pieces in a spray of blue shards, and he fled unarmed out of the door, while across the room Hunding's
+light smoulders darker.
 
-compose() holds every note, choreography() every memory; stage(), room() and figure() are the hut and the people
-in it, shared word for word by Act I's first scenes on a clock that runs on from scene to scene."""
+The music is Wagner's own: Act I, bars 502 to 513, the hunt and the burned hall; bars 542 to 547, the Neidings'
+hunt; bars 612 to 615, the forced bride and her brothers struck down; and bars 633 to 642, the kinsmen's revenge
+and the shattered weapons, as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the
+Wagner Ring Dataset's piano reduction of the score (pixelhome/ring.py), orchestrated by hand and register: the
+right hand on violins and woodwinds, the left hand's lines on horns, violas and cellos, the bass on cellos, basses
+and tuba, the orchestra fuller as the story grows, with timpani and cymbals on its great accents. Around the score,
+as a staging would: the hut's hearth crackles; wolf and cub run on padding feet; the burning hall roars, crackles
+and falls in on his mother. Steel rings as the wolves turn on the Neidings, a god's shimmer marks the father
+vanishing, and each brother falls with a clash and a blow. The kinsmen come running from both ends of the
+house, every parry rings, spear and shield shatter, and his feet run for the door. The effects lead with his
+story's violent images (the fire, the fights, the kinsmen and the shattering); they recede for the father's
+vanishing and the forced bride, and fade back into the hut as he flees.
+
+compose() tags every note of the excerpt, choreography() every memory; stage(), room() and figure() are the hut and
+the people in it, shared word for word by Act I's first scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK05'
 TITLE = 'Wehwalt'
@@ -32,22 +42,24 @@ DESCRIPTION = ("The stranger tells his story: a wolf for a father, a home burned
 VOICEOVER = ('Call me Woeful, the stranger says. Then he tells them his story, '
              'and it is one long run from fire, and from grief.')
 
+EX = excerpt(__file__)                      # Act I, bars 502-513, 542-547, 612-615 and 633-642, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
 K = 4                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_FATE = 1.0                                # the Volsung motif, low
-T_HUNT = 7.0                                # father and son hunting
-T_FIRE = 19.0                               # home to find the hall burning
-T_SNUFF = 27.5                              # the mother killed; the Volsung motif in full
-T_WILD = 31.0                               # living wild, hunted
-T_GONE = 40.0                               # the father vanishes: Valhalla
-T_BRIDE = 47.0                              # the forced bride; he kills her brothers
-KILLS = [49.5, 50.6, 51.7]
-T_LOST = 54.5                               # she is killed
-T_SHATTER = 55.5                            # his weapons hacked to pieces
-T_FLED = 58.0
-T_WEARY = 60.0                              # "warum ich Friedmund nicht heisse"
-T_SYM = 66.0
-T_STIR = 72.0                               # Hunding's motif begins to stir
-D = 80.0
+T_HUNT = 0.0                                # father and son hunting
+T_NEST = BAR[504] + 1.2                     # "da lag das Wolfsnest leer"
+T_FIRE = BAR[507]                           # "Zu Schutt gebrannt der prangende Saal"
+T_SNUFF = BAR[510]                          # the mother killed
+T_WILD = BAR[542]                           # living wild, hunted by the Neidings
+STRIKES = [BAR[544], BAR[545], BAR[546], BAR[546] + 1.2]   # the wolves turn on them
+T_GONE = BAR[547]                           # the father vanishes
+T_BRIDE = BAR[612]                          # the forced bride
+KILLS = [BAR[613], BAR[614], BAR[615]]      # he strikes down her brothers
+T_KIN = BAR[633]                            # "Der Erschlagnen Sippen stürmten daher"
+T_SHATTER = BAR[641]                        # spear and shield hacked to pieces
+T_LOST = T_SHATTER + 0.8                    # she is lost to him
+T_FLED = BAR[642]                           # he flees unarmed
+NKIN = 8
 
 HUT = hexc('#3a1a0a')
 HEARTH = hexc('#ff6a10')
@@ -75,12 +87,6 @@ END = dict(bed=0.18, hearth=0.58, trunk=0.95, leaves=0.6, hilt=0.45, door=0.3)
 SM = (0.5, 18.0)                            # Siegmund at Left 0.5: level, width
 SL = (0.52, 16.0)                           # Sieglinde at Left 0.22
 HU_START, HU_END = (0.6, 20.0), (0.66, 20.0)                     # Hunding at Right 0.3
-
-HUNDING_MOTIF = [(0, 1.5, 'D2'), (1.5, 0.5, 'D2'), (2, 1, 'F2'), (3, 0.75, 'E2'), (3.75, 0.25, 'C#2'),
-                 (4, 1.5, 'D2'), (5.5, 0.5, 'A1'), (6, 2, 'D2')]     # composed: the tubas' heavy tread
-HUNT_CALL = [(0, 0.5, 'A3'), (0.5, 0.25, 'D4'), (0.75, 0.25, 'D4'), (1, 0.5, 'F4'), (1.5, 0.5, 'A4'), (2, 1, 'D5'),
-             (3, 0.5, 'A4'), (3.5, 0.5, 'F4'), (4, 1.5, 'D4')]   # composed: a hunting call in D minor
-
 
 def at(G, seg, u):
     """Path distance u of the way along a segment."""
@@ -141,55 +147,29 @@ def brute(fr, S, p, lvl, w=20.0, dark=0.75):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The orchestra's great accents
+    (velocity 105 and up) are 'fate'; in the kinsmen's fight the loud notes are 'parry'; the basses' surging
+    tremolo is 'surge'; everything else is 'tutti', orchestrated by hand and register."""
+    bar_of = lambda t: max(m for m, bt in EX['bars'] if bt <= t + 1e-6)
     N = []
+    for t, d, m, v, h in sorted(EX['notes']):
+        b = bar_of(t)
+        if v >= 105:
+            part = 'fate'
+        elif 637 <= b <= 641 and v >= 95:
+            part = 'parry'
+        elif 633 <= b <= 636 and h == 1:
+            part = 'surge'
+        else:
+            part = 'tutti'
+        N.append((t, d, m, v, part, h))
+    return N
 
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
 
-    add(0.0, D, 'D1', 62, 'pedal')
-    for t, m, v, d in play('volsung_fate', T_FATE, 0.6, 0, 74):
-        add(t, d, m, v, 'fate', 0)
-    for k, t0 in enumerate((T_HUNT + 0.5, T_HUNT + 4.5, T_HUNT + 8.5)):
-        for b, d, m in HUNT_CALL:
-            add(t0 + b * 0.32, d * 0.32, note(m) + (0, 3, -2)[k], 98 - 6 * k, 'call', k)
-    for i in range(int((T_FIRE - T_HUNT) / 0.27)):   # galloping
-        add(T_HUNT + i * 0.27, 0.2, ('D2', 'D2', 'A1')[i % 3], 76 + 10 * (i % 3 == 0), 'gallop')
-    add(T_FIRE, T_SNUFF - T_FIRE + 1.0, 'D4', 86, 'blaze')
-    add(T_FIRE + 1.0, T_SNUFF - T_FIRE, 'A4', 90, 'blaze')
-    add(T_FIRE + 2.5, T_SNUFF - T_FIRE - 1.5, 'D5', 94, 'blaze')
-    add(T_FIRE, 4.0, 'D1', 96, 'roll')
-    for m in ('D2', 'A2'):
-        add(T_FIRE, T_SNUFF - T_FIRE, m, 84, 'ember')
-    add(T_FIRE + 3.5, 1.0, 'D1', 112, 'crash')
-    add(T_SNUFF - 3.0, 3.0, 'D1', 104, 'roll')
-    for t, m, v, d in play('volsung_fate', T_SNUFF, 0.5, 0, 112):
-        add(t, d, m, v, 'fate', 1)
-    for i in range(int((T_GONE - T_WILD - 1) / 0.25)):   # hunted: the low strings drive
-        add(T_WILD + 1 + i * 0.25, 0.2, ('D2', 'F2', 'E2', 'D2', 'A1', 'D2', 'C#2', 'D2')[i % 8], 84, 'drive')
-    for j, tk in enumerate((34.0, 35.4, 36.8, 38.2)):
-        add(tk, 0.5, 'D2', 104, 'strike', j)
-    for t, m, v, d in play('valhalla', T_GONE + 0.8, 0.6, 0, 76):
-        add(t, d, m, v, 'valhalla')
-    for i, m in enumerate(('Db4', 'F4', 'Ab4', 'Db5', 'F5')):
-        add(T_GONE + 0.5 + 0.15 * i, 1.5, m, 66, 'harp')
-    for i in range(int((T_LOST - T_BRIDE) / 0.25)):
-        add(T_BRIDE + i * 0.25, 0.2, ('D2', 'Eb2', 'D2', 'A1')[i % 4], 88, 'drive')
-    for j, tk in enumerate(KILLS):
-        add(tk, 0.5, 'D2', 112, 'strike', j)
-    add(T_LOST, 2.0, 'C2', 116, 'lost')
-    add(T_SHATTER, 1.5, 'D1', 124, 'shatter')
-    for t, m, v, d in play('siegmund_weary', T_WEARY, 0.6, 0, 84):
-        add(t, d, m, v, 'weary')
-    for t, m, v, d in play('sieglinde', T_SYM, 0.5, 0, 70, line='melody'):
-        if m >= note('C4'):
-            add(t, d, m, v, 'sym')
-    for m in ('D3', 'F3', 'A3'):
-        add(T_WEARY, T_STIR + 2 - T_WEARY, m, 56, 'pad')
-    for b, d, m in HUNDING_MOTIF:
-        add(T_STIR + 0.5 + b * 0.6, d * 0.6, m, 74, 'hunding', 0)
-        add(T_STIR + 5.3 + b * 0.6, d * 0.6, m, 84, 'hunding', 1)
-    return sorted(N, key=lambda e: e[0])
+def size(t):
+    """How full the orchestra is as the story goes."""
+    return keys(t, [(0, 0.6), (T_NEST, 0.3), (T_FIRE, 0.6), (T_SNUFF, 1.0), (T_SNUFF + 6, 0.5), (T_WILD, 0.8),
+                    (T_BRIDE, 1.0), (T_KIN, 0.6), (T_SHATTER, 1.0), (D, 0.4)])
 
 
 def choreography(G):
@@ -197,40 +177,44 @@ def choreography(G):
     F = nframes(D)
     t = np.arange(F) * DT
     A = lambda s, u: at(G, s, u)
-    run = [(T_HUNT, A('Left', 0.85)), (T_HUNT + 2.5, A('Porch Left', 0.5)), (T_HUNT + 5, A('Porch Front', 0.75)),
-           (T_HUNT + 7.5, A('Right', 0.6)), (T_HUNT + 10, A('Porch Right', 0.4)), (T_FIRE, A('Porch Front', 0.3)),
+    run = [(T_HUNT, A('Left', 0.85)), (T_HUNT + 2.0, A('Porch Left', 0.5)), (T_HUNT + 4, A('Porch Front', 0.75)),
+           (T_HUNT + 6, A('Right', 0.6)), (T_HUNT + 9, A('Porch Right', 0.4)), (T_FIRE, A('Porch Front', 0.3)),
            (T_WILD, A('Porch Front', 0.3)), (T_WILD + 2.5, A('Right', 0.45)), (T_WILD + 5, A('Porch Left', 0.3)),
-           (T_WILD + 7.5, A('Porch Right', 0.35)), (T_GONE, A('Porch Front', 0.5))]
+           (T_WILD + 7.5, A('Porch Right', 0.35)), (T_WILD + 10, A('Right', 0.3)), (T_GONE, A('Porch Front', 0.5))]
     rt, rp = zip(*run)
     father = np.interp(t, rt, rp)
     cub = np.interp(t - 0.3, rt, rp) - 45
-    cub_hero = np.interp(t, [T_GONE + 3, T_BRIDE + 2, T_LOST + 1.5, T_FLED], [A('Porch Front', 0.5),
-                                                                            A('Porch Left', 0.6), A('Porch Left', 0.6),
-                                                                            G.pd.max() + 40])
-    cub = np.where(t > T_GONE + 3, cub_hero, cub)
+    cub_hero = np.interp(t, [T_GONE + 2, T_BRIDE + 2, T_SHATTER + 0.5, T_FLED + 2.5], [A('Porch Front', 0.5),
+                                                                                    A('Porch Left', 0.6),
+                                                                                    A('Porch Left', 0.6),
+                                                                                    G.pd.max() + 40])
+    cub = np.where(t > T_GONE + 2, cub_hero, cub)
     lv = lambda pts: np.array([keys(x, pts) for x in t])
     alpha = dict(
-        father=lv([(T_HUNT - 1, 0), (T_HUNT + 0.5, 0.7), (T_GONE - 0.5, 0.7), (T_GONE + 0.8, 0)]),
-        cub=lv([(T_HUNT - 1, 0), (T_HUNT + 0.5, 0.55), (T_FLED - 1, 0.55), (T_FLED + 0.5, 0)]),
+        father=lv([(T_HUNT, 0), (T_HUNT + 0.8, 0.7), (T_GONE - 0.5, 0.7), (T_GONE + 0.8, 0)]),
+        cub=lv([(T_HUNT, 0), (T_HUNT + 0.8, 0.55), (T_FLED + 1, 0.55), (T_FLED + 2.5, 0)]),
         mother=lv([(T_FIRE - 1, 0), (T_FIRE, 0.6), (T_SNUFF, 0.6), (T_SNUFF + 0.3, 0)]),
         sister=lv([(T_FIRE - 1, 0), (T_FIRE, 0.55), (T_SNUFF + 0.5, 0.45), (T_WILD, 0)]),
         bride=lv([(T_BRIDE - 0.5, 0), (T_BRIDE + 0.5, 0.6), (T_LOST, 0.6), (T_LOST + 0.3, 0)]))
-    sister = np.interp(t, [T_SNUFF - 1, T_WILD], [A('Porch Front', 0.62), A('Right', 0.9)])
+    sister = np.interp(t, [BAR[512], T_WILD], [A('Porch Front', 0.62), A('Right', 0.9)])
     # foes: four chasing the wolves, then six closing on the bride from both sides
     foes = []
     for j in range(4):
         p = np.interp(t - 0.9 - 0.25 * j, rt, rp) + 30 * j
-        a = lv([(T_WILD + 1, 0), (T_WILD + 2, 0.7), (34.0 + 1.4 * j, 0.7), (34.2 + 1.4 * j, 0)])
-        foes.append((p, a, 34.0 + 1.4 * j))
+        a = lv([(T_WILD + 0.5, 0), (T_WILD + 1.5, 0.7), (STRIKES[j], 0.7), (STRIKES[j] + 0.2, 0)])
+        foes.append((p, a, STRIKES[j]))
     bride = A('Porch Left', 0.5)
-    for j in range(6):
+    for j in range(3 + NKIN):
         side = -1 if j % 2 else 1
-        p = bride + side * (90 + 40 * (j // 2)) + side * 500 * (1 - smoothstep(T_BRIDE, T_BRIDE + 3, t))
+        p = bride + side * (90 + 40 * (j // 2)) + side * 500 * (1 - smoothstep(T_BRIDE, T_BRIDE + 2, t))
         dies = KILLS[j] if j < 3 else D + 1
-        a = lv([(T_BRIDE, 0), (T_BRIDE + 1, 0.7), (dies, 0.7), (dies + 0.2, 0)])
-        if j >= 3:                          # the rest of the kin flood in
-            p = bride + side * (40 + 300 * (1 - smoothstep(T_LOST - 2, T_LOST, t)))
-            a = lv([(T_LOST - 2.5, 0), (T_LOST - 1.5, 0.75), (T_FLED, 0.75), (T_FLED + 1, 0)])
+        a = lv([(T_BRIDE, 0), (T_BRIDE + 0.6, 0.7), (dies, 0.7), (dies + 0.2, 0)])
+        if j >= 3:                          # the kinsmen storm in from both ends of the house, wave after wave
+            k = j - 3
+            t0 = T_KIN + 1.2 * k
+            far = G.pd.max() + 60 if side > 0 else -60
+            p = far + (bride + side * (60 + 25 * (k // 2)) - far) * smoothstep(t0, t0 + 5.0, t)
+            a = lv([(t0, 0), (t0 + 0.8, 0.8), (T_FLED, 0.8), (T_FLED + 1.5, 0)])
         foes.append((p, a, dies))
     return dict(t=t, father=father, cub=cub, sister=sister, alpha=alpha, foes=foes,
                 mother=A('Porch Front', 0.42), bride=bride)
@@ -248,26 +232,25 @@ def render(G, seed=5):
     dapple = Flicker(rng, G.N, 0.3, 1.2)
     blaze = Flicker(rng, G.N, 2.0, 7.0)
     fate_on = np.array(sorted({e[0] for e in N if e[4] == 'fate'}))
-    calls = np.array([e[0] for e in N if e[4] == 'call'])
-    stomp = np.array([e[0] for e in N if e[4] == 'hunding'])
-    strikes = [e for e in N if e[4] == 'strike']
-    shards = dict(p=sm + rng.normal(0, 1, 0), v=np.zeros(0))
+    calls = np.array(sorted({e[0] for e in N if e[0] < T_NEST and e[5] == 1}))
+    surge = np.array([e[0] for e in N if e[4] == 'surge'])
+    parry = np.array(sorted({e[0] for e in N if e[4] == 'parry'}))
     sh_v = rng.choice([-1, 1], 60) * rng.uniform(150, 1100, 60)
     sh_w = rng.uniform(8, 18, 60)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        vis = keys(t, [(T_FATE + 3, 0.0), (T_HUNT, 1.0), (T_FLED + 1, 1.0), (T_WEARY + 4, 0.0)])
-        lv = {k: keys(t, [(0, START[k]), (T_STIR, START[k]), (D - 1, END[k])]) for k in START}
-        lv['door'] += 0.35 * smoothstep(T_SHATTER, T_FLED, t) * (1 - smoothstep(T_FLED + 1, T_WEARY + 3, t))
+        vis = keys(t, [(0, 0.6), (1.5, 1.0), (T_FLED + 1, 1.0), (D, 0.3)])
+        lv = {k: keys(t, [(0, START[k]), (T_FLED, START[k]), (D - 0.5, END[k])]) for k in START}
+        lv['door'] += 0.35 * smoothstep(T_SHATTER, T_FLED, t) * (1 - smoothstep(D - 1.5, D - 0.2, t))
         fr = room(S, T, lv) * (1 - 0.6 * vis)
 
         # the Volsung motif: each chord a slow indigo breath from the storyteller
         i = int(np.searchsorted(fate_on, t, side='right')) - 1
         if i >= 0 and t - fate_on[i] < 3:
             a = t - fate_on[i]
-            big = 1.0 if fate_on[i] >= T_SNUFF else 0.6
+            big = 1.0
             fr += light(FATE, 0.55 * big * np.exp(-a / 1.2) * np.exp(-((np.abs(d - sm) - 300 * a) / 200) ** 2))
 
         # the hunt: a forest of dapples; each horn call flares the wolves
@@ -293,10 +276,10 @@ def render(G, seed=5):
 
         # the father gone: deep blue and gold over the porch, then an empty pelt
         if T_GONE - 0.5 <= t < T_BRIDE:
-            g = smoothstep(T_GONE - 0.5, T_GONE + 1, t) * (1 - smoothstep(T_GONE + 4, T_GONE + 6.5, t))
+            g = smoothstep(T_GONE - 0.5, T_GONE + 0.6, t) * (1 - smoothstep(T_GONE + 1.8, T_GONE + 2.9, t))
             glow = np.exp(-((d - pf) / 330) ** 2)
             fr += light(WOTAN, 0.55 * g * glow) + light(GOLD, 0.5 * g * glow ** 3 * (0.8 + 0.2 * np.sin(2 * np.pi * 1.1 * t)))
-            pelt = smoothstep(T_GONE + 0.5, T_GONE + 1.5, t) * (1 - smoothstep(T_GONE + 4.5, T_BRIDE, t))
+            pelt = smoothstep(T_GONE + 0.5, T_GONE + 1.2, t) * (1 - smoothstep(T_GONE + 2.0, T_BRIDE, t))
             fr += light(WOLF, 0.3 * pelt * np.exp(-((d - pf) / 40) ** 2))
 
         # memories as lights
@@ -320,6 +303,18 @@ def render(G, seed=5):
         if T_LOST <= t < T_LOST + 2.5:      # the bride killed
             a = t - T_LOST
             fr += light(FATE, 0.8 * np.exp(-a / 0.8) * np.exp(-((np.abs(d - C['bride']) - 200 * (1 - a / 2.5)) / 60) ** 2))
+        # the kinsmen's surge: the basses' tremolo pulses red over the whole house, wilder as they close in
+        if len(surge) and surge[0] <= t < T_SHATTER:
+            j = int(np.searchsorted(surge, t, side='right')) - 1
+            gr = smoothstep(T_KIN, BAR[636], t)
+            fr += light(FOE, (0.15 + 0.3 * gr) * np.exp(-(t - surge[j]) / 0.1) * (0.5 + 0.5 * np.cos(2 * np.pi * (d / 300 + 2 * t))))
+        # his parries: each blow a white flash at his shield and a ring of blue
+        j = int(np.searchsorted(parry, t, side='right')) - 1 if len(parry) else -1
+        if j >= 0 and t - parry[j] < 0.8 and t < T_SHATTER:
+            a = t - parry[j]
+            q = C['cub'][f]
+            fr += light(SHARD, 0.85 * np.exp(-a / 0.1) * np.exp(-((d - q) / 25) ** 2))
+            fr += light(SIEGMUND, 0.6 * np.exp(-a / 0.3) * np.exp(-((np.abs(d - q) - 40 - 500 * a) / 50) ** 2))
         if T_SHATTER <= t < T_SHATTER + 2.5:    # spear and shield hacked to pieces
             a = t - T_SHATTER
             q = C['cub'][int(T_SHATTER / DT)] + sh_v * (1 - np.exp(-a / 0.5)) * 0.6
@@ -331,25 +326,17 @@ def render(G, seed=5):
         tell = 0.12 * vis
         fr = figure(fr, S, sm, SIEGMUND, SM[0] + tell, SM[1])
         trem = 0.25 * smoothstep(T_SNUFF - 1, T_SNUFF, t) * (1 - smoothstep(T_WILD, T_WILD + 3, t)) * np.sin(2 * np.pi * 5 * t)
-        reach = smoothstep(T_SYM, T_SYM + 2, t) * (1 - smoothstep(T_SYM + 5, T_STIR + 1, t))
-        fr = figure(fr, S, sl, SIEGLINDE, SL[0] * (1 + trem + 0.25 * reach), SL[1])
-        if reach > 0:
-            span = smoothstep(sl - 20, sl + 20, d) * smoothstep(sm + 10, sm - 30, d)
-            fr += light(SIEGLINDE, 0.35 * reach * span)
-        k = int(np.searchsorted(stomp, t, side='right')) - 1
-        if k >= 0 and t - stomp[k] < 1.6:   # his motif stirring: dark red ripples from his seat
-            a = t - stomp[k]
-            band = np.exp(-((np.abs(d - hu) - 30 - 450 * a) / 90) ** 2) * np.exp(-a / 0.5) * (0.5 + 0.1 * (t > T_STIR + 5))
-            fr = fr * (1 - 0.6 * band)[:, None] + light(HUNDING, 0.4 * band)
-        hl = keys(t, [(0, HU_START[0]), (T_BRIDE, HU_START[0]), (T_BRIDE + 3, 0.72), (T_WEARY, 0.62), (T_STIR, 0.62),
-                      (D - 1, HU_END[0])])
+        fr = figure(fr, S, sl, SIEGLINDE, SL[0] * (1 + trem), SL[1])
+        hl = keys(t, [(0, HU_START[0]), (T_BRIDE, HU_START[0]), (T_BRIDE + 3, 0.72), (T_FLED, 0.72), (D - 0.5, HU_END[0])])
         fr = brute(fr, S, hu, hl, HU_END[1])
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction by hand and register, the orchestra fuller as the story
+    grows: timpani, cymbals and the brass on its great accents, the basses' tremolo on cellos and basses, the parries
+    on the brass with the anvil ringing, and a crash where spear and shield break."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -363,98 +350,65 @@ def score(M, G):
     def pan_of(track, t):
         return pan_at(np.interp(t, C['t'], C[track]))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('strings', 0.27, 0.32), ('winds', 0.26, 0.35), ('brass', 0.25, 0.3),
-                            ('harp', 0.26, 0.4), ('perc', 0.28, 0.28), ('fx', 0.13, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_v3*.wav')
-    gong = M.hits('Percussion/gongHit_f.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    sm, sl, hu = (pan_at(at(G, *x)) for x in (('Left', 0.5), ('Left', 0.22), ('Right', 0.3)))
-    pf = pan_at(at(G, 'Porch Front', 0.5))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=2.0, fall=1.5, gain=0.6)
-        elif part == 'fate':
-            g = 1.0 if k == 1 else 0.7
-            s = horn if m >= note('G3') else tbn
-            M.add('brass', s.play(m, v, dur=d * 1.05, release=0.5), t, 0.7 * g, sm if k == 0 else 0.0)
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.5), t, 0.7 * g, 0.0)
-        elif part == 'call':
-            pa = pan_of('father', t)
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 0.9, pa)
-            M.add('brass', horn.play(m - 12, v - 14, dur=d * 1.05, release=0.4), t, 0.5, pa)
-        elif part == 'gallop':
-            M.add('low', pizz.play(m + 12, v), t, 0.8, pan_of('father', t))
-        elif part == 'blaze':
-            hold('strings', vtrem, m, t, t + d, v, -0.3 + 0.3 * (m % 3), rise=1.5, fall=1.5, gain=0.8)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.8, pf)
-            M.add('fx', whoosh(2.0, 300, 3000, 0.7, seed=19), t - 0.5, 0.9, pf)
-        elif part == 'ember':
-            hold('low', vc, m, t, t + d, v, pf, rise=1.0, fall=1.0, gain=0.6)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, pf)
-        elif part == 'drive':
-            pa = pan_of('cub', t)
-            M.add('low', cbs.play(m, v), t, 0.8, pa)
-            M.add('low', vcs.play(m + 12, v - 10), t, 0.6, pa)
-        elif part == 'strike':
-            pa = pan_of('cub', t)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pa)
-            M.add('brass', tbn.play(m + 12, v, dur=0.3, release=0.2), t, 0.7, pa)
-        elif part == 'valhalla':
-            M.add('brass', (horn if m >= note('Ab3') else tbn).play(m, v, dur=d * 1.05, release=0.6), t, 0.6, pf)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 0.9, pf)
-        elif part == 'lost':
-            M.add('perc', gong.play(v), t, 0.7, pan_at(C['bride']))
-            M.add('brass', tbn.play(m + 12, v, dur=d, release=0.5), t, 0.8, pan_at(C['bride']))
-        elif part == 'shatter':
-            pa = pan_at(C['cub'][int(T_SHATTER / DT)])
-            M.add('perc', anvil.play(124), t, 0.9, pa)
-            M.add('perc', anvil.play(110), t + 0.18, 0.7, pa - 0.2)
-            M.add('perc', crash.play(120), t, 0.8, pa)
-            M.add('fx', whoosh(0.8, 6000, 800, 0.7, seed=55), t, 0.9, pa)
-        elif part == 'weary':
-            if d > 2:
-                hold('strings', vc, m, t, t + min(d, 4.0), v, sm, rise=0.4, fall=1.5, gain=0.8)
+    o = Orchestra(M, level=2.7)
+    notes = compose()
+    tutti = [(t, d, m, v, h) for t, d, m, v, part, h in notes if part == 'tutti']
+    o.tutti(tutti, size=size, pan=lambda t, m: 0.6 * pan_of('cub', t) if t > T_HUNT + 1 else None)
+    hits = set()
+    for t, d, m, v, part, h in notes:
+        if part == 'fate':
+            if h == 0:
+                o.play('trumpets' if m >= 60 else 'horns', m - 12 if m >= 72 else m, t, d, v, 0.25, 0.55)
+                o.play('violins', m, t, d, v - 6, 0.3, 0.5)
             else:
-                M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.4), t, 0.9, sm)
-        elif part == 'sym':
-            M.add('winds', ob.play(m, v, dur=d * 1.1, release=0.4), t, 0.8, sl)
-        elif part == 'pad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, -0.3, rise=2.0, fall=2.0, gain=0.5)
-        elif part == 'hunding':
-            M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, hu)
-            M.add('perc', timp.play(v - 10, pitch=-4 if m % 12 == 2 else -9), t, 0.6, hu)
+                o.play('trombones', m if m >= 40 else m + 12, t, d, v, 0.0, 0.7)
+                o.play('tuba', m - 12 if m >= 40 else m, t, d, v - 6, 0.0, 0.6)
+            if round(t, 1) not in hits:
+                hits.add(round(t, 1))
+                o.hit('timpani', t, 120, pitch=-5, gain=0.7)
+                o.hit('crash', t, 110, gain=0.45)
+        elif part == 'parry':
+            o.play('horns' if m < 67 else 'trumpets', m if m < 67 else m - 12, t, d, v, 0.6 * pan_of('cub', t), 0.6)
+            if round(t, 1) not in hits:
+                hits.add(round(t, 1))
+                o.clash(t, 0.6 * pan_of('cub', t), 100, 0.55)       # spear and shield take the blows
+        elif part == 'surge':
+            o.play('cellos', m, t, 0.1, v + 30, -0.3, 0.35)
+            o.play('basses', m - 12, t, 0.1, v + 24, 0.3, 0.3)
+    o.hit('crash', T_SHATTER, 124, gain=0.7)
+    o.hit('gong', T_SHATTER, 110, gain=0.5)
+    # the stage: the story's sounds over the score
+    # his story's images lead: the burning hall, the fights, the kinsmen; the father's vanishing and the bride are
+    # quieter, and his flight fades back into the hut
+    o.effects([(0.0, -3.0), (T_FIRE - 0.5, -1.0), (T_FIRE, 1.0), (T_SNUFF + 2.0, -2.0), (T_WILD, -1.0),
+               (T_GONE - 1.5, -2.0), (T_GONE, -7.0), (T_BRIDE + 0.5, -7.0), (KILLS[0] - 0.2, 0.0), (T_KIN, 0.0),
+               (T_SHATTER, 1.0), (T_FLED + 1.0, -2.0), (D, -7.0)])
+    o.fire(0.0, D, 0.2, pan_at(at(G, 'Left', 0.5)), crackle=10, seed=90)          # the hearth in the hut
+    o.gallop(T_HUNT + 0.3, T_NEST, 0.36, lambda t: pan_of('father', t), v=96, gain=0.7)     # wolf and cub running
+    o.gallop(T_WILD + 0.2, T_GONE, 0.34, lambda t: pan_of('father', t), v=100, gain=0.75)
+    fp = pan_at(at(G, 'Porch Front', 0.5))
+    o.fire(T_FIRE - 0.3, T_WILD - 1.0, lambda tt: np.clip((tt - T_FIRE + 0.3) / 0.8, 0, 1) *
+           (1 - 0.6 * np.clip((tt - T_SNUFF) / 3, 0, 1)), fp, crackle=40, seed=91)       # the hall burning
+    o.boom(T_FIRE, fp, 0.6)
+    o.boom(T_SNUFF, fp, 0.9)                                                         # the roof falls in on her
+    o.hit('glass', T_SNUFF + 0.05, 90, gain=0.3, pan=fp, fx=True)
+    for tk in STRIKES:                                                               # the wolves turn on the Neidings
+        o.clash(tk, pan_of('father', tk), 108, 0.6)
+        o.hit('bass drum', tk, 100, gain=0.45, pan=pan_of('father', tk), fx=True)
+    o.hit('cymbal swell', T_GONE - 1.2, 84, gain=0.4, pan=fp)                       # the father vanishes: a god's glow
+    o.play('glock', 84, T_GONE, 0.5, 90, fp, 0.35)
+    o.play('glock', 91, T_GONE + 0.12, 0.5, 84, fp, 0.3)
+    bp = pan_at(C['bride'])
+    for tk in KILLS:                                                                 # he strikes down her brothers
+        o.clash(tk, bp, 122, 0.85)
+        o.boom(tk + 0.05, bp, 0.6)
+    lft, rgt = pan_at(-60.0), pan_at(G.pd.max() + 60)
+    o.gallop(T_KIN, T_SHATTER, 0.3, lambda t: lft + (bp - lft) * min(1, (t - T_KIN) / 5), v=110, gain=0.6)
+    o.gallop(T_KIN + 0.15, T_SHATTER, 0.32, lambda t: rgt + (bp - rgt) * min(1, (t - T_KIN) / 5), v=110, gain=0.6)
+    o.shatter(T_SHATTER, bp, 1.0)                                                    # spear and shield in pieces
+    t = T_FLED
+    while t < T_FLED + 2.6:                                                          # he runs out unarmed
+        o.hit('hoof soft', t, 96, pitch=4, gain=0.45, pan=pan_of('cub', t), fx=True)
+        t += 0.22
+    o.hit('timpani roll', T_FIRE, 96, gain=0.5)
+    o.hit('timpani roll', T_KIN, 90, gain=0.5)

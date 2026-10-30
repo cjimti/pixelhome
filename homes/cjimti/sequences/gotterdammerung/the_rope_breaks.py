@@ -2,23 +2,30 @@
 between them, a white-hot head racing from one to the next and a gold whip cracking on out to the end of the
 house each time it is caught.
 
-But they sing now of Alberich and the Ring. Every note of the Ring (Donington 8) flashes gold along the rope with a
-red glint running through it; then the Curse (13) sounds on the trombones and the rope turns blood red, red pulses
-racing along it and the whole house throbbing red on its heavy low notes. The rope frays: dark gaps flicker
-through it, more and more, the throws come faster and stutter, and with a crash it snaps. One white flash over the
-whole house, and the two broken ends whip away to the two ends of the roofline and are gone.
+The music is Wagner's own: the end of the Norns' scene (bars 269 to 290, and 296 to 298), as Solti's 1958 Vienna
+Philharmonic recording takes it, from "das Rheingold raubte Alberich" through the curse, the fraying, "Es riß!"
+and the Norns' descent, "Hinab! Zur Mutter!". The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py): the Ring on bassoons and clarinets, the curse's heavy chords on trombones and tuba with the
+timpani, the rope's rushing figures on violins and harp, the tremolo under the end on cellos and basses. The rope
+creaks as it frays and snaps with a crack, a blow and two lashes flying apart; the Norns go down into the earth
+over a timpani roll and a scraped gong; under their singing the effects keep out of the way.
 
-The Twilight of the Gods (4) sounds on the horns, and at each of its phrases a Norn sinks into the earth, her grey
-white collapsing inward in a ring, until the rock is empty. "Down to our mother!" Then only the night, the low
-fire round the rock, and in the east, at the free end of Right, the first red of the coming day, red streaks
-shooting from it along the house.
+But they sing now of Alberich and the Ring. Every note of the Ring flashes gold along the rope with a red glint
+running through it; then the curse sounds and the rope turns blood red, red pulses racing along it and the whole
+house throbbing red on its heavy low notes. The rope frays: dark gaps flicker through it, more and more, the throws
+come twice a bar and stutter as the third Norn strains to pull it taut, and on "Es riß!" it snaps. One white flash
+over the whole house, and the two broken ends whip away to the two ends of the roofline and are gone.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
-the Prologue's scenes (see GD01)."""
+Each Norn flares as she sings; then one after another they sink into the earth, her grey white collapsing inward
+in a ring, until the rock is empty. "Hinab! Zur Mutter!" Then only the night, the low fire round the rock, and in
+the east, at the free end of Right, the first red of the coming day, red streaks shooting from it along the house.
+
+compose() tags every note of the excerpt; stage(), heat(), fire(), scene(), strand() and figure() are shared word
+for word by the Prologue's scenes (see GD01)."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD02'
 TITLE = 'The Rope Breaks'
@@ -29,17 +36,21 @@ VOICEOVER = ('The Norns sing of a ring of gold, and of a curse. '
              'The rope of fate begins to fray, and then it breaks.')
 
 K = 1                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-ROPE_BEAT = 0.42
-T_THROWS = [0.4 + 3.1 * j for j in range(10)] + [31.4 + 1.6 * j for j in range(6)]
-T_RING = 7.0
-T_CURSE = 17.0
-T_SNAP = 41.5
-T_DOWN = 45.0                               # the Twilight of the Gods: a Norn sinks at each phrase
-T_SINK = [45.0, 48.6, 52.2]
-T_HINAB = 56.5
-T_EAST = 62.0
-T_STREAKS = [63.0, 66.0, 69.0, 71.5, 74.0, 76.5]
-D = 80.0
+EX = excerpt(__file__)                      # bars 269-290 and 296-298, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+T_THROWS = ([BAR[b] for b in range(269, 280)] +                       # a throw every bar, then twice a bar
+            [x for b in range(280, 285) for x in (BAR[b], 0.5 * (BAR[b] + BAR[b + 1]))])
+T_FAST = BAR[280]                           # the throws quicken and stutter
+T_RING = BAR[269]
+T_CURSE = BAR[277]                          # "ein rächender Fluch"
+T_SNAP = BAR[285]                           # "Es riß!"
+T_SINK = [BAR[288], BAR[290], BAR[296] + 3.0]   # a Norn sinks at each
+T_HINAB = BAR[297]                          # "Zur Mutter!"
+T_EAST = BAR[296]
+T_STREAKS = [T_EAST + 1.5 + 2.4 * j for j in range(5)]
+NORN_OF = {'Erste Norn': 0, 'Zweite Norn': 1, 'Dritte Norn': 2}
+SUNG = [(t0, t1, NORN_OF[w]) for t0, t1, w, _ in EX['singing'] if w in NORN_OF]
+D = EX['seconds']
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -154,36 +165,27 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def bar_of(t):
+    return max([m for m, bt in BAR.items() if bt <= t + 1e-6] or [269])
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The right hand's longer notes
+    as she sings of the Ring are the Ring ('ring'); bars 277-279 are the curse ('curse'); the rushing figures as the
+    rope frays are the rope ('rope'); the rest 'orch'. k is tidy()'s tremolo flag."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_SNAP, 'Eb1', 62, 'pedal')
-    for j, t0 in enumerate(T_THROWS):
-        if t0 >= T_SNAP - 1.0:
-            break
-        v = 92 + int(20 * smoothstep(20, 40, t0))
-        beat = ROPE_BEAT if t0 < 31 else 0.26
-        for t, m, vv, d in play('norns_rope', t0, beat, 0, v):
-            if t < T_SNAP:
-                add(t, d, m, vv, 'rope', j)
-    for t, m, v, d in play('ring', T_RING, 0.6, -12, 96):
-        add(t, d, m, v, 'ring')
-    for t, m, v, d in play('curse', T_CURSE, 0.55, 0, 112):
-        add(t, d, m, v, 'curse')
-    add(T_SNAP, 0.1, 'C1', 127, 'snap')
-    for t, m, v, d in play('downfall', T_DOWN, 0.9, -12, 100):
-        add(t, d, m, v, 'down')
-    for j, t0 in enumerate(T_SINK + [T_HINAB]):
-        add(t0, 0.6, ('Bb1', 'Ab1', 'Gb1', 'Eb1')[j], 96 - 6 * j, 'sink', j)
-    add(T_EAST, D - T_EAST, 'Eb2', 58, 'east')
-    for j, t0 in enumerate(T_STREAKS):
-        for t, m, v, d in play('dawn', t0, 0.5, 0, 66 + 6 * j):
-            if t < t0 + 2.0:
-                add(t, d, m, v, 'streak', j)
+    for n in tidy(EX['notes']):
+        t, d, m, v, h = n[:5]
+        b = bar_of(t)
+        if b in (274, 275, 276) and h == 0 and d >= 0.3:
+            part = 'ring'
+        elif b in (277, 278, 279):
+            part = 'curse'
+        elif 280 <= b <= 284 and d < 0.25:
+            part = 'rope'
+        else:
+            part = 'orch'
+        N.append((t, d, m, v, part, n[5]))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -193,7 +195,7 @@ def render(G, seed=2):
     S = stage(G)
     d, L, nn = S['d'], S['L'], S['norns']
     N = compose()
-    throws = sorted({e[5] for e in N if e[4] == 'rope'})
+    throws = [j for j, t0 in enumerate(T_THROWS) if t0 < T_SNAP - 0.5]
     ring = [e for e in N if e[4] == 'ring']
     curse = [e for e in N if e[4] == 'curse']
     lowc = sorted({e[0] for e in curse if e[2] < note('C3')})
@@ -204,7 +206,7 @@ def render(G, seed=2):
         t = f * DT
         T = t + 80 * K
         lv = {k: keys(t, [(0, START[k]), (T_HINAB, START[k]), (T_HINAB + 6, END[k])]) for k in START}
-        fray = smoothstep(10, 40, t)
+        fray = smoothstep(BAR[271], BAR[284], t)
         red = smoothstep(T_CURSE, T_CURSE + 3, t)
         lv['rope'] = START['rope'] * (t < T_SNAP)
         lv['east'] = END['east'] * smoothstep(T_EAST, T_EAST + 10, t)
@@ -220,9 +222,9 @@ def render(G, seed=2):
             if not 0 <= a < 3.0 or t >= T_SNAP:
                 continue
             i, k = PAIRS[j % 3]
-            fly = (0.9 + 0.5 * (abs(i - k) == 2)) * (0.6 if t0 > 31 else 1.0)
+            fly = (0.9 + 0.5 * (abs(i - k) == 2)) * (0.6 if t0 >= T_FAST - 0.01 else 1.0)
             u = smoothstep(0, fly, a)
-            if t0 > 25:
+            if t0 > BAR[279]:
                 u *= 0.85 + 0.15 * np.sin(2 * np.pi * 7 * a)
             lvl = 1.0 * np.exp(-max(a - fly, 0) / 0.9)
             st = strand(S, nn[i], nn[k], u, lvl, T, 0.7 * fray)
@@ -273,9 +275,9 @@ def render(G, seed=2):
         for n in range(3):
             ts = T_SINK[n]
             lvl = NORNS_START[n] * (1 - smoothstep(ts, ts + 2.5, t))
-            if T_RING <= t < T_RING + 8 and n == 0 or T_CURSE <= t < T_CURSE + 11 and n == 1:
-                lvl += 0.25 * (0.5 + 0.5 * np.sin(2 * np.pi * 1.3 * t))
-            if t > 25 and t < ts:
+            if t < ts and any(t0 <= t < t1 + 0.6 for t0, t1, w in SUNG if w == n):   # she sings: she flares
+                lvl += 0.3 * (0.5 + 0.5 * np.sin(2 * np.pi * 1.3 * t))
+            if t > BAR[279] and t < ts:
                 lvl += 0.15 * fray * np.sin(2 * np.pi * (3 + n) * t)
             a = t - ts
             if 0 <= a < 2.5:
@@ -301,7 +303,9 @@ def render(G, seed=2):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the rope creaking and snapping as a production
+    would stage it."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -310,84 +314,41 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.28, 0.25), ('strings', 0.22, 0.35), ('brass', 0.26, 0.3), ('perc', 0.26, 0.3),
-                            ('harp', 0.2, 0.4), ('winds', 0.22, 0.35), ('fx', 0.1, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     S = stage(G)
     nn = [pan_at(p) for p in S['norns']]
-    east = pan_at(S['L'] - 100)
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v, 0.0, rise=2.0, fall=0.3, gain=0.45)
-        elif part == 'rope':
-            i, j = PAIRS[k % 3]
-            pa = 0.5 * (nn[i] + nn[j])
-            if m >= note('C5'):
-                M.add('harp', harp.play(m - 12, v - 8), t, 0.8, pa)
-            elif m >= note('C3'):
-                M.add('strings', vln.play(m, v - 6), t, 0.7, pa)
-            else:
-                M.add('low', cb.play(m, v - 10, dur=d * 1.1, release=0.2), t, 0.6, pa)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('winds', bsn, m, t, t + d, v, nn[0], rise=0.2, fall=0.8, gain=0.8)
-            else:
-                M.add('winds', bsn.play(m, v, dur=d * 1.05, release=0.25), t, 0.9, nn[0])
-        elif part == 'curse':
-            if d > 1.2:
-                hold('brass', tbn, m, t, t + d, v, nn[1], rise=0.15, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, nn[1])
-            if m < note('C3'):
-                M.add('perc', timp.play(v, pitch=-4), t, 0.8)
-                M.add('low', tuba.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.7)
-        elif part == 'snap':
-            M.add('perc', crash.play(v), t, 1.0)
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0)
-            M.add('perc', gong.play(115), t, 0.7)
-            M.add('fx', whoosh(1.4, 6000, 300, 0.8, seed=41), t, 0.9, -0.8)
-            M.add('fx', whoosh(1.4, 6000, 300, 0.8, seed=42), t, 0.9, 0.8)
-        elif part == 'down':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.2, fall=1.2, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9)
-            M.add('low', tuba.play(m - 24, v - 16, dur=d * 1.05, release=0.3), t, 0.55)
-        elif part == 'sink':
-            p = nn[k] if k < 3 else 0.0
-            M.add('perc', roll.play(v, pitch=-7, dur=2.0), t - 0.4, 0.6, p)
-            M.add('low', cb.play(m, v, dur=2.4, release=0.8), t, 0.8, p)
-            M.add('harp', harp.play(m + 24, 70), t, 0.7, p)
-        elif part == 'east':
-            hold('strings', vc, m, t, t + d, v, east * 0.6, rise=6.0, fall=1.0, gain=0.5)
-        elif part == 'streak':
-            M.add('strings', vc.play(m + 12, v, dur=d * 1.1, release=0.4), t, 0.7, east)
+    o = Orchestra(M, level=2.6)
+    N = compose()
+    tag = {(round(e[0], 4), e[2]): e[4] for e in N}
+
+    def role(t, d, m, v, h):
+        part = tag.get((round(t, 4), m), 'orch')
+        if part == 'ring':                                          # the Ring: bassoons and clarinets
+            return [('bassoons', 0, 6, 0.8), ('clarinets', 0, 0, 0.5)]
+        if part == 'curse':                                         # the curse: trombones and tuba
+            if h == 1 and m < 48:
+                return [('tuba', 0, 4, 0.7), ('basses', 0, 0, 0.5)]
+            return [('trombones', 0, 6, 0.75), ('horns', 0, -4, 0.45)]
+        if part == 'rope':                                          # the rope's rushing figures
+            return [('violins', 0, 0, 0.5)] + ([('harp', -12, -6, 0.4)] if m >= 72 else [])
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.85 if T_CURSE <= t < T_SNAP + 8 else 0.5, role=role,
+            pan=lambda t, m: 0.6 * float(np.sin(2 * np.pi * t / 3.1)) if T_FAST <= t < T_SNAP else 0.0)
+    for e in N:                                                     # the curse's low notes: timpani
+        if e[4] == 'curse' and e[2] < 48 and e[1] >= 0.6:
+            o.hit('timpani', e[0], 110, pitch=-4, gain=0.6, pan=nn[1])
+    for j in range(5):                                              # the rope creaks as it frays
+        t0 = BAR[280 + j] + 0.3
+        o.hit('scrape', t0, 70 + 10 * j, gain=0.25 + 0.06 * j, pan=nn[j % 3])
+    # the snap: a crack, a blow, and two lashes flying apart to the ends of the house
+    o.shatter(T_SNAP, 0.0, 1.0)
+    o.boom(T_SNAP + 0.02, 0.0, 0.9)
+    o.M.add('fx', whoosh(1.4, 6000, 300, 0.8, seed=41), T_SNAP, 0.9, -0.8)
+    o.M.add('fx', whoosh(1.4, 6000, 300, 0.8, seed=42), T_SNAP, 0.9, 0.8)
+    for n, ts in enumerate(T_SINK):                                 # each Norn sinking into the earth
+        o.hit('timpani roll', ts - 0.4, 90, pitch=-7, gain=0.5, pan=nn[n])
+        o.hit('gong scrape', ts, 90, gain=0.35, pan=nn[n])
+    o.hit('gong', T_HINAB, 96, gain=0.4)
+    # the fader: out of the way while they sing; up for the fraying and the snap; down again as they go
+    o.effects([(0.0, -14.0), (BAR[279], -14.0), (T_FAST, -6.0), (T_SNAP - 0.3, 0.0), (T_SNAP + 3.0, 0.0),
+               (T_SNAP + 6.0, -8.0), (D, -8.0)])

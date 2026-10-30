@@ -1,23 +1,31 @@
-"""Siegfried's Rhine Journey: the interlude between the Prologue and the first act. Siegfried's horn call (Donington
-48) rings out twice and carries him down off the rock: from the head of Porch Right he runs out along Right to the
-free end in an emerald streak, while Brünnhilde waves a last silver pulse on the summit and fades with the morning.
+"""Siegfried's Rhine Journey: the interlude between the Prologue and the first act.
 
-Then the river takes the house. Water floods in from the free end of Right and races back the whole length of the
-roofline to the end of the Side, and from then on every run is the Rhine: indigo, teal and green currents rushing
-downstream end to end, white crests riding them. The Rhine's flowing figure (2) surges the currents brighter at
-every statement; the horn call keeps coming back as an emerald streak racing down the water with a white wake,
-Siegfried on his journey; the Rhinemaidens' Rhinegold (31) scatters gold glints over the water, note by note.
+The music is Wagner's own, from the end of the Prologue as Solti's 1958 Vienna Philharmonic recording takes it:
+the duet's last chord and Siegfried's horn call twice (bars 669-675), the call again quicker as the orchestra takes it up (682-692), the
+journey's great climax, the Rhine in full flood in A major (776-812), and the Rhinegold glinting in E flat
+before the music darkens toward the Gibichungs' hall (838-848). The notes come from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py): the horn call on horns, echoing off the far bank; the river's figuration on
+violins and flutes, its current on violas and cellos; at the climax the theme in horns and trumpets over the
+whole brass; the Rhinegold on flutes, harp and glockenspiel; the dark turn on trombones and tuba. The river
+rushes the length of the house, splashing and timpani mark the boat racing past, cymbals the climax's great
+downbeats, a gong the dark turn; the effects lead as the water floods in and back off under the theme.
 
-Then the dark turn: the Renunciation of Love (76) on the brass, the water darkens to violet-indigo with a red
-flash through it, and the Ring (8) sounds twice, heavy, gold and red rings pulsing out over the river as the
-light goes, toward the hall of the Gibichungs. It ends on the Rhine at dusk, dark and still flowing.
+The horn call carries him down off the rock: from the head of Porch Right he runs out along Right to the free
+end in an emerald streak, every note an emerald flash, while Brünnhilde waves a last silver pulse on the summit
+and fades with the morning. Then the river takes the house: water floods in from the free end of Right and races
+back the whole length of the roofline, and from then on every run is the Rhine, indigo, teal and green currents
+rushing downstream, swelling and darkening with the orchestra; every great accent of the climax sends a wall of
+white water racing downstream end to end, and his boat comes again and again, an emerald comet with a white
+wake. The Rhinegold scatters gold glints over the water note by note; then the dark turn, the water going
+violet-indigo with red flashes through it, and heavy gold and red rings pulsing out as the light goes, the
+torchlight of the hall glimmering on the porch.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
+compose() tags every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
 the Prologue's scenes (see GD01); river() is this scene's own."""
 import numpy as np
-from pixelhome.audio import note
+from pixelhome.audio import whoosh
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD06'
 TITLE = "Siegfried's Rhine Journey"
@@ -28,18 +36,18 @@ DESCRIPTION = ("Siegfried's horn carries him down the mountain to the Rhine, and
 VOICEOVER = ('Down the mountain and along the river Rhine, Siegfried sets off in search of adventure.')
 
 K = 5                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-T_HORN = [0.5, 4.5]                         # the horn calls that carry him off the rock
-HORNBEAT = 0.42
-T_EXIT = 10.0                               # he is out at the free end of Right
-T_FLOOD = 9.0                               # the water floods in
+EX = excerpt(__file__)                      # Prologue, bars 669-675, 682-692, 776-812, 838-848, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_HORN = [BAR[670], BAR[673]]               # the horn call, twice, carrying him off the rock
+T_EXIT = BAR[674]                           # he is out at the free end of Right
+T_FLOOD = BAR[683]                          # the call again, quicker: the water floods in
 FLOOD_SPEED = 420.0
-T_RHINE = [16.5, 20.0, 23.5, 27.0, 30.5, 34.0]      # the Rhine's flowing figure
-RHBEAT = 0.3
-T_BOAT = [19.0, 28.0, 37.0, 44.0]           # the horn call again: his boat on the river
-T_GOLD = 38.0                               # the Rhinegold
-T_RENOUNCE = 47.0                           # the dark turn
-T_RING = [55.0, 62.0]
-D = 80.0
+T_BOAT = [BAR[683], BAR[776], BAR[787], BAR[795], BAR[802], BAR[809]]   # his boat racing down the river
+T_CLIMAX = BAR[787]                         # A major: the Rhine in full flood
+T_GOLD = BAR[838]                           # the Rhinegold
+T_RENOUNCE = BAR[843]                       # the dark turn
+T_RING = [BAR[845], BAR[847]]
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -184,33 +192,26 @@ def river(S, T, level, dark, speed, surge=0.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The horn call's right hand at the
+    start is 'horn' (k = which call); from the flood on the right hand is the river ('rhine', k = its bar), the left
+    hand its current ('flow'); the Rhinegold's right hand is 'gold', the dark turn 'renounce', the close 'ring'
+    (k = which of its two halves). 'flood' marks the water's arrival; it makes no sound of its own."""
+    bar_of = lambda t: max(m for m, bt in EX['bars'] if bt <= t + 1e-6)
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_HORN):
-        for t, m, v, d in play('siegfried_horn', t0, HORNBEAT, 5, 112 - 6 * k):
-            add(t, d, m, v, 'horn', k)
-    add(T_FLOOD, 2.0, 'Eb1', 110, 'flood')
-    for k, t0 in enumerate(T_RHINE):
-        for t, m, v, d in play('rhine', t0, RHBEAT, 0, 86 + 3 * k):
-            add(t, d, m, v, 'rhine', k)
-    for k, t0 in enumerate(T_BOAT):
-        for t, m, v, d in play('siegfried_horn', t0, 0.36, 5 + 2 * (k % 2), 104 + 4 * k):
-            add(t, d, m, v, 'boat', k)
-    for t, m, v, d in play('rheingold', T_GOLD, 0.32, 0, 92):
-        add(t, d, m, v, 'gold')
-    for t, m, v, d in play('renunciation_broad', T_RENOUNCE, 0.5, -12, 112):
-        add(t, d, m, v, 'renounce')
-    for k, t0 in enumerate(T_RING):
-        for t, m, v, d in play('ring', t0, 0.55, -12 + 0 * k, 104 - 10 * k):
-            add(t, d, m, v, 'ring', k)
-    for m in ('Eb1', 'Eb2'):
-        add(T_FLOOD + 2, T_RENOUNCE - T_FLOOD - 2, m, 70, 'pedal')
-    for m in ('C2', 'G2', 'Eb3'):
-        add(T_RING[1] + 6, D - T_RING[1] - 6, m, 58, 'dusk')
+    for t, d, m, v, h, trem in tidy(EX['notes']):
+        b = bar_of(t)
+        if t < T_FLOOD:
+            part, k = ('horn', 0 if b < 673 else 1) if h == 0 and b >= 670 else ('pedal', None)
+        elif b < 838:
+            part, k = ('rhine', b) if h == 0 else ('flow', b)
+        elif b < 843:
+            part, k = ('gold', None) if h == 0 else ('flow', b)
+        elif b < 845:
+            part, k = 'renounce', None
+        else:
+            part, k = 'ring', 0 if b < 847 else 1
+        N.append((t, d, m, v, part, k, trem))
+    N.append((T_FLOOD, 2.0, 27, 0, 'flood', None, False))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -229,12 +230,22 @@ def render(G, seed=6):
     N = compose()
     p_b = at(G, *BRUNNHILDE_START[:2])
     horn = sorted({e[0] for e in N if e[4] == 'horn'})
-    rhine = [sorted({e[0] for e in N if e[4] == 'rhine' and e[5] == k}) for k in range(len(T_RHINE))]
+    rhine = [sorted({e[0] for e in N if e[4] == 'rhine' and e[5] == b}) for b in sorted({e[5] for e in N if e[4] == 'rhine'})]
     boat_t = T_BOAT
     gold = [e for e in N if e[4] == 'gold']
     glint_at = np.random.default_rng(seed).uniform(0, L, len(gold))
-    renounce = sorted({e[0] for e in N if e[4] == 'renounce'})
-    ring = [sorted({e[0] for e in N if e[4] == 'ring' and e[5] == k}) for k in range(2)]
+    renounce = accents([e for e in N if e[4] == 'renounce'], n=3, space=0.6)
+    ring = [accents([e for e in N if e[4] == 'ring' and e[5] == k], n=2, space=0.9) for k in range(2)]
+
+    # how loud the orchestra is, frame by frame (0..1): the river swells with it
+    loud = np.zeros(F)
+    for e in N:
+        if e[3] > 0:
+            loud[min(F - 1, int(e[0] / DT))] += (e[3] / 127) ** 2
+    kern = np.exp(-np.arange(int(0.8 / DT)) * DT / 0.35)
+    loud = np.convolve(loud, kern)[:F]
+    loud = np.clip(loud / np.percentile(loud[loud > 0], 97), 0, 1)
+    waves = accents([e for e in N if T_FLOOD <= e[0] < T_GOLD], vmin=104, n=3, space=0.9)
 
     for f in range(F):
         t = f * DT
@@ -250,15 +261,21 @@ def render(G, seed=6):
         dark = keys(t, [(0, 0.0), (T_RENOUNCE, 0.0), (T_RENOUNCE + 3, 0.6), (T_RING[0], 0.5), (D - 6, RIVER_END['dark'])])
         level = keys(t, [(T_FLOOD, 0.85), (T_RENOUNCE, 0.85), (T_RING[1], 0.7), (D - 6, RIVER_END['level'])])
         speed = keys(t, [(T_FLOOD, 1.0), (T_RENOUNCE, 1.0), (D - 6, RIVER_END['speed'])])
-        surge = 0.0
-        for k, ons in enumerate(rhine):
-            if ons and ons[0] <= t < ons[-1] + 1.5:
-                surge = max(surge, smoothstep(ons[0], ons[0] + 0.3, t) * np.exp(-max(t - ons[-1], 0) / 0.6))
+        surge = loud[f]
         if t >= T_FLOOD:
-            riv = river(S, T, level, dark, speed, surge)
+            riv = river(S, T, level * (0.5 + 0.7 * surge ** 1.5), dark, speed, surge)
             fr = fr * (1 - wet)[:, None] + riv * wet[:, None]
             fr += light(FOAM, 0.9 * np.exp(-((d - front) / 40) ** 2) * (front > -40))
             fr += light(GREEN, 0.6 * np.exp(-((d - front) / 160) ** 2) * (front > -100))
+
+        # the orchestra's great accents: a wall of white water racing downstream the length of the house
+        for t0 in waves:
+            a = t - t0
+            if 0 <= a < 2.6:
+                q = L + 60 - 1100 * a
+                g = (1 - smoothstep(1.8, 2.6, a)) * (0.6 + 0.4 * (t0 >= T_CLIMAX))
+                fr += light(FOAM, g * np.exp(-((d - q) / 80) ** 2))
+                fr += light(GREEN, 0.9 * g * (d > q) * np.exp(-(d - q) / 300))
 
         # the horn calls on the rock: emerald streaks out along Right
         p_run = run_off(G, t)
@@ -284,13 +301,13 @@ def render(G, seed=6):
                 g = 1 - smoothstep(4.0, 5.0, a)
                 wake = (d > q) * np.exp(-(d - q) / 320)
                 fr = fr * (1 - 0.75 * g * np.exp(-((d - q) / 120) ** 2))[:, None]
-                fr += light(SIEGFRIED, g * np.exp(-((d - q) / 40) ** 2))
-                fr += light(HEAD, 0.9 * g * np.exp(-((d - q) / 9) ** 2))
+                fr += light(SIEGFRIED, g * np.exp(-((d - q) / 70) ** 2))
+                fr += light(HEAD, g * np.exp(-((d - q) / 14) ** 2))
                 fr += light(SIEGFRIED, 0.7 * g * wake)
                 fr += light(FOAM, 0.35 * g * wake * np.clip(np.sin(d / 9 - 25 * t), 0, 1))
 
         # the Rhinegold: gold glints over the water, note by note
-        for j, (t0, dur, m, v, part, k) in enumerate(gold):
+        for j, (t0, dur, m, v, part, k, _) in enumerate(gold):
             a = t - t0
             if 0 <= a < 1.2:
                 q = glint_at[j] - 300 * a
@@ -320,12 +337,12 @@ def render(G, seed=6):
                     fr += light(GOLD, 0.8 * np.exp(-a / 0.2) * np.exp(-((d - c) / 40) ** 2))
 
         # toward the hall: torchlight glimmering amber and purple on the porch as the light goes
-        if t >= T_RING[1]:
-            g = smoothstep(T_RING[1], D - 4, t)
+        if t >= BAR[846]:
+            g = smoothstep(BAR[846], D - 3, t)
             flick = 0.65 + 0.35 * np.sin(2 * np.pi * (d / 37 + 1.3 * t)) * np.sin(2 * np.pi * (d / 23 - 0.9 * t))
             fr += light(AMBER, 0.55 * g * S['porch'] * flick)
             fr += light(CHORD, 0.4 * g * S['porch'] * (1 - flick))
-            for t0 in np.arange(T_RING[1] + 4, D - 1, 2.0):
+            for t0 in np.arange(BAR[846] + 2, D - 1, 2.0):
                 a = t - t0
                 if 0 <= a < 1.5:
                     fr += light(AMBER, 0.6 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - S['summit']) - 700 * a) / 90) ** 2))
@@ -350,7 +367,7 @@ def render(G, seed=6):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the river and the horn's echo off the hills."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -359,88 +376,85 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.3, 0.25), ('strings', 0.28, 0.35), ('brass', 0.3, 0.3), ('perc', 0.26, 0.3),
-                            ('harp', 0.22, 0.4), ('winds', 0.26, 0.35), ('fx', 0.08, 0.3), ('dark', 0.26, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susNV/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     S = stage(G)
     L = S['L']
+    o = Orchestra(M, level=1.3)
 
-    def boat_pan(t, t0):
-        return pan_at(L + 40 - (L + 120) * min(1.0, max(0.0, (t - t0) / 4.2)))
+    def boat_pan(t):
+        live = [t0 for t0 in T_BOAT if t0 <= t < t0 + 4.2]
+        return pan_at(L + 40 - (L + 120) * (t - live[-1]) / 4.2) if live else 0.0
 
-    for t, d, m, v, part, k in compose():
-        if part == 'horn':
+    for t, d, m, v, part, k, trem in compose():
+        if part == 'horn':                  # his horn call, and its echo off the far side of the valley
             p = pan_at(run_off(G, t))
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, p, rise=0.08, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, p)
-        elif part == 'flood':
-            M.add('perc', crash.play(110), t, 0.7, pan_at(L - 100))
-            M.add('fx', whoosh(3.0, 200, 2500, 0.8, seed=6), t, 1.0, 0.0)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.7, pan_at(L - 100))
-        elif part == 'rhine':
-            if m < note('Eb3'):
-                M.add('low', vc.play(m + 12 * (m < note('Eb2')), v - 6, dur=d * 1.1, release=0.2), t, 0.6, 0.0)
-            elif m < note('Eb4'):
-                M.add('strings', vla.play(m, v, dur=d * 1.1, release=0.15), t, 0.6, 0.0)
-            else:
-                M.add('strings', vln.play(m, v, dur=d * 1.1, release=0.15), t, 0.6, 0.0)
-                M.add('harp', harp.play(m, v - 20), t, 0.4, 0.0)
-        elif part == 'boat':
-            t0 = T_BOAT[k]
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, boat_pan(t, t0), rise=0.08, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, boat_pan(t, t0))
-            if k >= 2 and d > 1.0:
-                M.add('perc', timp.play(v - 14, pitch=-3), t, 0.5, boat_pan(t, t0))
-        elif part == 'gold':
-            M.add('winds', fl.play(m, v, dur=d * 1.1, release=0.2), t, 0.6, 0.0)
-            if m >= note('E4'):
-                M.add('harp', glock.play(m, v - 10), t, 0.45, 0.0)
-        elif part == 'renounce':
-            hold('brass', tbn, m, t, t + d, v, 0.0, rise=0.08, fall=1.0, gain=0.85)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.7, 0.0)
-            if t == T_RENOUNCE:
-                M.add('perc', gong.play(110), t, 0.8, 0.0)
-        elif part == 'ring':
-            if d > 1.0:
-                hold('winds', clar, m + 12, t, t + d, v, 0.0, rise=0.15, fall=0.8, gain=0.7)
-            else:
-                M.add('winds', clar.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.8, 0.0)
-            M.add('low', tuba.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.7, 0.0)
+            o.play('horns', m, t, d, v, p, 0.95)
+            o.play('horns', m, t + 0.32, d, v - 30, -p * 0.8, 0.35)
         elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=2.0, fall=2.0, gain=0.45)
-        elif part == 'dusk':
-            hold('dark', vc, m, t, t + d, v, 0.0, rise=3.0, fall=1.5, gain=0.5)
+            o.play('cellos trem' if trem else 'cellos', m + 12, t, d, v - 10, 0.0, 0.4)
+            o.play('basses', m + 12 if m < 28 else m, t, d, v - 10, 0.0, 0.4)
+        elif part == 'rhine':
+            if t < BAR[688]:                # the call again, quicker: horns on the boat
+                o.play('horns', m, t, d, v, boat_pan(t), 0.9)
+            elif t >= T_CLIMAX and d >= 0.4:    # the climax: the theme in the full brass over the violins
+                o.play('horns', m, t, d, v, -0.3, 0.75)
+                o.play('trumpets', m, t, d, v - 12, 0.3, 0.45)
+                o.play('violins', m + 12 if m < 67 else m, t, d, v - 8, 0.25, 0.5)
+            else:
+                o.play('violins', m, t, d, v - 6, 0.3, 0.55)
+                if m >= 77:
+                    o.play('flutes', m, t, 0.1, v - 16, -0.4, 0.35)
+        elif part == 'flow':
+            if d < 0.3:
+                o.play('violas' if m >= 55 else 'cellos', m, t, d, v - 6, -0.2, 0.5)
+            else:
+                o.play('cellos', m, t, d, v, -0.2, 0.65)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, 0.2, 0.5)
+                if t >= T_CLIMAX:
+                    o.play('trombones', m, t, d, v - 8, 0.1, 0.5)
+                    o.play('tuba', m - 12 if m >= 40 else m, t, d, v - 12, 0.0, 0.4)
+        elif part == 'gold':                # the Rhinegold: flutes, harp and glockenspiel glinting over the water
+            gp = 0.6 * np.sin(t * 2.1)
+            o.play('flutes', m, t, d, v + 10, gp, 0.55)
+            o.play('harp', m, t, 0.3, v + 15, gp, 0.6)
+            o.play('glock', m, t, 0.3, v, gp, 0.35)
+        elif part == 'renounce':            # the dark turn: the strings' plunge, the brass under it
+            if d >= 0.5:
+                o.play('trombones', m if m < 60 else m - 12, t, d, v, 0.0, 0.75)
+                o.play('horns', m if m < 72 else m - 12, t, d, v - 6, -0.2, 0.6)
+                if m < 48:
+                    o.play('tuba', m, t, d, v - 6, 0.0, 0.55)
+            else:
+                o.play('violins' if m >= 55 else 'cellos', m, t, d, v - 4, 0.25, 0.55)
+        elif part == 'ring':                # the close: low brass and clarinets, darkening
+            if d >= 0.5:
+                o.play('clarinets', m, t, d, v - 10, -0.2, 0.55)
+                o.play('trombones' if m >= 46 else 'tuba', m, t, d, v - 10, 0.0, 0.6)
+            else:
+                o.play('violas' if m >= 55 else 'cellos', m, t, d, v - 14, 0.1, 0.45)
+    # the river: a rush of water that floods in from the free end of Right and runs to the end
+    rush = lambda tt: (0.35 + 0.35 * (tt >= T_CLIMAX) * (tt < T_GOLD) + 0.15 * (tt < BAR[776])) * \
+        (1 - 0.6 * (tt >= T_RENOUNCE))
+    o.wind(T_FLOOD - 0.5, D, level=rush, pan=0.0, seed=21)
+    # the river and the boat lead while the water floods in; they back off under the climax's theme and the gold
+    o.effects([(0, -4), (T_FLOOD - 0.5, 0), (BAR[776], -2), (T_CLIMAX - 0.5, -2), (T_CLIMAX + 1.0, -9),
+               (T_GOLD - 0.5, -9), (T_GOLD + 0.5, -12), (T_RENOUNCE, -6), (D, -6)])
+    o.boom(T_FLOOD, pan_at(L - 100), 0.7)
+    o.hit('crash', T_FLOOD, 112, gain=0.5, pan=pan_at(L - 100))
+    M.add('fx', np.vstack([whoosh(3.0, 200, 2500, 0.8, seed=6)[0]] * 2), T_FLOOD, 0.8, 0.4)
+    for t0 in T_BOAT[1:]:                    # each time the boat races past: a splash of foam and a timpani stroke
+        M.add('fx', np.vstack([whoosh(1.6, 2500, 400, 0.6, seed=int(t0))[0]] * 2), t0, 0.6, boat_pan(t0 + 1.0))
+        o.hit('timpani', t0, 112, pitch=-3, gain=0.5, pan=boat_pan(t0 + 0.2))
+    for b in (787, 795, 802, 809):          # the climax's great downbeats
+        o.hit('crash', BAR[b], 118, gain=0.55)
+    o.hit('cymbal swell', BAR[785] - 1.0, 100, gain=0.45)
+    for t0 in renounce_hits():               # the dark turn: a gong, the timpani
+        o.hit('gong', t0, 112, gain=0.6)
+        o.hit('timpani', t0, 120, pitch=-6, gain=0.6)
+    for t0 in T_RING:
+        o.hit('gong', t0, 96, gain=0.4)
+        o.hit('timpani roll', t0, 96, pitch=-5, gain=0.4)
+
+
+def renounce_hits():
+    N = compose()
+    return accents([e for e in N if e[4] == 'renounce'], n=3, space=0.6)[:2]

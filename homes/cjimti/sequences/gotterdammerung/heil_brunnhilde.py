@@ -1,21 +1,29 @@
-"""Heil, Brünnhilde!: the farewell on the summit, and it is ecstatic. They answer each other faster and faster:
-her love as fulfilment (Donington 90) in silver from the violins, his own motif (53) in emerald from the horns,
-and every note of either slams a whole run into its colour and sends a sweep the length of the house, the runs
-taking turns, the gaps between them shrinking until the two colours are tumbling over each other.
+"""Heil, Brünnhilde!: the farewell on the summit, and it is ecstatic. They answer each other faster and faster,
+and every note of either slams a whole run into its colour, silver for her, emerald for him, and sends a sweep the
+length of the house, the runs taking turns until the two colours are tumbling over each other.
 
-Then they sing together. Both motifs at once over a timpani roll, emerald and silver trading every run on every
-note, the whole house swelling gold-white, until the unison: one huge flash of white and gold over every run,
-and the two colours burst out from it, emerald racing over the Side and Left, silver over Right. Siegfried's horn
-call (48) rings out, and he goes: down off the summit along Porch Front and out along Porch Right toward the
-river, his horn throwing emerald streaks out along Right ahead of him to the free end, while Brünnhilde stays on
-the summit waving, every wave a pulse of silver over the house, fainter as he goes.
+The music is Wagner's own: the climax of the duet (bars 573 to 595, "ich bin nur Brünnhildes Arm" to "Vereint faßt
+er uns zwei!") and its last pages (bars 622 to 639, the Heils and the start of the orchestra's leave-taking), as
+Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano
+reduction (pixelhome/ring.py), orchestrated by hand and register. Their voices are not in the reduction, so the
+Heils are played from the printed vocal score (Schirmer, archive.org ringofnibelungen00wagn2, pp. 36-37) as
+written: hers on trumpets doubled by oboes, his (a tenor, an octave below the page) on horns, answering line by
+line, "Heil, strahlende Liebe! Heil, strahlendes Leben!", into the four Heils together and her held high C. A
+timpani roll and cymbal swell carry them to it; then, as he leads Grane down off the rock, the horse's hooves go
+with him, louder as the effects take over from the voices.
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are shared word for word by
-the Prologue's scenes (see GD01)."""
+Then the unison: one huge flash of white and gold over every run on her high C, and the two colours burst out
+from it, emerald racing over the Side and Left, silver over Right. Then he goes: down off the summit along Porch
+Front and out along Porch Right toward the river, emerald streaks shooting out along Right ahead of him to the
+free end on the orchestra's accents, while Brünnhilde stays on the summit waving, every wave a pulse of silver
+over the house, fainter as he goes.
+
+compose() tags every note of the excerpt; stage(), heat(), fire(), scene(), strand() and figure() are shared word
+for word by the Prologue's scenes (see GD01)."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD05'
 TITLE = 'Heil, Brünnhilde!'
@@ -25,18 +33,32 @@ DESCRIPTION = ('The lovers say goodbye in a blaze of emerald and silver, answeri
 VOICEOVER = ('Hail, Brünnhilde! Hail, Siegfried! One last embrace, and he sets off down the mountain.')
 
 K = 4                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-# the exchange: (time, who) — her love as fulfilment or his motif, the gaps shrinking
-EXCHANGE = [(1.5, 'b'), (5.5, 's'), (8.5, 'b'), (12.0, 's'), (14.6, 'b'), (17.6, 's'), (19.8, 'b'), (22.4, 's'),
-            (24.2, 'b'), (26.4, 's'), (27.9, 'b'), (29.8, 's'), (31.1, 'b'), (32.7, 's'), (33.8, 'b'), (35.2, 's')]
-BBEAT, SBEAT = 0.5, 0.42
-T_TOGETHER = 37.0                           # both at once over the timpani roll
-T_UNISON = 47.0                             # the unison
-T_HORN = [52.0, 57.0, 62.5]                 # his horn call, as he goes
-HORNBEAT = 0.42
-T_GO = 53.0                                 # he starts down off the summit
-T_THERE = 66.0                              # at the head of Porch Right
-T_SETTLE = 70.0
-D = 80.0
+EX = excerpt(__file__)                      # bars 573-595 and 622-639, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+WHO = {'Siegfried': 's', 'Brünnhilde': 'b'}
+LINES = [(t0, t1, WHO[w]) for t0, t1, w, _ in EX['singing'] if w in WHO]
+# The Heils, from the vocal score: (who, bar, beat, beats, note), 4/4, sounding pitch (his an octave below the page).
+_T = 1 / 3
+VOICE = ([('s', 622, 0, 4, 'C4'), ('s', 623, 0, 2, 'C4'), ('s', 623, 2, 1.5, 'F4'), ('s', 623, 3.5, 0.5, 'G4'),
+          ('s', 624, 0, 3.5, 'Ab4'), ('s', 624, 3.5, 0.5, 'D4')] +
+         [('b', 625, x, n, m) for x, n, m in ((0, 1.5, 'Bb5'), (1.5, .5, 'A5'), (2, .5, 'Ab5'), (2.5, .5, 'G5'),
+                                               (3, _T, 'F5'), (3 + _T, _T, 'Eb5'), (3 + 2 * _T, _T, 'D5'))] +
+         [('b', 626, 0, 2, 'C5'), ('b', 626, 2, 1, 'Db5')] +
+         [('s', 626, x, n, m) for x, n, m in ((0, 2, 'Ab4'), (2, .5, 'G4'), (2.5, .5, 'F4'), (3, .5, 'Eb4'),
+                                               (3.5, .5, 'D4'))] + [('s', 627, 0, 2, 'Db4')] +
+         [('b', 627, x, n, m) for x, n, m in ((0, 1.5, 'Bb5'), (1.5, .5, 'A5'), (2, .5, 'Ab5'), (2.5, .5, 'G5'),
+                                               (3, _T, 'F5'), (3 + _T, _T, 'E5'), (3 + 2 * _T, _T, 'Db5'))] +
+         [('b', 628, 0, 2, 'C5'), ('s', 628, 0, 1.5, 'Ab4'), ('s', 628, 1.5, .5, 'G4'), ('s', 628, 2, 1, 'G4'),
+          ('s', 628, 3, 1, 'C4')] +
+         [('b', 629, 1, 3, 'Eb5'), ('b', 630, 1, 3, 'E5'), ('b', 631, 1, 3, 'Ab5'), ('b', 632, 1, 11, 'C6'),
+          ('s', 629, 1, 3, 'G4'), ('s', 630, 1, 3, 'G4'), ('s', 631, 1, 3, 'F4'), ('s', 632, 1, 11, 'Ab4')])
+T_TOGETHER = BAR[629]                       # the four Heils together
+T_UNISON = BAR[632] + 0.25 * (BAR[633] - BAR[632])   # her high C
+T_HORN = [BAR[635], BAR[636], BAR[637], BAR[638], BAR[639]]   # streaks ahead of him as he goes
+T_GO = BAR[635]                             # he leads Grane down off the summit
+T_THERE = EX['seconds'] - 1.5               # at the head of Porch Right
+T_SETTLE = EX['seconds'] - 3.0
+D = EX['seconds']
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -157,34 +179,37 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def bar_of(t):
+    return max([m for m, bt in BAR.items() if bt <= t + 1e-6] or [573])
+
+
+def voice():
+    """The Heils in seconds: (time, seconds, midi, who)."""
+    bars = [(m, t) for m, t in EX['bars'] if m >= 622]
+    when = lambda pos: float(np.interp(pos, [x[0] for x in bars], [x[1] for x in bars]))
+    out = []
+    for who, b, x, n, name in VOICE:
+        t0, t1 = when(b + x / 4), when(min(b + (x + n) / 4, bars[-1][0]))
+        out.append((t0, t1 - t0, note(name), who))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note, tagged: (time, seconds, midi, velocity, part, k). In the exchange the accompaniment's notes under
+    each line are its singer's ('b' or 's', k = the line; k >= 100 from the climax on); the Heils are the voices
+    from the vocal score ('b' or 's', k = 'voice'); the rest 'orch'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for j, (t0, who) in enumerate(EXCHANGE):
-        v = 92 + j
-        if who == 'b':
-            for t, m, vv, d in play('love_fulfilled', t0, BBEAT * (1 - 0.02 * j), 5, v):
-                add(t, d, m, vv, 'b', j)
+    for n in tidy(EX['notes']):
+        t, d, m, v, h = n[:5]
+        line = next((j for j, (t0, t1, w) in enumerate(LINES) if t0 - 0.1 <= t < t1 and t < BAR[622]), None)
+        if line is not None and d >= 0.2 and not n[5]:
+            N.append((t, d, m, v, LINES[line][2], line + (100 if bar_of(t) >= 589 else 0)))
+        elif bar_of(t) >= 589 and t < BAR[622] and d >= 0.3 and not n[5]:
+            N.append((t, d, m, v, 'b' if h == 0 else 's', 100))
         else:
-            for t, m, vv, d in play('siegfried', t0, SBEAT * (1 - 0.015 * j), -12, v):
-                add(t, d, m, vv, 's', j)
-    for k in range(3):
-        for t, m, v, d in play('love_fulfilled', T_TOGETHER + 3.3 * k, 0.5, 5 + 2 * k, 108 + 4 * k):
-            add(t, d, m, v, 'b', 100 + k)
-        for t, m, v, d in play('siegfried', T_TOGETHER + 0.4 + 3.3 * k, 0.42, -12 + 2 * k, 108 + 4 * k):
-            add(t, d, m, v, 's', 100 + k)
-    add(T_TOGETHER, T_UNISON - T_TOGETHER, 'Eb2', 96, 'roll')
-    for m in ('Eb2', 'Bb2', 'Eb3', 'G3', 'Bb3', 'Eb4', 'G4'):
-        add(T_UNISON, 3.5, m, 124, 'unison')
-    for k, t0 in enumerate(T_HORN):
-        for t, m, v, d in play('siegfried_horn', t0, HORNBEAT, 5, 112 - 8 * k):
-            add(t, d, m, v, 'horn', k)
-    for m in ('Eb1', 'Bb1', 'Eb2', 'G2', 'Bb2', 'Eb3'):
-        add(T_SETTLE, D - T_SETTLE, m, 64, 'settle')
+            N.append((t, d, m, v, 'orch', n[5]))
+    for t, d, m, who in voice():
+        N.append((t, d, m, 104, who, 'voice'))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -209,6 +234,7 @@ def render(G, seed=5):
     runs = runs_by_order()
     masks = {r: (G.seg_of == r) for r in runs}
     notes = [e for e in N if e[4] in ('b', 's')]
+    notes = [(t0, dur, m, v, who, k if isinstance(k, int) else 200) for t0, dur, m, v, who, k in notes]
     horn = sorted({e[0] for e in N if e[4] == 'horn'})
     waves = np.arange(T_GO, T_SETTLE + 4, 1.25)          # her waving
 
@@ -287,7 +313,8 @@ def render(G, seed=5):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, the Heils from the vocal score on trumpets, oboes and
+    horns, and Grane's hooves as he goes."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -296,69 +323,28 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.3, 0.25), ('strings', 0.3, 0.35), ('brass', 0.3, 0.3), ('perc', 0.28, 0.3),
-                            ('harp', 0.22, 0.4), ('warm', 0.26, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     sb = pan_at(at(G, *BRUNNHILDE_START[:2]))
+    o = Orchestra(M, level=1.4)
 
-    def ps(t):
-        return pan_at(walk(G, t))
+    def size(t):
+        return 0.7 if t < BAR[584] else 1.0 if t < BAR[622] else 0.5 if t < T_TOGETHER else 1.0
 
-    for t, d, m, v, part, k in compose():
-        if part == 'b':
-            if d >= 0.9:
-                hold('strings', vln, m, t, t + d, v, sb, rise=0.15, fall=0.7, gain=0.8)
-            else:
-                M.add('strings', vln.play(m, v, dur=d * 1.1, release=0.25), t, 0.85, sb)
-            M.add('harp', harp.play(m, v - 26), t, 0.45, sb)
-        elif part == 's':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.85, ps(t))
-            M.add('low', vc.play(m - 12, v - 14, dur=d * 1.1, release=0.25), t, 0.55, ps(t))
-            if k >= 100 and m >= note('G4') - 12:
-                M.add('brass', tpt.play(m, v - 16, dur=d * 1.05, release=0.25), t, 0.45, ps(t))
-        elif part == 'roll':
-            r = 0.0
-            while r < d:
-                M.add('perc', roll.play(int(v * (0.6 + 0.4 * r / d)), pitch=-2, dur=2.6), t + r, 0.6, 0.0)
-                r += 2.4
-        elif part == 'unison':
-            hold('brass', tbn if m < note('Eb3') else horn, m, t, t + d, v, 0.0, rise=0.05, fall=1.5, gain=0.7)
-            hold('strings', vln, m + 12, t, t + d, v - 10, 0.0, rise=0.05, fall=1.5, gain=0.5)
-            if m == note('Eb2'):
-                M.add('perc', crash.play(122), t, 0.9)
-                M.add('perc', timp.play(124, pitch=-4), t, 0.95)
-                hold('low', cb, m, t, t + d, v - 10, 0.0, rise=0.05, fall=1.5, gain=0.7)
-        elif part == 'horn':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, ps(t), rise=0.08, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, ps(t))
-        elif part == 'settle':
-            hold('warm', vc if m < note('G2') else vln, m + 12 * (m < note('Eb2')), t, t + d, v, 0.0,
-                 rise=2.0, fall=1.0, gain=0.45)
+    o.tutti(tidy(EX['notes']), size=size)
+    for t, d, m, who in voice():                                    # the Heils
+        if who == 'b':
+            o.play('trumpets', m, t, d, 112, sb, 0.85)
+            o.play('oboes', m, t, d, 100, sb, 0.45)
+        else:
+            ps = pan_at(walk(G, t))
+            o.play('horns', m, t, d, 112, ps, 0.9)
+            o.play('cellos', m, t, d, 90, ps, 0.35)
+    o.hit('timpani roll', T_TOGETHER, 100, pitch=-3, gain=0.5)      # carried to her high C
+    o.hit('cymbal swell', T_UNISON - 3.8, 100, gain=0.5)
+    o.hit('crash', T_UNISON, 120, gain=0.7)
+    o.hit('timpani', T_UNISON, 120, pitch=-3, gain=0.8)
+    o.hit('crash', BAR[595], 110, gain=0.5)                         # "Vereint faßt er uns zwei!"
+    o.hit('timpani', BAR[595], 112, pitch=-3, gain=0.6)
+    # Grane's hooves: down off the summit along Porch Front and out along Porch Right with him
+    o.gallop(T_GO, D - 0.3, beat=(BAR[636] - BAR[635]) / 2, pan=lambda t: pan_at(walk(G, t)), v=100, gain=0.85)
+    # the fader: the voices are the scene; the hooves take over as he goes
+    o.effects([(0.0, -16.0), (T_GO - 0.5, -16.0), (T_GO + 0.5, 0.0), (D, 0.0)])

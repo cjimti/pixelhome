@@ -2,25 +2,30 @@
 magic fire burning low round it; the wings and the Side are the night sky, deep indigo and violet, alive with
 stars. Three great chords in E flat minor slam over the whole house, violet, blue, violet.
 
+The music is Wagner's own: the three awakening chords that open the Prologue (bars 1, 9 and 17, each held as long
+as Solti holds it) spliced to the third Norn's prophecy (bars 157 to 176), as Solti's 1958 Vienna Philharmonic
+recording takes them. The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+chords on the full brass over the basses, with a timpani stroke, a gong and a deep blow under each; Valhalla's
+long notes on horns, trombones and tuba; the rushing figures of the fire on violins and flutes, glockenspiel on
+their peaks; the rest on the strings. As she sings of the logs piled round the hall and of the fire that will
+burn it, the fire round the rock is heard as well as seen, roaring up to the end; it backs off under her lines.
+
 Then the three Norns rise out of the dark, grey white, on the middle of Left, the summit and the middle of Right,
-and begin to throw the golden rope of fate between them. Every rippling figure of the rope (Donington 10) is a
-throw: a white-hot head races from one Norn to the next, laying a fresh strand of gold the whole way, and when it
-is caught a gold whip cracks on past the catcher out to the end of the house. The long throw from Right back to
-Left crosses every corner of the porch. Strand on strand, the rope comes to span the house, shimmering.
+and begin to throw the golden rope of fate between them, one throw on every bar: a white-hot head races from one
+Norn to the next, laying a fresh strand of gold the whole way, and when it is caught a gold whip cracks on past
+the catcher out to the end of the house. Strand on strand, the rope comes to span the house, shimmering.
 
-Each Norn sings in turn (the Norns, 23): the singer flares and grey white rings roll out from her over the house.
-The first sings of the world ash, and the gods' castle rises: every note of Valhalla (63) slams one whole run in
-gold white over deep blue, run after run round the roofline. The third sings of Loge, and the fire round the rock
-leaps up: every figure of Loge (20) throws a tongue of flame racing out along the roofline from the rock, left and
-right in turn. The rope keeps flying, faster, to the end.
+The third Norn sings: on every line she flares and grey white rings roll out from her over the house. She sings
+of the gods' castle, and every long note of Valhalla slams one whole run in gold white over deep blue; she sings
+of the logs heaped round it, of the fire, and every rushing figure of the fire throws a tongue of flame racing out
+along the roofline from the rock, left and right in turn, faster and brighter to the end: "der ewigen Götter Ende".
 
-compose() holds every note; stage(), heat(), fire(), scene(), strand() and figure() are the rock, the sky and the
-rope, shared word for word by the Prologue's scenes (and GD13-GD14, which come back to the rock) on a clock
-T = t + 80 K that runs on from scene to scene."""
+compose() tags every note of the excerpt; stage(), heat(), fire(), scene(), strand() and figure() are the rock,
+the sky and the rope, shared word for word by the Prologue's scenes (and GD13-GD14, which come back to the rock)
+on a clock T = t + 80 K that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD01'
 TITLE = 'The Norns'
@@ -31,14 +36,17 @@ VOICEOVER = ('Night, on the mountain. Three sisters spin the rope of fate, and t
              'This is the Twilight of the Gods.')
 
 K = 0                                       # this scene's place on the Prologue's shared clock: T = t + 80 K
-T_CHORDS = [0.5, 3.0, 5.5]                  # the awakening chords
-T_RISE = [8.0, 9.0, 10.0]                   # the Norns rise
-ROPE_BEAT = 0.42
-T_THROWS = [12.0 + 3.1 * j for j in range(22)]   # every figure of the rope
-T_SING = [(14.0, 0), (37.0, 1), (58.0, 2)]  # each Norn's song (time, which Norn)
-T_VALHALLA = 24.0
-T_LOGE = [46.0 + 1.6 * j for j in range(6)]
-D = 80.0
+EX = excerpt(__file__)                      # bars 1, 9, 17 and 157-176, Solti 1958
+BAR = {int(m): t for m, t in EX['bars'] if m >= 157}
+T_CHORDS = [0.0, EX['segments'][1]['start'], EX['segments'][2]['start']]   # the awakening chords
+T_PROPHECY = EX['segments'][3]['start']    # the third Norn's prophecy
+T_RISE = [16.0, 17.4, 18.8]                 # the Norns rise under the third chord
+T_THROWS = [BAR[b] for b in range(157, 177)]   # a throw of the rope on every bar
+VALHALLA_BARS = (157, 158, 159, 165, 166, 168)
+FIRE_BARS = set(range(160, 165)) | set(range(169, 177))
+T_LOGE = sorted([BAR[b] for b in range(160, 165)] + [BAR[b] + 0.5 * (BAR[b + 1] - BAR[b]) for b in range(160, 165)]
+                + [BAR[b] for b in range(169, 177)] + [BAR[b] + 0.5 * (BAR[b + 1] - BAR[b]) for b in range(172, 177)])
+D = EX['seconds']
 
 NIGHT = hexc('#1a1070')
 NIGHT2 = hexc('#3a1a9a')
@@ -150,34 +158,30 @@ def figure(fr, S, p, col, lvl, w=16.0):
 PAIRS = [(0, 1), (1, 2), (2, 0)]            # who throws to whom, round and round
 
 
+def bar_of(t):
+    return max([m for m, bt in BAR.items() if bt <= t + 1e-6] or [0])
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The three chords ('chord', k);
+    then Valhalla's long notes ('valhalla'), the fire's rushing figures ('loge'), the rest ('orch'); 'sing' marks
+    each of the third Norn's lines (k = 2, the Norn) for the lights and makes no sound."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, (t0, ch) in enumerate(zip(T_CHORDS, (('Eb2', 'Eb3', 'Gb3', 'Bb3'), ('B1', 'B2', 'Eb3', 'Gb3'),
-                                                 ('Eb2', 'Eb3', 'Gb3', 'Bb3')))):
-        for m in ch:
-            add(t0, 2.2, m, 118 - 4 * k, 'chord', k)
-    add(0.0, D, 'Eb1', 60, 'pedal')
-    for j, t0 in enumerate(T_THROWS):
-        if t0 > D - 2.5:
-            break
-        v = 84 + int(18 * smoothstep(40, 75, t0))
-        for t, m, vv, d in play('norns_rope', t0, ROPE_BEAT, 0, v):
-            add(t, d, m, vv, 'rope', j)
-    for t0, n in T_SING:
-        for t, m, v, d in play('norns', t0, 0.55, -12, 96):
-            add(t, d, m, v, 'sing', n)
-    for t, m, v, d in play('valhalla', T_VALHALLA, 0.75, -12, 110):
-        add(t, d, m, v, 'valhalla')
-    for j, t0 in enumerate(T_LOGE):
-        for t, m, v, d in play('loge', t0, 0.2, 12, 100):
-            add(t, d, m, v, 'loge', j)
-    for t0 in T_RISE:
-        add(t0, 0.4, 'Eb2', 96, 'rise')
+    for n in tidy(EX['notes']):
+        t, d, m, v, h = n[:5]
+        if t < T_PROPHECY - 0.01:
+            N.append((t, d, m, v, 'chord', min(2, sum(t >= tc - 0.01 for tc in T_CHORDS) - 1)))
+            continue
+        b = bar_of(t)
+        if b in VALHALLA_BARS and d >= 0.5:
+            part = 'valhalla'
+        elif b in FIRE_BARS and d < 0.25:
+            part = 'loge'
+        else:
+            part = 'orch'
+        N.append((t, d, m, v, part, n[5]))
+    for t0, t1, who, text in EX['singing']:
+        N.append((t0, t1 - t0, 0, 0, 'sing', 2))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -268,6 +272,8 @@ def render(G, seed=1):
 
 
 def score(M, G):
+    """Wagner's notes, orchestrated from the piano reduction, with the chords' blows and the fire as a production
+    would stage them."""
     from pixelhome.audio import SR
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
@@ -277,81 +283,46 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.25, 0.25), ('strings', 0.2, 0.35), ('brass', 0.23, 0.3), ('perc', 0.22, 0.3),
-                            ('harp', 0.18, 0.4), ('fire', 0.14, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     S = stage(G)
     nn = [pan_at(p) for p in S['norns']]
-    for t, d, m, v, part, k in compose():
-        if part == 'chord':
-            if m < note('C3'):
-                hold('low', tuba, m, t, t + d, v, 0.0, rise=0.05, fall=1.2, gain=0.9)
-                if m == min(e[2] for e in compose() if e[4] == 'chord' and e[5] == k):
-                    M.add('perc', timp.play(v, pitch=-5), t, 0.9)
-                    M.add('perc', gong.play(90), t, 0.4)
-            else:
-                hold('brass', tbn if m < note('G3') else horn, m, t, t + d, v, 0.0, rise=0.05, fall=1.2, gain=0.75)
-        elif part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=6.0, fall=2.0, gain=0.5)
-        elif part == 'rope':
-            i, j = PAIRS[k % 3]
-            u = min(1.0, (t - T_THROWS[k]) / (0.9 + 0.5 * (abs(i - j) == 2)))
-            pa = nn[i] + (nn[j] - nn[i]) * u
-            if m >= note('C5'):
-                M.add('harp', harp.play(m - 12, v - 8), t, 0.8, pa)
-            elif m >= note('C3'):
-                M.add('strings', vln.play(m, v - 6), t, 0.7, pa)
-            else:
-                M.add('low', cb.play(m, v - 10, dur=d * 1.1, release=0.2), t, 0.6, pa)
-        elif part == 'sing':
-            p = nn[k]
-            if d > 1.0:
-                hold('strings', vc if m < note('D4') else vla, m, t, t + d, v, p, rise=0.3, fall=1.0, gain=0.8)
-            else:
-                M.add('strings', vla.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, p)
-            if m >= note('Bb3'):
-                M.add('low', bsn.play(m - 12, v - 16, dur=d * 1.05, release=0.3), t, 0.5, p)
-        elif part == 'valhalla':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, 0.0, rise=0.15, fall=1.0, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.6)
-        elif part == 'loge':
-            side = -0.7 if k % 2 == 0 else 0.7
-            M.add('fire', vln.play(m - 12, v), t, 0.7, side)
-            if m >= note('Bb5'):
-                M.add('fire', glock.play(m - 12, v - 20), t, 0.4, side)
-        elif part == 'rise':
-            n = int(round((t - T_RISE[0]) / (T_RISE[1] - T_RISE[0])))
-            M.add('perc', roll.play(v, pitch=-6, dur=1.6), t - 0.6, 0.5, nn[n])
-            M.add('harp', harp.play(note('Eb3') + 7 * n, 80), t, 0.8, nn[n])
+    o = Orchestra(M, level=1.15)
+    played = set()
+
+    def role(t, d, m, v, h):
+        b = bar_of(t)
+        if t < T_PROPHECY - 0.01:                                   # the awakening chords: the full brass
+            dv = 114 - v                                            # the chords are fortissimo, whatever the reduction says
+            return [('horns', 0, dv, 0.8), ('trombones', -12, dv, 0.7), ('tuba', -24, dv, 0.7),
+                    ('trumpets', 0, dv - 10, 0.35)] if h == 0 else [('basses', -12, dv, 0.6), ('cellos', -12, dv, 0.5)]
+        if b in VALHALLA_BARS and d >= 0.5:                         # Valhalla: horns, trombones, tuba
+            return [('horns', 0, 8, 0.8), ('trombones', 0, 0, 0.55), ('tuba', -12, -6, 0.45)]
+        if b in FIRE_BARS and d < 0.25:                             # the fire's rushing figures
+            parts = [('violins' if m >= 55 else 'violas', 0, 0, 0.55)]
+            if m >= 72:
+                parts.append(('flutes', 0, -10, 0.35))
+            if m >= 79 and (t, m) not in played:
+                played.add((t, m))
+                parts.append(('glock', -12, -16, 0.25))
+            return parts
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.8 if t >= BAR[170] else 0.55,
+            role=role)
+    for k, t0 in enumerate(T_CHORDS):                               # each chord: timpani, gong, a deep blow
+        o.hit('timpani', t0, 120, pitch=-5, gain=0.8)
+        o.hit('gong', t0 + 0.02, 100 + 8 * k, gain=0.45)
+        o.boom(t0, 0.0, 0.7)
+    for n, t0 in enumerate(T_RISE):                                 # the Norns rising: a roll under each
+        o.hit('timpani roll', t0 - 0.6, 80, pitch=-6, gain=0.35, pan=nn[n])
+    # the fire round the rock: low under the prophecy, leaping with each tongue of flame, roaring to the end
+    leap = np.array(T_LOGE)
+    o.fire(BAR[160] - 1.0, D, level=lambda tt: np.clip(0.25 + 0.45 * smoothstep(BAR[169], D - 2, tt) + 0.5 * np.sum(
+        np.exp(-np.clip(tt[:, None] - leap[None, :], 0, None) / 0.5) * (tt[:, None] >= leap[None, :]), axis=1)
+        * 0.6, 0, 1), pan=0.0, crackle=14.0)
+    for j, t0 in enumerate(T_LOGE):                                 # each tongue of flame: a rush out from the rock
+        side = -0.7 if j % 2 == 0 else 0.7
+        n = int(0.7 * SR)
+        o._sfx(o._noise(0, 200, 3000, 77 + j, n=n) * np.exp(-np.arange(n) / (0.18 * SR)), t0, 0.35, side)
+    # the fader: the chords' blows lead; under her lines the fire backs off; it takes the stage at the end
+    o.effects([(0.0, 0.0), (T_PROPHECY - 1.0, 0.0), (T_PROPHECY + 1.0, -12.0), (BAR[169], -10.0),
+               (BAR[173], -5.0), (D - 3.0, -2.0), (D, -2.0)])

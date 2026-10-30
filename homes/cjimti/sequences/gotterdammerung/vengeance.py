@@ -1,23 +1,28 @@
 """Vengeance: the shore emptied of the wedding, the torches low and turning blood red, Brünnhilde by Hagen's spear,
-Gunther shamed on Right, Hagen at the doors. She grieves first: her silver shudders and drips down to the ground
-in falling ripples. Hagen offers her his help, his falling tritone (Donington 61a) knocking violet shocks through
-the dark, and Gunther comes over from Right, gold, to the corner of the porch.
+Gunther shamed on Right, Hagen at the doors. She grieves first ("Wer bietet mir nun das Schwert?"): her silver
+shudders and drips down to the ground in falling ripples. Hagen offers her his help ("Vertraue mir, betrog'ne
+Frau!"), violet shocks knocking through the dark, and Gunther comes over from Right, gold, to the corner of the
+porch.
 
-The conspiracy (75) sounds in the trombones: every long note a deep red swell over the whole house. Then the three
-of them swear together, and their three colours, silver, gold and violet-black, break from where they stand and run
-round the house in bands, braiding back and forth end to end, faster and faster over a pounding ostinato, flashing
-white wherever two cross, the Curse (13) and Hagen's tritone cutting through. At the top the braid becomes one: three
-great chords, each a whole house of one colour, silver, gold, violet; then a black slam, and blood red floods out
-from the spear to both ends of the house: "So soll es sein! Siegfried falle!"
+"So soll es sein! Siegfried falle!": Gunther, then Brünnhilde, and every long note is a deep red swell over the
+whole house. Then the three of them swear together, and their three colours, silver, gold and violet-black, break
+from where they stand and run round the house in bands, braiding back and forth end to end, faster and faster on
+the pounding bass, flashing white wherever two cross, Hagen's calls on Alberich cutting through in violet, the
+Curse slashing red, until "Wotan! Wende dich her!" and the braid becomes one: three great chords, each a whole house
+of one colour, silver, gold, violet; then a black slam, and blood red floods out from the spear to both ends of
+the house.
 
-The torches burn red and low; the three stand where they swore, breathing.
+The music is Wagner's own: Act II, scene 5, her grief and Hagen's offer (bars 1386 to 1393), "So soll es sein"
+(1619 to 1623) and the oath of vengeance to its end (1640 to 1671), as Solti's 1958 Vienna Philharmonic recording
+takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py) orchestrated by hand and register.
+The stage adds a gong and timpani under Hagen's shocks, a deep drum under each red swell, a cymbal swell into the
+three chords and a gong and thunder on the slam; it keeps out of the way of the trio itself.
 
 compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD20'
 TITLE = 'Vengeance'
@@ -27,17 +32,27 @@ DESCRIPTION = ('Brünnhilde, Gunther and Hagen swear Siegfried\'s death. Silver,
 VOICEOVER = ('Betrayed, Brünnhilde joins Hagen and Gunther. Together, they swear that Siegfried must die.')
 
 K = 5                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_GRIEF = 0.5                               # her grief
-T_TRITONE = [6.0, 10.5]                     # "Vertraue mir"
-T_GUNTHER = (12.0, 18.0)                    # Gunther crosses to the corner of the porch
-T_PLOT = [13.5, 18.5]                       # the conspiracy
-T_BRAID = (24.0, 57.0)                      # the three colours braid round the house
-T_BRAID_TRI = [30.0, 36.0, 44.0, 50.0]
-T_CURSE = 40.0
-T_PLOT2 = 47.0
-T_CHORDS = [57.5, 58.7, 59.9]               # silver, gold, violet
-T_SLAM = 61.3                               # "Siegfried falle!"
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1386-1393, 1619-1623 and 1640-1671, Solti 1958
+D = EX['seconds']
+_SEG = [(g['start'], g['start'] + g['seconds']) for g in EX['segments']]
+
+
+def _sung(who, text):
+    """When the first sung line by who beginning with text starts."""
+    return next(t0 for t0, t1, w, x in EX['singing'] if w.startswith(who) and x.startswith(text))
+
+
+_LATE = accents(EX['notes'], _SEG[2][1] - 10, D, vmin=95, n=4, space=0.8)
+T_GRIEF = 0.3                               # her grief
+T_TRITONE = [_sung('Hagen', 'Vertraue'), _sung('Hagen', 'Wer dich')]    # "Vertraue mir"
+T_GUNTHER = (_sung('Hagen', 'Wer dich') - 1.0, _SEG[1][0])              # Gunther crosses to the corner of the porch
+T_PLOT = [_sung('Gunther', 'So soll'), _sung('Brünnhilde', 'So soll')]  # "So soll es sein! Siegfried falle!"
+T_BRAID = (_SEG[2][0], _LATE[0])            # the three colours braid round the house
+T_BRAID_TRI = [t0 for t0, t1, w, x in EX['singing'] if w == 'Hagen' and t0 >= _SEG[2][0]]   # his calls on Alberich
+T_CURSE = _sung('Brünnhilde', 'Allrauner')
+T_PLOT2 = _sung('Gunther', 'Wotan! Wende')
+T_CHORDS = _LATE[:3]                        # silver, gold, violet
+T_SLAM = _LATE[3]                           # the black slam
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -179,41 +194,25 @@ def red_torches(S, T, ps, lvl, red):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_BRAID[0], 'F1', 64, 'pedal')
-    for t, m, v, d in play('grief_accepted', T_GRIEF, 0.55, -12, 88):
-        add(t, d, m, v, 'grief')
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'score'. The right hand under
+    her grief is 'grief', the bass's long notes under "So soll es sein" 'plot', the bass under the oath 'ost';
+    'tritone', 'curse', 'chord', 'chordhit', 'slam' and 'slamhit' mark moments. Only 'score' sounds."""
+    N = [(t, d, m, v, 'score', h) for t, d, m, v, h in EX['notes']]
+    for t0 in accents([n for n in EX['notes'] if n[4] == 0], T_GRIEF, T_TRITONE[0], vmin=1, n=1, space=0.35):
+        N.append((t0, 0.6, 72, 70, 'grief', None))
     for k, t0 in enumerate(T_TRITONE + T_BRAID_TRI):
-        for t, m, v, d in play('hagen', t0, 0.7, -12, 108 + 2 * min(k, 4)):
-            add(t, d, m, v, 'tritone', k)
+        N.append((t0, 1.0, 36, 0, 'tritone', k))
+    lh = [n for n in EX['notes'] if n[4] == 1]
     for k, t0 in enumerate(T_PLOT + [T_PLOT2]):
-        for t, m, v, d in play('plot', t0, 0.42 if k < 2 else 0.3, -12, 104 + 4 * k):
-            add(t, d, m, v, 'plot', k)
-    t, j = T_BRAID[0], 0                    # the ostinato: faster and faster
-    while t < T_BRAID[1]:
-        u = (t - T_BRAID[0]) / (T_BRAID[1] - T_BRAID[0])
-        add(t, 0.2, ('F2', 'F2', 'Gb2', 'F2', 'C3', 'F2', 'Db3', 'C3')[j % 8], 84 + int(30 * u), 'ost', j)
-        t += 0.5 - 0.33 * u
-        j += 1
-    for t, m, v, d in play('curse', T_CURSE, 0.4, -12, 112):
-        add(t, d, m, v, 'curse')
+        N.append((t0, 2.5, 41, 100, 'plot', k))
+    for j, t0 in enumerate(accents(lh, T_BRAID[0], T_BRAID[1], vmin=1, n=1, space=0.2)):
+        N.append((t0, 0.2, 41, 100, 'ost', j))
+    N.append((T_CURSE, 1.0, 48, 0, 'curse', None))
     for k, t0 in enumerate(T_CHORDS):
-        for m in (('Bb2', 'D3', 'F3', 'Bb3'), ('C3', 'Eb3', 'G3', 'C4'), ('Db3', 'F3', 'Ab3', 'Db4'))[k]:
-            add(t0, 1.0, m, 118, 'chord', k)
-        add(t0, 0.5, 'F1', 120, 'chordhit', k)
-    for m in ('F2', 'C3', 'F3', 'Ab3', 'C4'):
-        add(T_SLAM, 2.5, m, 124, 'slam')
-    add(T_SLAM, 0.5, 'F1', 127, 'slamhit')
-    for m in ('F2', 'Ab2', 'C3'):
-        add(T_SLAM + 3.0, D - T_SLAM - 3.0, m, 66, 'after')
-    for j, t0 in enumerate(np.arange(T_SLAM + 5.0, D - 2.5, 2.0)):     # a heartbeat of vengeance
-        add(t0, 0.3, 'F1', 100 - 3 * j, 'thump', j)
-        add(t0 + 0.28, 0.3, 'F1', 80 - 3 * j, 'thump', j)
+        N.append((t0, 1.0, 60, 0, 'chord', k))
+        N.append((t0, 0.5, 29, 0, 'chordhit', k))
+    N.append((T_SLAM, 2.5, 41, 0, 'slam', None))
+    N.append((T_SLAM, 0.5, 29, 0, 'slamhit', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -248,14 +247,14 @@ def render(G, seed=20):
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        lv = {k: keys(t, [(0, START[k]), (T_SLAM, START[k]), (D - 6, END[k])]) for k in START}
+        lv = {k: keys(t, [(0, START[k]), (T_BRAID[0], START[k]), (D, END[k])]) for k in START}
         braid = smoothstep(T_BRAID[0], T_BRAID[0] + 1, t) * (1 - smoothstep(T_CHORDS[0], T_CHORDS[0] + 0.2, t))
         lv['dawn'] *= 1 - 0.5 * braid
         fr = shore(S, T, lv)
 
         # the torches: sinking and turning blood red
         red = RED * smoothstep(0, 14, t)
-        lvl = CROWD['lvl'] * keys(t, [(0, 1.0), (14, 0.85), (T_SLAM, 0.85), (D - 6, FIGS_END['crowd'] / CROWD['lvl'])])
+        lvl = CROWD['lvl'] * keys(t, [(0, 1.0), (14, 0.85), (T_BRAID[0], 0.85), (D, FIGS_END['crowd'] / CROWD['lvl'])])
         a, i = recent(ost, t, 0.5)
         if a is not None:
             lvl = lvl * (1 + 0.8 * braid * np.exp(-a / 0.08))
@@ -346,7 +345,7 @@ def render(G, seed=20):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, with the stage's gong, drums and thunder."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -355,80 +354,19 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.34, 0.25), ('brass', 0.34, 0.3), ('perc', 0.32, 0.25), ('winds', 0.3, 0.35),
-                            ('strings', 0.3, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    ph = pan_at(at(G, *HAGEN_AT))
-    pb = pan_at(at(G, *BRUNN_AT))
-    pg = pan_at(at(G, *GUNTHER_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v + 10, 0.0, rise=2.0, fall=2.0, gain=0.55)
-        elif part == 'grief':
-            M.add('winds', oboe.play(m + 12, v, dur=d * 1.1, release=0.3), t, 0.8, pb)
-            M.add('strings', vln.play(m + 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, pb)
-        elif part == 'tritone':
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.08, fall=0.8, gain=0.9)
-            M.add('perc', timp.play(v - 10, pitch=-6), t, 0.7, ph)
-        elif part == 'plot':
-            if d > 1.0:
-                hold('brass', tbn, m + 12, t, t + d, v, 0.0, rise=0.2, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.9)
-            M.add('low', tuba.play(m, v - 14, dur=d * 1.05, release=0.3), t, 0.6)
-        elif part == 'ost':
-            M.add('low', cbs.play(m, v), t, 0.8, 0.0)
-            M.add('strings', vcs.play(m + 12, v - 8), t, 0.6, ((k % 3) - 1) * 0.6)
-            if k % 2 == 0:
-                M.add('perc', timp.play(v - 6, pitch=-5), t, 0.5, ((k % 3) - 1) * 0.6)
-        elif part == 'curse':
-            if d > 1.0:
-                hold('brass', tpt, m + 12, t, t + d, v, 0.0, rise=0.08, fall=0.8, gain=0.8)
-            else:
-                M.add('brass', tpt.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.85)
-            M.add('brass', tbn.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.6)
-        elif part == 'chord':
-            p = (pb, pg, ph)[k]
-            hold('brass', horn, m, t, t + d, v, p, rise=0.04, fall=0.4, gain=0.6)
-            hold('brass', tbn, m - 12, t, t + d, v - 6, p, rise=0.04, fall=0.4, gain=0.55)
-        elif part == 'chordhit':
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, (pb, pg, ph)[k])
-        elif part == 'slam':
-            hold('brass', tbn, m, t, t + d, v, 0.0, rise=0.03, fall=1.5, gain=0.6)
-            hold('brass', tpt, m + 12, t, t + d, v - 10, 0.0, rise=0.03, fall=1.5, gain=0.45)
-        elif part == 'slamhit':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0)
-            M.add('perc', crash.play(v), t, 0.9)
-            M.add('perc', gong.play(115), t, 0.8)
-        elif part == 'thump':
-            M.add('perc', timp.play(v, pitch=-7), t, 0.8, 0.0)
-        elif part == 'after':
-            hold('strings', ctrem, m + 12, t, t + d, v, ph * 0.5, rise=2.0, fall=1.5, gain=0.45)
+    o = Orchestra(M, level=2.35)
+    # the stage keeps out of the trio's way and comes in with the slam
+    o.effects([(0, -6), (T_SLAM - 0.5, -6), (T_SLAM, 0), (D, 0)])
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.6 if t < T_PLOT[0] else 1.0)
+    ph, psp = pan_at(at(G, *HAGEN_AT)), pan_at(at(G, 'Porch Front', 0.5))
+    for k, t0 in enumerate(T_TRITONE):
+        o.hit('gong', t0, 100, gain=0.35, pan=ph)
+        o.hit('timpani', t0, 116, pitch=-6, gain=0.6, pan=ph)
+    for t0 in T_PLOT:
+        o.hit('timpani roll', t0, 104, pitch=-5, gain=0.45)
+        o.hit('bass drum', t0, 118, gain=0.5)
+    o.hit('cymbal swell', T_CHORDS[0] - 3.0, 104, gain=0.45)
+    for k, t0 in enumerate(T_CHORDS):
+        o.hit('crash', t0, 112 + 4 * k, gain=0.45)
+    o.boom(T_SLAM, psp, 1.0)
+    o.thunder(T_SLAM + 0.05, 1.0, psp, 0.8)

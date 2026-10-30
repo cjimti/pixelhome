@@ -1,22 +1,32 @@
-"""The Kiss of Sleep: the farewell's glow is still on the house as Wotan bends over his daughter and kisses her
-eyes. A soft white spark at her face, and the magic sleep (Donington 16) begins its slow chromatic descent in
-the woodwinds, chord by chord, from A flat down to C. With every chord her light dims a step and turns from
-silver toward a sleeping violet, and her gold glints, her godhood, come loose one by one and drift away along
-the roofline to both ends of the house, where they go out.
+"""The Kiss of Sleep: the farewell's last great surge, then Wotan bends over his daughter and kisses her eyes.
 
-Transformation (Donington 91) in the violins over the harp: a slow tide of violet washes out from her across
-the whole house and back again, and when it has passed she is no longer a Valkyrie. Wotan lays her down: her
-light sinks lower and spreads, a still violet-silver glow at the summit, the very middle of Porch Front. He
-covers her with her shield, a cool steel-silver arc that glides over her and settles, glinting.
+The music is Wagner's own: Act III, bars 1568 to 1576, the orchestral climax of the farewell, then bars 1613 to
+1621, "so küßt er die Gottheit von dir", the kiss and the magic sleep sinking chord by chord, as Solti's 1958
+Vienna Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano reduction of the
+score (pixelhome/ring.py), orchestrated by hand and register: the climax on the full orchestra (violins, flutes and
+piccolo above, horns, trombones and trumpets in the middle, cellos, basses and tuba below, timpani on the bass
+accents); the kiss on a glockenspiel and the harp over soft strings; the sleep's chords on the woodwinds, flutes
+over oboes over clarinets over bassoons, with the harp. Over it the stage adds what the house shows: the mountain
+wind and cymbals in the climax; at the kiss a shimmer of bell tree and glockenspiel over a soft gong; a chime for
+each glint of her godhood drifting away, toward the end it drifts to; a bowed cymbal under the violet tide; a soft
+gong under each ripple of the sleep; a thud as he lays her down; the shield scraping over her and ringing as it
+settles. The effects sit back under the climax and leave Wotan's line clear; the kiss's shimmer and the shield are
+the staged moments, and even they stay gentle under the sleep's chords; the effects come forward only for her
+being laid down and the shield.
 
-The power of fate (Donington 84) on Wagner tubas, two long chords, each an indigo shadow passing over the
-roof. Wotan steps back from her toward the left of the porch, and the evening deepens into night.
+The lights follow the real notes. Through the climax the whole house surges blue and silver with the orchestra,
+every loud high note a silver-white flash, every bass accent a wave of his blue rolling out to both ends. As Wotan
+sings the glow draws in round the two of them; at the kiss a white spark at her face, and with each soft note
+after it a gold glint, her godhood, comes loose and drifts away along the roofline to an end of the house while a
+slow violet tide washes out across the house and back. Then the sleep: with every chord a violet ripple runs out
+from her, her light dims a step and turns from silver toward a sleeping violet. Wotan lays her down, her light
+sinking and spreading at the summit, the very middle of Porch Front, and covers her with her shield, a cool
+steel-silver arc that glides over her and settles, glinting.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK28'
 TITLE = 'The Kiss of Sleep'
@@ -26,17 +36,16 @@ DESCRIPTION = ('Wotan kisses his daughter\'s eyes, and her godhood leaves her. H
 VOICEOVER = ('One kiss on each eye, and the warrior becomes a sleeper. '
              'Watch her light change, and her gold drift away.')
 
-T_KISS = 5.0                                # the kiss
-T_SLEEP = 6.0                               # the magic sleep, in the woodwinds
-SBEAT = 0.9
-T_TRANS = 25.5                              # Transformation
-TBEAT = 0.8
-T_LAY = 38.5                                # he lays her down
-T_SHIELD = 51.0                             # and covers her with her shield
-T_FATE = 59.0                               # the power of fate
-FBEAT = 1.3
-T_BACK = 71.0                               # he steps back
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1568-1576 and 1613-1621, Solti 1958
+BAR = {}
+for m, t in EX['bars']:
+    BAR.setdefault(int(m), t)
+T_SPLICE = EX['segments'][1]['start']       # "so küßt er die Gottheit von dir"
+T_KISS = BAR[1614]                          # the kiss
+T_SLEEP = BAR[1617]                         # the magic sleep, chord by chord
+T_LAY = BAR[1619]                           # he lays her down
+T_SHIELD = BAR[1620]                        # and covers her with her shield
+D = EX['seconds']
 T0 = 80.0 * 27                              # the opera's clock at our start
 
 WOTAN = hexc('#1a3cff')
@@ -78,47 +87,44 @@ def stage(d, ta, porch):
 
 def sleeper(t):
     """Brünnhilde's state: (colour, core level, core width, halo level, halo width, glint level)."""
-    s = smoothstep(T_SLEEP, T_SLEEP + 20 * SBEAT, t)
-    tr = smoothstep(T_TRANS, T_TRANS + 15 * TBEAT, t)
-    lay = smoothstep(T_LAY, T_LAY + 6, t)
-    c = mix(mix(SILVER, WARM, 0.7 * (1 - s)), mix(VIOLET, SILVER, 0.2), 0.6 * s + 0.4 * tr)
+    s = smoothstep(T_KISS, T_SLEEP, t) * 0.4 + smoothstep(T_SLEEP, T_LAY + 2, t) * 0.6
+    lay = smoothstep(T_LAY, T_LAY + 4, t)
+    c = mix(mix(SILVER, WARM, 0.7 * (1 - s)), mix(VIOLET, SILVER, 0.2), s)
     return c, 0.85 - 0.2 * s - 0.12 * lay, 20 + 6 * lay, 0.32 - 0.04 * lay, 80 - 10 * lay, 0.45 * (1 - s)
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand). In the climax 'bass' is the
+    left hand below C3, 'high' the right hand from C#6 up, 'line' the rest of the right hand, 'mid' the rest of the
+    left; then 'sing' under Wotan's line, 'kiss' the soft notes after the kiss, 'sleep' the sleep's chords."""
     N = []
+    for t, d, m, v, h in EX['notes']:
+        if t < T_SPLICE - 0.01:
+            part = ('high' if m >= 85 else 'line') if h == 0 else ('bass' if m < 48 else 'mid')
+        else:
+            part = 'sing' if t < T_KISS - 0.01 else 'kiss' if t < T_SLEEP - 0.01 else 'sleep'
+        N.append((t, d, m, v, part, h))
+    return N
 
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
 
-    for m in ('E2', 'B2', 'E3', 'Ab3'):                     # the farewell, still sounding
-        add(0.0, T_SLEEP + 1.0, m, 54, 'bed')
-    add(T_KISS, 2.0, 'Ab5', 70, 'kiss')
-    for t, m, v, d in play('sleep', T_SLEEP, SBEAT, 0, 84):
-        add(t, d, m, v, 'sleep')
-    for t, m, v, d in play('transformation', T_TRANS, TBEAT, 0, 88):
-        add(t, d, m, v, 'trans')
-    for b, ms, dur in ((0, ('G2', 'D3', 'B3'), 3), (3, ('C2', 'G2', 'E3'), 3), (6, ('D2', 'A2', 'Gb3'), 3),
-                       (9, ('G2', 'D3', 'B3'), 3), (12, ('D2', 'A2', 'Gb3', 'C4'), 3)):
-        for m in ms:
-            add(T_TRANS + b * TBEAT, dur * TBEAT, m, 62, 'transbed')
-        add(T_TRANS + b * TBEAT, 0.0, ms[0], 74, 'arp')
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3'):              # laid down: E major, very still
-        add(T_LAY, T_FATE - T_LAY + 0.5, m, 56, 'bed')
-    for k in range(4):
-        add(T_LAY + 3.0 * k, 0.0, 'E2', 66 - 3 * k, 'arp')
-    add(T_SHIELD, 2.2, 'C4', 80, 'gliss')
-    add(T_SHIELD, 3.0, 'E6', 64, 'kiss')
-    for t, m, v, d in play('fate', T_FATE, FBEAT, 0, 92):
-        add(t, d, m, v, 'fate')
-    add(T_FATE, 9 * FBEAT, 'D2', 60, 'roll')
-    for t, m, v, d in play('sleep', T_BACK + 0.5, 0.75, 0, 64, line='melody'):
-        if t < D - 1.5:
-            add(t, d, m, v, 'sleephi')
-    for m in ('Ab2', 'Eb3', 'C4'):
-        add(T_BACK + 0.5, D - T_BACK - 1.0, m, 50, 'bed')
-    return sorted(N, key=lambda e: e[0])
+def energy(N, F):
+    """Per frame: how loud and busy the orchestra is, 0..1 (velocity-weighted notes, smoothed)."""
+    e = np.zeros(F)
+    for t, d, m, v, part, h in N:
+        f0, f1 = int(t / DT), int(min(t + max(d, 0.15), D) / DT) + 1
+        e[f0:f1] += (v / 127) ** 2 / max(1, f1 - f0) ** 0.5
+    k = np.exp(-np.arange(-40, 41) ** 2 / (2 * 14 ** 2))
+    e = np.convolve(e, k / k.sum(), 'same')
+    return np.clip(e / np.percentile(e, 97), 0, 1)
+
+
+def accents(ts, gap):
+    """Onsets at least gap seconds apart."""
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
 
 
 def follow(target, rate):
@@ -145,8 +151,9 @@ def choreography(G):
         rate[k][m] = r
 
     set_('w', 0, D, at(G, 'Porch Front', 0.45), 2.0)
-    set_('w', T_TRANS, D, at(G, 'Porch Front', 0.38), 0.5)
-    set_('w', T_BACK, D, at(G, 'Porch Front', 0.25), 1.0)
+    set_('w', T_SPLICE, D, at(G, 'Porch Front', 0.47), 0.8)
+    set_('w', T_SLEEP, D, at(G, 'Porch Front', 0.4), 0.5)
+    set_('w', T_SHIELD + 2, D, at(G, 'Porch Front', 0.3), 0.8)
     set_('b', 0, D, at(G, 'Porch Front', 0.5), 2.0)
     pos = {k: follow(tgt[k], rate[k]) for k in 'wb'}
     pos['t'] = t
@@ -161,15 +168,17 @@ def render(G, seed=28):
     L = G.length
     C = choreography(G)
     N = compose()
+    E = energy(N, F)
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
     tw = Flicker(np.random.default_rng(2701), G.N, 1.0, 4.0)            # shared with WK27
     sh = Flicker(np.random.default_rng(2801), G.N, 0.3, 1.2)
-    chords = np.array(sorted({e[0] for e in N if e[4] == 'sleep'}))
-    trans = np.array([e[0] for e in N if e[4] == 'trans'])
-    fates = np.array(sorted({e[0] for e in N if e[4] == 'fate'}))
-    pb0 = at(G, 'Porch Front', 0.5)
-    # her godhood: a gold glint leaves her with each chord of the sleep and drifts to an end of the house
-    gd = [(tc + 0.15 * j, (-1) ** (i + j), 0.7 + 0.25 * rng.random()) for i, tc in enumerate(chords) for j in range(2)]
+    waves = accents([e[0] for e in N if e[4] == 'bass' and e[3] >= 80], 0.9)
+    peaks = accents([e[0] for e in N if e[4] == 'high' and e[3] >= 95], 0.45)
+    onsets = np.array(sorted({round(e[0], 2) for e in N if e[0] < T_SPLICE}))
+    chords = np.array(accents([e[0] for e in N if e[4] == 'sleep'], 0.4))
+    # her godhood: a gold glint leaves her with each soft note after the kiss (and each chord of the sleep)
+    loose = accents([e[0] for e in N if e[4] in ('kiss', 'sleep')], 0.3)
+    gd = [(tc, (-1) ** i, 0.6 + 0.35 * rng.random()) for i, tc in enumerate(loose)]
 
     def recent(ts, t, tau, span=3.0):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -178,73 +187,86 @@ def render(G, seed=28):
     for f in range(F):
         t = f * DT
         ta = t + T0
+        e = E[f]
         fr = stage(d, ta, porch)
         pw, pb = C['w'][f], C['b'][f]
         mid = 0.5 * (pw + pb)
         dm = np.abs(d - mid)
         db = np.abs(d - pb)
 
-        # the farewell's glow, fading as the sleep comes
-        emb = 0.24 * (1 - smoothstep(T_KISS, T_SLEEP + 8, t))
-        tender = 0.3 * (1 - smoothstep(T_KISS, T_SLEEP + 6, t))
-        if emb > 0:
-            g = np.exp(-(dm / 900) ** 2)
-            fr *= (1 - 0.3 * emb * g)[:, None]
-            fr += light(EMBRACE, emb * 0.45 * g * (0.8 + 0.2 * np.sin(2 * np.pi * (d / 300 - 0.2 * ta))))
-            fr += light(SILVER, emb * 0.3 * np.exp(-(dm / 70) ** 2))
+        # the climax: the embrace over the whole house, as wide and bright as the orchestra is loud
+        cl = 1 - smoothstep(T_SPLICE - 3, T_KISS, t)
+        if cl > 0:
+            hit = recent(onsets, t, 0.18, 1.0)
+            wide = 500 + 1600 * e
+            g = np.exp(-(dm / wide) ** 2)
+            emb = cl * (0.2 + 0.6 * e)
+            fr *= (1 - 0.45 * emb * g)[:, None]
+            wv = 0.6 + 0.4 * np.sin(2 * np.pi * (d / 300 - (0.2 + 0.4 * e) * ta))
+            fr += light(EMBRACE, emb * (0.5 + 0.15 * hit) * g * wv)
+            fr += light(SILVER, emb * 0.35 * np.exp(-(dm / (70 + 200 * e)) ** 2))
+            r = 1700 * (0.5 + 0.5 * np.sin(2 * np.pi * t / 4.7 - np.pi / 2))
+            fill = smoothstep(r + 250, r - 250, dm)
+            fr += light(SILVER, cl * e * (0.25 + 0.3 * hit) * fill) + light(WOTAN, cl * e * 0.4 * (1 - fill))
             br = 0.5 + 0.5 * np.sin(2 * np.pi * (dm / 900 - 0.07 * ta))
-            fr += light(mix(SILVER, WARM, 0.4), tender * 0.12 * br ** 2 * (1 - 0.5 * porch))
-            fr += light(WOTAN, tender * 0.38 * (1 - br) * (0.6 + 0.4 * tw(ta)))
+            fr += light(WOTAN, cl * 0.3 * (1 - br) * (0.6 + 0.4 * tw(ta)))
+        for ts in waves:
+            if ts <= t < ts + 3.0:
+                age = t - ts
+                r = 1600 * smoothstep(0, 2.6, age)
+                band = np.exp(-((dm - r) / 180) ** 2) * (1 - age / 3.0)
+                fr += light(WOTAN, 0.8 * band) + light(WOTAN_SOFT, 0.3 * band ** 2)
+        for ts in peaks:
+            if ts <= t < ts + 1.2:
+                a = np.exp(-(t - ts) / 0.25)
+                fr += light(WHITE, 0.8 * a * np.exp(-(dm / 900) ** 2)) + light(SILVER, 0.4 * np.exp(-(t - ts) / 0.7) * np.ones(G.N))
 
-        # the sleep: each chord a soft violet ripple out from her
+        # Wotan's line: the glow draws in round the two of them
+        if T_SPLICE - 3 <= t < T_KISS + 3:
+            u = smoothstep(T_SPLICE - 3, T_SPLICE + 2, t) * (1 - smoothstep(T_KISS, T_KISS + 3, t))
+            g = np.exp(-(dm / (900 - 500 * smoothstep(T_SPLICE, T_KISS, t))) ** 2)
+            fr += light(EMBRACE, u * 0.8 * g * (0.8 + 0.2 * np.sin(2 * np.pi * (d / 300 - 0.15 * ta))))
+
+        # after the kiss: a slow violet tide out across the house and back, until the sleep
+        trl = smoothstep(T_KISS, T_KISS + 2, t) * (1 - smoothstep(T_SLEEP + 2, T_LAY, t))
+        if trl > 0:
+            u = np.clip((t - T_KISS) / (T_SLEEP - T_KISS), 0, 1)
+            r = 1700 * np.sin(np.pi * u)
+            tide = smoothstep(r + 250, r - 250, db)
+            fr *= (1 - 0.35 * trl * tide)[:, None]
+            fr += light(VIOLET, trl * 0.5 * tide * (0.75 + 0.25 * np.sin(2 * np.pi * (db / 160 - 0.5 * ta))))
+            fr += light(SILVER, trl * 0.55 * np.exp(-((db - r) / 60) ** 2))
+
+        # the sleep: each chord a violet ripple out from her
         cp = recent(chords, t, 0.8)
         i = int(np.searchsorted(chords, t, side='right')) - 1
-        if i >= 0 and t - chords[i] < 2.5:
+        if i >= 0 and t - chords[i] < 3.0:
             age = t - chords[i]
-            band = np.exp(-((db - 900 * age / 2.5) / 180) ** 2) * (1 - age / 2.5)
-            fr += light(VIOLET, 0.45 * band)
+            band = np.exp(-((db - 1100 * age / 3.0) / 200) ** 2) * (1 - age / 3.0)
+            fr += light(VIOLET, 0.6 * band) + light(FATE_HI, 0.3 * band * (1 - porch))
         for tg, side, sp in gd:
             if tg <= t < tg + 4.0:
                 age = t - tg
                 q = pb + side * (L * 0.62) * sp * (age / 4.0) ** 0.7
                 fr += light(GLINT, 0.95 * (1 - age / 4.0) * np.exp(-((d - q) / 15) ** 2))
 
-        # Transformation: a tide of violet out across the house and back
-        trl = smoothstep(T_TRANS - 0.5, T_TRANS + 1.5, t) * (1 - smoothstep(T_TRANS + 15 * TBEAT - 1, T_LAY + 3, t))
-        if trl > 0:
-            u = np.clip((t - T_TRANS) / (15 * TBEAT), 0, 1)
-            r = 1700 * np.sin(np.pi * u)
-            tide = smoothstep(r + 250, r - 250, db)
-            tp = recent(trans, t, 0.6)
-            fr *= (1 - 0.35 * trl * tide)[:, None]
-            fr += light(VIOLET, trl * (0.42 + 0.15 * tp) * tide * (0.75 + 0.25 * np.sin(2 * np.pi * (db / 160 - 0.5 * ta))))
-            fr += light(SILVER, trl * 0.5 * np.exp(-((db - r) / 60) ** 2))
-
         # the kiss
-        if T_KISS <= t < T_KISS + 2.0:
-            a = np.exp(-(t - T_KISS) / 0.5)
-            fr += light(WHITE, 0.9 * a * np.exp(-(db / 10) ** 2))
+        if T_KISS <= t < T_KISS + 2.5:
+            a = np.exp(-(t - T_KISS) / 0.6)
+            fr += light(WHITE, 0.95 * a * np.exp(-(db / 12) ** 2)) + light(SILVER, 0.35 * a * np.exp(-(db / 300) ** 2))
 
         # the shield: a steel-silver arc that glides over her from Wotan and settles, glinting
         shl = smoothstep(T_SHIELD, T_SHIELD + 2.0, t)
         if t >= T_SHIELD:
-            c = pw + (pb - pw) * smoothstep(T_SHIELD, T_SHIELD + 2.0, t)
+            c = pw + (pb - pw) * shl
             arc = np.exp(-((d - c) / (34 * (0.6 + 0.4 * shl))) ** 4)
             glint = (rng.random(G.N) < 0.06) * arc
             fr += light(SHIELD, (0.32 + 0.08 * sh(ta)) * arc + 0.4 * glint)
             if t < T_SHIELD + 3:
                 fr += light(SHIELD, 0.5 * np.exp(-(t - T_SHIELD - 2.0) ** 2 / 0.1) * np.exp(-(db / 200) ** 2))
 
-        # fate: indigo shadows over the roof
-        fl = smoothstep(T_FATE - 0.5, T_FATE + 1, t) * (1 - smoothstep(T_FATE + 9 * FBEAT, D, t))
-        if fl > 0:
-            fp = recent(fates, t, 1.5, 6.0)
-            tex = 0.6 + 0.4 * np.sin(2 * np.pi * (d / 260 + 0.04 * ta)) * np.sin(2 * np.pi * (d / 610 - 0.03 * ta))
-            fr *= 1 - 0.3 * fl * fp
-            fr += light(FATE_HI, fl * (0.2 + 0.4 * fp) * tex * (1 - np.exp(-(db / 60) ** 2)))
-
         # Wotan
-        wc = mix(WOTAN, WOTAN_SOFT, 0.75 - 0.25 * smoothstep(T_FATE, D, t))
+        wc = mix(WOTAN, WOTAN_SOFT, 0.75 - 0.25 * smoothstep(T_SLEEP, D, t))
         fr += light(wc, 0.85 * np.exp(-((d - pw) / 24) ** 2) + 0.375 * np.exp(-((d - pw) / 120) ** 2))
 
         # Brünnhilde, falling asleep
@@ -257,95 +279,84 @@ def render(G, seed=28):
     return np.clip(out, 0, 1)
 
 
-def score(M, G):
-    from pixelhome.audio import SR
+def house_pan(G):
+    """Path distance -> left/right across the facade, as heard from the street."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
+    return lambda dd: float(0.85 * (2 * (np.interp(dd, ds, xs) - x0) / (x1 - x0) - 1))
 
-    def pan_at(dd):
-        x = np.interp(dd, ds, xs)
-        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
+def score(M, G):
+    """Wagner's notes, orchestrated from the piano reduction: the full orchestra for the climax, then the kiss on
+    glockenspiel and harp over soft strings, and the sleep's chords on the woodwinds and harp. Over it, what the house
+    shows: wind, swells and crashes in the climax, the kiss's shimmer, a chime for every glint of her godhood
+    drifting away, a soft gong under each ripple of sleep, and the shield sliding over her and settling."""
+    o = Orchestra(M, level=3.2)
+    pan_at = house_pan(G)
     C = choreography(G)
-    pf = pan_at(at(G, 'Porch Front', 0.5))
+    N = compose()
+    L = G.length
+    pb = at(G, 'Porch Front', 0.5)
+    bp = pan_at(pb)
 
-    def pan_of(who, t):
-        return pan_at(np.interp(t, C['t'], C[who]))
+    def role(t, d, m, v, h):
+        if t < T_SPLICE - 0.01:
+            return None
+        if t < T_SLEEP - 0.01:                                  # Wotan's line and the kiss: strings, harp, glock
+            parts = [('violins' if m >= 55 else 'violas' if m >= 48 else 'cellos', 0, 10, 0.6)]
+            if h == 0 and t >= T_KISS - 0.01:
+                parts += [('harp', 0, 30, 0.6), ('glock', 0, 20, 0.35) if m >= 60 else ('harp', 12, 20, 0.4)]
+            return parts
+        sec = 'flutes' if m >= 72 else 'oboes' if m >= 64 else 'clarinets' if m >= 55 else 'bassoons' if m >= 46 else 'cellos'
+        return [(sec, 0, 22, 0.6), ('harp', 0, 20, 0.3)]
 
-    for name, gain, rev in (('strings', 0.18, 0.45), ('low', 0.18, 0.28), ('brass', 0.15, 0.4), ('winds', 0.13, 0.45),
-                            ('harp', 0.18, 0.5), ('perc', 0.14, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    cym = M.hits('Percussion/susCymb1-cresc-Median_v1.wav')
+    o.tutti(EX['notes'], size=lambda t: 1.0, role=role)
+    for t, d, m, v, part, h in N:
+        if part == 'bass' and v >= 110:
+            o.hit('timpani', t, v - 15, pitch=(m - 40) * 0.5, gain=0.4)
+    o.hit('crash', BAR[1571], 105, gain=0.4)
+    o.hit('timpani roll', T_SPLICE - 4, 70, gain=0.25)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    # the climax's wind sits back under the orchestra and is gone by Wotan's line, which must be clear; the kiss's
+    # shimmer and the shield are the staged moments, kept gentle
+    o.effects([(0, -9), (T_SPLICE - 3, -12), (T_SPLICE, -20), (T_LAY - 0.5, -20), (T_LAY, -4), (T_SHIELD + 3, -4),
+               (T_SHIELD + 5, -20), (D, -20)])
+    # the climax: the mountain wind, a timpani roll under each wave of blue, a crash on each white flash
+    o.wind(0, T_KISS + 4, level=lambda tt: 0.7 - 0.5 * smoothstep(T_SPLICE - 3, T_KISS + 4, tt), pan=-0.3)
+    for ts in accents([e[0] for e in N if e[4] == 'bass' and e[3] >= 80], 0.9):
+        o.hit('timpani roll', ts, 82, pitch=-3, gain=0.35, pan=bp)
+    for ts in accents([e[0] for e in N if e[4] == 'high' and e[3] >= 95], 0.45):
+        o.hit('crash', ts, 96, gain=0.22, pan=bp)
+    o.hit('cymbal swell', T_SPLICE - 4.5, 86, gain=0.25)
 
-    for t, d, m, v, part, who in compose():
-        if part == 'bed':
-            s = cb if m < note('C3') else va if m < note('C4') else vn
-            hold('strings', s, m, t, t + d, v, pf + 0.25 * ((m % 3) - 1), rise=1.5, fall=2.0, gain=0.7)
-        elif part == 'kiss':
-            M.add('perc', glock.play(m, v), t, 0.7, pf)
-        elif part == 'sleep':
-            if m >= note('C5'):
-                M.add('winds', fl.play(m, v, dur=d * 1.05, release=0.6), t, 0.9, pf - 0.15)
-            elif m >= note('Gb4'):
-                M.add('winds', ob.play(m, v - 6, dur=d * 1.05, release=0.6), t, 0.8, pf + 0.15)
-            elif m >= note('C4'):
-                M.add('winds', cl.play(m, v - 4, dur=d * 1.05, release=0.6), t, 0.8, pf - 0.3)
-            elif m >= note('C3'):
-                M.add('winds', bsn.play(m, v - 6, dur=d * 1.05, release=0.6), t, 0.8, pf + 0.3)
-            else:
-                hold('low', vc, m + 12, t, t + d, v - 10, pf, rise=0.3, fall=0.8, gain=0.6)
-        elif part == 'trans':
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.7), t, 1.0, pf - 0.2)
-            M.add('strings', vn.play(m - 12, v - 14, dur=d * 1.05, release=0.7), t, 0.7, pf + 0.2)
-        elif part == 'transbed':
-            s = cb if m < note('C3') else va
-            hold('strings', s, m, t, t + d, v, pf + 0.25 * ((m % 3) - 1), rise=0.6, fall=1.0, gain=0.7)
-        elif part == 'arp':
-            for i, x in enumerate((m, m + 7, m + 12, m + 16, m + 19, m + 24, m + 28)):
-                M.add('harp', harp.play(x + 12, v), t + 0.11 * i, 0.9, -0.5 + 0.17 * i)
-        elif part == 'gliss':
-            gl = [x for x in range(note('E4'), note('E6') + 1) if x % 12 in (4, 8, 11)]
-            for i, x in enumerate(gl):
-                M.add('harp', harp.play(x, 70 + 2 * i), t + i * d / len(gl), 0.8, pan_of('w', t) * (1 - i / len(gl)) + pf * i / len(gl))
-            M.add('perc', cym.play(70), t - 1.0, 0.4, pf)
-        elif part == 'fate':
-            if m >= note('F3'):
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=1.0), t, 0.9, pf + 0.1 * ((m % 5) - 2))
-            elif m >= note('C3'):
-                M.add('brass', horn.play(m, v - 4, dur=d * 1.05, release=1.0), t, 0.8, pf)
-                M.add('low', vc.play(m, v - 16, dur=d * 1.05, release=1.0), t, 0.5, pf)
-            else:
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=1.2), t, 1.0, pf)
-                hold('low', cb, m + 12, t, t + d, v - 14, pf, rise=0.3, fall=1.5, gain=0.6)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.5, pf)
-        elif part == 'sleephi':
-            M.add('winds', fl.play(m, v, dur=d * 1.05, release=0.8), t, 0.8, pf)
+    # the kiss: a shimmer of bell tree and glockenspiel at her face, a soft gong under it
+    tree = M.hits('Percussion/BellTree_Stroke*_v1_Sum.wav')
+    M.add('perc', tree.play(110), T_KISS - 0.4, 0.6, bp)
+    for k, m in enumerate((88, 91, 95)):
+        o.play('glock', m, T_KISS + 0.07 * k, 0.4, 96, bp, 0.45)
+    M.add('perc', M.hits('Percussion/gongHit_p.wav').play(100), T_KISS, 0.5, bp)
+    # each glint of her godhood drifting away: a chime moving out toward its end of the house
+    tri = M.hits('Percussion/Triangle6-Hit_v1*.wav')
+    rng = np.random.default_rng(28)                             # the same draws render() makes
+    loose = accents([e[0] for e in N if e[4] in ('kiss', 'sleep')], 0.3)
+    for i, tc in enumerate(loose):
+        side, sp = (-1) ** i, 0.6 + 0.35 * rng.random()
+        pp = pan_at(pb + side * L * 0.62 * sp * 0.5)
+        M.add('perc', tri.play(70 + 30 * (i % 3 == 0)), tc, 0.35, pp)
+        o.play('glock', 84 + (i * 5) % 12, tc + 0.05, 0.3, 70, pp, 0.25)
+    # the violet tide after the kiss: a bowed cymbal breathing out and back
+    bow = M.hits('Percussion/susCymb1-bow-*.wav')
+    M.add('perc', bow.play(100), T_KISS + 1.0, 0.45, bp - 0.3)
+    M.add('perc', bow.play(90), 0.5 * (T_KISS + T_SLEEP), 0.4, bp + 0.3)
+    # the sleep: a soft gong and a low timpani under each chord's ripple
+    for tc in accents([e[0] for e in N if e[4] == 'sleep'], 0.4):
+        M.add('perc', M.hits('Percussion/gongHit_p.wav').play(72), tc, 0.22, bp)
+        o.hit('timpani', tc, 56, pitch=-7, gain=0.2, pan=bp)
+    # he lays her down: a soft thud; the shield slides over her (a cymbal scrape) and settles (a ringing clang)
+    o.hit('bass drum', T_LAY, 90, gain=0.45, pan=bp, fx=True)
+    o.hit('timpani', T_LAY, 80, pitch=-8, gain=0.4, pan=bp, fx=True)
+    o.hit('scrape', T_SHIELD, 100, gain=0.55, pan=pan_at(np.interp(T_SHIELD, C['t'], C['w'])), fx=True)
+    o.hit('metal', T_SHIELD + 2.0, 96, gain=0.45, pan=bp, fx=True)
+    o.hit('brake drum', T_SHIELD + 2.0, 80, gain=0.25, pan=bp, fx=True)
+    M.add('perc', tri.play(110), T_SHIELD + 2.05, 0.4, bp)

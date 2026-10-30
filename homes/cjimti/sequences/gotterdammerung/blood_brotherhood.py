@@ -1,24 +1,31 @@
-"""Blood Brotherhood: the hall of the Gibichungs, Gutrune at Siegfried's side. Gunther tells of the bride he
-wants, asleep on a rock behind a wall of fire, and Loge's fire (Donington 20) licks once round the whole house in
-tongues of orange: Siegfried, who no longer remembers her, offers to fetch her for him.
+"""Blood Brotherhood: the hall of the Gibichungs, Gutrune at Siegfried's side. Siegfried, who no longer remembers
+the bride asleep behind the fire, scorns it ("Ich fürchte kein Feuer") and offers to fetch her for Gunther: on the
+music's leaping figures tongues of orange fire lick round the whole house, and Gunther comes down from his throne.
 
-Gunther comes down from his throne to stand with him. Each cuts his arm, two blood red flashes, and their blood
-runs out along the roofline to both ends and back into the drinking horn between them. Then the oath (42) on the
-brass: every note strikes a whole run, emerald for Siegfried and gold for Gunther, round the house, with rings
-out from the two of them, and its second form (42a) answers in great falling octaves, run against run. Under it
-the conspiracy (75) creeps in the bass, a slow seep of black and violet from Hagen in the shadows. They drink: a
-white flash in the horn, and the three colours burst out together. Hagen will not drink; his tritone lands, the
-hall knocked dark.
+The music is Wagner's own, four passages of Act I as Solti's 1958 Vienna Philharmonic recording takes them: "Ich
+fürchte kein Feuer" (bars 601-611), the oath of blood brotherhood (640-660), the drink (723-730) and "Frisch auf
+die Fahrt!" (772-785). The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the fire
+on violins, piccolo and harp; the oath's descending octaves on trumpets, its answer on trombones, the great falling
+line of its fortissimo on the whole brass with tuba, basses and timpani; the conspiracy creeping on tuba and cello
+tremolo; Hagen's falling octaves on tuba, trombones, timpani and gong; Siegfried's horn call on horns and trumpets.
+The stage adds the fire's roar under Siegfried's boast, a blade whistling across each arm, and the wind in the sail.
 
-Siegfried's horn call (48) rings out and the two of them go down to the river, along Porch Right and Right, and
-are gone up the Rhine in a wake of teal and white, leaving Gutrune in the hall and Hagen in the shadows.
+On the oath's octaves every note strikes a whole run emerald, with rings out from Siegfried; each cuts his arm on
+its climaxes, two blood red flashes, and their blood runs out along the roofline to both ends and back into the
+drinking horn between them. Gunther's answer strikes the runs gold, the conspiracy seeps out of Hagen in black and
+violet under the build, and the fortissimo's falling line hurls emerald runs against gold. "Trink' ich dir Treu'":
+a white flash in the horn, and the three colours burst out together. Then Hagen's falling octaves land, each a blow
+that knocks the hall dark.
 
-compose() holds every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
-Act I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
+Siegfried's horn rings out in great chords and the two of them go down to the river, along Porch Right and Right,
+and are gone up the Rhine in a wake of teal and white, leaving Gutrune in the hall and Hagen in the shadows.
+
+compose() tags every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by Act
+I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play, melody
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'GD11'
 TITLE = 'Blood Brotherhood'
@@ -29,19 +36,15 @@ VOICEOVER = ('Siegfried and Gunther mix their blood and swear to be brothers. '
              'Hagen will not drink.')
 
 K = 4                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_LOGE = [1.5, 4.5]                         # the bride behind the fire
-T_COME = (7.0, 11.0)                        # Gunther comes down to him
-T_CUT = [12.5, 14.0]                        # Siegfried's arm, then Gunther's
-T_OATH = [18.0, 24.5]                       # the oath, emerald then gold
-OBEAT = 0.75
-T_OATHB = [31.0, 39.5]                      # its second form, run against run
-T_PLOT = [19.0, 41.0]                       # the conspiracy beneath
-T_DRINK = 48.0
-T_HAGEN = [51.0, 54.0]
-T_HORN = 58.0
-T_GO = (60.5, 66.0)                         # down to the river
-T_BOAT = (66.0, 73.5)                       # up the Rhine and gone
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 601-611, 640-660, 723-730 and 772-785, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+SEG = [s['start'] for s in EX['segments']] + [D]
+T_COME = (BAR[607], BAR[610])               # Gunther comes down to him
+T_CUT = [BAR[652], BAR[656]]                # Siegfried's arm on the oath's first climax, Gunther's on the fortissimo
+T_DRINK = 59.7                              # "trink' ich dir Treu'": the chord as he drinks
+T_GO = (BAR[776], BAR[780])                 # down to the river
+T_BOAT = (BAR[780], BAR[785] + 0.6)         # up the Rhine and gone
 
 AMBER = hexc('#ff8a20')
 PURPLE = hexc('#6a10c0')
@@ -148,39 +151,37 @@ def blow(fr, S, p, a, s=1.0):
     return fr
 
 
+def part_of(t, d, m, v, h):
+    """What a note of the excerpt is: (part, k), see compose()."""
+    if t < SEG[1] and h == 0 and v >= 90 and (t < 5.5 or 8.8 <= t < 10.5):
+        return 'loge', int(t >= 5.5)
+    if BAR[640] <= t < BAR[642] and h == 0 and d >= 0.3 and v >= 98:
+        return 'oath', 0
+    if BAR[652] <= t < BAR[656] and h == 1 and v >= 100 and d >= 0.25:
+        return 'oath', 1
+    if 41.5 <= t < 48.0 and d >= 0.25 and v >= 100:
+        return 'oathb', 0
+    if BAR[642] <= t < BAR[651] and h == 1 and d >= 0.25:
+        return 'plot', None
+    if 62.5 <= t < 70.0 and d >= 1.0 and v >= 110:
+        return 'hagen', None
+    if t >= SEG[3] and h == 0 and d >= 0.5 and v >= 110:
+        return 'horn', 0
+    return 'music', None
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'Bb1', 56, 'pedal')
-    for k, t0 in enumerate(T_LOGE):
-        for t, m, v, d in play('loge', t0, 0.22, 12, 92):
-            add(t, d, m, v, 'loge', k)
-    for k, t0 in enumerate(T_CUT):
-        add(t0, 0.4, 'G2', 112, 'cut', k)
-    for k, t0 in enumerate(T_OATH):
-        for t, m, v, d in play('oath', t0, OBEAT, -12, 108 + 6 * k):
-            add(t, d, m, v, 'oath', k)
-    for k, t0 in enumerate(T_OATHB):
-        for t, m, v, d in play('oath_b', t0, 0.62, -12, 110 + 6 * k):
-            add(t, d, m, v, 'oathb', k)
-    for k, t0 in enumerate(T_PLOT):
-        for t, m, v, d in play('plot', t0, 0.62, -24, 88):
-            add(t, d, m, v, 'plot', k)
-    add(T_DRINK, 0.3, 'Bb1', 120, 'drink')
-    for m in ('Bb2', 'D3', 'F3', 'Bb3', 'D4'):
-        add(T_DRINK, 3.0, m, 98, 'chord')
-    for k, t0 in enumerate(T_HAGEN):
-        for t, m, v, d in play('hagen', t0, 0.7, 0, 118):
-            add(t, d, m, v, 'hagen', k)
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.42, 0, 108):
-        add(t, d, m, v, 'horn', 0)
-    for t, m, v, d in play('siegfried_horn', T_BOAT[0] + 1.5, 0.5, 0, 80):
-        add(t, d, m, v, 'horn', 1)
-    add(T_BOAT[0], T_BOAT[1] - T_BOAT[0] + 2, 'F2', 74, 'river')
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Over Siegfried's "Ich fürchte
+    kein Feuer" the right hand's loud figures are Loge's fire ('loge', k = which half); the descending octaves that
+    open the oath are the oath ('oath', k 0, emerald), the left hand's rising arpeggio between the cuts its answer
+    ('oath', k 1, gold), the great falling line of the fortissimo its second form ('oathb'); the bass under the
+    oath's build is the conspiracy ('plot'); the falling octaves after the drink are Hagen's blows ('hagen'); the
+    loud chords of "Frisch auf die Fahrt!" are Siegfried's horn ('horn'). Everything else is 'music'."""
+    N = [(float(t), float(d), int(m), int(v)) + part_of(t, d, m, v, h) for t, d, m, v, h, _ in tidy(EX['notes'])]
+    for part in ('hagen', 'horn'):                          # one blow, one call, per chord: the lights' cue
+        cue = [e for e in N if e[4] == part]
+        keep = [e for i, e in enumerate(cue) if i == 0 or e[0] - cue[i - 1][0] > 0.2]
+        N = [e for e in N if e[4] != part] + keep + [e[:4] + ('music', None) for e in cue if e not in keep]
     return sorted(N, key=lambda e: e[0])
 
 
@@ -227,12 +228,12 @@ def render(G, seed=11):
         # the bride behind the fire: tongues of Loge's fire licking round the whole house
         for t0, dur, m, v, part, k in loge:
             a = t - t0
-            if 0 <= a < 1.2:
-                u = float(np.clip((m - 58) / 14, 0, 1))
+            if 0 <= a < 1.4:
+                u = float(np.clip((m - 60) / 22, 0, 1))
                 c = L * (0.05 + 0.9 * u) if k == 0 else L * (0.95 - 0.9 * u)
-                tongue = np.exp(-((d - c) / (90 + 140 * a)) ** 2) * np.exp(-a / 0.45)
-                fr += light(ORANGE, 0.95 * tongue)
-                fr += light(TORCH, 0.8 * tongue * np.exp(-a / 0.15))
+                tongue = np.exp(-((d - c) / (120 + 220 * a)) ** 2) * np.exp(-a / 0.55)
+                fr += light(ORANGE, 1.0 * tongue)
+                fr += light(TORCH, 0.9 * tongue * np.exp(-a / 0.18))
 
         # Gunther comes down from the throne: two gold surges out over the house
         for j in range(2):
@@ -332,7 +333,9 @@ def render(G, seed=11):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, and the stage's sounds: the fire Siegfried scorns, the
+    blades drawn across their arms, the sail filling as they go."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -341,84 +344,57 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.34, 0.25), ('brass', 0.32, 0.3), ('strings', 0.28, 0.35), ('winds', 0.26, 0.35),
-                            ('perc', 0.32, 0.3), ('fx', 0.12, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    picc = M.sampler('Woodwinds/Piccolo/Sus/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=2.2)
     hag = pan_at(at(G, *HAGEN_AT))
-    river = pan_at(at(G, 'Right', 0.95))
-    sfp = pan_at(at(G, *SIEGFRIED_AT))
-    gunp = pan_at(at(G, *GUNTHER_AT))
-    for t, d, m, v, part, k in compose():
-        here = pan_at(where(G, t)[0])
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=4.0, fall=2.0, gain=0.5)
-        elif part == 'loge':
-            M.add('winds', picc.play(m, v - 10, dur=d * 1.2, release=0.15), t, 0.6, -0.6 + 1.2 * k)
-            M.add('strings', vln.play(m - 12, v), t, 0.6, -0.6 + 1.2 * k)
-            M.add('strings', harp.play(m, 70), t, 0.5, -0.6 + 1.2 * k)
-        elif part == 'cut':
-            p = sfp if k == 0 else gunp
-            M.add('perc', timp.play(v, pitch=-2), t, 0.7, p)
-            M.add('fx', whoosh(0.35, 3000, 6000, 0.6, seed=11 + k), t - 0.1, 0.8, p)
-        elif part == 'oath':
-            if d > 1.0:
-                hold('brass', tpt if k == 0 else tbn, m, t, t + d, v, sfp if k == 0 else gunp, rise=0.08, fall=0.6,
-                     gain=0.8)
-            else:
-                M.add('brass', (tpt if k == 0 else tbn).play(m, v, dur=d * 1.05, release=0.25), t, 0.9,
-                      sfp if k == 0 else gunp)
-            M.add('low', tuba.play(m - 24, v - 16, dur=d * 1.05, release=0.25), t, 0.5)
-            if t == T_OATH[k]:
-                M.add('perc', crash.play(110), t, 0.7)
-                M.add('perc', timp.play(112, pitch=-4), t, 0.8)
-        elif part == 'oathb':
-            hold('brass', horn, m, t, t + d, v, -0.5 if m >= note('C3') else 0.5, rise=0.08, fall=0.6, gain=0.8)
-            M.add('perc', timp.play(v - 6, pitch=-5), t, 0.6, -0.5 if m >= note('C3') else 0.5)
-        elif part == 'plot':
-            hold('low', tuba, m + 12, t, t + d, v, hag, rise=0.5, fall=1.0, gain=0.6)
-            hold('strings', ctrem, m + 12, t, t + d, v - 10, hag, rise=0.5, fall=1.0, gain=0.4)
-        elif part == 'drink':
-            M.add('perc', crash.play(120), t, 0.9)
-            M.add('perc', timp.play(120, pitch=-5), t, 0.9)
-        elif part == 'chord':
-            hold('brass', horn, m, t, t + d, v, 0.0, rise=0.05, fall=1.0, gain=0.55)
+    sfp, gunp = pan_at(at(G, *SIEGFRIED_AT)), pan_at(at(G, *GUNTHER_AT))
+    N = compose()
+
+    def role(t, d, m, v, h):
+        part, k = part_of(t, d, m, v, h)
+        if part == 'loge':                                  # the fire: violins, piccolo, harp
+            return [('violins', 0, 0, 0.6), ('piccolo' if m >= 79 else 'flutes', 12 if m < 67 else 0, -10, 0.4),
+                    ('harp', 0, -20, 0.35)]
+        if part == 'oath':                                  # the oath: trumpets for him, trombones for Gunther
+            return [('trumpets' if k == 0 else 'trombones', 0, 0, 0.85), ('horns', 0, -6, 0.5),
+                    ('tuba', -12 if m >= 48 else 0, -12, 0.45)]
+        if part == 'oathb':                                 # its second form: the whole brass, falling
+            return [('trombones', 0, 4, 0.9), ('horns', 12, -4, 0.6), ('tuba', 0 if m < 40 else -12, 0, 0.7),
+                    ('basses', -12 if m >= 40 else 0, 0, 0.5)]
+        if part == 'plot':                                  # the conspiracy creeping in the bass
+            return [('tuba', 12 if m < 36 else 0, -6, 0.55), ('cellos trem', 12, -10, 0.45)]
+        if part == 'hagen':
+            return [('tuba', 0 if m >= 33 else 12, 4, 0.9), ('trombones', 12, -6, 0.6), ('basses', 0, 0, 0.6)]
+        if part == 'horn':                                  # his horn call, in full brass
+            return [('horns', 0, 0, 0.8), ('trumpets', 0, -10, 0.45)]
+        return None
+
+    def pan(t, m):
+        if t < SEG[1]:
+            return -0.5 + float(np.clip(t / SEG[1], 0, 1))
+        if t >= T_GO[0]:
+            return pan_at(where(G, t)[0]) * 0.7
+        return 0.0
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.6 if t < SEG[1] else 1.0, role=role, pan=pan)
+    for t, d, m, v, part, k in N:
+        if part == 'oathb' and m < 48:
+            o.hit('timpani', t, min(127, v), pitch=-5, gain=0.6)
         elif part == 'hagen':
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.2, release=0.4), t, 1.0, hag)
-            M.add('low', tbn.play(m, v - 10, dur=d * 1.2, release=0.4), t, 0.7, hag)
-            M.add('perc', timp.play(v, pitch=-7 if m < note('C3') else -3), t, 0.9, hag)
-            if m < note('C3'):
-                M.add('perc', gong.play(96), t, 0.5, hag)
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.4), t, 0.9, here if k == 0 else river)
-        elif part == 'river':
-            hold('strings', ctrem, m + 12, t, t + d, v, river, rise=1.0, fall=1.5, gain=0.55)
-            hold('strings', vtrem, m + 24, t, t + d, v - 10, river, rise=1.0, fall=1.5, gain=0.35)
+            o.hit('timpani', t, 120, pitch=-7, gain=0.8, pan=hag)
+            o.hit('gong', t, 100, gain=0.4, pan=hag)
+    o.hit('crash', BAR[640], 110, gain=0.6)                 # the oath begins
+    o.hit('crash', T_CUT[1], 124, gain=0.8)
+    o.hit('crash', T_DRINK, 118, gain=0.7)
+    o.hit('timpani roll', BAR[654], 110, pitch=-4, gain=0.6)
+
+    # the stage: the fire Siegfried scorns, the blades, the sail
+    o.fire(0.3, 10.5, level=lambda tt: 0.35 + 0.4 * np.exp(-((tt - 3.0) / 1.5) ** 2), pan=lambda t: -0.6 + 0.11 * t)
+    for k, t0 in enumerate(T_CUT):                          # a blade drawn across each arm
+        p = sfp if k == 0 else gunp
+        M.add('fx', whoosh(0.3, 2500, 7000, 0.7, seed=31 + k), t0 - 0.12, 0.9, p)
+        o.hit('metal', t0, 96, gain=0.35, pan=p)
+    # the fire and the blades lead; the effects keep out of the oath, the drink and the horn call
+    o.effects([(0, 0), (10.0, 0), (11.5, -10), (T_CUT[0] - 1.0, -10), (T_CUT[0] - 0.3, 0), (T_CUT[1] + 1.0, 0),
+               (T_CUT[1] + 2.0, -12), (T_GO[1] - 1.5, -12), (T_GO[1], -2), (D, -2)])
+    o.wind(T_GO[1] - 1.0, D, level=lambda tt: 0.5 + 0.3 * smoothstep(T_BOAT[0], T_BOAT[0] + 3, tt),
+           pan=pan_at(at(G, 'Right', 0.8)))

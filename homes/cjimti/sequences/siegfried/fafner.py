@@ -1,24 +1,29 @@
-"""Fafner: the horn has woken the dragon. Two red eyes burn in the cave mouth; the dragon's motif (Donington 57)
-climbs in the tubas and with every note the cave heaves, and a mass of ochre scales over black swells out of the
-middle of Porch Front, its scales rippling. Siegfried strides from his tree along Left to the corner of the porch
-to face it.
+"""Fafner: the horn has woken the dragon. Two red eyes burn in the cave mouth; with every low note in the depths
+the cave heaves, and a mass of ochre scales over black swells out of the middle of Porch Front, its scales
+rippling. Siegfried strides from his tree along Left to the corner of the porch to face it, laughing at it.
 
-The eyes flare and the dragon roars the giants' authority (59) in tubas and trombones: an ochre blast across the
-whole house, then a pulse from the cave on every note. It crawls out onto the porch on the second climb of its
-motif until it fills Porch Front and the back of both porch runs, its tail lashing out along Right. It breathes
-fire: a blast races from its jaws along Porch Left, Left and Side to the end of the house, red to orange to
-white-hot, and Siegfried flares in it untouched; he taunts it with his motif (53) in emerald bursts; it breathes
-again, all along Right to the free end. Then it stamps on the giants' motif (58), the whole porch thumping stone
-and ochre and the forest shaking with each step, and the two stand face to face, the dragon breathing slowly, its
-eyes full red.
+"Was ist da?": the eyes flare and the dragon roars in octaves on tubas and trombones, an ochre blast across the
+whole house and then a pulse from the cave on every note. On the low octaves' growling tremolo it crawls out
+onto the porch until it fills Porch Front and the back of both porch runs, its tail lashing out along Right on
+the orchestra's blows while Siegfried taunts it in emerald bursts. "Zu tauben Reden taugt er schlecht": it
+breathes fire, a blast racing from its jaws along Porch Left, Left and Side to the end of the house, red to
+orange to white-hot, Siegfried flaring in it untouched; then it stamps on the pounding octaves of "dich zu
+verschlingen", the whole porch thumping stone and ochre with each step, and breathes again along Right; and
+Siegfried laughs back at it ("Hoho! Du grausam grimmiger Kerl!") as the two stand face to face.
+
+The music is Wagner's own: Act II, bars 1016 to 1029 and 1038 to 1045, as Solti's 1958 Vienna Philharmonic
+recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the dragon's depths
+and roars on tubas, trombones, bassoons and basses, the tremolos on low strings, the higher lines (Siegfried's
+mockery) on horns, clarinets and violins. The stage adds the dragon's roar as a growl of thunder in the cave,
+the rush of its fire, the crack of its tail and a great blow under every stamp; the effects lead here, backing
+off only under Siegfried's taunts.
 
 compose() holds every note; stage(), forest(), figure() and sparks() are Act II's forest and cave, shared word
 for word with SF11 on a clock that runs on from scene to scene; dragon(), breath(), hero() and bird() are the
 dragon fight's own, shared with SF16 to SF19."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF17'
 TITLE = 'Fafner'
@@ -29,15 +34,16 @@ VOICEOVER = ('Out of the cave crawls Fafner, the dragon, breathing fire. '
              'Siegfried has never been afraid of anything, and he is not afraid now.')
 
 K = 6                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_HEAVE = 1.5                               # the dragon's motif climbs: the cave heaves
-T_WALK = (6.0, 13.0)                        # Siegfried strides to the corner of the porch
-T_ROAR = 13.5                               # the giants' authority, the roar
-T_OUT = 24.0                                # the second climb: it crawls out
-T_FIRE = [33.5, 48.5]                       # fire along Left and Side, then along Right
-T_TAUNT = [39.5, 43.5]                      # Siegfried's motif
-T_LASH = [27.0, 30.5, 45.0, 53.0]           # the tail lashes along Right
-T_STAMP = 56.5                              # the giants' motif: it stamps
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1016-1029 and 1038-1045, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_HEAVE = 0.0                               # the depths stir: the cave heaves
+T_WALK = (2.0, 10.0)                        # Siegfried strides to the corner of the porch
+T_ROAR = BAR[1020]                          # "Was ist da?": the roar
+T_OUT = BAR[1025]                           # the growling tremolo: it crawls out
+T_FIRE = [BAR[1039], BAR[1043]]             # fire along Left and Side, then along Right
+T_LASH = [BAR[1027], BAR[1028], BAR[1029], BAR[1044] + 0.4]  # the tail lashes along Right
+T_STAMP = BAR[1039]                         # the pounding octaves: it stamps
 EXT = (260.0, 430.0)                        # how far it spreads either side of the cave's middle: half out, all out
 
 NIGHT = hexc('#14a878')
@@ -203,31 +209,28 @@ def breath(S, flick, src, side, a, reach=1500.0, hold=1.6):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The depths under Siegfried's
+    laughter ('heave', k=0) and under the growling tremolo ('heave', k=1) push the dragon out; the octaves of
+    "Was ist da?" are its roar ('roar'); the pounding octaves are its stamps ('stamp', the left hand's beats) and
+    their right hand its growl ('growl'); the right hand of 1027-1029 and of "Hoho!" is Siegfried's taunt
+    ('taunt'); the rest is his mockery ('sieg') over the low strings ('low')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'Eb1', 72, 'rumble')
-    for t, m, v, d in play('fafner', T_HEAVE, 0.6, 0, 96):
-        add(t, d, m, v, 'heave', 0)
-    add(T_ROAR, 0.5, 'C1', 125, 'roarhit')
-    for t, m, v, d in play('giants_authority', T_ROAR, 0.45, -12, 116):
-        add(t, d, m, v, 'roar')
-    for t, m, v, d in play('fafner', T_OUT, 0.55, 0, 112):
-        add(t, d, m, v, 'heave', 1)
-    for t0 in T_FIRE:
-        add(t0, 3.4, 'C2', 120, 'fire')
-    for k, t0 in enumerate(T_TAUNT):
-        for t, m, v, d in play('siegfried', t0, 0.55, -12, 100 + 6 * k):
-            add(t, d, m, v, 'taunt', k)
-    for t0 in T_LASH:
-        add(t0, 0.4, 'G1', 112, 'lash')
-    for t, m, v, d in play('giants', T_STAMP, 0.55, -12, 118):
-        add(t, d, m, v, 'stamp')
-    for m in ('Eb2', 'Gb2', 'A2'):
-        add(T_STAMP + 8, D - T_STAMP - 8, m, 70, 'standoff')
+    for t, d, m, v, h, *tr in tidy(EX['notes']):
+        if T_ROAR - 0.01 <= t < BAR[1022] - 0.01:
+            part, k = 'roar', None
+        elif T_STAMP - 0.01 <= t < BAR[1044] - 0.01:
+            part, k = ('growl' if h == 0 else 'stamp'), None
+        elif h == 1 and m <= 43 and t < BAR[1022]:
+            part, k = 'heave', 0
+        elif h == 1 and m <= 45 and T_OUT - 0.01 <= t < BAR[1027]:
+            part, k = 'heave', 1
+        elif h == 0 and (BAR[1027] - 0.01 <= t < BAR[1030] - 0.01 or t >= BAR[1044] - 0.01):
+            part, k = 'taunt', None
+        elif h == 0 and m >= 55:
+            part, k = 'sieg', None
+        else:
+            part, k = 'low', None
+        N.append((float(t), float(d), int(m), int(v), part, k, bool(tr and tr[0])))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -236,6 +239,8 @@ def extent(t, steps):
     e = 0.0
     for k, ts in enumerate(steps):
         a, b = (0.0, EXT[0]) if k == 0 else EXT
+        if not ts or t < ts[0]:
+            continue
         for i, s in enumerate(ts):
             e = max(e, a + (b - a) * (i + smoothstep(s, s + 0.35, t)) / len(ts) * (t >= s))
     return e
@@ -248,11 +253,17 @@ def render(G, seed=17):
     S = stage(G)
     d, mid = S['d'], S['mid']
     N = compose()
+    N = [e[:6] for e in N]
     heave = [e for e in N if e[4] == 'heave']
-    steps = [[e[0] for e in heave if e[5] == k] for k in (0, 1)]
+    steps = [sorted([e[0] for e in heave if e[5] == 0 and e[0] > 0.5] + [e[0] for e in N if e[4] == 'roar']),
+             [e[0] for e in heave if e[5] == 1]]
     roar = [e for e in N if e[4] == 'roar']
     taunt = [e for e in N if e[4] == 'taunt']
-    stamp = np.array(sorted({e[0] for e in N if e[4] == 'stamp'}))
+    stamp = []
+    for t0 in sorted({e[0] for e in N if e[4] == 'stamp'}):
+        if not stamp or t0 - stamp[-1] > 0.42:
+            stamp.append(t0)
+    stamp = np.array(stamp)
     flick = Flicker(rng, G.N, 4.0, 12.0)
     tree, corner = at(G, 'Left', 0.5), at(G, 'Porch Left', 0.3)
 
@@ -277,7 +288,7 @@ def render(G, seed=17):
                 fr += light(CAVE, 0.9 * np.exp(-a / 0.35) * S['mouth'])
 
         # the dragon: breathing slowly on the shared clock, its head toward Siegfried, the tail lashing on Right
-        lvl = keys(t, [(T_HEAVE, 0.0), (T_HEAVE + 2, 0.75)]) * (0.88 + 0.12 * np.sin(2 * np.pi * T / 3.2))
+        lvl = keys(t, [(T_HEAVE, 0.3), (T_ROAR, 0.75)]) * (0.88 + 0.12 * np.sin(2 * np.pi * T / 3.2))
         tail = sum(520 * np.exp(-max(t - tl, 0) / 0.5) * smoothstep(tl - 0.05, tl + 0.15, t) for tl in T_LASH)
         head = mid - 0.9 * e
         fr = dragon(fr, S, T, e, lvl * (1 + 0.5 * stomp), lv['eyes'], head, tail)
@@ -320,7 +331,7 @@ def render(G, seed=17):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the stage's sounds on top."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -329,68 +340,53 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.42, 0.25), ('brass', 0.4, 0.3), ('perc', 0.38, 0.28), ('fx', 0.22, 0.3),
-                            ('strings', 0.3, 0.32)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/Trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     cave = pan_at(at(G, 'Porch Front', 0.5))
-    left, right = pan_at(at(G, 'Side', 0.5)), pan_at(at(G, 'Right', 0.7))
+    left, right = pan_at(at(G, 'Side', 0.2)), pan_at(at(G, 'Right', 0.8))
     me = pan_at(at(G, 'Porch Left', 0.3))
-    for t, d, m, v, part, k in compose():
-        if part == 'rumble':
-            hold('low', cb, m + 12, t, t + d, v, cave, rise=2.0, fall=1.5, gain=0.6)
-        elif part == 'heave':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.35), t, 0.95, cave)
-            M.add('low', bsn.play(m, v - 10, dur=d * 1.1, release=0.35), t, 0.7, cave)
-            if k == 1:
-                M.add('perc', timp.play(v - 14, pitch=-5), t, 0.6, cave)
-        elif part == 'roarhit':
-            M.add('perc', gong.play(v), t, 0.8, cave)
-            M.add('perc', crash.play(v), t, 0.8, cave)
-            M.add('fx', whoosh(1.4, 200, 1400, 0.7, seed=17), t - 0.1, 1.0, cave)
-        elif part == 'roar':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.25), t, 0.95, cave)
-            M.add('low', tuba.play(m - 12, v - 6, dur=d * 1.05, release=0.25), t, 0.85, cave)
-        elif part == 'fire':
-            src, dst = (cave, left) if t < T_FIRE[1] else (cave, right)
-            M.add('fx', whoosh(d, 400, 5000, 0.9, seed=int(t)), t, 1.0, (src + dst) / 2)
-            M.add('perc', roll.play(v, pitch=0, dur=d), t, 0.7, dst)
-            M.add('perc', crash.play(110), t + 0.6, 0.6, dst)
-            hold('strings', vn, note('C5'), t, t + d * 0.8, 92, dst, rise=0.1, fall=0.6, gain=0.5)
-        elif part == 'taunt':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.95, me)
-        elif part == 'lash':
-            M.add('perc', timp.play(v, pitch=-2), t, 0.8, right)
-            M.add('fx', whoosh(0.5, 2000, 300, 0.6, seed=int(t * 10)), t - 0.15, 1.0, right)
+    o = Orchestra(M, level=2.35)
+    N = compose()
+    for t, d, m, v, part, k, trem in N:
+        if part == 'heave':
+            o.play('tuba', m, t, d, v + 6, cave, 0.9)
+            o.play('bassoons', m + 12, t, d, v - 6, cave, 0.5)
+            o.play('basses', m, t, d, v, cave, 0.5)
+        elif part in ('roar', 'growl'):
+            if m < 60:
+                o.play('trombones', m, t, d, v + 6, cave, 0.75)
+                o.play('tuba', m - 12, t, d, v, cave, 0.6)
+            else:
+                o.play('horns', m, t, d, v, cave, 0.6)
         elif part == 'stamp':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, cave)
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.05, release=0.2), t, 0.9, cave)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.95, cave)
-        elif part == 'standoff':
-            hold('strings', vc, m, t, t + d, v, cave, rise=3.0, fall=1.5, gain=0.6)
+            o.play('tuba', m, t, d, v + 4, cave, 0.8)
+            o.play('basses', m, t, d, v, cave, 0.55)
+        elif part == 'taunt':
+            o.play('horns', m, t, d, v + 6, me, 0.85)
+            o.play('violins', m, t, d, v - 8, me, 0.35)
+        elif part == 'sieg':
+            o.play('clarinets', m, t, d, v, me, 0.6)
+            o.play('violins', m, t, d, v - 10, me, 0.35)
+        else:
+            o.play('cellos trem' if trem and m < 60 else 'violas trem' if trem else 'cellos' if m < 60 else 'violas',
+                   m, t, d, v - 4, cave, 0.5)
+    # the stage: the roar, the tail, the fire, the stamps
+    o.thunder(T_ROAR, near=0.8, pan=cave, gain=1.0)
+    o.hit('gong', T_ROAR, 115, gain=0.6, pan=cave)
+    o.thunder(T_OUT + 0.3, near=0.5, pan=cave, gain=0.7)
+    for tl in T_LASH:
+        o.hit('timpani', tl, 118, pitch=-2, gain=0.6, pan=right)
+        o.hit('brake drum', tl, 110, gain=0.3, pan=right)
+        o.wind(tl - 0.3, tl + 0.6, 1.0, pan=right, seed=int(tl * 10))
+    for i, t0 in enumerate(T_FIRE):
+        dst = left if i == 0 else right
+        o.fire(t0, t0 + 4.2, level=lambda tt, t0=t0: np.exp(-np.maximum(tt - t0 - 0.4, 0) / 1.6), pan=(cave + dst) / 2,
+               crackle=25, seed=170 + i)
+        o.wind(t0, t0 + 1.4, 1.0, pan=dst, seed=171 + i)
+        o.hit('crash', t0 + 0.5, 110, gain=0.5, pan=dst)
+    last = -1.0
+    for t, d, m, v, part, k, trem in N:
+        if part == 'stamp' and t - last > 0.42:
+            o.boom(t, cave, 0.55)
+            last = t
+    # the effects lead for the dragon, and back off under Siegfried's taunts
+    o.effects([(0, -4), (T_ROAR - 0.5, 0), (BAR[1027] - 0.3, 0), (BAR[1027], -8), (BAR[1030] - 0.5, -8),
+               (BAR[1030], -2), (T_FIRE[0] - 0.5, 0), (BAR[1044] - 0.3, 0), (BAR[1044], -8)])

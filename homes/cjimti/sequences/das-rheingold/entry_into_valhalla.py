@@ -1,63 +1,68 @@
-"""Entry into Valhalla: the end of the opera. Heavy grey-blue storm air hangs over the mountain after the
-killing, until Donner climbs up on Left and calls to it: "Heda! Hedo!" (Donington 46) on the horns, twice,
-in B flat. The mist swirls in toward him from all over the house, thickening round his white light while
-steel-blue sparks crackle in it and the timpani roll. A breath; then he strikes with his hammer. Lightning: two
-flashes of the whole house and jagged white bolts racing from him to both ends of the roofline, with a gong,
-cymbals, bass drum and the brass crashing in. The storm (Donington 74) rumbles down through the low strings,
-rain glitters everywhere and two smaller bolts flicker on the far runs, and then the air clears from Donner
-outward into a still evening sky, and the castle stands revealed on the porch.
+"""Entry into Valhalla: the end of the opera. Donner gathers the storm and splits it with his hammer, Froh lays
+down the rainbow bridge, and the gods walk into their castle to Valhalla in the full orchestra.
 
-Froh lays down the rainbow bridge (Donington 64): six harps' worth of shimmering G flat arpeggios, and the
-rainbow runs out from him along the whole house in both directions until every run is banded in colour, its
-glitter flowing toward the castle. Valhalla (Donington 63) in the full brass, twice, the second time with
-trumpets: the battlements across Porch Left, Porch Front and Porch Right blaze white-gold, every chord a wave
-of light across the porch.
+The music is Wagner's own: bars 3690-3712 and the last eight bars (3889-3896) of Das Rheingold, as Solti's 1958
+Vienna Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py).
+Donner's call, "Donner, der Herr, ruft euch zu Heer! Heda! Heda! Hedo!", is played on trombones doubled by horns,
+from the printed vocal score (Schott, archive.org dasrheingold00wagn2, pp. 205-206), over the swirling figures of
+the gathering mist in the strings and woodwinds; the crescendo builds to the hammer stroke, the storm discharges
+in the low strings and timpani, "Bruder, hierher!" and the first shimmer of the rainbow; then Valhalla,
+thunderous, in the full brass over the rainbow's arpeggios in the harps and violins, to the last D flat chord.
+The staging's sounds: wind gathering with the mist and distant thunder, then the hammer itself, a crack of
+thunder, a boom and steel on rock; two smaller bolts on the far runs, rain, a cymbal swell into the rainbow, and
+a gong and crash under the last chord. The effects stay low under Donner's call and the finale's brass.
 
-From far below, the Rhinemaidens lament their stolen gold: their song (Donington 26) and their cry "Rheingold!"
-(Donington 31) turned into the minor on flute, oboe and clarinet, while the rainbow and the castle dim and three
-faint lights, silver, green and violet, rise at the far ends of the wings, and the Rhine shimmers once more
-down the Side. Loge flickers off to the front of Porch Left to his own restless motif, wanting no part of what
-comes next. Then the march: the Sword (Donington 45) on a trumpet in C, each high note a white-gold blade of
-light flashing out from Wotan along the whole house, and the gods walk the bridge into the castle one by one,
-Donner and Froh in from the wings, then Freia, Fricka and last of all Wotan, each one a flare of white-gold as
-they pass through the gate. Valhalla once more, thunderous, with cymbals and timpani, the rainbow at full
-strength on the wings, and a last huge D flat chord: one flash of the whole house, then the castle blazing
-over its rainbow as the light slowly settles.
+Heavy grey-blue storm air hangs over the mountain until Donner calls to it from Left; the mist swirls in toward
+him from all over the house, thickening round his white light while steel-blue sparks crackle in it. A breath;
+then he strikes: two flashes of the whole house and jagged white bolts racing from him to both ends of the
+roofline; the storm rumbles, rain glitters everywhere, two smaller bolts flicker on the far runs, and then the
+air clears from Donner outward into a still evening sky and the castle stands revealed on the porch. Froh lays
+down the rainbow, running out along the whole house until every run is banded in colour. Then Valhalla: the
+battlements blaze white-gold on every chord, the gods walk the bridge into the castle one by one, Donner and Froh
+in from the wings, then Freia, Fricka and last of all Wotan, each a flare of white-gold at the gate, white-gold
+blades flash out along the house on the top notes, and the last chord is one flash of the whole house, then the
+castle blazing over its rainbow as the light settles.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags the music's moments, choreography() every position; render() and score() read both."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'RG24'
 TITLE = 'Entry into Valhalla'
 KIND = 'show'
 DESCRIPTION = ('Donner gathers the storm and splits it with one blow of his hammer, Froh lays a rainbow bridge '
-               'across the whole house, and the gods march into their gleaming new castle. Far below, the '
-               'Rhinemaidens are still crying for their gold.')
-VOICEOVER = ('The storm breaks, the sky clears, and a rainbow leads the gods home to Valhalla. '
-             'Listen closely, though. Down in the river, someone is still crying.')
+               'across the whole house, and the gods march into their gleaming new castle, Valhalla.')
+VOICEOVER = ('Donner calls the storm to him and splits it with one blow of his hammer. '
+             'Then a rainbow leads the gods home to Valhalla.')
 
-HBEAT = 0.6
-T_HEDA = [2.5, 8.5]                         # "Heda! Hedo!"
-T_BREATH = 14.0
-STRIKE = [15.0, 15.35]                      # the hammer: two flashes
-T_STORM = 15.6
-SMALL = [(17.6, 'Right'), (19.8, 'Side')]   # two smaller bolts on the far runs
-T_CLEAR = 21.5
-T_BOW = 25.0                                # the rainbow bridge
-T_VAL = [31.5, 38.2]                        # Valhalla, twice
-VBEAT = 0.8
-T_LAMENT = 44.8                             # the Rhinemaidens' lament
-T_CRY = 50.8
-T_LOGE = 55.6
-T_MARCH = 57.0                              # the Sword; the gods walk the bridge
-T_FINALE = 61.2                             # Valhalla, thunderous
-T_LAST = 67.6
-T_CHORD = 74.0                              # the last chord
-D = 80.0
+EX = excerpt(__file__)                      # bars 3690-3712 and 3889-3896, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [g['start'] for g in EX['segments']] + [EX['seconds']]
+T_HEDA = [0.0, 5.83]                        # "Donner, der Herr, ruft euch zu Heer!", "Heda! Heda! Hedo!"
+T_BREATH = 41.3
+STRIKE = [42.25, 42.6]                      # the hammer: two flashes
+T_STORM = 42.9
+SMALL = [(45.0, 'Right'), (BAR[3708], 'Side')]   # two smaller bolts on the far runs
+T_CLEAR = 51.0
+T_BOW = BAR[3712]                           # the rainbow bridge
+T_VAL = [SEG[1], BAR[3892]]                 # Valhalla
+T_LAMENT = 70.0                             # (the Rhinemaidens' lament is not in these bars)
+T_CRY = 70.0
+T_LOGE = SEG[1]
+T_MARCH = SEG[1]                            # the gods walk the bridge
+T_FINALE = BAR[3892]
+T_LAST = BAR[3894]
+T_CHORD = BAR[3896]                         # the last chord
+D = EX['seconds']
 T0 = 240.0                                  # the opera's clock at our start: steady motion carries across the cuts
+
+# Donner's call, from the vocal score: (bar, beat, beats, note), 4/4
+VOICE = [(3690, 0, 0.5, 'F4'), (3690, 0.5, 1 / 6, 'F3'), (3690, 2 / 3, 1 / 3, 'F3'), (3690, 1, 2, 'Bb3'),
+         (3690, 3, 0.5, 'C4'), (3690, 3.5, 1 / 6, 'F3'), (3690, 11 / 3, 1 / 3, 'C4'), (3691, 0, 2, 'D4'),
+         (3691, 3.75, 0.25, 'F3'), (3692, 0, 3, 'Bb3'), (3692, 3.75, 0.25, 'F3'),
+         (3693, 0, 0.75, 'D4'), (3693, 0.75, 0.25, 'F3'), (3693, 1, 3, 'Bb3')]
 
 WOG, WELL, FLO = 0, 1, 2
 MAIDENS = [('Right', 0.93), ('Right', 0.8), ('Left', 0.12)]
@@ -118,13 +123,8 @@ def castle(t):
 
 def bow(t):
     """How strong the rainbow is."""
-    return (0.7 * smoothstep(T_BOW, T_BOW + 1, t) - 0.42 * smoothstep(T_LAMENT - 1, T_LAMENT + 1.5, t)
+    return (0.7 * smoothstep(T_BOW, T_BOW + 1, t)
             + 0.57 * smoothstep(T_MARCH - 1, T_MARCH + 1, t) - 0.25 * smoothstep(D - 4, D, t))
-
-
-def sad(m):
-    """The maidens' song in the minor: every C becomes C flat."""
-    return m - 1 if m % 12 == 0 else m
 
 
 def billow(d, t):
@@ -132,93 +132,39 @@ def billow(d, t):
     return (0.5 + 0.3 * np.sin(2 * np.pi * (d / 330 - 0.035 * t)) + 0.2 * np.sin(2 * np.pi * (d / 140 + 0.06 * t) + 1.3))
 
 
+def voice():
+    """Donner's call in seconds: (time, seconds, midi)."""
+    bars = [(m, t) for m, t in EX['bars'] if m <= 3713]
+    when = lambda pos: float(np.interp(pos, [q[0] for q in bars], [q[1] for q in bars]))
+    out = []
+    for b, x, n, name in VOICE:
+        t0 = when(b + x / 4)
+        out.append((t0, when(b + (x + n) / 4) - t0, note(name)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """The music's moments, from the excerpt's real notes and Donner's voice: (time, seconds, midi, velocity, part,
+    who). 'donner' a note of his call, 'harp' the rainbow's arpeggios, 'valhalla' a chord of Valhalla, 'vhit' its
+    bar lines, 'sword' a blade of light on the finale's top notes."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('Bb1', 'Bb2', 'Db3', 'F3'):                   # the storm air, still hanging
-        add(0.0, STRIKE[0], m, 62, 'mist')
-    for i, t0 in enumerate(T_HEDA):                         # Donner calls the mists to him
-        for t, m, v, d in play('donner', t0, HBEAT, 0, 100 + 10 * i):
-            add(t, d, m, v, 'donner')
-            add(t, d, m - 12, v - 10, 'donner')
-        add(t0 + 0.2, 4.6, 'Bb1', 80 + 10 * i, 'roll')
-    add(T_BREATH, STRIKE[0] - T_BREATH, 'F2', 100, 'roll')
-    add(STRIKE[0], 3.0, 'Bb1', 127, 'thunder')
-    add(STRIKE[1], 2.0, 'F2', 116, 'crack')
-    for t, m, v, d in play('storm', T_STORM, 0.5, 0, 112):
-        add(t, d, m, v, 'storm')
-    for ts, _ in SMALL:
-        add(ts, 1.5, 'Bb1', 96, 'crack')
-    add(T_STORM, T_CLEAR - T_STORM + 1, 'D5', 60, 'rain')
-
-    # the air clears; the rainbow bridge in G flat over D flat; Valhalla
-    for i, m in enumerate(('Db3', 'F3', 'Ab3', 'Db4', 'F4', 'Ab4')):
-        add(T_CLEAR + 0.4 * i, T_VAL[0] - T_CLEAR - 0.4 * i, m, 64, 'clear')
-    add(T_CLEAR, T_VAL[0] - T_CLEAR, 'Db2', 70, 'clearbass')
-    for k in range(2):
-        for t, m, v, d in play('rainbow', T_BOW + k * 6.0, 0.5, 0, 90 if k == 0 else 80):
-            add(t, d, m, v, 'harp' if m >= note('C5') else 'bowbass')
-    for k, t0 in enumerate(T_VAL):
-        for t, m, v, d in play('valhalla', t0, VBEAT, 0, 104 + 8 * k):
-            add(t, d, m, v, 'valhalla', k)
-        add(t0, 1.0, 'Db2', 110 + 8 * k, 'vhit')
-    for t, m, v, d in play('rainbow', T_VAL[1], 0.4, 0, 70):
-        if m >= note('C5') and t < T_LAMENT - 0.5:
-            add(t, d, m - 12, v, 'harp')
-
-    # far below, the Rhinemaidens' lament: their song and their cry, in the minor
-    song = [(b, d, note(n)) for b, d, n in MOTIFS['rhinemaidens']['notes']]
-    who_at = lambda b: (WOG, WELL, FLO)[int(b // 4) % 3]
-    for b, d, m in song:
-        if b >= 12:
-            continue
-        t = T_LAMENT + b * 0.5
-        if d >= 0.5:
-            add(t, d * 0.5, sad(m), 88, 'sing', who_at(b))
-        else:
-            add(t, d * 0.5, sad(m), 62, 'rock')
-    ev = {}
-    for b, d, n in MOTIFS['rheingold']['notes']:
-        ev.setdefault(b, []).append((d, note(n)))
-    for b in sorted(ev):
-        ms = sorted(m for _, m in ev[b])
-        ms = [m - 1 if m % 12 == 4 and b in (2, 5) else m for m in ms]           # "-gold!" in C minor
-        ms = [m - 1 if m % 12 == 9 else m for m in ms]                             # A to A flat: the longing darker
-        dd = max(d for d, _ in ev[b]) * 0.55
-        top = [m for m in ms if m >= note('G4')][-3:]
-        for k, m in enumerate(top):
-            add(T_CRY + b * 0.55, dd, m, 92, 'sing', (FLO, WELL, WOG)[k % 3])
-        for m in ms:
-            if m < note('G4'):
-                add(T_CRY + b * 0.55, dd, m, 70, 'lamentlow')
-    for t, m, v, d in play('loge_flicker', T_LOGE, 0.35, 0, 88):
-        add(t, d, m, v, 'loge')
-    for t, m, v, d in play('loge', T_LOGE + 1.4, 0.3, 12, 70):
-        add(t, d, m, v, 'logeharp')
-
-    # the march: the Sword in C on a trumpet; Valhalla, thunderous; the last chord
-    for t, m, v, d in play('sword', T_MARCH, 0.5, 0, 116):
-        add(t, d, m, v, 'sword')
-    for m in ('C2', 'C3', 'G3', 'E4'):
-        add(T_MARCH, 4.0, m, 84, 'swordbed')
-    for t, m, v, d in play('valhalla', T_FINALE, 0.75, 0, 120):
-        add(t, d, m, v, 'valhalla', 2)
-    for b in (0, 4, 6.6667):
-        add(T_FINALE + b * 0.75, 1.0, 'Db2', 124, 'vhit')
-    for t, m, v, d in play('rainbow', T_FINALE, 0.375, 0, 80):
-        if m >= note('C5') and t < T_CHORD - 0.3:
-            add(t, d, m, v, 'harp')
-    for t, m, v, d in play('valhalla', T_LAST, 0.9, 0, 122):
-        if t < T_LAST + 5.3 * 0.9:
-            add(t, d, m, v, 'valhalla', 3)
-    add(T_LAST + 5.3 * 0.9, T_CHORD - T_LAST - 5.3 * 0.9, 'Db2', 110, 'roll')
-    for m in ('Db2', 'Ab2', 'Db3', 'F3', 'Ab3', 'Db4', 'F4', 'Ab4', 'Db5'):
-        add(T_CHORD, D - T_CHORD - 0.6, m, 124, 'chord')
-    add(T_CHORD, 4.0, 'Db2', 127, 'final')
+    seen = set()
+    for t, d, m, v, h in EX['notes']:
+        key = round(t, 2)
+        if T_BOW <= t < SEG[1] and h == 0:
+            N.append((t, d, m, v, 'harp', None))
+        elif t >= SEG[1]:
+            if h == 1 and d >= 0.3 and (key, 'v') not in seen:
+                seen.add((key, 'v'))
+                N.append((t, d, m, v, 'valhalla', 2))
+            elif h == 0 and d < 0.3 and m >= 72 and t < T_CHORD:
+                N.append((t, d, m, v, 'harp', None))
+    for t, d, m in voice():
+        N.append((t, d, m, 100, 'donner', None))
+    for b in range(3889, 3897):
+        N.append((BAR[b], 1.0, 37, 0, 'vhit', None))
+        if b in (3890, 3892, 3894):
+            N.append((BAR[b], 0.5, 84, 0, 'sword', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -442,7 +388,8 @@ def render(G, seed=24):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, Donner's call on trombones and horns, the storm's
+    sounds over it."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -451,146 +398,49 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    C = choreography(G)
-    hc = pan_at(at(G, 'Porch Front', 0.5))
     pD = pan_at(at(G, 'Left', 0.5))
-    pF = pan_at(at(G, 'Right', 0.6))
-    mp = [pan_at(at(G, *m)) for m in MAIDENS]
+    hc = pan_at(at(G, 'Porch Front', 0.5))
+    o = Orchestra(M, level=1.6)
 
-    def pan_of(who, t):
-        return pan_at(np.interp(t, C['t'], C[who]))
+    def role(t, d, m, v, h):
+        if T_BOW - 0.05 <= t < SEG[1] and h == 0:      # the rainbow: harps and violins
+            return [('harp', 0, 0, 0.5), ('violins', 0, -6, 0.4), ('flutes', 0, -10, 0.3 if m >= 72 else 0.0)]
+        if t >= SEG[1]:                                 # Valhalla, thunderous
+            if h == 1:
+                return [('trombones', 0, 0, 0.75), ('tuba', 0, 0, 0.6 if m < 50 else 0.0),
+                        ('horns', 12 if m < 50 else 0, -4, 0.55), ('basses', 0, -6, 0.4 if m < 45 else 0.0)]
+            if d < 0.3:
+                return [('harp', 0, 0, 0.45), ('violins', 0, -6, 0.4)]
+            return [('trumpets', 0, -2, 0.6), ('violins', 0, 0, 0.5)]
+        return None
 
-    for name, gain, rev in (('strings', 0.12, 0.35), ('low', 0.125, 0.2), ('brass', 0.12, 0.32), ('winds', 0.13, 0.38),
-                            ('voices', 0.11, 0.45), ('harp', 0.12, 0.45), ('perc', 0.15, 0.3), ('fx', 0.07, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    voice = [M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12), M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12),
-             M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)]
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_fff.wav')
-    cym = M.hits('Percussion/susCymb1-cresc-Median_v1.wav')
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0 if t >= STRIKE[0] - 6 else 0.6, role=role)
+    for t, d, m in voice():                             # Donner: trombones, horns with them
+        o.play('trombones', m, t, d, 116, pD, 0.85)
+        o.play('horns', m, t, d, 104, pD, 0.55)
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'mist':
-            s = trem if m <= note('Bb2') else vatrem
-            hold('strings', s, m + 12 * (m == note('Bb1')), t, t + d, v, -0.3 + 0.2 * (m % 4), rise=0.05, fall=0.3,
-                 gain=1.4)
-        elif part == 'donner':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.1, pD)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d + 0.2), t, 0.9, pD if t < 20 else 0.0)
-        elif part == 'thunder':
-            M.add('perc', gong.play(127), t, 1.0, pD)
-            M.add('perc', crash.play(127), t, 1.0, pD)
-            M.add('perc', bd.play(127), t, 1.0, pD)
-            M.add('perc', timp.play(127, pitch=-5), t, 1.0, pD)
-            for mm in ('Bb1', 'F2', 'Bb2', 'D3', 'F3'):
-                M.add('brass', (tuba if note(mm) < note('Bb2') else tbn).play(note(mm), 124, dur=d, release=0.8),
-                      t, 1.0, 0.0)
-            M.add('fx', whoosh(2.5, 3000, 120, 0.8, seed=11), t, 1.0, 0.0)
-        elif part == 'crack':
-            M.add('perc', crash.play(v), t, 0.8, pan_at(at(G, 'Right', 0.5)) if 17 < t < 18 else -0.6)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.8, 0.0)
-            M.add('fx', whoosh(d, 2500, 150, 0.6, seed=int(t * 10)), t, 0.8, 0.0)
-        elif part == 'storm':
-            M.add('low', vc.play(m + 12, v, dur=d * 1.05, release=0.2), t, 1.0, -0.2)
-            M.add('low', cbs.play(m + 12, v, dur=d, release=0.1), t, 0.9, 0.2)
-            M.add('brass', tbn.play(m + 12, v - 14, dur=d * 1.05, release=0.2), t, 0.6, 0.0)
-            M.add('low', bsn.play(m + 12, v - 10, dur=d, release=0.2), t, 0.6, 0.0)
-        elif part == 'rain':
-            hold('strings', vtrem, m, t, t + d, v, 0.3, rise=1.0, fall=2.0, gain=0.5)
-            M.add('perc', cym.play(80), t + d - 4.0, 0.5, 0.0)
-        elif part == 'clear':
-            hold('strings', vn if m >= note('Db4') else va, m, t, t + d, v, -0.4 + 0.15 * (m % 6), rise=2.5, fall=1.5,
-                 gain=0.7)
-        elif part == 'clearbass':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=3.0, fall=1.5, gain=0.8)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 1.0, pF if t < T_VAL[0] else -0.5 + 1.0 * ((m * 7) % 12) / 11)
-            if t < T_VAL[0]:
-                M.add('harp', harp.play(m - 12, v - 10), t, 0.6, -pF)
-        elif part == 'bowbass':
-            M.add('brass', horn.play(m + 12, v, dur=d * 1.05, release=0.5), t, 0.8, pF)
-            hold('low', cb, m, t, t + d, v, 0.0, rise=0.2, fall=1.0, gain=0.6)
-        elif part == 'valhalla':
-            g = 0.9 + 0.15 * who
-            if m >= note('Ab3'):
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.5), t, g, hc - 0.25)
-                if who >= 1:
-                    M.add('brass', tpt.play(m, v - 8, dur=d * 1.05, release=0.5), t, 0.8 * g, hc + 0.25)
-                if who >= 2:
-                    M.add('strings', vn.play(m + 12, v - 10, dur=d * 1.05, release=0.5), t, 0.8, -0.4)
-            elif m >= note('Db3'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.5), t, g, hc)
-            else:
-                M.add('brass', tuba.play(m, v, dur=d * 1.05, release=0.5), t, g, hc)
-                hold('low', cb, m + 12, t, t + d, v - 10, hc, rise=0.2, fall=0.6, gain=0.7)
-        elif part == 'vhit':
-            M.add('perc', timp.play(v, pitch=-3), t, 0.9, hc)
-            if v >= 118:
-                M.add('perc', crash.play(v - 10), t, 0.7, hc)
-        elif part == 'sing':
-            M.add('voices', voice[who].play(m, v, dur=d * 1.05, release=0.3), t, 1.0, mp[who])
-        elif part == 'rock':
-            M.add('harp', harp.play(m, v), t, 0.6, -0.2)
-        elif part == 'lamentlow':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, 0.0, rise=0.3, fall=0.8, gain=0.35)
-        elif part == 'loge':
-            M.add('winds', pic.play(m, v), t, 1.0, pan_of('loge', t))
-        elif part == 'logeharp':
-            M.add('harp', harp.play(m, v), t, 0.7, pan_of('loge', t))
-        elif part == 'sword':
-            p = pan_of('wotan', t)
-            M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.4), t, 1.2, p)
-            M.add('brass', horn.play(m - 12, v - 10, dur=d * 1.05, release=0.4), t, 0.6, p)
-        elif part == 'swordbed':
-            hold('strings', vn if m >= note('C4') else va if m >= note('C3') else cb, m, t, t + d, v, 0.0,
-                 rise=0.3, fall=0.8, gain=0.6)
-        elif part == 'chord':
-            if m >= note('Db4'):
-                M.add('brass', tpt.play(m, v, dur=d, release=1.5), t, 0.8, 0.2)
-                hold('strings', vn, m, t, t + d, v - 8, -0.2, rise=0.05, fall=2.5, gain=0.7)
-            elif m >= note('Db3'):
-                M.add('brass', horn.play(m, v, dur=d, release=1.5), t, 1.0, -0.2)
-                M.add('brass', tbn.play(m, v - 6, dur=d, release=1.5), t, 0.8, 0.2)
-            else:
-                M.add('brass', tuba.play(m, v, dur=d, release=1.5), t, 1.0, 0.0)
-                hold('low', cb, m + (12 if m < note('E2') else 0), t, t + d, v, 0.0, rise=0.05, fall=2.5, gain=0.9)
-        elif part == 'final':
-            M.add('perc', gong.play(127), t, 1.0, 0.0)
-            M.add('perc', crash.play(127), t, 1.0, -0.3)
-            M.add('perc', crash.play(124), t + 0.02, 0.9, 0.3)
-            M.add('perc', bd.play(127), t, 1.0, 0.0)
-            M.add('perc', timp.play(127, pitch=-1), t, 1.0, 0.0)
-            M.add('perc', roll.play(110, dur=d), t + 0.3, 0.7, 0.0)
+    o.effects([(0.0, -14.0), (11.5, -14.0), (13.0, -4.0), (STRIKE[0] - 1.0, 0.0), (T_CLEAR + 2.0, -2.0),
+               (SEG[1] - 0.5, -6.0), (SEG[1] + 1.0, -16.0)])
+    o.wind(0.0, STRIKE[0] + 6.0, level=lambda tt: 0.25 + 0.75 * np.clip(tt / STRIKE[0], 0, 1) ** 1.5, pan=pD)
+    o.thunder(18.0, near=0.1, pan=0.5, gain=0.7)       # the storm gathering, far off
+    o.thunder(29.0, near=0.25, pan=-0.6, gain=0.8)
+    o.thunder(37.0, near=0.4, pan=0.2, gain=0.9)
+    o.hit('timpani roll', T_BREATH - 2.0, 100, pitch=-5, gain=0.5, pan=pD)
+    o.thunder(STRIKE[0], near=1.0, pan=0.0, gain=1.3)   # the hammer
+    o.boom(STRIKE[0], pD, 1.2)
+    o.clash(STRIKE[0], pD, 124, 0.8)
+    o.hit('crash', STRIKE[1], 120, gain=0.6, pan=0.0)
+    for ts, seg in SMALL:                               # two smaller bolts on the far runs
+        o.thunder(ts, near=0.6, pan=pan_at(at(G, seg, 0.5)), gain=0.9)
+    from pixelhome.audio import SR
+    n = int((T_CLEAR + 2.5 - T_STORM) * SR)             # the rain
+    tt = np.arange(n) / SR
+    env = np.clip(tt / 0.6, 0, 1) * np.clip((T_CLEAR + 2.5 - T_STORM - tt) / 2.5, 0, 1)
+    o._sfx(o._noise(0, 2500, 9000, 24, n=n) * env * o._wobble(n, 2, 25, 0.4), T_STORM, 0.35, 0.0)
+    o.hit('cymbal swell', T_BOW - 2.6, 96, gain=0.45, pan=pan_at(at(G, 'Right', 0.6)))   # into the rainbow
+    o.hit('triangle', T_BOW, 90, gain=0.35, pan=pan_at(at(G, 'Right', 0.6)))
+    o.hit('cymbal swell', T_CHORD - 2.6, 110, gain=0.5, pan=hc)   # the last chord
+    o.hit('crash', T_CHORD, 124, gain=0.75, pan=hc)
+    o.hit('gong', T_CHORD, 120, gain=0.6, pan=hc)
+    o.hit('bass drum', T_CHORD, 124, gain=0.7, pan=hc)
+    o.hit('timpani roll', T_CHORD, 110, pitch=-3, gain=0.5, pan=hc)

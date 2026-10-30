@@ -1,24 +1,29 @@
 """The Wedding Procession: the shore still red from the oath, the torches low and bloody, Hagen, Gunther and
-Brünnhilde where they swore. Then the cowhorns blast from the hall, the doors swing open in a flood of amber, the
-red drains out of the torches and they blaze up orange again, and the double wedding sweeps out.
+Brünnhilde where they swore. Then the hall bursts into Siegfried's wedding music, the doors swing open in a flood
+of amber, the red drains out of the torches and they blaze up orange again, and the double wedding sweeps out.
 
 Siegfried, emerald, and Gutrune, rose, come out of the doors and process along Right to the river and back;
 Gunther, gold, leads Brünnhilde, silver, the other way along Porch Left and Left toward the Side and back. On every
-beat of the march banners of their colours fly out ahead of them along the roofline, every bar a whole run flashes
-rose or gold, and the vassals' torches sway in step and flare on the beat over the whole house. Gutrune's motif
-(Donington 40) sings in the oboes and violins over a march in C, the vassals' call (54) in the cowhorns. And under
-it all, every few bars, a slow pulse of Hagen's violet-black rolls out from the doors.
+beat of the procession banners of their colours fly out ahead of them along the roofline, every bar a whole run
+flashes rose or gold, and the vassals' torches sway in step and flare on the beat over the whole house. Gutrune's
+rose sings out over it, and the cowhorns call from the hall. But when the music darkens, slow pulses of Hagen's
+violet-black roll out from the doors.
 
-The couples go into the hall in a last amber flare. Then the conspiracy (75) breaks through in the trombones: a
-violet-black slam that knocks the whole house dark, blood seeping out from Hagen, the torches cowering, and his
-tritone (61a) twice more. He is left alone at the doors in the settling dark, the torches low, the moon coming up.
+The couples go into the hall in a last amber flare. Then the plot breaks through the last bars: a violet-black
+slam that knocks the whole house dark, blood seeping out from Hagen, the torches cowering, and two more shocks as
+the act ends on a low, dark chord. He is left alone at the doors in the settling dark.
+
+The music is Wagner's own: the end of Act II, scene 4 (bars 1282 to 1295), as Siegfried leads the wedding party
+into the hall, and the wedding procession that ends the act (1672 to its last bar), as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py)
+orchestrated by hand and register. The stage adds the doors flung open, the crowd's feet in step with the
+procession, a cymbal on each banner bar, and a gong and drums on the final slam.
 
 compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD21'
 TITLE = 'The Wedding Procession'
@@ -28,19 +33,29 @@ DESCRIPTION = ('The cowhorns blast, the hall doors open, and the double wedding 
 VOICEOVER = ('A double wedding, with horns and torches. But under the music, the plot is already moving.')
 
 K = 6                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_HORNS = [1.5, 4.0]                        # the cowhorns from the hall
-T_OPEN = 4.0                                # the doors swing open
-BEAT = 0.6
-T_MARCH = (7.2, 55.2)                       # the march, 80 bars of ... 20 bars of 4
-T_OUT = (8.0, 30.0)                         # the couples process out
-T_BACK = (31.0, 52.0)                       # and back
-T_IN = (52.0, 56.0)                         # into the hall
-T_GUT = [9.6, 19.2, 28.8, 38.4]             # Gutrune's motif over the march
-T_CALL = [14.4, 33.6, 43.2]                 # the cowhorns again
-T_PULSE = [12.0, 21.6, 31.2, 40.8, 50.4]    # Hagen beneath
-T_PLOT = 58.0                               # the conspiracy breaks through
-T_TRITONE = [65.0, 70.0]
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 1282-1295 and 1672-1704, Solti 1958
+D = EX['seconds']
+_BARS = [(m, t) for m, t in EX['bars']]
+
+
+def bar(pos):
+    """Seconds into the excerpt of a (fractional) bar position."""
+    seg = [b for b in _BARS if abs(b[0] - pos) < 40]
+    return float(np.interp(pos, [b[0] for b in seg], [b[1] for b in seg]))
+
+
+T_HORNS = [0.3, bar(1283)]                  # the wedding music bursts from the hall
+T_OPEN = bar(1283)                          # the doors swing open
+BEAT = 0.5
+T_MARCH = (T_OPEN + 1.0, bar(1700))         # the procession
+T_OUT = (bar(1284), bar(1294))              # the couples process out
+T_BACK = (bar(1674), bar(1690))             # and back
+T_IN = (bar(1690), bar(1693))               # into the hall
+T_GUT = [bar(1676), bar(1680), bar(1684), bar(1694)]   # Gutrune's rose over the procession
+T_CALL = [bar(1672), bar(1678), bar(1696)]  # the cowhorns again
+T_PULSE = [bar(1687), bar(1689), bar(1691)]  # Hagen beneath, as the music darkens
+T_PLOT = bar(1701)                          # the plot breaks through
+T_TRITONE = [bar(1702), bar(1703)]
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -195,40 +210,28 @@ def red_torches(S, T, ps, lvl, red):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'score'. 'horns', 'open',
+    'bass' (each beat of the procession, from the bass), 'gutrune' (the right hand where her rose sings), 'pulse',
+    'plot' (the bass after the slam), 'slam' and 'tritone' mark moments for the lights. Only 'score' sounds."""
+    N = [(t, d, m, v, 'score', h) for t, d, m, v, h in EX['notes']]
     for k, t0 in enumerate(T_HORNS + T_CALL):
-        for t, m, v, d in play('vassals', t0, 0.34, 0, 108 if k < 2 else 96):
-            add(t, d, m, v, 'horns', k)
-    add(T_OPEN, 1.0, 'C2', 116, 'open')
-    t, j = T_MARCH[0], 0                    # the march: a C major bass on the beat, a chord every bar
-    while t < T_MARCH[1] - 1e-6:
-        bar = (j // 4) % 4
-        root = ('C2', 'F2', 'G2', 'C2')[bar]
-        add(t, 0.25, root if j % 2 == 0 else ('G2', 'C3', 'D3', 'G2')[bar], 96 + 10 * (j % 4 == 0), 'bass', j)
-        if j % 4 == 0:
-            for m in (('C4', 'E4', 'G4'), ('C4', 'F4', 'A4'), ('B3', 'D4', 'G4'), ('C4', 'E4', 'G4'))[bar]:
-                add(t, BEAT * 3.5, m, 84, 'chord', j)
-        t += BEAT
-        j += 1
+        N.append((t0, 1.0, 60, 0, 'horns', k))
+    N.append((T_OPEN, 1.0, 36, 0, 'open', None))
+    lh = [n for n in EX['notes'] if n[4] == 1]
+    for j, t0 in enumerate(accents(lh, T_MARCH[0], T_MARCH[1], vmin=1, n=1, space=0.42)):
+        N.append((t0, 0.25, 36, 0, 'bass', j))
     for k, t0 in enumerate(T_GUT):
-        for tt, m, v, d in play('gutrune', t0, 0.45, 0, 92 + 2 * k):
-            add(tt, d, m, v, 'gutrune', k)
+        for t, d, m, v, h in EX['notes']:
+            if h == 0 and t0 <= t < t0 + 2.4:
+                N.append((t, d, m, v, 'gutrune', k))
     for k, t0 in enumerate(T_PULSE):
-        for tt, m, v, d in play('hagen', t0, 1.0, -12, 76):
-            add(tt, d, m, v, 'pulse', k)
-    for tt, m, v, d in play('plot', T_PLOT, 0.4, -12, 116):
-        add(tt, d, m, v, 'plot')
-    add(T_PLOT, 0.5, 'C1', 125, 'slam')
+        N.append((t0, 1.5, 36, 0, 'pulse', k))
+    for t, d, m, v, h in lh:
+        if t >= T_PLOT:
+            N.append((t, d, m, v, 'plot', None))
+    N.append((T_PLOT, 0.5, 24, 0, 'slam', None))
     for k, t0 in enumerate(T_TRITONE):
-        for tt, m, v, d in play('hagen', t0, 0.9, -12, 110 - 8 * k):
-            add(tt, d, m, v, 'tritone', k)
-    for m in ('C2', 'Gb2'):
-        add(T_TRITONE[-1] + 2.0, D - T_TRITONE[-1] - 2.0, m, 58, 'dark')
+        N.append((t0, 1.0, 36, 0, 'tritone', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -369,7 +372,8 @@ def render(G, seed=21):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction; the stage adds the doors, the crowd's feet, the
+    banners' cymbals and the final slam."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -378,79 +382,22 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.27, 0.25), ('brass', 0.27, 0.3), ('perc', 0.26, 0.25), ('winds', 0.26, 0.35),
-                            ('strings', 0.26, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    horn_st = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tuba_st = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v6*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    tri_ = M.hits('Percussion/Triangle3-Hit*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
-    ph = pan_at(at(G, *HAGEN_AT))
-    pdoor = pan_at(at(G, *DOOR))
-    pa, pb = pan_at(at(G, *A_TO)), pan_at(at(G, *B_TO))
+    o = Orchestra(M, level=1.8)
+    # the crowd's feet sit under the procession, well back; the stage leads only at the doors and the slam
+    o.effects([(0, -2), (T_OPEN + 2, -2), (T_OPEN + 3, -9), (T_PLOT - 0.3, -9), (T_PLOT, 0), (D, 0)])
+    o.tutti(tidy(EX['notes']), size=lambda t: 1.0)
+    pd_, ph = pan_at(at(G, *DOOR)), pan_at(at(G, *HAGEN_AT))
+    o.boom(T_OPEN, pd_, 0.6)
+    o.hit('crash', T_OPEN, 112, gain=0.45, pan=pd_)
+    pans = [pan_at(at(G, r, 0.5)) for r in RUNS]
     for t, d, m, v, part, k in compose():
-        if part == 'horns':
-            M.add('brass', horn_st.play(m, v), t, 0.9, pdoor if k < 2 else (pa, pb, pdoor)[k % 3])
-            M.add('brass', horn.play(m - 12, v - 10, dur=d * 1.1, release=0.2), t, 0.6, pdoor)
-        elif part == 'open':
-            M.add('perc', crash.play(v), t, 0.8, pdoor)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pdoor)
-        elif part == 'bass':
-            M.add('low', tuba_st.play(m, v), t, 0.8, 0.0)
-            M.add('perc', bd.play(v - 20), t, 0.5, 0.0)
-            if k % 4 == 0:
-                M.add('perc', timp.play(v - 10, pitch=-5), t, 0.6, 0.0)
-            if k % 2 == 1:
-                M.add('perc', tri_.play(70), t, 0.3, 0.0)
-        elif part == 'chord':
-            hold('strings', vla, m, t, t + d, v, 0.0, rise=0.05, fall=0.5, gain=0.45)
-            M.add('brass', horn.play(m - 12, v - 16, dur=d, release=0.3), t, 0.4, 0.0)
-        elif part == 'gutrune':
-            span = pa if k % 2 == 0 else pb
-            M.add('winds', oboe.play(m, v, dur=d * 1.1, release=0.3), t, 0.8, span * 0.6)
-            M.add('strings', vln.play(m, v - 10, dur=d * 1.1, release=0.3), t, 0.6, span * 0.6)
-            M.add('winds', clar.play(m - 12, v - 20, dur=d * 1.1, release=0.3), t, 0.4, span * 0.6)
+        if part == 'bass':                  # the crowd stepping with the procession
+            o.M.add('fx', o.hits['hoof soft'].play(84 + 12 * (k % 4 == 0)), t, 0.4, pans[k % len(pans)])
+            if k % 8 == 0:
+                o.hit('crash', t, 92, gain=0.22, pan=pans[(k // 4) % len(pans)])
         elif part == 'pulse':
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.3, fall=1.0, gain=0.6)
-        elif part == 'plot':
-            if d > 1.0:
-                hold('brass', tbn, m + 12, t, t + d, v, ph, rise=0.1, fall=1.0, gain=0.9)
-            else:
-                M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.9, ph)
-            M.add('low', tuba.play(m, v - 12, dur=d * 1.05, release=0.3), t, 0.6, ph)
-        elif part == 'slam':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, ph)
-            M.add('perc', gong.play(118), t, 0.8, ph)
-            M.add('perc', crash.play(110), t, 0.6, ph)
-        elif part == 'tritone':
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.08, fall=0.8, gain=0.9)
-            M.add('perc', timp.play(v - 10, pitch=-6), t, 0.7, ph)
-        elif part == 'dark':
-            hold('strings', ctrem, m + 12, t, t + d, v, ph * 0.5, rise=2.0, fall=1.5, gain=0.45)
+            o.hit('gong', t, 96, gain=0.3, pan=ph)
+    o.boom(T_PLOT, ph, 1.0)                 # the plot breaks through
+    o.hit('gong', T_PLOT + 0.02, 124, gain=0.6, pan=ph)
+    for t0 in T_TRITONE:
+        o.hit('timpani', t0, 120, pitch=-7, gain=0.7, pan=ph)

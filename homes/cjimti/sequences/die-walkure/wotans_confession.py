@@ -1,29 +1,42 @@
 """Wotan's Confession: alone on the rocky pass with the one daughter who is his will, Wotan tells everything,
-and the house becomes his memory. Brünnhilde (silver, gold glints) kneels at his side to her own horn motif
-(Donington 88) while his blue spreads out from the porch and gathers at both free ends of the roofline: a frame
-for what he remembers.
+and the house becomes his memory. Brünnhilde (silver, gold glints) kneels at his side, "So sah ich dich nie", while
+his blue spreads out from the porch and gathers at both free ends of the roofline: a frame for what he remembers.
 
-First the Rhinegold: the river's teal waves roll along the whole house and the gold kindles on the rock at the
-back of the porch, swelling note by note to its horn call (Donington 44) and then, on the trumpet, throwing
-glittering rays out to both ends. The gold draws itself into the Ring (Donington 8): ten gold beads circling the
-house, flaring on every chord of the clarinets and bassoons, faster on the second time round until they close
-on one point. Then Alberich's Curse (Donington 13) in trombones and tubas over a hammering F sharp: the house
-goes red-black, each note of the climb sends a red ring out from the Ring wider than the last, and the fall
-drops a blood wash with black crawling through it. Erda rises out of the porch in moss green to her own motif
-(Donington 3) in the low strings and bassoon, and her warning, the Twilight of the Gods (Donington 4), falls in
-horns and trombones as the castle's gold fades away from the porch in steps. Valhalla (Donington 63) sounds
-soft in the brass while the eight Valkyries streak in from the ends of the house, each bringing a hero's white
-spark to the heights. And the need he cannot meet: a lone Wälsung blue spark wanders on Right to the Sword
-(Donington 45) on a muted trumpet; Wotan's blue reaches out along Porch Right toward it and his own spear's
-steel line slams down across the corner. "Das Ende!": one blue blaze of the whole house and a crash, and then
-Wotan's grief (Donington 82) in trombones and cellos as the memories drain out of the house, the slate and the
-dawn come back, and he sinks, dim, with Brünnhilde silver beside him.
+The music is Wagner's own: Act II, bars 608 to 631 (Wotan's outburst, "O heilige Schmach! O schmählicher Harm!
+Götternot! Götternot! Endloser Grimm! Ewiger Gram!") and bars 920 to 943 (the end of his confession, "Fahre denn
+hin, herrische Pracht ... Zusammenbreche, was ich gebaut! Auf geb' ich mein Werk! Nur eines will ich noch: das
+Ende!"), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py): the left hand's churning tremolo on cellos and violas, the right hand by turns
+on horns (the gold), clarinets and bassoons (the Ring), trombones, horns and trumpets ("Götternot!"), cellos and
+bassoon (Erda), violins with flutes and piccolo for the great upward sweeps, and the descending bass of the
+collapse on trombones, tuba and basses; the full brass, a cymbal, a gong and the timpani for the last fortissimo.
+The memories have their sounds as on a stage: the river rushing along the house, the gold glinting on the
+glockenspiel, a gong as it turns into the Ring and again on the curse, thunder on the blood wash, the earth
+groaning as Erda rises, the castle's gold crumbling, the Valkyries' hooves, steel as his spear slams down, the
+world falling with every step of the bass, and at the end everything shattering at once. His lines come first:
+the effects stay well back while he sings and come forward between his lines (the river and the gold, the blood
+wash, the crumbling castle, the Valkyries' ride) and for two strokes inside them (the curse's gong on
+"Götternot!", his spear slamming down), lead the last fortissimo's shattering, and leave "das Ende!"
+alone.
+
+His memories pass over the house on the real music. As the tremolo starts the river's teal waves roll along the
+whole house and the gold kindles on the rock at the back of the porch, swelling note by note and then throwing
+glittering rays out to both ends. On the orchestra's first stroke the gold draws itself into the Ring: ten gold
+beads circling the house, flaring on every note, faster after the second stroke until they close on one point.
+"Götternot!": the house goes red-black, each note of the cry sends a red ring out from the Ring wider than the
+last, and the fall drops a blood wash with black crawling through it. Erda rises out of the porch in moss green,
+and the castle's gold fades away from the porch in steps. As he bids farewell to his splendour the eight
+Valkyries streak in from the ends of the house, each bringing a hero's white spark to the heights. Then the need he
+cannot meet: a lone Wälsung blue spark wanders on Right, flaring on every great sweep of the strings; Wotan's blue
+reaches out along Porch Right toward it, and his own spear's steel line slams down across the corner. On each step
+of the falling bass a slow blue wave draws in from both ends of the house to him as the world he built
+collapses, until the last fortissimo: one blue blaze of the whole house and a crash. "Das Ende!": the memories
+drain away, the slate and the dawn come back, and he sinks, dim, with Brünnhilde silver beside him.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play, melody, bass
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK13'
 TITLE = "Wotan's Confession"
@@ -34,25 +47,27 @@ DESCRIPTION = ('Wotan tells Brünnhilde everything: the stolen gold, the Ring an
 VOICEOVER = ('Wotan has never told anyone the whole truth. Tonight he tells his daughter, '
              'and every memory is worse than the last.')
 
-BEAT = 0.75                                 # a quarter note at 80
-T_ASK = 1.0                                 # Brünnhilde kneels by him, to her motif
-T_TELL = 6.5                                # his blue spreads to frame the memories
-T_GOLD = [9.0, 13.2]                        # the Gold's call: horn, then trumpet
-GBEAT = 0.6
-T_RING = [18.0, 23.4]                       # the Ring, twice
-RBEAT = 0.45
-T_CURSE = 29.0
-CBEAT = 0.5
-T_ERDA = 39.5
-T_DOWN = 45.5
-T_HEROES = 51.5                             # Valhalla; the Valkyries bring the fallen
-T_HERO = 59.5                               # the free hero he cannot make
-T_BLOCK = 63.6                              # his spear bars the way
-T_ENDE = 66.6                               # "Das Ende!"
-T_GRIEF = 67.6
-GRBEAT = 0.6
-T_HOME = 70.0                               # the pass comes back
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 608-631 and 920-943, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+BAR[632] = BAR[920] = EX['segments'][1]['start']
+D = EX['seconds']
+SUNG = [(t0, t1, who.lower()) for t0, t1, who, _ in EX['singing']]
+T_ASK = 0.5                                 # Brünnhilde kneels by him: "So sah ich dich nie"
+T_TELL = BAR[610]                           # the tremolo: his blue spreads to frame the memories
+T_GOLD = [BAR[612], BAR[614]]               # the gold kindles, then throws its rays
+T_RING = [BAR[616], BAR[622]]               # the orchestra's two strokes: the Ring, then faster
+T_CURSE = BAR[626]                          # "Götternot!"
+T_FALL = BAR[629]                           # the cry falls: a blood wash
+T_ERDA = BAR[630]                           # "Endloser Grimm!": Erda rises
+T_DOWN = BAR[920]                           # "Fahre denn hin": the castle's gold fades in steps
+T_HEROES = BAR[923]                         # the Valkyries bring the fallen
+VGAP = 0.75                                 # between one Valkyrie and the next
+T_HERO = BAR[927]                           # the free hero he cannot make, on the great sweeps
+T_BLOCK = BAR[931]                          # his spear bars the way
+T_GRIEF = BAR[934]                          # "Zusammenbreche, was ich gebaut": the falling bass
+T_ENDE = BAR[941]                           # the last fortissimo: a blaze
+T_LAST = BAR[943]                           # "das Ende!"
+T_HOME = BAR[942]                           # the pass comes back
 K = 12                                      # the shared clock: T = t + 80*K lines the beds up across the cuts
 GLINTS = (-24, -9, 10, 23)                  # where Brünnhilde's gold glints sit about her
 
@@ -130,85 +145,32 @@ def handover(G):
     return f
 
 
+def singer(t):
+    for t0, t1, who in SUNG:
+        if t0 <= t < t1 + 0.3:
+            return who
+    return None
+
+
+WINDOWS = [(0.0, T_TELL, 'brunn'), (T_GOLD[0], T_RING[0], 'gold'), (T_RING[0], T_CURSE, 'ring'),
+           (T_CURSE, T_ERDA, 'curse'), (T_ERDA, T_DOWN, 'erda'), (T_DOWN, T_HEROES, 'down'),
+           (T_HEROES, T_HERO, 'valhalla'), (T_HERO, T_ENDE, 'sword')]
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The right hand takes the part
+    of whichever memory is on the house ('gold', 'ring', 'curse', ...); the left hand's long notes in the collapse
+    are 'grief', the last fortissimo 'ende', every other left-hand note 'low'. who is whoever is singing."""
     N = []
-
-    def add(t, d, m, v, part, k=0):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    def motif(key, t0, beat, part, tr=0, vel=96, line=None, k=0, legato=1.0):
-        for t, m, v, d in play(key, t0, beat, tr, vel, line, legato):
-            add(t, d, m, v, part, k)
-
-    # Brünnhilde at his feet: what troubles you?
-    add(0.0, T_TELL + 1.0, 'E1', 70, 'pedal')
-    add(0.0, T_TELL + 1.0, 'E2', 56, 'pedal')
-    motif('brunnhilde', T_ASK, BEAT, 'brunn', -5, 70, 'melody')
-    for t0, ch in ((T_ASK, ('B2', 'E3', 'G3')), (T_ASK + 3, ('C3', 'E3', 'A3'))):
-        for m in ch:
-            add(t0, 3.2, m, 56, 'pad')
-    for i, m in enumerate(('E2', 'G2', 'B2', 'E3')):            # his blue spreads: trombones, low and slow
-        add(T_TELL + 0.4 * i, T_GOLD[0] - T_TELL - 0.4 * i + 0.4, m, 66 + 6 * i, 'wotan')
-
-    # the Rhinegold: river waves, the Gold's call twice
-    for i, t in enumerate(np.arange(T_GOLD[0], T_RING[0], GBEAT / 2)):
-        m = (note('G3'), note('B3'), note('D4'), note('G4'), note('D4'), note('B3'))[i % 6]
-        add(t, GBEAT / 2, m, 48 + int(26 * (t - T_GOLD[0]) / 9), 'river', i)
-    for m in ('G1', 'G2', 'D3'):
-        add(T_GOLD[0], T_RING[0] - T_GOLD[0] + 0.5, m, 64, 'pedal')
-    motif('gold', T_GOLD[0], GBEAT, 'gold', 0, 92, k=0)
-    motif('gold', T_GOLD[1], GBEAT, 'gold', 12, 104, k=1)
-
-    # the Ring, twice, the second louder
-    for j, t0 in enumerate(T_RING):
-        for t, m, v, d in play('ring', t0, RBEAT, 0, 84 + 16 * j):
-            add(t, d, m, v, 'ring' if m > note('C3') else 'ringbass', j)
-    for i, t in enumerate(np.arange(T_RING[1], T_CURSE - 0.6, RBEAT / 2)):     # it tightens: a harp murmur
-        add(t, RBEAT, note('G4') + (0, 4, 7, 4)[i % 4], 60 + i, 'harp')
-
-    # the Curse: melody in the trombones, F sharp hammered underneath
-    for t, m, v, d in play('curse', T_CURSE, CBEAT, 0, 112):
-        add(t, d, m, v, 'curse' if m >= note('C3') else 'cursebass')
-    for i in range(int(20 / 1)):
-        add(T_CURSE + i * CBEAT, 0.3, 'Gb2', 118 if i % 4 == 0 else 96, 'timp')
-
-    # Erda rises; the Twilight of the Gods falls
-    for t, m, v, d in play('erda', T_ERDA, BEAT, -12, 92):
-        add(t, d, m, v, 'erda' if m >= note('C3') else 'erdabass')
-    for t, m, v, d in play('downfall', T_DOWN, BEAT, -12, 100):
-        add(t, d, m, v, 'down' if m >= note('C3') else 'downbass')
-
-    # Valhalla, soft; the Valkyries come in with the fallen
-    for t, m, v, d in play('valhalla', T_HEROES, BEAT, 0, 74):
-        add(t, d, m, v, 'valhalla')
-    for k in range(8):
-        tk = T_HEROES + 0.85 * k
-        for j in range(6):
-            add(tk + j * 0.07, 0.07, note('B5') + (0, 2)[j % 2] - (k % 3), 62, 'trill', k)
-
-    # the free hero: the Sword on a muted trumpet, far off on Right; the spear bars the way
-    for m in ('C2', 'G2', 'E3'):
-        add(T_HERO, T_BLOCK - T_HERO + 0.4, m, 60, 'pad')
-    motif('sword', T_HERO, 0.52, 'sword', 0, 86)
-    for t, m, v, d in play('spear', T_BLOCK, 0.42, 0, 116):
-        if t < T_BLOCK + 2.4:
-            add(t, d, m, v, 'spear')
-    add(T_BLOCK, 0.6, 'G1', 118, 'stroke')
-
-    # "Das Ende!"
-    for m in ('E1', 'E2', 'B2', 'E3', 'G3', 'B3', 'E4'):
-        add(T_ENDE, 1.4, m, 124, 'ende')
-
-    # Wotan's grief
-    for b, d, m in melody('wotan_grief'):
-        if b < 16:
-            add(T_GRIEF + b * GRBEAT, min(d, 16 - b) * GRBEAT * (1.0 if b < 15 else 3.5), m, 92, 'grief')
-    for b0, ch in ((0, ('E2', 'B2', 'G3')), (4, ('D2', 'A2', 'Gb3')), (8, ('C2', 'G2', 'E3')), (12, ('E2', 'B2', 'G3'))):
-        for m in ch:
-            add(T_GRIEF + b0 * GRBEAT, (4 if b0 < 12 else 8.5) * GRBEAT, m, 70 - 4 * (b0 == 12), 'griefpad')
-    add(T_GRIEF, D - T_GRIEF, 'E1', 72, 'pedal')
-    return sorted(N, key=lambda e: e[0])
+    for t, d, m, v, hand in EX['notes']:
+        if T_ENDE <= t < T_HOME:
+            part = 'ende'
+        elif hand == 1:
+            part = 'grief' if T_GRIEF <= t and d >= 0.8 else 'low'
+        else:
+            part = next((p for t0, t1, p in WINDOWS if t0 <= t < t1), 'high')
+        N.append((t, d, m, v, part, singer(t)))
+    return N
 
 
 def follow(target, rate):
@@ -260,18 +222,18 @@ def render(G, seed=13):
         i = int(np.searchsorted([e[0] for e in ev], t, side='right')) - 1
         return (ev[i], t - ev[i][0]) if i >= 0 else (None, 99.0)
 
-    brunn_ev = ons('brunn')
-    wot_ev = ons('wotan', 'curse', 'grief', 'spear', 'ende')
+    brunn_ev = [e for e in N if e[5] == 'brünnhilde']
+    wot_ev = [e for e in N if e[5] == 'wotan' or e[4] in ('curse', 'grief', 'ende')]
     gold_ev = ons('gold')
-    ring_ev = sorted({e[0] for e in ons('ring')})
+    ring_ev = sorted({e[0] for e in ons('ring')} | set(T_RING))
     curse_ev = [e for e in ons('curse')]
-    timp_ev = [e[0] for e in ons('timp')]
+    timp_ev = [e[0] for e in N if e[4] == 'low' and T_CURSE <= e[0] < T_ERDA][::8]
     erda_ev = ons('erda')
     erda_top = {}
     for e in erda_ev:
         erda_top[e[0]] = max(erda_top.get(e[0], 0), e[2])
     erda_on = sorted(erda_top)
-    down_on = sorted({e[0] for e in ons('down')})
+    down_on = [BAR[b] for b in range(920, 923)] + [T_HEROES - 0.6]
     sword_ev = ons('sword')
     grief_ev = ons('grief')
     gp = [e[0] for e in gold_ev]
@@ -348,10 +310,10 @@ def render(G, seed=13):
             fr += light(BLOOD, c_in * (0.45 + 0.35 * hit))
             for tn, dn, m, v, _, _ in curse_ev:
                 if tn <= t < tn + 1.6:
-                    rad = (80 + 45 * (m - note('Gb3'))) * smoothstep(tn, tn + 1.2, t) * 3
+                    rad = (80 + 45 * (m - 54)) * smoothstep(tn, tn + 1.2, t) * 3
                     a = np.exp(-(t - tn) / 0.8)
                     fr += light(RED, c_in * 1.1 * a * np.exp(-((np.abs(d - rock) - rad) / 55) ** 2))
-            fall = smoothstep(T_CURSE + 13.5 * CBEAT, T_CURSE + 16 * CBEAT, t)
+            fall = smoothstep(T_FALL, T_FALL + 1.2, t)
             black = smoothstep(0.1, 0.5, np.sin(2 * np.pi * (crawl + d / 230 - 0.25 * T)))
             fr = fr * (1 - 0.8 * fall * black[:, None] * c_in) + light(RED, c_in * fall * 0.5 * (1 - black))
             fr += light(RED, c_in * 0.6 * np.exp(-((d - rock) / 20) ** 2))
@@ -360,7 +322,7 @@ def render(G, seed=13):
         e_in = smoothstep(T_ERDA - 0.5, T_ERDA + 2.0, t) * (1 - smoothstep(T_DOWN + 2.0, T_HEROES, t))
         if e_in > 0:
             j = int(np.searchsorted(erda_on, t, side='right')) - 1
-            h = (erda_top[erda_on[j]] - note('Db3')) / 15 if j >= 0 else 0.0
+            h = min(1.0, (erda_top[erda_on[j]] - 61) / 15) if j >= 0 else 0.0
             pulse = np.exp(-(t - erda_on[j]) / 0.5) if j >= 0 else 0.0
             z = G.pos[:, 2]
             rise = smoothstep(-150, -570, z) * porch
@@ -375,12 +337,12 @@ def render(G, seed=13):
             fr += light(CASTLE, dn_in * (0.25 + 0.5 * step) * smoothstep(reach, reach - 250, np.abs(d - pf)))
             fr = fr * (1 - 0.4 * dn_in * (1 - step))
 
-        # Valhalla: the eight Valkyries bring their heroes to the heights
+        # the farewell to his splendour: the eight Valkyries bring their heroes to the heights
         h_in = smoothstep(T_HEROES - 0.5, T_HEROES + 1.0, t) * (1 - smoothstep(T_HERO - 0.5, T_HERO + 1.5, t))
         if h_in > 0:
             fr += light(CASTLE, h_in * (0.3 + 0.08 * np.sin(2 * np.pi * T / 3)) * porch)
             for k in range(8):
-                tk = T_HEROES + 0.85 * k
+                tk = T_HEROES + VGAP * k
                 if t < tk:
                     continue
                 u = smoothstep(tk, tk + 1.6, t)
@@ -412,10 +374,13 @@ def render(G, seed=13):
                 fr += light(SPEAR, f_in * (0.4 + 0.6 * s) * np.exp(-((d - bar) / 70) ** 4))
                 fr += light(HERO, f_in * 0.8 * np.exp(-(t - T_BLOCK) / 0.15) * np.exp(-((d - bar) / 140) ** 2))
 
-        # "Das Ende!": a blaze of blue over the whole house
+        # the last fortissimo: a blaze of blue over the whole house; "das Ende!", a last swell
         if T_ENDE <= t < T_ENDE + 3.0:
             a = np.exp(-(t - T_ENDE) / 0.5)
             fr += light(WOTAN, 1.05 * a) + light(SPEAR, 0.5 * np.exp(-(t - T_ENDE) / 0.12))
+        if t >= T_LAST:
+            a = np.sin(np.pi * min(1.0, (t - T_LAST) / (D - T_LAST)))
+            fr += light(WOTAN, 0.45 * a * np.exp(-((d - C['wotan'][f]) / 500) ** 2))
 
         # his grief: each note a slow blue wave drawn in from both ends of the house to him
         for tn, dn, m, v, part, _ in grief_ev:
@@ -450,7 +415,7 @@ def render(G, seed=13):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, the right hand coloured by the memory on the house."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -460,115 +425,91 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
-    for name, gain, rev in (('low', 0.19, 0.2), ('brass', 0.18, 0.32), ('horns', 0.17, 0.38),
-                            ('strings', 0.16, 0.32), ('winds', 0.16, 0.38), ('harp', 0.2, 0.45),
-                            ('perc', 0.2, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    mtpt = M.sampler('Brass/Trumpet/straightM-sus/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=1.85)
     pw = pan_at(C['wotan'][0])
-    rock = at(G, 'Porch Front', 0.6)
-    VF = [pan_at(at(G, s, u)) for s, u in VFROM]
-    for t, d, m, v, part, k in compose():
-        pb = pan_at(np.interp(t, C['t'], C['brunn']))
-        if part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=2.0, fall=1.5)
-        elif part == 'pad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, 0.0, rise=0.6, fall=0.8, gain=0.7)
-        elif part == 'brunn':
-            M.add('horns', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pb)
-        elif part == 'wotan':
-            hold('brass', tbn, m, t, t + d, v, pw, rise=1.2, fall=0.8, gain=0.8)
-        elif part == 'river':
-            M.add('strings', vn.play(m, v, dur=d * 1.5, release=0.15), t, 0.5, -0.6 + 1.2 * ((k * 7) % 11) / 10)
-            if k % 3 == 0:
-                M.add('harp', harp.play(m - 12, v), t, 0.6, 0.0)
-        elif part == 'gold':
-            s = horn if k == 0 else tpt
-            M.add('horns', s.play(m, v, dur=d * 1.05, release=0.5), t, 1.0, pan_at(rock))
-        elif part == 'ring':
-            M.add('winds', cl.play(m, v, dur=d, release=0.3), t, 0.9, -0.3)
-            M.add('winds', bsn.play(m - 12, v - 8, dur=d, release=0.3), t, 0.6, 0.3)
-        elif part == 'ringbass':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=0.3, fall=0.8, gain=0.8)
-        elif part == 'harp':
-            M.add('harp', harp.play(m, v), t, 0.8, 0.5 * np.sin(t * 3))
-        elif part == 'curse':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pan_at(rock))
-            M.add('winds', cl.play(m - 12, v - 20, dur=d, release=0.3), t, 0.5, 0.0)
-        elif part == 'cursebass':
-            M.add('brass', tuba.play(m + 12, v, dur=d, release=0.5), t, 0.8, 0.0)
-            hold('low', cb, m + 12, t, t + d, v - 10, 0.0, rise=0.2, fall=0.5, gain=0.7)
-        elif part == 'timp':
-            M.add('perc', timp.play(v, pitch=-3), t, 0.9, pan_at(rock))
-        elif part == 'erda':
-            M.add('strings', vc.play(m, v, dur=d * 1.05, release=0.5), t, 0.9, -0.15)
-            M.add('winds', bsn.play(m, v - 15, dur=d, release=0.4), t, 0.6, 0.15)
-        elif part == 'erdabass':
-            hold('low', cb, m + 12, t, t + d, v - 10, 0.0, rise=1.0, fall=1.0, gain=0.8)
-        elif part == 'down':
-            s = horn if m >= note('D4') else tbn
-            M.add('horns' if s is horn else 'brass', s.play(m, v, dur=d * 1.05, release=0.6), t, 0.8, 0.0)
-        elif part == 'downbass':
-            hold('low', tuba, m + 12, t, t + d, v - 10, 0.0, rise=0.5, fall=1.0, gain=0.7)
-        elif part == 'valhalla':
-            s = tuba if m < note('C3') else (tbn if m < note('C4') else horn)
-            M.add('brass' if s is not horn else 'horns', s.play(m, v, dur=d * 1.05, release=0.6), t, 0.6, 0.0)
-        elif part == 'trill':
-            M.add('winds', fl.play(m, v, dur=0.1, release=0.06), t, 0.5, VF[k])
-            if t - T_HEROES - 0.85 * k < 0.01:
-                M.add('perc', whoosh(1.4, 600, 3500, 0.35, seed=k), t, 0.5, VF[k])
-        elif part == 'sword':
-            M.add('horns', mtpt.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pan_at(at(G, 'Right', 0.72)))
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d * 1.1, release=0.3), t, 1.0, pan_at(at(G, 'Porch Right', 0.9)))
-            M.add('brass', tuba.play(m - 12, v - 10, dur=d * 1.1, release=0.3), t, 0.6, 0.3)
-        elif part == 'stroke':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, pan_at(at(G, 'Porch Right', 0.9)))
-            M.add('perc', whoosh(0.5, 4000, 400, 0.4, seed=3), t - 0.35, 0.6, 0.4)
-        elif part == 'ende':
-            s = tuba if m < note('E2') else (tbn if m < note('E3') else horn)
-            M.add('horns' if s is horn else 'brass', s.play(m, v, dur=d, release=0.8), t, 0.9, pw)
-            if m == note('E1'):
-                M.add('perc', crash.play(124), t, 1.0, 0.0)
-                M.add('perc', gong.play(120), t, 0.8, 0.0)
-                M.add('perc', timp.play(127, pitch=-7), t, 1.0, 0.0)
-                hold('strings', trem, note('E4'), t, t + 1.6, 100, 0.0, rise=0.05, fall=1.5, gain=0.6)
-        elif part == 'grief':
-            M.add('brass', tbn.play(m - 12, v, dur=d * 1.05, release=0.6), t, 0.9, pw)
-            M.add('strings', vc.play(m - 12, v - 10, dur=d * 1.05, release=0.6), t, 0.8, -0.2)
-        elif part == 'griefpad':
-            hold('strings', va if m >= note('C3') else vc, m, t, t + d, v, 0.0, rise=0.8, fall=1.5, gain=0.7)
-    M.add('perc', roll.play(96, dur=1.4), T_CURSE + 14.4 * CBEAT, 0.7, 0.0)
+    pr = pan_at(at(G, 'Porch Front', 0.6))
+    ph = pan_at(at(G, 'Right', 0.72))
+    COLOUR = {'brunn': [('horns', 0, 0, 0.8)],
+              'gold': [('horns', 0, 4, 0.9), ('trumpets', 0, -10, 0.4)],
+              'ring': [('clarinets', 0, 4, 0.8), ('bassoons', -12, -4, 0.55)],
+              'curse': [('horns', 0, 10, 0.9), ('trombones', -12, 8, 0.8), ('trumpets', 0, 0, 0.5)],
+              'erda': [('cellos', -12, 6, 0.8), ('bassoons', -12, 0, 0.55)],
+              'down': [('horns', 0, 4, 0.8), ('trombones', -12, 0, 0.6)],
+              'valhalla': [('violins', 0, 0, 0.6), ('flutes', 0, -8, 0.4), ('horns', -12, -6, 0.4)],
+              'high': [('violins', 0, 0, 0.55)]}
+
+    for t, d, m, v, part, who in compose():
+        if part in ('low', 'grief'):
+            if part == 'grief':                                                 # the collapse: falling bass
+                o.play('trombones', m + 12, t, d, v + 6, pw, 0.8)
+                o.play('tuba', m, t, d, v, 0.0, 0.6)
+                o.play('basses', m, t, d, v, 0.2, 0.55)
+                o.play('cellos', m + 12, t, d, v, -0.2, 0.55)
+            elif d < 0.3:                                                       # the churning tremolo
+                o.play('cellos' if m < 55 else 'violas', m, t, 0.1, v + 4, -0.2 if m < 55 else 0.2, 0.45)
+            else:
+                o.play('cellos', m, t, d, v, -0.2, 0.7)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, 0.2, 0.5)
+        elif part == 'ende':                                                    # the last fortissimo: full brass
+            for sec, tr, g in (('trombones', 0, 0.9), ('horns', 12, 0.8), ('trumpets', 12, 0.5), ('tuba', -12, 0.6)):
+                o.play(sec, m + tr if m + tr >= 36 else m, t, d, v, pw, g)
+        elif part == 'sword':                                                   # the great sweeps
+            o.play('violins', m, t, d, v, ph, 0.6)
+            if m >= 77:
+                o.play('piccolo' if m >= 83 else 'flutes', m, t, d, v - 10, ph, 0.45)
+            if v >= 100 and d >= 0.3:
+                o.play('trumpets', m, t, d, v - 10, ph, 0.4)
+        else:
+            for sec, tr, dv, g in COLOUR[part]:
+                o.play(sec, m + tr, t, d, v + dv, pr if part in ('gold', 'curse') else None, g)
+    for t0 in T_RING:                                                           # the orchestra's two strokes
+        o.hit('timpani', t0, 112, pitch=-5, gain=0.6, pan=pr)
+    o.hit('timpani roll', T_CURSE, 100, gain=0.5, pan=pr)
+    o.hit('crash', BAR[628], 104, gain=0.45, pan=pr)
+    o.hit('timpani', T_FALL, 110, pitch=-4, gain=0.55, pan=pr)
+    for b in (927, 929, 933):
+        o.hit('cymbal swell', BAR[b] - 1.4, 90, gain=0.35, pan=ph)
+    o.hit('crash', T_BLOCK, 112, gain=0.55, pan=pan_at(at(G, 'Porch Right', 0.9)))
+    o.hit('timpani', T_BLOCK, 118, pitch=-6, gain=0.6, pan=pan_at(at(G, 'Porch Right', 0.9)))
+    o.hit('crash', T_ENDE, 124, gain=0.7)
+    o.hit('gong', T_ENDE, 120, gain=0.6)
+    o.hit('timpani', T_ENDE, 127, pitch=-7, gain=0.7)
+
+    # the stage: what the memories on the house show, heard
+    N = compose()
+    fxhit = lambda name, t, v, g, p: o.hit(name, t, v, gain=g, pan=p, fx=True)       # a stage hit, on the fader
+    o.wind(T_TELL, T_RING[0] + 1.0, 0.35, pan=0.0)                               # the river rolling along the house
+    for t, d, m, v, part, who in N:
+        if part == 'gold':                                                      # the gold glinting, note by note
+            o.play('glock', min(m + 12, 96), t, 0.2, v - 10, pr, 0.3)
+    o.hit('cymbal swell', T_GOLD[1] - 1.4, 95, gain=0.4, pan=pr, fx=True)                 # its rays thrown out
+    o.hit('gong', T_RING[0], 112, gain=0.6, pan=pr, fx=True)                             # the gold becomes the Ring
+    o.hit('gong', T_RING[1], 104, gain=0.45, pan=pr, fx=True)
+    o.hit('gong', T_CURSE, 120, gain=0.6, pan=pr, fx=True)                               # "Götternot!": the curse
+    o.thunder(T_FALL, 0.8, pr, 0.9)                                             # the blood wash
+    o.thunder(T_ERDA, 0.15, 0.0, 1.0)                                           # Erda rising out of the earth
+    fxhit('gong scrape', T_ERDA + 0.3, 110, 0.8, pr)
+    for b in range(920, 923):                                                   # the castle's gold crumbling away
+        fxhit('scrape', BAR[b], 100, 0.6, pr)
+        o.hit('timpani', BAR[b], 96, pitch=-6, gain=0.35, pan=pr, fx=True)
+    hero_from = [pan_at(at(G, sg, u)) for sg, u in VFROM]
+    for k in range(8):                                                          # the Valkyries riding in with heroes
+        tk = T_HEROES + VGAP * k
+        o.gallop(tk, tk + 1.6, 0.34, pan=lambda t, k=k, tk=tk: hero_from[k] * (1 - smoothstep(tk, tk + 1.6, t)),
+                 v=108, gain=0.75)
+    o.clash(T_BLOCK, pan_at(at(G, 'Porch Right', 0.9)), 124, 0.7)               # his spear slams down
+    for t, d, m, v, part, who in N:
+        if part == 'grief':                                                     # the world he built collapsing
+            o.hit('bass drum', t, min(127, v + 10), gain=0.3, fx=True)
+            fxhit('scrape', t + 0.05, 90, 0.3, pw)
+    o.shatter(T_ENDE, 0.0, 1.0)                                                 # the last fortissimo: it all breaks
+    o.thunder(T_ENDE + 0.05, 1.0, 0.0, 1.0)
+    # the effects stay well back under his lines and come forward between them: the river and the gold before he
+    # speaks, the blood wash and Erda, the crumbling castle and the Valkyries' ride; under "Fahre denn hin" and the
+    # collapse they recede, then the last fortissimo's shattering leads, and "das Ende!" is left alone
+    o.effects([(0.0, -12), (5.1, -12), (6.0, -5), (13.2, -5), (13.8, -12), (18.1, -12), (18.8, -4), (24.5, -4),
+               (25.1, -12), (29.4, -12), (30.0, -4), (32.6, -4), (33.2, -12), (34.6, -12), (34.8, -3), (36.0, -3),
+               (36.5, -12), (40.0, -12), (40.4, 0), (41.6, 0),
+               (42.4, -6), (46.0, -6), (46.4, -2), (57.6, -2), (58.3, -12), (65.3, -12), (65.5, -3), (66.6, -3),
+               (67.0, -12), (82.2, -12), (82.4, 0), (85.2, 0),
+               (85.8, -16)])

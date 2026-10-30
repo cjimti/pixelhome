@@ -1,28 +1,35 @@
-"""Donner and Froh: Freia's cry is answered. Froh comes first, rising out of the front of Porch Left to a harp
-glissando and a horn call, a shimmering band of rainbow that slides in beside her, and as he arrives a rainbow
-sweeps once along the whole roofline. Then a crack of thunder and Donner bursts out of the porch in white and
-steel blue, lightning forking away from him down Porch Left and along the Left wing, and plants himself between
-his sister and the giants.
+"""Donner and Froh: the giants close in on Freia and she cries out for help, and her cry is answered. Froh comes
+first, rising out of the front of Porch Left on the orchestra's rush, a shimmering band of rainbow that slides in
+beside her, and as he arrives a rainbow sweeps once along the whole roofline. Then a crack of thunder and Donner
+bursts out of the porch in white and steel blue, lightning forking away from him down Porch Left and along the
+Left wing, and plants himself between his sister and the giants.
 
-Donner's call to the thunder (Donington 46) rings out on the horns, each long note a bolt of lightning thrown
-from him toward the giants. Fasolt and Fafner answer with their own stamping motif (Donington 58), every stamp
-shaking Porch Right, unimpressed. So Donner raises his hammer: a timpani roll swells while steel-blue sparks
-are drawn in to him from every run of the house, and he sounds his call again fortissimo, horns and trumpets,
-and with each note lightning cracks right across the house: the boldest moment of the show, three great
-flashes a couple of seconds apart.
+The music is Wagner's own, as Solti's 1958 Vienna Philharmonic recording takes it: the giants seizing Freia ("Du
+da! Folg' uns!"), her "Helft! Helft! Vor den Harten!", Froh's "Zu mir, Freia!" and "Froh schützt die Schöne!",
+Donner's entrance and "Fasolt und Fafner, fühltet ihr schon meines Hammers harten Schlag?", the giants' "Was
+soll das Drohn?", Donner raising his hammer, "Kommt her, des Lohnes Last wäg' ich mit gutem Gewicht!", and
+Wotan's spear crashing down between them, "Halt, du Wilder! Nichts durch Gewalt!" (bars 1131-1167); then the
+first flickers of Loge's motif as he arrives (1183-1187). The notes come from the Wagner Ring Dataset's piano
+reduction (pixelhome/ring.py): the giants on trombones, tuba and basses; Freia's cry on violins and flutes;
+Froh's rush on violins, horns and harp; Donner on horns and trumpets over trombones and tuba; the hammer's climb
+for the full orchestra over a timpani roll; the spear's falling octaves on trombones, tuba and basses under the
+horns; Loge's flicker on flutes, piccolo, violins and harp. The reduction carries the dynamics in one hand only,
+so each note takes the loudest velocity around it. A production's storm goes with Donner: a thunderclap as he
+bursts in, thunder with every bolt he throws, the wind rising while he raises the hammer, and a blow of the
+spear; the giants stamp on the bass drum, and Loge arrives with a crackle of fire.
 
-Before the hammer can fall, Wotan's spear (Donington 73) slams down in the trombones and tubas: a steel
-white-blue line strikes in one frame across the whole back of the porch, between Donner and the giants, and
-holds there while the descending scale walks down it. Donner's lightning gutters out and the giants step back.
-Wotan restates his treaties (Donington 14), quieter now, and the gods wait for the one who talked Wotan into
-this bargain. At the very end something flickers at the free end of the Right wing: a few orange sparks, a
-skittering piccolo. Loge has arrived.
+Donner's call throws bolts of lightning at the giants, who answer stamping, unimpressed. So Donner raises his
+hammer: the house darkens under a storm while steel-blue sparks are drawn in to him from every run, and at the
+top of the climb lightning cracks right across the house, three great flashes. Before the hammer can fall,
+Wotan's spear slams down: a steel white-blue line strikes in one frame across the whole back of the porch,
+between Donner and the giants, and holds there while the falling octaves walk down it. Donner's lightning
+gutters out and the giants step back. Then something flickers at the free end of the Right wing: a few orange
+sparks. Loge has arrived.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'RG10'
 TITLE = 'Donner and Froh'
@@ -33,28 +40,30 @@ DESCRIPTION = ("Freia's brothers rush to her side: Froh in a rainbow and Donner 
 VOICEOVER = ('Freia calls for her brothers, and they come running: one bright as a rainbow, '
              'one loud as a storm. Somebody is about to lose his temper.')
 
+EX = excerpt(__file__)                      # bars 1131-1167, 1183-1187, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+SEG = [sg['start'] for sg in EX['segments']] + [EX['seconds']]
 BEAT = 0.5
-T_FROH = 2.5                                # Froh rises out of the porch
-T_DONNER = 8.0                              # thunder: Donner bursts out
-T_CALL = 11.5                               # Donner's call
-T_DEFY = 17.5                               # the giants stamp back
-T_RAISE = 26.5                              # he raises his hammer
-T_CALL2 = 32.0                              # the call, fortissimo: lightning across the house
-T_STOP = 38.8                               # Wotan's spear
-T_TREATY = 47.0
-T_WAIT = 60.0                               # the gods wait; the giants grumble
-T_LOGE = 72.5                               # a flicker: Loge
-D = 80.0
+T_CRY = BAR[1135]                           # Freia: "Helft! Helft!"
+T_FROH = BAR[1137]                          # Froh rises out of the porch
+T_DONNER = BAR[1144]                        # thunder: Donner bursts out
+T_CALL = BAR[1147]                          # Donner's call
+T_DEFY = BAR[1150]                          # the giants answer
+T_CALL1B = BAR[1157]                        # Donner again: "Schon oft zahlt' ich Riesen den Zoll"
+T_RAISE = BAR[1158]                         # he raises his hammer
+T_CALL2 = BAR[1162]                         # the top of the climb: lightning across the house
+T_STOP = BAR[1164]                          # Wotan's spear
+T_TREATY = T_STOP + 6.0
+T_WAIT = SEG[1] - 0.3
+T_LOGE = SEG[1]                             # a flicker: Loge
+D = EX['seconds']
+LEVEL = 1.9
 T0 = 80.0                                   # seconds since The Giants began: sways and drifts run on
 
 WOTAN, FRICKA, FREIA, FROH, DONNER = 0, 1, 2, 3, 4
 FASOLT, FAFNER = 0, 1
 APPLES = [('Side', 0.62), ('Left', 0.12), ('Side', 0.8), ('Left', 0.3), ('Side', 0.93), ('Left', 0.05),
           ('Side', 0.7), ('Left', 0.22), ('Left', 0.36), ('Side', 0.86), ('Left', 0.17), ('Side', 0.98)]
-FROH_CALL = [(0, .5, 'G3'), (.5, .5, 'B3'), (1, .5, 'D4'), (1.5, 2.5, 'G4'), (4, .5, 'E4'), (4.5, .5, 'F#4'),
-             (5, 3, 'G4')]
-WAIT = [(0, 2, 'F3'), (2, 1, 'Gb3'), (3, 1, 'F3'), (4, 2, 'Eb3'), (6, 2, 'Db3'), (8, 3, 'C3'), (11, 1, 'Db3'),
-        (12, 4, 'F3')]                              # Fricka, low and reproachful: where is your Loge now?
 
 WOT = hexc('#1a3cff')
 SPEAR = hexc('#c8d8ff')
@@ -186,56 +195,37 @@ def god_light(fr, S, p, col, b=0.78, wash=0.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The giants are 'giant' (a
+    'stamp' on each bar's first beat while they seize her, and on their heavy notes when they answer); Freia's cry
+    is 'cry'; Froh's rush is 'froh' over 'frohbass'; Donner is 'call', a 'bolt' on his long notes and three great
+    ones at the top of his climb, which is 'climb'; the spear is 'spear'; Loge is 'flicker' (who = the phrase)."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('A3', 'C#4', 'E4'):
-        add(0.0, T_FROH + 1.0, m, 84, 'trem')
-    gl = [x for x in range(note('G2'), note('G5') + 1) if x % 12 in (7, 11, 2)]
-    for i, m in enumerate(gl):
-        add(T_FROH - 0.6 + i * 1.2 / len(gl), 0.8, m, 92, 'gliss', FROH)
-    for b, d, m in FROH_CALL:
-        add(T_FROH + 0.6 + b * BEAT, d * BEAT, m, 100, 'froh', FROH)
-    add(T_DONNER, 2.0, 'Bb1', 124, 'thunder', DONNER)
-    for t0, v in ((T_CALL, 104), (T_CALL2, 122)):
-        for t, m, _, d in play('donner', t0, BEAT * (1.0 if t0 == T_CALL else 0.9), 0, v):
-            add(t, d, m, v, 'call', DONNER)
-            if d >= 0.2:                                    # each long note throws a bolt
-                add(t, 1.5, 'Bb1', v, 'bolt', DONNER)
-    for t, m, _, d in play('giants', T_DEFY, BEAT * 1.1, -12, 104):
-        add(t, d, m, 104, 'giant', FASOLT if t < T_DEFY + 4 * BEAT * 1.1 else FAFNER)
-        if d >= 0.3:
-            add(t, 0.4, 'C1', 112, 'stamp', FASOLT if (t - T_DEFY) % (4 * BEAT * 1.1) < 2 * BEAT * 1.1 else FAFNER)
-    add(T_DONNER + 2.0, T_RAISE - T_DONNER - 2.0, 'Bb1', 66, 'pedal')
-    add(T_STOP + 5.0, D - T_STOP - 5.0, 'Bb1', 60, 'pedal')
-    for m in ('Gb2', 'Db3', 'Bb3', 'F4'):                   # the treaties end unresolved; the gods look round
-        add(T_TREATY + 8.6, T_WAIT + 1.0 - T_TREATY - 8.6, m, 70, 'sigh')
-    add(T_RAISE - 2.0, T_CALL2 - T_RAISE + 2.0, 'Bb1', 70, 'roll')
-    for i in range(22):                                     # the strings climb while he raises it
-        add(T_RAISE + i * (T_CALL2 - T_RAISE - 0.3) / 22, 0.3, note('Bb2') + i, 74 + i * 2, 'climb')
-    for m in ('Bb1', 'F2', 'Bb2', 'D3', 'F3'):
-        add(T_CALL2, T_STOP - T_CALL2, m, 100, 'storm')
-    add(T_STOP, 1.0, 'C5', 124, 'slam', WOTAN)
-    for t, m, v, d in play('spear', T_STOP, BEAT * 0.75, 0, 120):
-        add(t, d, m, v, 'spear', WOTAN)
-    tr = play('treaties', T_TREATY, BEAT * 1.1, 0, 84)
-    top = {}
-    for t, m, v, d in tr:
-        top[t] = max(top.get(t, 0), m)
-    for t, m, v, d in tr:
-        add(t, d, m, v, 'treaty' if m == top[t] else 'treatybass' if m < note('C3') else 'treatyharm', WOTAN)
-    for b, d, m in WAIT:
-        add(T_WAIT + b * BEAT, d * BEAT, m, 88, 'fricka', FRICKA)
-    for k in range(int((T_LOGE - T_WAIT) / (2 * BEAT))):    # a slow pulse while they wait
-        add(T_WAIT + k * 2 * BEAT, BEAT, ('Bb1', 'Bb1', 'Gb1', 'F1')[k % 4], 74, 'pulse')
-    for t, m, v, d in play('giants', T_WAIT + 4.0, BEAT * 1.3, -24, 80, line='melody'):
-        add(t, d, m, v, 'grumble', FAFNER)
-    for k, t0 in enumerate((T_LOGE, T_LOGE + 2.6, T_LOGE + 4.6)):
-        for t, m, v, d in play('loge_flicker', t0, 0.13 if k < 2 else 0.11, -12 + 2 * k, 70 + 10 * k):
-            add(t, d, m, v, 'flicker', k)
+    bolted = []
+    for t, d, m, v, h in sorted(EX['notes']):
+        if t < T_CRY or T_DEFY <= t < T_CALL1B:
+            N.append((t, d, m, v, 'giant', FASOLT if int(t / 2.4) % 2 == 0 else FAFNER))
+        elif t < T_FROH:
+            N.append((t, d, m, v, 'cry' if h == 0 else 'giant', FREIA if h == 0 else FAFNER))
+        elif t < T_DONNER:
+            N.append((t, d, m, v, 'froh' if h == 0 else 'frohbass', FROH))
+        elif t < T_RAISE:
+            N.append((t, d, m, v, 'call', DONNER))
+            if h == 0 and d >= 0.5 and t >= T_CALL and all(abs(t - b) > 1.5 for b in bolted):
+                bolted.append(t)
+        elif t < T_STOP:
+            N.append((t, d, m, v, 'climb', DONNER))
+        elif t < T_LOGE:
+            N.append((t, d, m, v, 'spear', WOTAN))
+        else:
+            N.append((t, d, m, v, 'flicker', min(2, int((t - T_LOGE) / 2.5))))
+    for tb in bolted:
+        N.append((tb, 1.5, 34, 110, 'bolt', DONNER))
+    for tb in (T_CALL2, T_CALL2 + 1.1, BAR[1163]):         # right across the house
+        N.append((tb, 1.5, 34, 124, 'bolt', DONNER))
+    beats = [BAR[b] for b in (1131, 1132, 1133, 1134)]
+    beats += sorted({round(e[0], 3) for e in N if e[4] == 'giant' and e[0] >= T_DEFY and e[2] <= 50 and e[1] >= 0.3})
+    for k, tb in enumerate(beats):
+        N.append((tb, 0.4, 24, 112, 'stamp', (FASOLT, FAFNER)[k % 2]))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -311,6 +301,7 @@ def render(G, seed=10):
     spear = np.array([e[0] for e in N if e[4] == 'spear'])
     fricka = np.array([e[0] for e in N if e[4] == 'fricka'])
     flick = np.array([e[0] for e in N if e[4] == 'flicker'])
+    cries = np.array([e[0] for e in N if e[4] == 'cry'])
     bolts = [(e[0], e[0] >= T_CALL2) for e in N if e[4] == 'bolt']      # (time, right across the house?)
     jag = [np.clip(rng.uniform(-0.4, 1.0, G.N), 0, 1) ** 0.6 for _ in range(8)]
     nm = 60                                                 # sparks drawn in to the hammer
@@ -345,7 +336,7 @@ def render(G, seed=10):
         menace(fr, S, g.min())
 
         # Freia, Fricka, Wotan
-        freia_light(fr, S, gp[FREIA], t)
+        freia_light(fr, S, gp[FREIA], t, last(cries, t, 0.3))
         god_light(fr, S, gp[FRICKA], FRI, 0.78 + 0.25 * last(fricka, t, 0.5))
         wf = last(treaty, t, 0.5) + 0.9 * last(spear, t, 0.3)
         god_light(fr, S, gp[WOTAN], WOT, 0.78 + 0.25 * wf, 0.32)
@@ -463,7 +454,7 @@ def render(G, seed=10):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with Donner's storm and the giants' tread."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -474,133 +465,94 @@ def score(M, G):
 
     C = choreography(G)
 
-    def pan_g(k, t):
-        return pan_at(np.interp(t, C['t'], C['giants'][k]))
-
     def pan_god(k, t):
         return pan_at(np.interp(t, C['t'], C['gods'][k]))
 
-    for name, gain, rev in (('brass', 0.22, 0.3), ('low', 0.22, 0.18), ('strings', 0.18, 0.32), ('winds', 0.2, 0.35),
-                            ('perc', 0.25, 0.25), ('harp', 0.22, 0.4), ('fx', 0.1, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tubst = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    crash_s = M.hits('Percussion/cymbal-crash1_mp*.wav')
+    def pan_g(k, t):
+        return pan_at(min(np.interp(t, C['t'], C['giants'][k]), G.length))
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    o = Orchestra(M, level=LEVEL)
+    N = compose()
+    tv = np.array([(e[0], e[3]) for e in N if e[4] not in ('stamp', 'bolt')])
 
-    wp = pan_god(WOTAN, 0)
-    for t, d, m, v, part, who in compose():
-        if part == 'trem':
-            hold('strings', vtrem, m, t, t + d, v, -0.3, rise=0.1, fall=1.2, gain=0.6)
-        elif part == 'pedal':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=1.5, fall=1.5, gain=0.6)
-            hold('low', cb, m, t, t + d, v, 0.0, rise=1.5, fall=1.5, gain=0.6)
-        elif part == 'sigh':
-            hold('strings', va if m >= note('C3') else trem, m, t, t + d, v, -0.2, rise=1.0, fall=1.5, gain=0.6)
-        elif part == 'gliss':
-            M.add('harp', harp.play(m, v), t, 1.0, pan_at(np.interp(t, C['t'], C['gods'][FROH])))
-        elif part == 'froh':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pan_god(FROH, t))
-        elif part == 'thunder':
-            pa = pan_god(DONNER, t)
-            M.add('perc', crash.play(124), t, 1.0, pa)
-            M.add('perc', timp.play(124, pitch=-6), t, 1.0, pa)
-            M.add('perc', bd.play(124), t, 1.0, pa)
-            M.add('perc', roll.play(110, dur=d), t, 0.7, pa)
-            M.add('fx', whoosh(0.8, 5000, 400, 0.6, seed=8), t - 0.05, 1.0, pa)
-        elif part == 'call':
-            pa = pan_god(DONNER, t)
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.4), t, 1.0, pa)
-            M.add('brass', horn.play(m - 12, v - 10, dur=d * 1.05, release=0.4), t, 0.7, pa - 0.1)
-            if v > 110:
-                M.add('brass', tpt.play(m, v, dur=d * 1.05, release=0.4), t, 0.8, pa + 0.1)
-                M.add('low', tuba.play(m - 24, v, dur=d * 1.05, release=0.4), t, 0.8, pa)
+    def loud(t, v):                                         # the reduction's dynamics sit in one hand
+        near = tv[np.abs(tv[:, 0] - t) < 0.6, 1]
+        return int(max(v, near.max() - 8)) if len(near) else v
+
+    for t, d, m, v, part, who in N:
+        if part in ('stamp', 'bolt'):
+            continue
+        v = loud(t, v)
+        if part == 'giant':
+            gp = pan_g(who, t)
+            if m >= 55:
+                o.play('horns', m, t, d, v, gp, 0.55)
+                o.play('violas' if m < 67 else 'violins', m, t, d, v - 8, gp, 0.35)
+            elif m >= 45:
+                o.play('trombones', m, t, d, v, gp, 0.7)
+            else:
+                o.play('tuba', m + 12 if m < 33 else m, t, d, v, gp, 0.65)
+                o.play('basses', m, t, d, v - 6, gp, 0.5)
+        elif part == 'cry':                                 # "Helft! Helft!"
+            o.play('violins', m, t, d, v, pan_god(FREIA, t), 0.6)
+            o.play('piccolo' if m >= 84 else 'flutes', m, t, d, v - 8, pan_god(FREIA, t), 0.45)
+        elif part == 'froh':                                # Froh's rush
+            o.play('violins', m, t, d, v, pan_god(FROH, t), 0.55)
+            o.play('harp', m, t, d, v, pan_god(FROH, t) - 0.2, 0.45)
+            if d >= 0.3:
+                o.play('horns', m - 12 if m >= 72 else m, t, d, v - 4, pan_god(FROH, t), 0.5)
+        elif part == 'frohbass':
+            o.play('cellos', m, t, d, v, -0.2, 0.55)
+            o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, 0.2, 0.4)
+        elif part == 'call':                                # Donner
+            dp = pan_god(DONNER, t)
+            if m >= 60:
+                o.play('horns', m, t, d, v + 4, dp, 0.65)
+                if d >= 0.3:
+                    o.play('trumpets', m, t, d, v - 6, dp, 0.45)
+            elif m >= 45:
+                o.play('trombones', m, t, d, v, dp, 0.65)
+            else:
+                o.play('tuba', m, t, d, v, dp, 0.55)
+                o.play('basses', m, t, d, v - 6, 0.2, 0.45)
+        elif part == 'climb':                               # the hammer raised: everything climbs
+            dp = pan_god(DONNER, t)
+            o.play('violins' if m >= 55 else 'violas', m, t, d, v, dp + 0.2, 0.5)
+            if m >= 55:
+                o.play('horns', m, t, d, v - 4, dp, 0.45)
+            if m < 52:
+                o.play('trombones', m + 12 if m < 45 else m, t, d, v, dp, 0.55)
+                o.play('tuba', m, t, d, v - 4, 0.0, 0.5)
+        elif part == 'spear':                               # Wotan's spear: the falling octaves
+            wp = pan_god(WOTAN, t)
+            if m >= 60:
+                o.play('horns', m, t, d, v + 6, wp, 0.6)
+                o.play('trumpets', m, t, d, v - 4, wp, 0.4)
+            else:
+                o.play('trombones', m + 12 if m < 45 else m, t, d, v + 6, wp, 0.75)
+                o.play('tuba', m, t, d, v + 4, 0.0, 0.6)
+                o.play('basses', m, t, d, v, 0.2, 0.5)
+        elif part == 'flicker':                             # Loge
+            lp = pan_at(C['loge'])
+            if m >= 72:
+                o.play('piccolo' if m >= 84 else 'flutes', m, t, min(d, 0.12), v, lp, 0.5)
+            o.play('violins' if m >= 55 else 'violas', m, t, min(d, 0.15), v - 6, lp, 0.45)
+            o.play('harp', m, t, d, v - 8, lp, 0.3)
+    # the staging: the giants' tread, Donner's storm, the spear's blow, Loge's fire
+    for t, d, m, v, part, who in N:
+        if part == 'stamp':
+            o.hit('bass drum', t, 122, gain=0.55, pan=pan_g(who, t))
+            o.hit('timpani', t, 108, pitch=-8, gain=0.35, pan=pan_g(who, t))
         elif part == 'bolt':
-            pa = pan_god(DONNER, t)
-            big = t >= T_CALL2
-            M.add('perc', (crash if big else crash_s).play(v), t, 0.9 if big else 0.6, 0.0 if big else pa)
-            M.add('perc', timp.play(v, pitch=-4), t, 0.9, pa)
-            if big:
-                M.add('perc', bd.play(124), t, 0.9, 0.0)
-            M.add('fx', whoosh(0.5, 6000, 900, 0.6, seed=int(t * 10)), t - 0.05, 0.9, pa)
-        elif part == 'giant':
-            pa = pan_g(who, t)
-            M.add('brass', (tbn if who == FASOLT else tuba).play(m + 12 * (who == FASOLT), v, dur=d * 1.1,
-                                                                release=0.2), t, 0.9, pa)
-            M.add('low', tubst.play(m, v), t, 0.7, pa)
-        elif part == 'stamp':
-            pa = pan_g(who, t)
-            M.add('perc', timp.play(v, pitch=-5), t, 1.0, pa)
-            M.add('perc', bd.play(v), t, 0.8, pa)
-            M.add('low', pizz.play(m + 12, v), t, 0.8, pa)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.5, pan_god(DONNER, t))
-        elif part == 'climb':
-            pa = pan_god(DONNER, t)
-            M.add('strings', vtrem.play(m + 12, v, dur=d * 1.4, release=0.1), t, 0.7, pa)
-            M.add('low', trem.play(m, v, dur=d * 1.4, release=0.1), t, 0.6, pa)
-            M.add('perc', timp.play(60 + int(2.5 * (m - note('Bb2'))), pitch=-6 + 0.25 * (m - note('Bb2'))), t,
-                  0.6, pa)
-        elif part == 'storm':
-            hold('strings', trem if m < note('Bb2') else vtrem, m + 12 * (m < note('Bb2')), t, t + d, v, 0.0,
-                 rise=0.2, fall=0.15, gain=0.6)
-        elif part == 'slam':
-            M.add('perc', crash.play(127), t, 1.0, 0.0)
-            M.add('perc', timp.play(127, pitch=-8), t, 1.0, 0.0)
-            M.add('perc', bd.play(127), t, 1.0, 0.0)
-            M.add('fx', whoosh(0.4, 400, 6000, 0.7, seed=3), t - 0.35, 1.0, 0.0)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d * 1.1, release=0.3), t, 1.0, wp + 0.3)
-            M.add('brass', tbn.play(m + 12, v - 10, dur=d * 1.1, release=0.3), t, 0.6, wp + 0.4)
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.1, release=0.3), t, 0.9, wp + 0.3)
-            M.add('low', cb.play(m - 12, v - 10, dur=d * 1.1, release=0.3), t, 0.6, 0.0)
-            M.add('perc', timp.play(v - 10, pitch=-6), t, 0.6, 0.0)
-        elif part == 'treaty':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.4), t, 1.0, wp)
-            M.add('brass', horn.play(m, v - 14, dur=d, release=0.4), t, 0.5, wp + 0.1)
-        elif part == 'treatyharm':
-            M.add('brass', horn.play(m, v - 24, dur=d, release=0.4), t, 0.45, -0.2)
-        elif part == 'treatybass':
-            M.add('low', tuba.play(m, v - 10, dur=d, release=0.4), t, 0.8, wp)
-        elif part == 'fricka':
-            pa = pan_god(FRICKA, t)
-            M.add('winds', ob.play(m + 12, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-            M.add('strings', va.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.8, pa)
-        elif part == 'pulse':
-            M.add('low', pizz.play(m + 12, v), t, 0.9, 0.0)
-            M.add('low', cb.play(m + 12, v - 20, dur=d, release=0.3), t, 0.5, 0.0)
-        elif part == 'grumble':
-            M.add('low', tuba.play(m + 12, v, dur=d * 1.1, release=0.3), t, 0.8, pan_g(who, t))
-        elif part == 'flicker':
-            pa = pan_at(C['loge'])
-            M.add('winds', pic.play(m + 12, v), t, 0.9, pa)
-            M.add('harp', harp.play(m, v - 10), t, 0.5, pa)
+            big = t >= T_CALL2 - 0.01
+            o.thunder(t, near=1.0 if big else 0.7, pan=0.0 if big else pan_g(FASOLT, t), gain=1.0 if big else 0.75)
+    o.thunder(T_DONNER, near=1.0, pan=pan_god(DONNER, T_DONNER), gain=1.0)
+    o.wind(T_RAISE - 1.0, T_STOP + 2.5, level=lambda tt: 0.3 + 0.7 * smoothstep(T_RAISE, T_CALL2, tt), pan=0.0)
+    o.hit('timpani roll', T_RAISE, 100, pitch=-5, gain=0.45)
+    o.boom(T_STOP, pan_god(WOTAN, T_STOP), 0.9)
+    o.clash(T_STOP, pan_god(WOTAN, T_STOP), 120, 0.8)
+    o.hit('crash', T_STOP, 120, gain=0.55)
+    o.fire(T_LOGE - 0.3, D, level=lambda tt: 0.25 + 0.5 * smoothstep(T_LOGE, D, tt), pan=pan_at(C['loge']),
+           crackle=16.0)
+    o.effects([(0, -4), (T_FROH - 0.5, -4), (T_FROH, -10), (T_DONNER - 0.3, -10), (T_DONNER, 0), (T_CALL, -2),
+               (T_DEFY, -6), (T_RAISE, -2), (T_CALL2, 1), (T_STOP + 2.5, 0), (T_STOP + 4, -10), (T_LOGE, -6)])

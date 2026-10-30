@@ -1,23 +1,33 @@
 """The Rhinemaidens: a wooded valley on the Rhine, bright afternoon. The river runs along Right and down the Side in
 racing currents of indigo, teal and green with foam glinting on them; the forest is over Left and the porch, gold
 shafts of sun sliding through it. Woglinde in silver, Wellgunde in sea green and Flosshilde in violet surface out
-of the water on Right and play on their song (Donington 26): every note a dart along the river and a ripple of
-their colour running the length of both river runs, and on their joy (32) they chase each other end to end of Right
-with the whole river flashing.
+of the water on Right. Their joy comes first: the music swirls and they chase each other end to end of Right with
+the whole river flashing; then they sing, every note a dart along the river and a ripple of their colour running
+the length of both river runs. Siegfried's horn sounds from the forest, an emerald flash on Left, and he strides out
+along the porch to the bank. Gold surges up both river runs as they circle in on him: give us the Ring. He laughs at
+them, his strength blasting emerald from end to end, whole runs at a time, and the Ring on his hand throws gold
+rings out over the house as he swears they will never have it. Then they warn him: the Curse turns the whole river
+blood violet, wave on wave, the power of fate rolls indigo out from him, and they stream away out of the free end
+of Right, leaving him alone on the bank with the gold on his hand.
 
-Siegfried's horn sounds from the forest (48), an emerald flash on Left, and he strides out along the porch to the
-bank, lost on the hunt. The maidens circle in on him and the Rheingold (31) surges gold up both river runs: give
-us the Ring. The Ring (8) on his hand throws gold rings out over the house. He laughs, his strength (53) blasting
-emerald from end to end twice, whole runs at a time. Then they warn him: the Curse (13) turns the whole river
-blood violet, wave on wave, and the power of fate (84) rolls indigo out from him. They dive and stream away out of
-the free end of Right, the river runs bright again, and he stands alone on the bank with the gold on his hand.
+The music is Wagner's own, Act III's first scene as Solti's 1958 Vienna Philharmonic recording takes it, from the
+Wagner Ring Dataset's piano reduction (pixelhome/ring.py), in four cuts: the maidens' swirling joy and the start of
+their song "Frau Sonne sendet lichte Strahlen" (bars 66 to 76), their alarm before "Ich höre sein Horn" (144 to
+151), Siegfried's "Nun lacht nur lustig zu! ... euch Nickern geb' ich ihn nie!" (232 to 242), and their warning
+"... so fällst auch du, und heute noch" (314 to 321). Strings, harp and flutes carry the river's figuration, horns
+and trombones his music, trombones and tuba the Curse. Their song's melody is not in the reduction, so Woglinde's
+line is taken from the Schott vocal score (archive.org gtterdmmerung1900wagn, p. 234 to 235) and played as written
+on flute and oboe. Siegfried's horn call, played offstage in the opera and missing from the reduction, sounds from
+the forest on a horn. A river's rush runs under the maidens and backs off while they sing; cymbals for the gold,
+a gong and timpani for the Curse and for fate, and three splashes as they dive.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
 from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD22'
 TITLE = 'The Rhinemaidens'
@@ -28,18 +38,34 @@ VOICEOVER = ('Siegfried has lost his way on the hunt, and comes to the river. '
              'Three voices in the water ask him for the Ring.')
 
 K = 0                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_SONG = [1.0, 10.0]                        # the maidens' song
-T_JOY = 18.0                                # their joy: the chase
-T_HORN = 25.0                               # his horn in the forest
-T_WALK = (26.5, 32.0)                       # he strides out along the porch to the bank
-T_GOLD = 33.0                               # the Rheingold: give us the Ring
-T_RING = 40.5                               # the Ring on his hand
-T_LAUGH = [48.0, 51.5]                      # he laughs: his strength
-T_CURSE = 55.5                              # they warn him
-T_FATE = 64.0
-T_LEAVE = 67.0                              # they stream away
-T_ECHO = 72.0
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 66-77, 144-152, 232-243 and 314-322, Solti 1958
+D = EX['seconds']
+SEG = [s_['start'] for s_ in EX['segments']] + [D]
+
+
+def when(m):
+    """Bar position m (as in the dataset) -> seconds into the excerpt."""
+    for s_ in EX['segments']:
+        a, b = s_['measures']
+        if a <= m <= b:
+            bars = [(x, y) for x, y in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bars], [y for _, y in bars]))
+    raise ValueError(m)
+
+
+T_JOY = 0.0                                 # their joy: the chase
+JOY_END = when(72.5)
+T_SONG = when(72.667)                       # "Frau Sonne sendet lichte Strahlen"
+T_HORN = when(149)                          # his horn in the forest
+T_WALK = (T_HORN + 1.0, SEG[2] + 0.8)       # he strides out along the porch to the bank
+T_GOLD = SEG[2]                             # give us the Ring: gold up the river
+T_RING = when(239.83)                       # "euch Nickern geb' ich ihn nie!": the Ring on his hand
+T_CURSE = SEG[3]                            # they warn him
+T_FATE = [when(319), when(321)]
+T_LEAVE = D - 4.9                           # they stream away
+# Woglinde's line, from the vocal score: (bar, start, length in eighths of a 9/8 bar, note)
+SONG = [(72, 6, 3, 'C5'), (73, 0, 5, 'D5'), (73, 5, 1, 'F5'), (73, 6, 3, 'C5'), (74, 0, 5, 'Bb4'), (74, 5, 1, 'A4'),
+        (74, 6, 1, 'D5'), (74, 7, 1, 'E5'), (74, 8, 1, 'F5'), (75, 0, 9, 'G5'), (76, 0, 2, 'C5')]
 
 WOGLINDE = hexc('#c0f4ff')
 WELLGUNDE = hexc('#20ff90')
@@ -207,50 +233,65 @@ def panner(G):
     return pan_at
 
 
+def thin(ts, gap):
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
+
+
+def song():
+    """Woglinde's line in seconds: (time, seconds, midi)."""
+    return [(when(b + x / 9), when(b + (x + n) / 9) - when(b + x / 9), note(m)) for b, x, n, m in SONG]
+
+
+def horn_call():
+    """Siegfried's horn call, offstage in the forest, in F."""
+    return [(t, d, m, v) for t, m, v, d in play('siegfried_horn', T_HORN, 0.36, -2, 100)]
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every event for the lights: (time, seconds, midi, velocity, part, k). The river's figuration in the joy and the
+    alarm ('joy', thinned to one in a quarter second), the song ('song', k = which maiden), the horn call ('horn'),
+    his laughter (the orchestra's big chords, 'laugh'), the Ring ('ring'), the Curse ('curse') and fate ('fate')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_HORN, 'Ab1', 60, 'flow')
-    for j, t0 in enumerate(T_SONG):
-        for t, m, v, d in play('rhinemaidens', t0, 0.7, 0, 88 + 6 * j):
-            add(t, d, m, v, 'song', j)
-    for t, m, v, d in play('rhinemaidens_joy', T_JOY, 0.55, 0, 96):
-        add(t, d, m, v, 'joy')
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.32, 5, 104):
-        add(t, d, m, v, 'horn')
-    for t, m, v, d in play('rheingold', T_GOLD, 0.75, -12, 98):
-        add(t, d, m, v, 'gold')
-    for t, m, v, d in play('ring', T_RING, 0.58, 0, 92):
-        add(t, d, m, v, 'ring')
-    for j, t0 in enumerate(T_LAUGH):
-        for t, m, v, d in play('siegfried', t0, 0.8, -12, 110 + 6 * j):
-            add(t, d, m, v, 'laugh', j)
-    for t, m, v, d in play('curse', T_CURSE, 0.42, 0, 108):
-        add(t, d, m, v, 'curse')
-    for t, m, v, d in play('fate', T_FATE, 0.62, 0, 96):
-        add(t, d, m, v, 'fate')
-    for t, m, v, d in play('rhinemaidens', T_ECHO, 0.6, 0, 70):
-        if t < D - 1.0:
-            add(t, d, m, v, 'echo')
-    add(T_ECHO, D - T_ECHO, 'Ab2', 58, 'flow2')
+    notes = EX['notes']
+    rh = [n for n in notes if n[4] == 0 and n[2] >= note('Ab3')]
+    for t in thin([n[0] for n in rh if t_in(n[0], 0, T_SONG - 0.4) or t_in(n[0], SEG[1], T_HORN - 0.3)], 0.24):
+        N.append((t, 0.3, 72, 90, 'joy', None))
+    for i, (t, d, m) in enumerate(song()):
+        N.append((t, d, m, 96, 'song', i % 3))
+    for t in thin([n[0] for n in rh if t_in(n[0], when(76.3), SEG[1])], 0.5):
+        N.append((t, 0.3, 72, 70, 'song', None))
+    for t, d, m, v in horn_call():
+        N.append((t, d, m, v, 'horn', None))
+    for t in accents(notes, SEG[2], T_RING - 0.2, vmin=104, n=2, space=0.8):
+        N.append((t, 0.3, 50, 110, 'laugh', None))
+    for t in thin([n[0] for n in rh if t_in(n[0], T_RING - 0.2, SEG[3])], 0.5):
+        N.append((t, 0.3, 64, 100, 'ring', None))
+    for t in thin([n[0] for n in notes if t_in(n[0], SEG[3], T_LEAVE) and n[3] >= 80], 0.55):
+        N.append((t, 0.3, 50, 100, 'curse', None))
+    for t in T_FATE:
+        N.append((t, 1.0, 60, 110, 'fate', None))
     return sorted(N, key=lambda e: e[0])
+
+
+def t_in(t, a, b):
+    return a <= t < b
 
 
 def swim(G, t, N):
     """Where each maiden is at time t (path distances), and how bright."""
     r0, r1 = at(G, 'Right', 0.08), at(G, 'Right', 1.0)
     span = r1 - r0
-    song = sorted({e[0] for e in N if e[4] in ('song', 'joy', 'gold', 'curse')})
+    song = sorted({e[0] for e in N if e[4] in ('song', 'joy', 'curse')})
     out = []
     for k in range(3):
         base = 0.35 + 0.25 * k + 0.12 * np.sin(2 * np.pi * t / (5.3 + 1.1 * k) + 2.0 * k)
         darts = sum(0.06 * np.sin(1.7 * j + 2.1 * k) * smoothstep(s, s + 0.25, t) for j, s in enumerate(song) if s <= t)
         u = base + darts
-        chase = smoothstep(T_JOY, T_JOY + 1, t) * (1 - smoothstep(T_JOY + 6, T_JOY + 7, t))
+        chase = smoothstep(T_JOY, T_JOY + 0.8, t) * (1 - smoothstep(JOY_END - 1, JOY_END, t))
         u = u + chase * 0.35 * np.sin(2 * np.pi * (t - T_JOY) / 3.0 + 2.1 * k)
         near = smoothstep(T_GOLD - 1.5, T_GOLD + 1.5, t) * (1 - smoothstep(T_CURSE + 7, T_LEAVE, t))
         circle = 0.12 + 0.08 * k + 0.04 * np.sin(2 * np.pi * t / 1.6 + 2.1 * k)
@@ -282,7 +323,7 @@ def render(G, seed=22):
         t = f * DT
         T = t + 80 * K
         lv = dict(START)
-        warn = smoothstep(T_CURSE, T_CURSE + 1.0, t) * (1 - smoothstep(T_FATE + 4, T_LEAVE + 3, t))
+        warn = smoothstep(T_CURSE, T_CURSE + 1.0, t) * (1 - smoothstep(T_LEAVE, T_LEAVE + 4, t))
         lv['river'] = START['river'] * (1 - 0.5 * warn)
         lv['sun'] = START['sun'] * (1 - 0.6 * warn)
         fr = scene(S, T, lv)
@@ -293,7 +334,7 @@ def render(G, seed=22):
             for i, (t0, dur, m, v, _, k) in enumerate(notes[part]):
                 a = t - t0
                 if 0 <= a < 1.4 and m >= note('Ab3'):
-                    who = i % 3
+                    who = k if k is not None else i % 3
                     p, lvl = swimmers[who]
                     g = (0.9 if part != 'echo' else 0.5) * np.exp(-a / 0.5)
                     dist = np.abs(d - p)
@@ -304,7 +345,7 @@ def render(G, seed=22):
                     fr += light(MAIDENS[who], 0.55 * g * shore)
 
         # the chase: the whole river flashes in their colours, one run then the other
-        if T_JOY <= t < T_JOY + 7:
+        if T_JOY <= t < JOY_END:
             j = int((t - T_JOY) / 0.55)
             a = (t - T_JOY) % 0.55
             fr += light(MAIDENS[j % 3], 0.75 * np.exp(-a / 0.2) * river * (G.seg_of == ('Right', 'Side')[j % 2]))
@@ -341,8 +382,7 @@ def render(G, seed=22):
                 fr += light(BLOOD, 0.85 * np.exp(-a / 0.6) * S['land'] * np.exp(-((np.abs(d - p_end) - 900 * a) / 200) ** 2))
         # fate: indigo rolling out from him
         for t0, dur, m, v, _, k in notes['fate']:
-            if m >= note('Ab3'):
-                fr = ring(fr, S, t, t0, p_end, FATE_C, 1.0, speed=900, width=220, tau=1.3)
+            fr = ring(fr, S, t, t0, p_end, FATE_C, 1.0, speed=900, width=220, tau=1.3)
 
         # they stream away: a band of each maiden's colour sweeps the whole house from the free end of Right
         for k in range(3):
@@ -375,65 +415,49 @@ def render(G, seed=22):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes from the piano reduction, Woglinde's line from the vocal score, the horn call offstage, and the
+    river, the gold, the Curse and the dive as a production would stage them."""
+    from pixelhome.audio import whoosh
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.28, 0.25), ('strings', 0.24, 0.32), ('winds', 0.26, 0.35), ('brass', 0.28, 0.3),
-                            ('harp', 0.22, 0.4), ('perc', 0.26, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    cym = M.hits('Percussion/cymbal-crash1_m*.wav')
-    voices = [flute, oboe, clar]
+    o = Orchestra(M, level=2.5)
     N = compose()
     sw = lambda t, k: pan_at(swim(G, t, N)[k][0])
     bank = pan_at(at(G, *SIEG_END[:2]))
-    j = {'song': 0, 'echo': 0, 'joy': 0}
-    for t, d, m, v, part, k in N:
-        if part in ('flow', 'flow2'):
-            for mm in (m, m + 7, m + 12):
-                hold('low', cb if mm < note('C3') else vla, mm, t, t + d, v, 0.5, rise=3.0, fall=2.0, gain=0.5)
-        elif part in ('song', 'echo', 'joy'):
-            who = j[part] % 3
-            j[part] += 1
-            if m >= note('Ab3'):
-                M.add('winds', voices[who].play(m - 12 * (who == 2), v, dur=d * 1.1, release=0.25), t, 0.85, sw(t, who))
-            else:
-                M.add('harp', harp.play(m + 12, v - 10), t, 0.8, sw(t, who))
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pan_at(at(G, 'Left', 0.4)))
-        elif part == 'gold':
-            if m >= note('C4'):
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.3), t, 0.8, bank)
-            else:
-                M.add('harp', harp.play(m + 12, v), t, 0.8, bank)
-            if m >= note('D5'):
-                M.add('strings', vln.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.6, bank)
-        elif part == 'ring':
-            M.add('winds', clar.play(m, v, dur=d * 1.05, release=0.25), t, 0.85, bank)
-        elif part == 'laugh':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.25), t, 0.95, bank)
-            if m == note('D4') - 12 or d >= 0.3:
-                M.add('perc', timp.play(v - 10, pitch=-3), t, 0.5, bank)
-        elif part == 'curse':
-            if d > 1.0:
-                hold('brass', tbn, m, t, t + d, v, bank, rise=0.15, fall=0.8, gain=0.85)
-            else:
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, bank)
-            M.add('low', tuba.play(m - 12, v - 14, dur=d * 1.05, release=0.3), t, 0.6, bank)
-        elif part == 'fate':
-            hold('brass', tuba if m < note('C3') else horn, m if m < note('C3') else m - 12, t, t + d, v, bank,
-                 rise=0.4, fall=1.0, gain=0.7)
-    M.add('perc', cym.play(96), T_GOLD, 0.5, bank)
-    M.add('perc', timp.play(112, pitch=-5), T_CURSE, 0.8, bank)
-    for k in range(3):
-        M.add('perc', whoosh(1.2, 400, 3000, 0.5, seed=k + 1), T_LEAVE + 0.4 * k, 0.6, pan_at(at(G, 'Right', 0.9)))
+    river = pan_at(at(G, 'Right', 0.5))
+
+    def size(t):
+        return 0.6 if t < SEG[2] else 1.0 if t < SEG[3] else 0.85
+
+    def role(t, d, m, v, h):
+        if t < SEG[2] and h == 0 and d < 0.25:              # the river's figuration: violins, a harp glinting
+            return [('violins' if m >= 55 else 'violas', 0, -6, 0.45), ('harp', 0, -14, 0.3)]
+        if t < SEG[2] and h == 1 and d >= 0.3:              # its long chords: clarinets and horns, soft
+            return [('clarinets', 0, -8, 0.45), ('horns', 0, -14, 0.35)]
+        if SEG[3] <= t and h == 1 and d >= 0.3 and m >= 48:  # the Curse: trombones and tuba
+            return [('trombones', 0, 0, 0.75), ('tuba', -12, -8, 0.45)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=size, role=role, pan=lambda t, m: river if t < SEG[2] else bank * 0.6)
+    for t, d, m in song():                                  # Woglinde's line: flute and oboe
+        o.play('flutes', m, t, d, 100, sw(t, 0), 0.75)
+        o.play('oboes', m, t, d, 92, sw(t, 1), 0.4)
+    for t, d, m, v in horn_call():                          # his horn, off in the forest
+        o.play('horns', m, t, d, v, pan_at(at(G, 'Left', 0.4)), 0.7)
+
+    # the river, ridden down under their song and his music
+    o.wind(0.0, SEG[2] + 2.0, level=0.45, pan=river, seed=22)
+    o.effects([(0.0, -3), (T_SONG - 1.0, -3), (T_SONG, -15), (when(76.3), -15), (when(76.3) + 1.5, -5),
+               (T_HORN, -4), (SEG[2], -8), (SEG[3], -6), (T_LEAVE - 0.5, -6), (T_LEAVE, 0)])
+    o.hit('cymbal swell', T_GOLD - 2.6, 96, gain=0.4, pan=bank)
+    o.hit('crash', T_GOLD, 104, gain=0.45, pan=bank)
+    laughs = [e[0] for e in N if e[4] == 'laugh']
+    for t in laughs[:3]:
+        o.hit('timpani', t, 112, pitch=-3, gain=0.45, pan=bank)
+    o.hit('triangle', T_RING, 100, gain=0.4, pan=bank)
+    o.hit('gong', T_CURSE, 104, gain=0.45, pan=bank)
+    o.hit('timpani', T_CURSE, 116, pitch=-5, gain=0.6, pan=bank)
+    for t in T_FATE:
+        o.hit('timpani roll', t, 104, pitch=-5, gain=0.45, pan=bank)
+        o.hit('gong', t, 100, gain=0.35, pan=bank)
+    for k in range(3):                                      # they dive: three splashes
+        M.add('fx', whoosh(1.2, 400, 3000, 0.5, seed=k + 1), T_LEAVE + 0.4 * k, 0.9, pan_at(at(G, 'Right', 0.9)))

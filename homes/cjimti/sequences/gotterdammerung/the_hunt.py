@@ -1,24 +1,32 @@
-"""The Hunt: the valley on the Rhine as GD22 left it, Siegfried alone on the bank with the Ring glinting. Hunting horns
-in the forest: his own call (Donington 48) answered from Left, Left flashing at each, and the hunt pours out of the
-forest from the front corner of Left, the vassals' torches streaming in along Left and the porch to stand all over
-it. Hagen comes in ultraviolet in a pool of black to Porch Left, Gunther in royal gold to Porch Front, and Siegfried
-strides from the bank to the middle of the porch. The vassals' call (54) on the trombones sends every torch flaring.
+"""The Hunt: the valley on the Rhine as GD22 left it, Siegfried alone on the bank with the Ring glinting. The hunt's
+horns sound in the forest, Left flashing at each call, and the hunt pours out of the forest from the front corner of
+Left, the vassals' torches streaming in along Left and the porch to stand all over it. Hagen comes in ultraviolet in
+a pool of black to Porch Left, Gunther in royal gold to Porch Front, and Siegfried strides from the bank to the
+middle of the porch; the fanfare sends every torch flaring.
 
 Then he tells them his story, and each part of it takes over the whole house. Mime's forge: the house roars orange,
-and every hammer blow of the forging motif (52) flashes white on the porch and throws sparks to both ends. The
-dragon: the forging dies into Fafner's crawl (57), ochre waves heaving out over the house with two red eyes on the
-porch, a fire blast down Left and the white stroke of the sword. The Woodbird: the house goes hard green and a
-magenta bird darts everywhere on its song (27), every note a pop of magenta. Hagen hands him a drink, the potion's
-chords (19) running violet from Hagen to him, and he remembers Brünnhilde: the fire flares round the porch with
-silver at its heart and her motif (88) sweeps silver and gold end to end. The story fades back into the valley, and
-Hagen has moved round behind him.
+and every hammer stroke flashes white on the porch and throws sparks to both ends. The dragon: ochre waves heaving
+out over the house on the bass with two red eyes on the porch, a fire blast down Left and the white stroke of the
+sword on "dort fällt' ich Fafner, den Wurm". The Woodbird: the house goes hard green and a magenta bird darts
+everywhere on its song, every note a pop of magenta. Hagen hands him a drink, violet running from Hagen to him, and
+he remembers Brünnhilde: the fire flares round the porch with silver at its heart and silver and gold sweep end to
+end on the fire music's surges, while Hagen moves round behind him.
+
+The music is Wagner's own, as Solti's 1958 Vienna Philharmonic recording takes it, from the Wagner Ring Dataset's
+piano reduction (pixelhome/ring.py), in four cuts: the hunt gathering (Act III, bars 534 to 542), Siegfried's
+story of the forge and the dragon from "des Lehrlings Mute mußt' es gelingen" to "dort fällt' ich Fafner, den Wurm"
+(676 to 693), the Woodbird, "Auf den Ästen saß es und sang" (706 to 711), and "Bis den feurigen Fels ich traf ...
+die Lohe durchschritt ich und fand zum Lohn" with the fire music (801 to 810). Horns and trombones for the hunt,
+flutes and oboe for the bird, violins and harp for the fire round her rock. Staged: the hunting party's hooves out
+of the forest, an anvil on each hammer stroke, Fafner's fire and the sword's clash, a gong as Hagen hands him the
+horn, and the fire's roar as he remembers.
 
 compose() holds every note; stage(), scene(), water(), figure(), torches(), sparks() and ring() are the valley,
 shared word for word by Act III's scenes (GD22 to GD30) on a clock that runs on from scene to scene: T = t + 80 K."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise, colormap
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise, colormap
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD23'
 TITLE = 'The Hunt'
@@ -29,19 +37,30 @@ VOICEOVER = ('The hunters gather by the river, and Siegfried tells them his stor
              'The forge. The dragon. The bird. And then, a woman asleep in the fire.')
 
 K = 1                                       # this scene's place on Act III's shared clock: T = t + 80 K
-T_HORNS = [0.8, 3.4, 6.0]                   # hunting horns, his and theirs
-T_POUR = (1.5, 9.0)                         # the hunt pours out of the forest
-T_VASSALS = 9.5
-STORY = dict(forge=(12.5, 27.0), dragon=(27.5, 42.0), bird=(42.5, 56.5), brunn=(63.0, 76.0))
-T_FORGE = [13.5, 17.0, 20.5]
-T_MIME = 24.0
-T_DRAGON = 28.5
-T_BLAST = 36.5
-T_SWORD = 39.0
-T_BIRD = [43.5, 49.5]
-T_POTION = 57.0
-T_BRUNN = [64.0, 69.0]
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 534-543, 676-694, 706-712 and 801-811, Solti 1958
+D = EX['seconds']
+SEG = [s_['start'] for s_ in EX['segments']] + [D]
+
+
+def when(m):
+    """Bar position m (as in the dataset) -> seconds into the excerpt."""
+    for s_ in EX['segments']:
+        a, b = s_['measures']
+        if a <= m <= b:
+            bars = [(x, y) for x, y in EX['bars'] if a <= x <= b]
+            return float(np.interp(m, [x for x, _ in bars], [y for _, y in bars]))
+    raise ValueError(m)
+
+
+T_HORNS = [when(536), when(538), when(540)]  # the hunt's horns
+T_POUR = (0.3, when(541))                   # the hunt pours out of the forest
+T_VASSALS = when(541)
+STORY = dict(forge=(SEG[1], when(689)), dragon=(when(689) - 0.3, SEG[2]), bird=(SEG[2], SEG[3]),
+             brunn=(SEG[3] + 2.2, D - 0.5))
+T_DRAGON = when(689)                        # "der führte mich nun zum Wald"
+T_BLAST = when(692)                         # Fafner's fire
+T_SWORD = when(693)                         # "dort fällt' ich Fafner, den Wurm"
+T_POTION = SEG[3]                           # Hagen's drink
 
 SIEGFRIED = hexc('#00ff40')
 HEAD = hexc('#e8ffe8')
@@ -220,47 +239,48 @@ def panner(G):
     return pan_at
 
 
+def thin(ts, gap):
+    out = []
+    for t in sorted(ts):
+        if not out or t - out[-1] >= gap:
+            out.append(t)
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every event for the lights, from the excerpt's notes: (time, seconds, midi, velocity, part, k). The hunt's horn
+    calls ('horn') and fanfare ('vassals'), the forge's hammer strokes ('forging', its loudest chords), the dragon's
+    heaving bass ('dragon'), the sword's stroke ('sword'), the Woodbird's notes ('bird'), Hagen's drink ('potion')
+    and Brünnhilde's music ('brunn', the fire music's loudest chords)."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for j, t0 in enumerate(T_HORNS):
-        for t, m, v, d in play('siegfried_horn', t0, 0.3, (5, 0, 7)[j], 100 - 6 * (j == 1)):
-            add(t, d, m, v, 'horn', j)
-    for t, m, v, d in play('vassals', T_VASSALS, 0.5, -12, 106):
-        add(t, d, m, v, 'vassals')
-    for j, t0 in enumerate(T_FORGE):
-        for t, m, v, d in play('forging', t0, 0.5, 0, 104 + 4 * j):
-            add(t, d, m, v, 'forging', j)
-    for t, m, v, d in play('mime', T_MIME, 0.42, -12, 88):
-        add(t, d, m, v, 'mime')
-    for t, m, v, d in play('fafner', T_DRAGON, 0.5, 0, 108):
-        add(t, d, m, v, 'dragon')
-    add(T_BLAST, 1.6, 'C2', 118, 'blast')
-    for t, m, v, d in play('nothung', T_SWORD, 0.45, 0, 112):
-        add(t, d, m, v, 'sword')
-    for j, t0 in enumerate(T_BIRD):
-        for t, m, v, d in play('woodbird', t0, 0.62, 0, 92 + 6 * j):
-            add(t, d, m, v, 'bird', j)
-    for t, m, v, d in play('potion', T_POTION, 0.36, -12, 92):
-        add(t, d, m, v, 'potion')
-    for j, t0 in enumerate(T_BRUNN):
-        for t, m, v, d in play('brunnhilde', t0, 0.6, 0, 100 + 8 * j):
-            add(t, d, m, v, 'brunn', j)
-    add(T_BRUNN[0] - 1.0, 14.0, 'E1', 70, 'firebed')
-    add(76.0, 4.0, 'Ab1', 60, 'flow')
+    notes = EX['notes']
+    inside = lambda n, a, b: a <= n[0] < b
+    for j, t in enumerate(T_HORNS):
+        N.append((t, 0.5, 72, 104, 'horn', j))
+    for t in accents(notes, T_VASSALS - 0.2, SEG[1], vmin=100, n=2, space=0.5):
+        N.append((t, 0.4, 60, 106, 'vassals', None))
+    for t in thin([n[0] for n in notes if inside(n, SEG[1], T_DRAGON) and n[3] >= 90 and n[4] == 1], 0.5):
+        N.append((t, 0.3, note('C2'), 110, 'forging', None))
+    for t, d, m, v, h in notes:
+        if T_DRAGON <= t < T_SWORD - 0.1 and h == 1 and d >= 0.3:
+            N.append((t, d, m, v, 'dragon', None))
+    for t in thin([n[0] for n in notes if inside(n, T_SWORD - 0.05, SEG[2]) and n[4] == 0], 0.25):
+        N.append((t, 0.3, 72, 112, 'sword', None))
+    for t in thin([n[0] for n in notes if inside(n, SEG[2], SEG[3]) and n[2] >= note('B4')], 0.3):
+        N.append((t, 0.2, note('C6'), 96, 'bird', None))
+    for t in (T_POTION, T_POTION + 1.3):
+        N.append((t, 1.2, note('C4'), 92, 'potion', None))
+    for t in accents(notes, SEG[3] + 2.0, D, vmin=96, n=2, space=0.9):
+        N.append((t, 0.5, 72, 108, 'brunn', None))
     return sorted(N, key=lambda e: e[0])
 
 
 def where(G, t):
     """Siegfried, Hagen and Gunther at time t: (path distance, level) each."""
-    s = at(G, *SIEG[0]) + (at(G, *SIEG[1]) - at(G, *SIEG[0])) * smoothstep(4.0, 10.0, t)
+    s = at(G, *SIEG[0]) + (at(G, *SIEG[1]) - at(G, *SIEG[0])) * smoothstep(3.0, 9.0, t)
     h0, h1, h2 = at(G, 'Left', 0.0), at(G, *HAGEN_AT[0]), at(G, *HAGEN_AT[1])
     h = h0 + (h1 - h0) * smoothstep(T_POUR[0] + 1, T_POUR[1], t)
-    h = h + (h2 - h) * smoothstep(70.0, 78.0, t)
+    h = h + (h2 - h) * smoothstep(SEG[3] + 4.0, D - 2.0, t)
     g0, g1 = at(G, 'Left', 0.0), at(G, *GUNTHER_AT[:2])
     g = g0 + (g1 - g0) * smoothstep(T_POUR[0] + 2, T_POUR[1] + 1, t)
     return ((s, SIEG[2]), (h, HAGEN_AT[2] * smoothstep(T_POUR[0] + 1, T_POUR[0] + 2.5, t)),
@@ -280,7 +300,7 @@ def render(G, seed=23):
     d, L = S['d'], S['L']
     N = compose()
     notes = {p: [e for e in N if e[4] == p] for p in
-             ('horn', 'vassals', 'forging', 'mime', 'dragon', 'sword', 'bird', 'potion', 'brunn')}
+             ('horn', 'vassals', 'forging', 'dragon', 'sword', 'bird', 'potion', 'brunn')}
     anvil = S['pf']
     blows = [(e[0], 1.0, anvil) for e in notes['forging'] if e[2] < note('C3')]
     blow_t = np.array([b[0] for b in blows])
@@ -318,10 +338,6 @@ def render(G, seed=23):
                 fr += light(HEAT, g * min(1.0, 1.2 * np.exp(-a / 0.1)) * np.exp(-((d - anvil) / 40) ** 2))
                 fr = ring(fr, S, t, blow_t[i], anvil, FORGE, 0.9 * g, speed=1500, width=80, tau=0.5)
             fr += light(SPARK, g * np.clip(sparks(S, blows, t, 23), 0, 1))
-            for t0, dur, m, v, _, k in notes['mime']:
-                a = t - t0
-                if 0 <= a < 0.5:
-                    fr = figure(fr, S, at(G, 'Porch Front', 0.3), MIME, 0.8 * g * np.exp(-a / 0.3))
 
         # the dragon: ochre waves heaving out over the house, red eyes on the porch, the fire blast, the sword
         g = tableau(t, 'dragon')
@@ -330,10 +346,10 @@ def render(G, seed=23):
             for t0, dur, m, v, _, k in notes['dragon']:
                 a = t - t0
                 if 0 <= a < 2.4:
-                    u = (m - lo) / (hi - lo)
+                    u = float(np.clip((m - lo) / (hi - lo), 0, 1))
                     r = (400 + 1100 * u) * (1 - np.exp(-a / 0.7))
                     fr += light(SCALE, g * (0.8 + 0.3 * u) * np.exp(-a / 1.0) * np.exp(-((np.abs(d - anvil) - r) / (110 + 90 * u)) ** 2))
-            eye = g * (0.6 + 0.4 * smoothstep(T_DRAGON + 4, T_DRAGON + 6, t))
+            eye = g * (0.6 + 0.4 * smoothstep(T_DRAGON + 1.5, T_DRAGON + 3, t))
             for u in (0.4, 0.6):
                 fr += light(EYE, eye * np.exp(-((d - at(G, 'Porch Front', u)) / 6) ** 2))
             a = t - T_BLAST
@@ -346,8 +362,8 @@ def render(G, seed=23):
                 a = t - t0
                 if 0 <= a < 1.0:
                     fr += light(STEEL, g * 0.9 * np.exp(-a / 0.2) * np.exp(-((np.abs(d - ps) - 1600 * a) / 60) ** 2))
-            if 0 <= t - (T_SWORD + 2.2) < 0.6:
-                fr += light(WHITE, g * 0.6 * np.exp(-(t - T_SWORD - 2.2) / 0.12))
+            if 0 <= t - T_SWORD < 0.6:
+                fr += light(WHITE, g * 0.6 * np.exp(-(t - T_SWORD) / 0.12))
 
         # the Woodbird: hard green, a magenta bird darting everywhere, every note a pop
         g = tableau(t, 'bird')
@@ -368,7 +384,6 @@ def render(G, seed=23):
         for t0, dur, m, v, _, k in notes['potion']:
             a = t - t0
             if 0 <= a < dur + 0.8 and m >= note('G3'):
-                lo_, hi_ = min(ph, ps), max(ph, ps)
                 u = min(1.0, a / 0.8)
                 tip = ph + (ps - ph) * u
                 band = (d >= min(ph, tip) - 10) * (d <= max(ph, tip) + 10)
@@ -385,8 +400,8 @@ def render(G, seed=23):
                 a = t - t0
                 if 0 <= a < 2.0:
                     col = SILVER if j % 2 == 0 else GLINT
-                    fr += light(col, g * 0.85 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - anvil) - 1300 * a) / 120) ** 2))
-                    fr += light(col, g * 0.5 * np.exp(-a / 0.35) * (G.seg_of == runs[j % 6]))
+                    fr += light(col, g * 1.0 * np.exp(-a / 0.7) * np.exp(-((np.abs(d - anvil) - 1300 * a) / 220) ** 2))
+                    fr += light(col, g * 0.8 * np.exp(-a / 0.4) * (G.seg_of == runs[j % 6]))
 
         # the people: Hagen in a pool of black, Gunther, and Siegfried with the Ring
         if lh > 0:
@@ -402,82 +417,49 @@ def render(G, seed=23):
     return np.clip(out, 0, 1)
 
 
+def S_PORCH(G):
+    return at(G, 'Porch Front', 0.5)
+
+
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes from the piano reduction, coloured scene by scene of his story, and the hunt, the forge, the
+    dragon and the fire as a production would stage them."""
     pan_at = panner(G)
-    for name, gain, rev in (('low', 0.28, 0.25), ('strings', 0.24, 0.32), ('winds', 0.26, 0.35), ('brass', 0.28, 0.3),
-                            ('perc', 0.26, 0.28), ('mallet', 0.18, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    hold = hold_factory(M, SR)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    harp = M.sampler('Strings/Harp/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    left = pan_at(at(G, 'Left', 0.3))
-    porch = pan_at(at(G, 'Porch Front', 0.5))
-    sieg = pan_at(at(G, *SIEG[1]))
-    for t, d, m, v, part, k in compose():
-        if part == 'horn':
-            p = left if k != 0 else pan_at(at(G, *SIEG[0]))
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, p)
-        elif part == 'vassals':
-            M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.9, porch)
-            if m < note('C3'):
-                M.add('perc', timp.play(v - 14, pitch=-3), t, 0.5, porch)
-        elif part == 'forging':
-            if m < note('C3'):
-                M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.2), t, 0.85, porch)
-                M.add('perc', anvil.play(min(127, v + 8)), t, 0.85, porch)
-            elif m < note('C4'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.2), t, 0.85, porch)
-            else:
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.25), t, 0.8, porch)
-        elif part == 'mime':
-            M.add('mallet', xylo.play(m + 12, v), t, 0.7, pan_at(at(G, 'Porch Front', 0.3)))
-            M.add('winds', bsn.play(m, v), t, 0.8, pan_at(at(G, 'Porch Front', 0.3)))
-        elif part == 'dragon':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.3), t, 0.95, porch)
-            M.add('low', cb.play(m, v - 8, dur=d * 1.1, release=0.3), t, 0.7, porch)
-        elif part == 'blast':
-            M.add('perc', crash.play(v), t, 0.7, left)
-            M.add('perc', whoosh(1.6, 300, 4000, 0.8, seed=5), t, 0.9, left)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.8, porch)
-        elif part == 'sword':
-            M.add('brass', tpt.play(m - 12, v, dur=d * 1.05, release=0.3), t, 0.85, sieg)
-        elif part == 'bird':
-            if m >= note('B4'):
-                M.add('winds', (flute if k == 0 else oboe).play(m - 12, v, dur=d * 1.1, release=0.2), t, 0.85, 0.0)
-            else:
-                M.add('strings', harp.play(m, v - 16), t, 0.6, 0.0)
-        elif part == 'potion':
-            if m >= note('G3'):
-                hold('winds', clar, m, t, t + d, v, pan_at(at(G, *HAGEN_AT[0])), rise=0.4, fall=1.0, gain=0.8)
-            else:
-                hold('low', vc, m, t, t + d, v - 10, porch, rise=0.4, fall=1.0, gain=0.6)
-        elif part == 'brunn':
-            if d > 1.0:
-                hold('brass', horn, m - 12, t, t + d, v, porch, rise=0.2, fall=1.0, gain=0.85)
-            else:
-                M.add('brass', horn.play(m - 12, v, dur=d * 1.05, release=0.3), t, 0.9, porch)
-            M.add('strings', vln.play(m, v - 14, dur=d * 1.1, release=0.3), t, 0.6, porch)
-        elif part == 'firebed':
-            for mm in (m, m + 7, m + 12):
-                hold('low', cb, mm, t, t + d, v, porch, rise=1.5, fall=2.0, gain=0.5)
-            for j in range(20):
-                M.add('mallet', harp.play(note(('E4', 'Ab4', 'B4', 'E5')[j % 4]), 64), t + 0.6 * j, 0.6, porch)
-        elif part == 'flow':
-            hold('low', cb, m, t, t + d, v, 0.5, rise=1.5, fall=1.0, gain=0.5)
-    M.add('perc', crash.play(110), STORY['forge'][0] + 1.0, 0.5, porch)
-    M.add('perc', timp.play(116, pitch=-6), STORY['dragon'][0] + 1.0, 0.8, porch)
+    o = Orchestra(M, level=2.65)
+    N = compose()
+    porch = pan_at(S_PORCH(G))
+    left = pan_at(at(G, 'Left', 0.4))
+
+    def size(t):
+        return 1.0 if t < SEG[1] or STORY['dragon'][0] <= t < SEG[2] or t >= SEG[3] + 3 else 0.6
+
+    def role(t, d, m, v, h):
+        if SEG[2] <= t < SEG[3] and h == 0:                 # the Woodbird: flutes and oboe
+            return [('flutes', 0, -4, 0.6), ('oboes', 0, -12, 0.35)] if m >= 67 else [('clarinets', 0, -8, 0.5)]
+        if t < SEG[1] and h == 1 and d >= 0.3 and m >= 54:  # the hunt: horns and trombones
+            return [('horns', 0, 2, 0.85), ('trombones', 0, -6, 0.5)]
+        if t >= SEG[3] + 2 and h == 0 and d < 0.25:         # the fire round her rock: violins and harp
+            return [('violins', 0, -6, 0.45), ('harp', 0, -10, 0.35)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=size, role=role, pan=lambda t, m: left * (1 - smoothstep(0, SEG[1], t)) + porch * smoothstep(0, SEG[1], t))
+    # the hunt: hooves and the party's tread out of the forest, the horns flashing on Left
+    o.gallop(T_POUR[0], T_POUR[1], 0.5, pan=lambda t: left + (porch - left) * smoothstep(*T_POUR, t), v=92, gain=0.8)
+    for t in T_HORNS:
+        o.hit('timpani', t, 104, pitch=-3, gain=0.35, pan=left)
+    # the forge: an anvil on each hammer stroke
+    for e in N:
+        if e[4] == 'forging':
+            o.hit('anvil', e[0], 112, gain=0.4, pan=porch)
+    # the dragon: Fafner's fire, the sword stroke
+    o.fire(T_BLAST - 0.2, T_BLAST + 2.6, level=1.0, pan=pan_at(at(G, 'Porch Left', 0.2)), crackle=20, seed=23)
+    o.hit('bass drum', T_BLAST, 120, gain=0.6, pan=porch)
+    o.clash(T_SWORD, porch, 124, 1.0)
+    o.boom(T_SWORD + 0.05, porch, 0.7)
+    # Hagen's drink, and the fire round her rock
+    o.hit('gong scrape', T_POTION, 100, gain=0.4, pan=porch)
+    o.fire(SEG[3] + 2.0, D, level=lambda tt: 0.6 + 0.4 * smoothstep(SEG[3] + 6, SEG[3] + 12, tt), pan=porch,
+           crackle=10, seed=24)
+    o.hit('cymbal swell', STORY['brunn'][0] + 4.0, 96, gain=0.4, pan=porch)
+    o.effects([(0.0, -6), (SEG[1] - 1.0, -6), (SEG[1], -12), (T_BLAST - 0.3, -12), (T_BLAST, -2), (SEG[2], -2),
+               (SEG[2] + 0.5, -16), (SEG[3], -16), (SEG[3] + 2.5, -9)])

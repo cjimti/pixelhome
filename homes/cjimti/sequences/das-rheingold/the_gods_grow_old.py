@@ -17,11 +17,21 @@ to its edge and go down into it, his blue and Loge's flame sinking into the vapo
 Far below, three faint taps on an anvil. The other gods stand grey and dim on the wings, the battlements are
 dimmed, and the vapour keeps rising.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+The music is Wagner's own, from Scene 2 of Das Rheingold as Solti's 1958 Vienna Philharmonic recording takes
+it: the giants leaving with Freia ("für immer folge sie uns!", her "Rettet! Helft!", bars 1636-1649), Loge
+seeing the mist fall ("Trügt mich ein Nebel?", 1676-1685), Wotan's resolve ("Auf, Loge! Hinab mit mir!",
+1768-1771), and the start of the descent to Nibelheim (1808-1821). The notes come from the Wagner Ring
+Dataset's piano reduction (pixelhome/ring.py): the giants on tubas, trombones and basses, Freia's music on
+violins and oboes, the twilight of the gods on bassoons, horns and cellos, Loge's flickers on piccolo, flutes
+and harp, Wotan's treaty on trombones, the descent on the full orchestra. Like a staged production it adds what
+the lights show: the giants' stamps on bass drum and timpani, a thin cold air as the mist comes down, the
+fissure cracking open with a great blow and a deep rumble, hissing sulphur with each puff of vapour, a rush
+downward as Wotan and Loge sink, and three far-off taps on an anvil.
+
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'RG12'
 TITLE = 'The Gods Grow Old'
@@ -32,17 +42,18 @@ DESCRIPTION = ('The giants carry Freia away, and without her golden apples the g
 VOICEOVER = ('The giants have taken Freia, and the golden apples are going with her. '
              'Watch the colour drain out of the gods.')
 
-BEAT = 0.55
+EX = excerpt(__file__)                      # Scene 2: bars 1636-1649, 1676-1685, 1768-1771, 1808-1821
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
 T_GO = 0.6                                  # the giants set off with her
-T_MIST = 11.0                               # the mist falls
-DOWNFALL = [14.0, 24.5]
-T_MOCK = 34.5                               # Loge mocks them
-T_RESOLVE = 48.0                            # Wotan: down to Nibelheim
-T_CRACK = 54.0                              # the fissure opens
-T_WALK = 60.0
-T_DOWN = 69.0                               # they go down
-T_TAPS = 75.0
-D = 80.0
+T_MIST = BAR[1676]                          # "Trügt mich ein Nebel?": the mist falls
+T_MOCK = 36.5                               # "Wie bang und bleich verblüht ihr so bald!": Loge mocks them
+T_RESOLVE = BAR[1768]                       # "Auf, Loge! Hinab mit mir!"
+T_CRACK = BAR[1808]                         # the descent begins: the fissure opens
+T_WALK = BAR[1810]
+T_DOWN = BAR[1815]                          # they go down
+T_TAPS = BAR[1819]
+TAPS = [BAR[1819], BAR[1820], BAR[1821]]
 T0 = 240.0                                  # seconds since The Giants began: sways and drifts run on
 
 WOTAN, FRICKA, FROH, DONNER = 0, 1, 2, 3
@@ -50,11 +61,8 @@ FASOLT, FAFNER = 0, 1
 APPLES = [('Side', 0.62), ('Left', 0.12), ('Side', 0.8), ('Left', 0.3), ('Side', 0.93), ('Left', 0.05),
           ('Side', 0.7), ('Left', 0.22), ('Left', 0.36), ('Side', 0.86), ('Left', 0.17), ('Side', 0.98)]
 WITHER = [T_MIST + 2.0 + 1.7 * k for k in range(12)]       # one apple after another
-MOCKS = [T_MOCK, T_MOCK + 3.2, T_MOCK + 6.4, T_MOCK + 9.6]
+MOCKS = [T_MOCK, 40.0, 45.2, 49.7]           # his lines
 MOCK_TO = [('Left', 0.9), ('Left', 0.5), ('Porch Left', 0.1), ('Porch Left', 0.55)]
-RESOLVE = [(0, .5, 'Bb2'), (.5, .5, 'Db3'), (1, 2, 'F3'), (3, .5, 'Eb3'), (3.5, .5, 'Db3'), (4, 1.5, 'Bb2'),
-           (5.5, .5, 'F2'), (6, 3, 'Bb2')]          # "Up, Loge! Down with me!"
-
 WOT = hexc('#1a3cff')
 SPEAR = hexc('#c8d8ff')
 FRI = hexc('#ff9ad0')
@@ -194,56 +202,44 @@ def god_light(fr, S, p, col, b=0.78, wash=0.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who, tremolo). The giants' left hand
+    is 'giant', Freia's right hand 'freia'; in the mist the left hand's long notes are the twilight of the gods
+    ('downfall'), its others 'downbass', the right hand's quick notes Loge's 'flicker', its long ones 'mistnote';
+    Wotan's resolve is 'treaty' (its top line), 'treatyharm' and 'treatybass'; the descent is 'descent', its right
+    hand 'fall' once they go down. 'stamp', 'crack', 'puff', 'step', 'laugh' and 'anvil' mark moments for the
+    lights and the stage."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('A3', 'C4', 'E4'):
-        add(0.0, 3.0, m, 72, 'trem')
-    for t, m, _, d in play('giants', T_GO, BEAT * 1.35, -12, 102):
-        add(t, d, m, 102, 'giant', FASOLT if t < T_GO + 4 * BEAT * 1.35 else FAFNER)
-        if d >= 0.3:
-            add(t, 0.4, 'C1', 110, 'stamp', FAFNER if (t - T_GO) % (4 * BEAT * 1.35) < 2 * BEAT * 1.35 else FASOLT)
-    for t, m, v, d in play('freia', T_GO + 1.0, BEAT * 1.1, -1, 96, line='melody'):
-        fadeout = max(0.35, 1 - (t - T_GO) / 12)
-        add(t, d, m + 12, int(v * fadeout), 'freia')
-    add(T_MIST - 1.0, D - T_MIST + 1.0, 'D2', 60, 'mist')
-    for k, t0 in enumerate(DOWNFALL):
-        for t, m, v, d in play('downfall', t0, BEAT * 1.6, -12 - k, 86 - 6 * k):
-            add(t, d, m, v, 'downfall' if m >= note('C3') else 'downbass')
-    for i, tw in enumerate(WITHER):
-        add(tw, 0.6, note('A4') - i, 64, 'wither', i)
-    for k, t0 in enumerate(MOCKS):
-        if k % 2 == 0:
-            for t, m, v, d in play('loge_flicker', t0, 0.12, -12 + k, 92):
-                add(t, d, m, v, 'flicker')
+    tops = {}
+    for t, d, m, v, h, trem in tidy(EX['notes']):
+        if T_RESOLVE <= t < T_CRACK:
+            tops[round(t, 2)] = max(tops.get(round(t, 2), 0), m)
+    for t, d, m, v, h, trem in tidy(EX['notes']):
+        if t < T_MIST:
+            part, who = ('freia', None) if h == 0 else ('giant', FASOLT if t < 8 else FAFNER)
+        elif t < T_RESOLVE:
+            if h == 0:
+                part = 'flicker' if d < 0.3 else 'mistnote'
+            else:
+                part = 'downfall' if d >= 0.5 else 'downbass'
+            who = None
+        elif t < T_CRACK:
+            part = 'treaty' if m == tops[round(t, 2)] else 'treatybass' if m < 48 else 'treatyharm'
+            who = WOTAN
         else:
-            for t, m, v, d in play('loge_ambivalent', t0, BEAT * 0.7, 0, 88):
-                add(t, d, m, v, 'amb')
-        for j, (hi, lo) in enumerate((('E6', 'C6'), ('D6', 'B5'), ('C6', 'A5'))):
-            for m in (hi, lo):
-                add(t0 + 1.6 + j * 0.16, 0.12, m, 90 - 6 * j, 'laugh')
-    tr = play('treaties', T_RESOLVE, BEAT * 0.9, 0, 96)
-    top = {}
-    for t, m, v, d in tr:
-        top[t] = max(top.get(t, 0), m)
-    for t, m, v, d in tr:
-        if t < T_RESOLVE + 8 * BEAT * 0.9:
-            add(t, d, m, v, 'treaty' if m == top[t] else 'treatybass' if m < note('C3') else 'treatyharm', WOTAN)
-    for b, d, m in RESOLVE:
-        add(T_CRACK - 1.0 + b * BEAT, d * BEAT, m, 100, 'resolve', WOTAN)
-    add(T_CRACK, 1.2, 'D1', 120, 'crack')
-    add(T_CRACK, D - T_CRACK, 'D1', 80, 'rumble')
+            part, who = ('fall' if h == 0 and t >= T_DOWN else 'descent'), None
+        N.append((t, d, m, v, part, who, trem))
+    for k, ts in enumerate(accents([n for n in EX['notes'] if n[4] == 1], T_GO, T_MIST - 2, 60, 1, 1.1)):
+        N.append((ts, 0.4, 24, 110, 'stamp', FAFNER if k % 2 == 0 else FASOLT, False))
+    N.append((T_CRACK, 1.2, 26, 0, 'crack', None, False))
     for k in range(5):
-        add(T_CRACK + 2.5 + 3.0 * k, 2.5, 'D2', 70 + 4 * k, 'puff', k)
-    for i in range(int((T_DOWN - T_WALK) / (2 * BEAT))):        # their footsteps along the porch
-        add(T_WALK + i * 2 * BEAT, BEAT, ('D2', 'A1')[i % 2], 76, 'step')
-    for i in range(24):
-        add(T_DOWN + i * 0.12, 0.25, note('D5') - i, 96 - i, 'fall')
-    for k in range(3):
-        add(T_TAPS + 1.4 * k, 0.5, 'Bb3', 46 + 8 * k, 'anvil')
+        N.append((T_CRACK + 2.5 + 3.0 * k, 2.5, 38, 0, 'puff', k, False))
+    walk = [BAR[b] + x * (BAR[b + 1] - BAR[b]) for b in range(1810, 1815) for x in (0.0, 0.5)]
+    for ts in walk:                                         # their footsteps along the porch
+        N.append((ts, 0.5, 38, 0, 'step', None, False))
+    for t0 in MOCKS:
+        N.append((t0 + 1.6, 0.3, 84, 0, 'laugh', None, False))
+    for ts in TAPS:
+        N.append((ts, 0.5, 58, 0, 'anvil', None, False))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -273,8 +269,9 @@ def choreography(G):
         rate[k][m] = r
 
     set_(WOTAN, 0, D, at(G, 'Left', 0.75) + 1.5 * np.sin(2 * np.pi * (t + T0) / 3.1), 3.0)
-    for i, ts in enumerate([e[0] for e in N if e[4] == 'step']):     # Wotan walks to the fissure
-        n = int((T_DOWN - T_WALK) / (2 * BEAT))
+    steps = [e[0] for e in N if e[4] == 'step']
+    for i, ts in enumerate(steps):                                   # Wotan walks to the fissure
+        n = len(steps)
         set_(WOTAN, ts, D, at(G, 'Left', 0.75) + (pf - 20 - at(G, 'Left', 0.75)) * (i + 1) / n, 4.0)
     set_(FRICKA, 0, D, at(G, 'Left', 0.45) + 1.5 * np.sin(2 * np.pi * (t + T0) / 3.7), 3.0)
     set_(FROH, 0, D, at(G, 'Left', 0.65) + 2 * np.sin(2 * np.pi * (t + T0) / 2.2), 2.2)
@@ -332,7 +329,7 @@ def render(G, seed=12):
 
     def times(*parts):
         return np.array(sorted(e[0] for e in N if e[4] in parts) or [-9.0])
-    gnotes, freia_n, down = times('giant'), times('freia'), times('downfall')
+    gnotes, freia_n = times('giant'), times('freia')
     loge_n, laughs, treaty = times('flicker', 'amb'), times('laugh'), times('treaty', 'resolve')
     stamps = [(e[0], e[5], e[3]) for e in N if e[4] == 'stamp']
     puffs = [e[0] for e in N if e[4] == 'puff']
@@ -469,6 +466,8 @@ def render(G, seed=12):
 
 
 def score(M, G):
+    """Wagner's notes, orchestrated from the piano reduction scene by scene, with the giants' stamps, the mist,
+    the fissure and the anvils far below on the stage."""
     from pixelhome.audio import SR, whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
@@ -495,117 +494,88 @@ def score(M, G):
         x = np.interp(t, C['t'], C['giants'][k]) - G.length
         return float(np.clip(1 - x / 400, 0.15, 1))
 
-    for name, gain, rev in (('brass', 0.23, 0.3), ('low', 0.25, 0.2), ('strings', 0.22, 0.35), ('winds', 0.22, 0.4),
-                            ('perc', 0.24, 0.28), ('harp', 0.22, 0.4), ('fx', 0.11, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tubst = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    flst = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_mf*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'trem':
-            hold('strings', vtrem, m, t, t + d, v, 0.4, rise=0.1, fall=2.0, gain=0.6)
-        elif part == 'giant':
-            pa, ga = pan_g(who, t), away(who, t)
-            M.add('brass', (tbn if who == FASOLT else tuba).play(m + 12 * (who == FASOLT), v, dur=d * 1.1,
-                                                                release=0.2), t, 0.9 * ga, pa)
-            M.add('low', tubst.play(m, v), t, 0.7 * ga, pa)
-        elif part == 'stamp':
-            pa, ga = pan_g(who, t), away(who, t)
-            M.add('perc', timp.play(v, pitch=-5), t, 1.0 * ga, pa)
-            M.add('perc', bd.play(v), t, 0.8 * ga, pa)
-            M.add('low', pizz.play(m + 12, v), t, 0.8 * ga, pa)
-        elif part == 'freia':
-            pa = pan_at(np.interp(t, C['t'], C['freia']))
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-        elif part == 'mist':
-            hold('low', trem, m + 12, t, t + d, v, -0.2, rise=4.0, fall=2.0, gain=0.7)
-            hold('strings', vtrem, m + 24, t, t + d, v - 14, 0.2, rise=6.0, fall=2.0, gain=0.35)
-        elif part == 'downfall':
-            M.add('winds', (cl if m < note('C4') else fl).play(m, v, dur=d * 1.05, release=0.5), t, 0.8, -0.2)
-            M.add('strings', va.play(m, v - 6, dur=d * 1.05, release=0.5), t, 0.7, 0.2)
-        elif part == 'downbass':
-            hold('low', vc, m + 12, t, t + d, v - 10, 0.0, rise=1.0, fall=1.5, gain=0.6)
-            hold('low', cb, m, t, t + d, v - 10, 0.0, rise=1.0, fall=1.5, gain=0.5)
-        elif part == 'wither':
-            pa = pan_at(at(G, *APPLES[who]))
-            M.add('harp', harp.play(m, v), t, 0.7, pa)
-            M.add('winds', fl.play(m, v - 20, dur=0.5, release=0.4), t + 0.1, 0.4, pa)
-        elif part == 'flicker':
-            M.add('winds', pic.play(m + 12, v), t, 0.9, pan_loge(t))
-            M.add('harp', harp.play(m, v - 10), t, 0.5, pan_loge(t))
-        elif part == 'amb':
-            pa = pan_loge(t)
-            if m >= note('C5'):
-                M.add('strings', vns.play(m - 12, v), t, 0.8, pa)
-            elif m >= note('Ab3'):
-                M.add('harp', harp.play(m, v), t, 0.6, pa)
+    o = Orchestra(M, level=3.0)
+    # the mist's air is felt as it falls, then sits under Loge's lines and Wotan's treaty; the fissure and the
+    # descent are the staging's moment
+    o.effects([(0.0, 0.0), (T_MIST, -2.0), (T_MOCK - 1.0, -8.0), (T_CRACK - 0.6, -8.0), (T_CRACK, 0.0), (D, 0.0)])
+    N = compose()
+    for t, d, m, v, part, who, trem in N:
+        if v == 0:
+            continue
+        if part == 'giant':                                     # the giants tramp off
+            gp, a = pan_g(who, t), away(who, t)
+            if m < 48:
+                o.play('tuba', m, t, d, v, gp, 0.75 * a)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, gp, 0.5 * a)
             else:
-                M.add('low', vc.play(m, v - 6, dur=d * 1.05, release=0.2), t, 0.6, pa)
-        elif part == 'laugh':
-            M.add('winds', (pic if m >= note('Ab5') else flst).play(m, v), t, 0.8, pan_loge(t))
-        elif part == 'treaty':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.4), t, 1.0, pan_god(WOTAN, t))
-            M.add('brass', horn.play(m, v - 14, dur=d, release=0.4), t, 0.5, pan_god(WOTAN, t) + 0.1)
-        elif part == 'treatyharm':
-            M.add('brass', horn.play(m, v - 24, dur=d, release=0.4), t, 0.45, -0.2)
-        elif part == 'treatybass':
-            M.add('low', tuba.play(m, v - 10, dur=d, release=0.4), t, 0.8, pan_god(WOTAN, t))
-        elif part == 'resolve':
-            pa = pan_god(WOTAN, t)
-            M.add('brass', tbn.play(m + 12, v, dur=d * 1.05, release=0.3), t, 1.0, pa)
-            M.add('low', tuba.play(m, v - 10, dur=d * 1.05, release=0.3), t, 0.8, pa)
-        elif part == 'crack':
-            M.add('perc', timp.play(v, pitch=-8), t, 1.0, pf)
-            M.add('perc', bd.play(v), t, 1.0, pf)
-            M.add('perc', crash.play(100), t, 0.6, pf)
-            M.add('fx', whoosh(1.4, 200, 1400, 0.6, seed=4), t, 1.0, pf)
-        elif part == 'rumble':
-            hold('low', cb, m + 12, t, t + d, v, pf, rise=2.0, fall=2.0, gain=0.8)
-            hold('low', trem, m + 12, t, t + d, v, pf, rise=4.0, fall=2.0, gain=0.5)
-            M.add('perc', roll.play(70, dur=d), t, 0.5, pf)
-        elif part == 'puff':
-            M.add('fx', whoosh(2.4, 180, 900, 0.5, seed=20 + who), t, 1.0, pf)
-            M.add('low', bsn.play(m + 12 - who, v, dur=1.6, release=0.6), t, 0.6, pf)
-        elif part == 'step':
-            M.add('low', pizz.play(m + 12, v), t, 0.8, pan_god(WOTAN, t))
-            M.add('perc', timp.play(v - 20, pitch=-6), t, 0.4, pan_god(WOTAN, t))
-        elif part == 'fall':
-            M.add('strings', vn.play(m, v, dur=d * 1.3, release=0.1), t, 0.6, pf)
-            M.add('harp', harp.play(m - 12, v), t, 0.6, pf)
-        elif part == 'anvil':
-            M.add('perc', anvil.play(v), t, 0.8, pf)
+                o.play('trombones', m, t, d, v, gp, 0.65 * a)
+                o.play('cellos', m - 12, t, d, v - 8, gp, 0.4 * a)
+        elif part == 'freia':                                   # her music, dragged away
+            fp = pan_at(np.interp(t, C['t'], C['freia']))
+            if trem:
+                o.play('violins trem', m, t, d, v, fp, 0.5)
+            else:
+                o.play('violins', m, t, d, v + 4, fp, 0.6)
+                if d >= 0.3:
+                    o.play('oboes', m, t, d, v - 6, fp, 0.4)
+        elif part in ('downfall', 'downbass'):                  # the twilight of the gods, sinking
+            o.play('bassoons', m, t, d, v, -0.1, 0.5)
+            o.play('cellos', m, t, d, v - 4, -0.25, 0.5)
+            if part == 'downfall':
+                o.play('horns', m + 12 if m < 48 else m, t, d, v - 6, 0.25, 0.45)
+        elif part == 'flicker':                                 # Loge, the only colour left
+            lp = pan_loge(t)
+            o.play('piccolo' if m >= 79 else 'flutes', m, t, 0.1, v, lp, 0.45)
+            o.play('harp', m - 12, t, d, v - 8, lp, 0.35)
+        elif part == 'mistnote':
+            if trem:
+                o.play('violins trem', m, t, d, v - 6, 0.2, 0.4)
+            else:
+                o.play('clarinets', m, t, d, v, 0.2, 0.45)
+                o.play('flutes', m, t, d, v - 10, -0.3, 0.3)
+        elif part in ('treaty', 'treatyharm', 'treatybass'):    # "Auf, Loge! Hinab mit mir!"
+            wp = pan_god(WOTAN, t)
+            if part == 'treaty':
+                o.play('trombones', m, t, d, v + 6, wp, 0.8)
+                o.play('horns', m, t, d, v - 8, wp, 0.45)
+            elif part == 'treatybass':
+                o.play('tuba', m, t, d, v, wp, 0.6)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, wp, 0.45)
+            else:
+                o.play('horns', m, t, d, v - 4, wp, 0.45)
+        else:                                                   # the descent: the whole orchestra
+            if trem:
+                o.play('violins trem' if m >= 55 else 'violas trem' if m >= 48 else 'cellos trem', m, t, d, v, pf, 0.5)
+            elif m >= 60:
+                o.play('violins', m, t, d, v, pf + 0.2, 0.55)
+                if m >= 74:
+                    o.play('flutes', m, t, 0.1, v - 10, -0.3, 0.3)
+            elif m >= 48:
+                o.play('horns' if d >= 0.4 else 'violas', m, t, d, v, pf - 0.2, 0.55)
+                if d >= 0.4:
+                    o.play('trombones', m, t, d, v - 8, pf, 0.4)
+            else:
+                o.play('cellos', m, t, d, v, pf, 0.6)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 6, pf, 0.45)
+                if d >= 0.5:
+                    o.play('tuba', m, t, d, v - 8, pf, 0.45)
+
+    # the stage
+    for t, d, m, v, part, who, trem in N:
+        if part == 'stamp':                                     # each giant's stamp shakes the run
+            gp, a = pan_g(who, t), away(who, t)
+            o.hit('bass drum', t, 118, gain=0.7 * a, pan=gp)
+            o.hit('timpani', t, 110, pitch=-7, gain=0.45 * a, pan=gp)
+        elif part == 'puff':                                    # sulphur hissing up out of the crack
+            o._sfx(o._noise(0, 1200, 7000, 400 + who, n=int(2.4 * SR)) *
+                   np.sin(np.linspace(0, np.pi, int(2.4 * SR))) ** 2, t, 0.25, pf)
+        elif part == 'step':                                    # their footsteps toward the edge
+            o.hit('timpani', t, 70, pitch=-9, gain=0.25, pan=pan_god(WOTAN, t))
+        elif part == 'anvil':                                   # far below: Nibelheim
+            o.hit('anvil', t, 64, gain=0.35, pan=pf)
+    o.wind(T_MIST - 1.0, T_RESOLVE + 2.0, 0.35, pan=0.0, seed=12)              # the mist's cold air
+    o.hit('cymbal swell', T_MIST - 2.0, 70, gain=0.3)
+    o.boom(T_CRACK, pf, 1.0)                                                     # the fissure cracks open
+    o.hit('gong scrape', T_CRACK + 0.1, 110, gain=0.5, pan=pf)
+    o.thunder(T_CRACK + 0.2, 0.3, pf, 0.9)
+    o._sfx(whoosh(2.2, 2500, 150, 0.9, seed=40)[0], T_DOWN - 0.2, 0.8, pf)        # they sink into the vapour

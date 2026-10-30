@@ -1,22 +1,26 @@
-"""The Starling Song: Mime whines his nursery song of how he raised the boy (Mime's lament, Donington 72), oboe
-and bassoon over a rocking pizzicato, and a broad wash of sulphur yellow rocks back and forth across the whole
-house like a cradle, pulsing on every note. Three times Siegfried cuts him off: a horn stab, and an emerald slash
-runs out from him to both ends of the roofline and snuffs the yellow out. The birds have mothers and fathers, he
-says; where are mine?
+"""The Starling Song: Mime whines his nursery song of how he raised the boy, "Als zullendes Kind zog ich dich auf",
+and a broad wash of sulphur yellow rocks back and forth across the whole house like a cradle, pulsing on every
+note. Then Siegfried has had enough: "So muß ich dich fassen!" He seizes Mime by the throat, emerald closing round
+the yellow, a surge racing out from the two of them on every bar while Mime shakes. Mime fumbles for the mother's
+name, a yellow shudder at every chord, and gives in: "Sieglinde mochte sie heißen", and hearth amber floods Right;
+then the father, and Wälsung blue rolls out over Left and Side, until "Erschlagen sei er": Siegfried lets Mime
+go, blue and amber run back together onto the porch and flare there as emerald.
 
-Then he seizes Mime by the throat: his strength (53) on the horns, emerald closing round the yellow, Mime
-shaking. Mime gives in. Siegmund's motif (35) rises in the cellos and horns, and Wälsung blue rolls out from the
-porch over Left and Side: the father. Sieglinde's (36) follows on cellos and oboe, and hearth amber floods Right:
-the mother, who died giving him birth, so it fades as her phrase sinks. Siegfried lets Mime go; blue and amber
-run back together onto the porch and flare there as emerald, and the cave settles with him at the anvil's right
-hand and Mime at its left.
+The music is Wagner's own: Act I, bars 508 to 532, 914 to 946 and 1046 to 1066, as Solti's 1958 Vienna
+Philharmonic recording takes them. The orchestra's notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py); the reduction has no voices, so Mime's song comes from the printed vocal score (Schirmer 1914,
+archive.org 31761034115105, pp. 21-22) and is played as he sings it, on clarinet and bassoon with an oboe an octave
+above, over the orchestra's soft sighing chords (violas and horns) and its rocking (harp and cellos). Siegfried's
+attack is the full orchestra; Sieglinde's motif is on the cellos with an oboe above, the Wälsungs' arpeggios on
+violins and clarinets. The staging adds a crash and a thud as he seizes Mime, and a gong when the father is named
+slain; the forge crackles, held well down under the singing.
 
-compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
+compose() tags every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'SF04'
 TITLE = 'The Starling Song'
@@ -27,14 +31,30 @@ VOICEOVER = ('Every bird in the forest has a mother and a father. '
              'Siegfried wants to know: where are mine?')
 
 K = 3                                       # this scene's place on Act I's shared clock: T = t + 80 K
-LAMENT_BEAT = 0.7
-T_LAMENT = [1.5, 8.6, 15.7]                 # Mime's nursery song
-T_CUT = [7.4, 14.5, 21.6]                   # Siegfried cuts him off
-T_GRAB = 23.5                               # he seizes Mime
-T_SM = [29.0, 39.5]                         # Siegmund's motif: the father
-T_SL = [50.5, 59.5]                         # Sieglinde's: the mother
-T_LET = 68.5                                # he lets Mime go
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 508-532, 914-946 and 1046-1066, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+LAMENT_BEAT = 0.62                          # the cradle rocks over two of these a side
+T_LAMENT = [0.0]                            # Mime's nursery song
+T_GRAB = EX['segments'][1]['start']         # "So muß ich dich fassen": he seizes Mime
+T_CUT = [T_GRAB]                            # the song snuffed out
+T_SL = [BAR[1050], BAR[1053]]               # "Sieglinde mochte sie heißen": the mother
+T_SM = [BAR[1057], BAR[1061]]               # "Dann frag' ich, wie hieß mein Vater?": the father
+T_LET = BAR[1063]                           # "Erschlagen sei er": he lets Mime go
+# Mime's Starling Song, from the vocal score (Schirmer 1914, archive.org 31761034115105, pp. 21-22): (bar, start,
+# length in quarters, note as written; a tenor, so it sounds an octave lower). 3/4; the upbeat is in 2/2. A grace
+# note is (bar, -1, 0, note), just before the beat.
+SONG = [(511, 3, 1, 'C5'), (512, -1, 0, 'Db5'), (512, 0, 1, 'C5'), (512, 1, 1, 'Bb4'), (512, 2, 1, 'Ab4'),
+        (513, 0, 2, 'G4'), (514, -1, 0, 'C5'), (514, 0, 1, 'Bb4'), (514, 1, 1, 'Ab4'), (514, 2, 1, 'G4'),
+        (515, 0, 2, 'F4'), (516, 0, 1, 'Gb4'), (516, 1, 1, 'Ab4'), (516, 2, 1, 'Bb4'), (517, 0, 1, 'C5'),
+        (517, 1, 1, 'F4'), (517, 2, 1, 'F4'), (518, 0, 1, 'Gb4'), (518, 1, 1, 'Ab4'), (518, 2, 1, 'Bb4'),
+        (519, 0, 2, 'C5'), (520, -1, 0, 'Eb5'), (520, 0, 1, 'Db5'), (520, 1, 1, 'C5'), (520, 2, 1, 'Bb4'),
+        (521, 0, 2, 'Ab4'), (522, -1, 0, 'Db5'), (522, 0, 1, 'C5'), (522, 1, 1, 'Bb4'), (522, 2, 1, 'Ab4'),
+        (523, 0, 2, 'G4'), (524, -1, 0, 'C5'), (524, 0, 1, 'Bb4'), (524, 1, 1, 'Ab4'), (524, 2, 1, 'G4'),
+        (525, 0, 1, 'F4'), (525, 1, 1, 'F4'), (525, 2, 1, 'G4'), (526, 0, 2, 'Ab4'), (526, 2, 1, 'F4'),
+        (527, 0, 1, 'C5'), (527, 2, 1, 'F4'), (528, 0, 1, 'Gb4'), (528, 1, 1, 'Ab4'), (528, 2, 1, 'Bb4'),
+        (529, 0, 2, 'Ab4'), (529, 2, 1, 'F4'), (530, -1, 0, 'Eb5'), (530, 0, 1, 'C5'), (530, 1, 1, 'Bb4'),
+        (530, 2, 1, 'Ab4'), (531, 0, 1, 'Ab4'), (531, 2, 1, 'F4')]
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -125,34 +145,41 @@ def hero(fr, S, p, lvl, w=16.0):
     return fr + light(HEAD, 0.9 * lvl * np.exp(-((S['d'] - p) / 5) ** 2))
 
 
+def song():
+    """Mime's song in seconds: (time, seconds, midi as sung)."""
+    bars = [(m, t) for m, t in EX['bars'] if m < 600]
+    when = lambda pos: float(np.interp(pos, [b[0] for b in bars], [b[1] for b in bars]))
+    out = []
+    for b, x, n, name in SONG:
+        per = 4 if b == 511 else 3
+        if x < 0:
+            t0 = when(b) - 0.07
+            out.append((t0, 0.07, note(name) - 12))
+        else:
+            t0 = when(b + x / per)
+            out.append((t0, when(b + (x + n) / per) - t0, note(name) - 12))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_LAMENT):
-        for t, m, v, d in play('mime_lament', t0, LAMENT_BEAT, 0, 86 + 4 * k):
-            add(t, d, m, v, 'lament', k)
-        for j in range(8):                  # the cradle: a rocking pizzicato under it
-            add(t0 + j * 2 * LAMENT_BEAT, 0.3, ('F2', 'C3')[j % 2], 72, 'rock', k)
-    for k, t0 in enumerate(T_CUT):
-        add(t0, 0.5, ('G3', 'A3', 'B3')[k], 112 + 4 * k, 'cut', k)
-    for t, m, v, d in play('siegfried', T_GRAB, 0.75, -12, 120):
-        add(t, d, m, v, 'grab')
-    add(T_GRAB, 0.1, 'C1', 122, 'crash')
-    add(T_GRAB + 2.5, T_SM[0] - T_GRAB - 2.5, 'A2', 70, 'trem')
-    for k, t0 in enumerate(T_SM):
-        for t, m, v, d in play('siegmund', t0, 0.55, 0, 96 - 6 * k):
-            add(t, d, m, v, 'siegmund', k)
-    for k, t0 in enumerate(T_SL):
-        for t, m, v, d in play('sieglinde', t0, 0.6, 0, 92 - 10 * k):
-            add(t, d, m, v, 'sieglinde', k)
-    for t, m, v, d in play('siegfried_horn', T_LET + 1.0, 0.55, 0, 96):
-        add(t, d, m, v, 'horn')
-    for m in ('G2', 'D3', 'G3', 'B3'):
-        add(T_LET + 4.5, D - T_LET - 4.5, m, 62, 'glow')
+    """Every note, tagged: (time, seconds, midi, velocity, part, k). Mime's song from the vocal score ('lament'); in
+    the excerpt, the right hand under it is the orchestra's sighing chords ('sigh'), the left hand its rocking
+    ('rock'); the right hand of Siegfried's attack is his strength ('grab'); the right hand from "Sieglinde" is her
+    motif ('sieglinde') and from "wie hieß mein Vater?" the Wälsungs' ('siegmund'); everything else 'orch'."""
+    N = [(t, d, m, 96, 'lament', 0) for t, d, m in song()]
+    for t, d, m, v, h in EX['notes']:
+        part = 'orch'
+        if t < T_GRAB:
+            part = 'sigh' if h == 0 else 'rock'
+        elif t < EX['segments'][2]['start']:
+            part = 'grab' if h == 0 else 'orch'
+        elif h == 0 and t < T_SL[0]:
+            part = 'fumble'
+        elif h == 0 and T_SL[0] <= t < T_SM[0]:
+            part = 'sieglinde'
+        elif h == 0 and t >= T_SM[0]:
+            part = 'siegmund'
+        N.append((t, d, m, v, part, 0))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -171,8 +198,10 @@ def render(G, seed=4):
     pl0, pr1 = at(G, 'Porch Left', 0.0), at(G, 'Porch Right', 1.0)
     father = np.clip((pl0 - d) / pl0, 0, 1)                    # 0 at the porch, 1 at the back of Side
     mother = np.clip((d - pr1) / (L - pr1), 0, 1)              # 0 at the porch, 1 at the free end of Right
-    sm_end = T_SM[1] + 18 * 0.55
-    sl_end = T_SL[1] + 15 * 0.6
+    sl_end = T_SM[0] + 2.0
+    fumble = np.array(sorted({e[0] for e in N if e[4] == 'fumble'}))
+    grab_bars = [(bt, max([n[3] for n in EX['notes'] if bt <= n[0] < bt + 0.6] or [0]) / 127)
+                 for m, bt in EX['bars'] if 914 <= m < 946]
 
     for f in range(F):
         t = f * DT
@@ -206,6 +235,16 @@ def render(G, seed=4):
             a = t - T_GRAB
             fr += light(WHITE, 0.6 * np.exp(-a / 0.1))
             fr += light(SIEGFRIED, 0.9 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p_mime) - 1200 * a) / 120) ** 2))
+        for bt, sv in grab_bars:            # his grip: an emerald surge out from the two of them on every bar
+            a = t - bt
+            if 0 <= a < 1.2:
+                fr += light(SIEGFRIED, 1.4 * sv * np.exp(-a / 0.45) *
+                            np.exp(-((np.abs(d - p_grab) - 1600 * a) / 220) ** 2))
+        k = int(np.searchsorted(fumble, t, side='right')) - 1      # Mime fumbling for the name: a shudder each chord
+        if k >= 0 and t - fumble[k] < 1.2 and t < T_SL[0]:
+            a = t - fumble[k]
+            fr += light(MIME, 0.8 * np.exp(-a / 0.5) * np.exp(-((np.abs(d - p_mime) - 900 * a) / 120) ** 2))
+            fr += light(SIEGFRIED, 0.4 * np.exp(-a / 0.3) * np.exp(-((d - p_grab) / 200) ** 2))
         if held > 0:
             r = 140 - 80 * smoothstep(T_GRAB, T_GRAB + 4, t)
             ring = np.exp(-((np.abs(d - p_mime) - r) / 18) ** 2)
@@ -243,7 +282,7 @@ def render(G, seed=4):
             fr += light(SIEGFRIED, 0.5 * fl)
 
         shake = 5 * held * np.sin(2 * np.pi * 11 * t)
-        mlvl = keys(t, [(0, 0.65), (T_LAMENT[0], 0.85), (T_GRAB, 0.85), (T_GRAB + 1, 0.5), (T_LET, 0.5),
+        mlvl = keys(t, [(0, 0.85), (T_GRAB, 0.85), (T_GRAB + 1, 0.5), (T_LET, 0.5),
                         (D - 5, 0.6)])
         fr = figure(fr, S, p_mime + shake, MIME, mlvl)
         fr = hero(fr, S, ps, keys(t, [(0, 0.8), (T_GRAB - 0.5, 1.0), (T_LET + 3, 1.0), (D - 4, 0.8)]))
@@ -252,7 +291,7 @@ def render(G, seed=4):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, and Mime's song as he sings it."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -261,77 +300,37 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.4, 0.22), ('winds', 0.34, 0.3), ('brass', 0.38, 0.3), ('strings', 0.36, 0.32),
-                            ('perc', 0.36, 0.25), ('warm', 0.34, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Cello Section/pizzT/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    horn_st = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
+    mime_p = pan_at(at(G, 'Porch Front', MIME_AT))
+    hero_p = pan_at(at(G, 'Porch Front', HERO_AT))
+    o = Orchestra(M, level=2.6)
+    tag = {(round(e[0], 4), e[2]): e[4] for e in compose()}
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        p = tag.get((round(t, 4), m), 'orch')
+        if p == 'sigh':                     # the sighing chords under his song: violas and horns, soft
+            return [('violas', 0, -30, 0.45), ('horns', 0, -36, 0.3)]
+        if p == 'rock':                     # the rocking: harp and cellos, plucked
+            return [('harp', 0, -20, 0.55), ('cellos', 0, -32, 0.35)]
+        if p == 'fumble':                   # his dithering: clarinets and bassoons
+            return [('clarinets', 0, -10, 0.55), ('bassoons', -12, -14, 0.4)]
+        if p == 'sieglinde':                # her motif on the cellos, an oboe above
+            return [('cellos', 0, -4, 0.75), ('oboes', 12, -14, 0.35)]
+        if p == 'siegmund':                 # the Wälsungs' arpeggios: violins, clarinets on the long notes
+            return [('violins', 0, -8, 0.5)] + ([('clarinets', 0, -8, 0.5)] if d >= 0.8 else [])
+        return None
 
-    mime = pan_at(at(G, 'Porch Front', MIME_AT))
-    hero = pan_at(at(G, 'Porch Front', HERO_AT))
-    left = pan_at(at(G, 'Left', 0.4))
-    right = pan_at(at(G, 'Right', 0.6))
-    for t, d, m, v, part, k in compose():
-        if part == 'lament':
-            M.add('winds', oboe.play(m + 12, v, dur=d * 1.1, release=0.2), t, 0.8, mime)
-            M.add('winds', bsn.play(m, v - 10, dur=d * 1.1, release=0.2), t, 0.6, mime)
-        elif part == 'rock':
-            M.add('low', pizz.play(m, v), t, 0.8, mime * 0.5)
-        elif part == 'cut':
-            for mm in (m, m + 7, m + 12):
-                M.add('brass', horn_st.play(mm, v), t, 0.7, hero)
-            M.add('perc', timp.play(v, pitch=-2), t, 0.8, hero)
-        elif part == 'grab':
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v, hero, rise=0.05, fall=0.4, gain=0.9)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.15), t, 0.9, hero)
-        elif part == 'crash':
-            M.add('perc', crash.play(v), t, 0.9, mime)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, mime)
-        elif part == 'trem':
-            hold('low', ctrem, m, t, t + d, v, mime, rise=0.3, fall=1.5, gain=0.5)
-        elif part == 'siegmund':
-            if m >= note('D4'):
-                hold('brass', horn, m - 12, t, t + d, v - 6, left, rise=1.0, fall=1.5, gain=0.7)
-            elif m >= note('D3'):
-                hold('strings', vc, m, t, t + d, v, left, rise=0.3, fall=1.2, gain=0.9)
-            else:
-                M.add('low', vc.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, left)
-                M.add('low', cb.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.7, left)
-        elif part == 'sieglinde':
-            if d > 1.0:
-                hold('strings', vc, m, t, t + d, v, right, rise=0.25, fall=1.0, gain=0.85)
-            else:
-                M.add('strings', vc.play(m, v, dur=d * 1.1, release=0.25), t, 0.9, right)
-            M.add('winds', oboe.play(m + 12, v - 16, dur=d * 1.1, release=0.25), t, 0.5, right)
-        elif part == 'horn':
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v, hero, rise=0.06, fall=0.6, gain=0.85)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.15), t, 0.85, hero)
-        elif part == 'glow':
-            hold('warm', vc if m < note('C3') else horn, m, t, t + d, v, hero * 0.5, rise=2.5, fall=2.0, gain=0.5)
+    o.tutti(EX['notes'], size=lambda t: 1.0 if T_GRAB <= t < EX['segments'][2]['start'] else 0.5, role=role,
+            pan=lambda t, m: hero_p * 0.5 if T_GRAB <= t else mime_p * 0.6)
+    for t, d, m in song():                  # Mime's song: clarinet and bassoon as he sings it, an oboe above
+        o.play('clarinets', m, t, max(d, 0.1), 104, mime_p, 0.85)
+        o.play('bassoons', m, t, max(d, 0.1), 96, mime_p, 0.5)
+        o.play('oboes', m + 12, t, max(d, 0.1), 80, mime_p, 0.3)
+    # he seizes Mime by the throat: a crash, a thud, and his grip on every bar
+    o.hit('crash', T_GRAB, 118, gain=0.6, pan=mime_p)
+    o.boom(T_GRAB, mime_p, 0.7)
+    o.hit('timpani roll', T_GRAB + 0.5, 100, pitch=-4, gain=0.5, pan=mime_p)
+    o.hit('cymbal swell', T_SL[0] - 2.8, 80, gain=0.3, pan=pan_at(at(G, 'Right', 0.6)))
+    o.hit('gong', T_LET + 1.6, 96, gain=0.35)                  # "Erschlagen": the father slain
+    o.fire(0.0, D, 0.22, pan=pan_at(at(G, 'Porch Front', 0.5)), crackle=4.0)
+    o.effects([(0.0, -10.0), (T_GRAB - 0.3, -10.0), (T_GRAB, 0.0), (EX['segments'][2]['start'], 0.0),
+               (T_SL[0], -10.0), (D, -10.0)])

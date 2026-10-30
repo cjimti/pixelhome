@@ -1,22 +1,32 @@
-"""The Stranger: the storm is still raging outside the door of Hunding's hut when the door bursts open at the free
-end of Right. A gust of grey rain floods in across Right and the porch, lightning cracks over the doorway, and a
-man stumbles in out of it: Siegmund, a light of Wälsung blue, streaming rain. He has run all night from his
-enemies with no weapon left, and he staggers through the room toward the fire on Left in lurches, stopping to
-sway, twice falling back a step, dimmer as he goes. The cellos and basses sing his motif (Donington 35), the long
-held D over a bass that sinks and sinks, and each time a wave of blue rolls out from him over the house; the last
-of the storm figure (74) grumbles away in the basses at the door. He passes under the great ash tree in the
-middle of the porch without seeing it, though its leaves stir and the hilt in the trunk glints as he goes by.
+"""The Stranger: the storm is still raging outside the door of Hunding's hut. Thunder rolls in the basses and
+grumbles away, flashes crack over the doorway at the free end of Right, and the storm motif sinks lower and
+softer at the door. Then the door bursts open: a gust of grey rain floods in across Right and the porch, lightning
+cracks over the doorway, and a man stumbles in out of it: Siegmund, a light of Wälsung blue, streaming rain. He
+has run all night from his enemies with no weapon left, and he staggers through the room toward the fire on Left,
+one lurch to a bar, stopping to sway, twice falling back a step. The cellos sing his motif, the long held D over
+a bass that sinks and sinks, and each time a wave of blue rolls out from him over the house. He passes under the
+great ash tree in the middle of the porch without seeing it, though its leaves stir and the hilt in the trunk
+glints as he goes by. His weariness swells through the orchestra in four great heaves, and each one throws a
+wave of blue over the whole house.
 
-At the hearth his weary motif (35a) sounds in the cellos. "Whoever owns this hearth, here I must rest": he
-sways, flares once, and collapses beside the fire, a low dim blue lying at the middle of Left, while the hearth
-glows over him, the storm keeps on faintly at the open door, and the weary motif sinks into the bassoons.
+At the hearth he sways. "Whoever owns this hearth, here I must rest": he flares once and collapses beside the
+fire, a low dim blue lying at the middle of Left, while the hearth glows over him and the storm keeps on faintly
+at the open door.
 
-compose() holds every note, choreography() his every lurch; stage(), room() and figure() are the hut and the
-people in it, shared word for word by Act I's first scenes on a clock that runs on from scene to scene."""
+The music is Wagner's own: Act I, bars 91 to 104, the storm's last thunder, and then bars 122 to 145, Siegmund's
+entrance to his first words, as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the
+Wagner Ring Dataset's piano reduction of the score (pixelhome/ring.py): the thunder on cellos and basses with the
+timpani rolling under it, the storm's falling chords on trombones and horns, Siegmund's motif on the cellos
+over the basses, and the four heaves on the full strings with horns. Around the score, as a staging would: rain
+and wind beyond the door, thunder after every flash, the door flung open with a blow and a gust, his heavy
+stumbling footfalls, the fall by the fire, and the hearth crackling throughout. The storm's thunder and the door
+lead; once he is inside they recede so his motif on the cellos is clear, the storm only a murmur at the door.
+
+compose() tags every note of the excerpt, choreography() his every lurch; stage(), room() and figure() are the hut
+and the people in it, shared word for word by Act I's first scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK02'
 TITLE = 'The Stranger'
@@ -26,17 +36,17 @@ DESCRIPTION = ('A stranger bursts in out of the storm, soaked and unarmed, and s
 VOICEOVER = ('The door flies open, and a stranger falls in out of the storm. '
              'Whoever owns this fire, he says, here I must rest.')
 
+EX = excerpt(__file__)                      # Act I, bars 91-104 and 122-145, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
 K = 1                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
-T_DOOR = 3.0                                # the door bursts open
-T_IN = 3.6                                  # he is in the doorway
-STORM_ECHO = [(0.6, 84), (9.5, 66), (19.0, 50), (31.0, 40)]
-T_SM = [9.0, 31.0]                          # his motif, cellos and basses with the horns on the held D
-T_WEARY = 46.0
-T_ARRIVE = 50.5
-T_FALL = 54.0                               # "hier muss ich rasten"
-T_WEARY2 = 58.0
-D = 80.0
+THUNDER = [92, 93, 96, 97]                  # the basses roll on a low A
+CRACKS = [91, 94, 95]                       # the storm's falling chords: lightning over the doorway
+T_DOOR = BAR[122]                           # the door bursts open on his motif's first note
+T_IN = T_DOOR + 0.6                         # he is in the doorway
+HEAVES = [138, 139, 140, 141]               # his weariness swells through the orchestra
+T_ARRIVE = BAR[142]                         # at the hearth
+T_FALL = BAR[144] + 0.2                     # "hier muss ich rasten"
 
 HUT = hexc('#3a1a0a')
 HEARTH = hexc('#ff6a10')
@@ -106,31 +116,25 @@ def figure(fr, S, p, col, lvl, w=18.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). Before the door opens the left
+    hand is the thunder ('thunder') or the storm motif ('storm') and the chords are 'crack' (k = the bar); after it
+    the right hand's long notes are Siegmund's motif ('siegmund'), the rest of the right hand 'inner' and the left
+    hand 'bass'; in the four heaves everything is 'heave' (k = which heave)."""
+    bar_of = lambda t: max(m for m, bt in EX['bars'] if bt <= t + 1e-6)
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t0, v in STORM_ECHO:
-        for t, m, vv, d in play('storm', t0, 0.28, 0, v):
-            add(t, d, m, vv, 'storm')
-    add(0.0, 44.0, 'D2', 62, 'trem')
-    add(T_DOOR, 1.2, 'D1', 120, 'burst')
-    for k, t0 in enumerate(T_SM):
-        for t, m, v, d in play('siegmund', t0, BEAT, 0, 92 - 8 * k):
-            add(t, d, m, v, 'siegmund', k)
-    for t, m, v, d in play('siegmund_weary', T_WEARY, 0.6, 0, 86):
-        add(t, d, m, v, 'weary', 0)
-    add(T_FALL - 0.3, 0.6, 'F2', 100, 'fall')
-    for j, m in enumerate(('D3', 'C3', 'Bb2', 'A2', 'G2', 'F2', 'E2', 'D2')):
-        add(T_FALL + j * 0.16, 0.3, m, 92 - 5 * j, 'sink')
-    for t, m, v, d in play('siegmund_weary', T_WEARY2, 0.85, -12, 70):
-        add(t, d, m, v, 'weary', 1)
-    for m in ('D3', 'F3', 'A3'):
-        add(T_ARRIVE, D - T_ARRIVE, m, 58, 'warm')
-    add(0.0, D, 'D1', 72, 'pedal')
-    return sorted(N, key=lambda e: e[0])
+    for t, d, m, v, h in sorted(EX['notes']):
+        b = bar_of(t)
+        if b in HEAVES:
+            N.append((t, d, m, v, 'heave', HEAVES.index(b)))
+        elif b >= 122:
+            N.append((t, d, m, v, 'siegmund' if h == 0 and d >= 0.8 else ('inner' if h == 0 else 'bass'), b))
+        elif b in THUNDER:
+            N.append((t, d, m, v, 'thunder', b))
+        elif b in CRACKS:
+            N.append((t, d, m, v, 'crack', b))
+        else:
+            N.append((t, d, m, v, 'storm', b))
+    return N
 
 
 def follow(target, rate):
@@ -147,10 +151,10 @@ def follow(target, rate):
 def lurches():
     """When he lurches forward: [(time, share of the way)]. Twice he falls back a step."""
     rng = np.random.default_rng(35)
-    ts = np.linspace(T_IN + 1.0, T_ARRIVE - 1.0, 22) + rng.uniform(-0.4, 0.4, 22)
-    share = rng.uniform(0.7, 1.3, 22)
-    share[[7, 15]] = -0.8
-    share[[6, 14]] += 0.8
+    ts = [BAR[b] + 0.05 for b in range(123, 142)]          # one lurch on each bar of his motif
+    share = rng.uniform(0.7, 1.3, len(ts))
+    share[[6, 13]] = -0.8
+    share[[5, 12]] += 0.8
     return [(float(t), float(s)) for t, s in zip(ts, share / share.sum())]
 
 
@@ -168,8 +172,8 @@ def choreography(G):
     sway = 9 * np.sin(2 * np.pi * t / 1.7) * smoothstep(T_IN, T_IN + 2, t) * (1 - smoothstep(T_FALL, T_FALL + 1, t))
     pos = follow(tgt, np.full(F, 4.5)) + sway
     lvl = np.array([keys(x, [(T_IN - 0.4, 0.0), (T_IN + 0.4, 0.85), (T_ARRIVE, 0.62), (T_FALL - 0.2, 0.62),
-                             (T_FALL + 0.3, 0.95), (T_FALL + 3.0, LYING[0])]) for x in t])
-    wid = np.array([keys(x, [(T_FALL, 18.0), (T_FALL + 2.5, LYING[1])]) for x in t])
+                             (T_FALL + 0.3, 0.95), (T_FALL + 2.0, LYING[0])]) for x in t])
+    wid = np.array([keys(x, [(T_FALL, 18.0), (T_FALL + 1.8, LYING[1])]) for x in t])
     return dict(t=t, pos=pos, lvl=lvl, w=wid)
 
 
@@ -181,25 +185,51 @@ def render(G, seed=2):
     d, pf = S['d'], S['pf']
     C = choreography(G)
     N = compose()
-    sm = [e for e in N if e[4] == 'siegmund' and e[2] >= note('D3')]
-    sm_on = np.array(sorted({e[0] for e in sm}))
+    sm_on = np.array(sorted({e[0] for e in N if e[4] == 'siegmund'}))
+    sm_held = [(e[0], e[0] + e[1]) for e in N if e[4] == 'siegmund' and e[1] >= 2.0]
+    thunder = np.array([(e[0], e[3]) for e in N if e[4] == 'thunder'])
+    storm_on = np.array([(e[0], e[3]) for e in N if e[4] == 'storm' and e[2] < 50])
+    cracks = [BAR[b] for b in CRACKS] + [T_DOOR, T_DOOR + 0.35]
+    heaves = [BAR[b] for b in HEAVES]
     steps = [tl for tl, _ in lurches()]
     drip = Flicker(rng, G.N, 3.0, 9.0)
     jag = rng.uniform(0.25, 1.0, G.N)
     right = G.seg_of == 'Right'
+    door_c = at(G, 'Right', 0.9)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
         p = C['pos'][f]
-        lv = {k: keys(t, [(0, START[k]), (T_FALL, START[k]), (T_FALL + 12, END[k])]) for k in START}
+        lv = {k: keys(t, [(0, START[k]), (T_ARRIVE, START[k]), (D - 0.5, END[k])]) for k in START}
         burst = smoothstep(T_DOOR - 0.1, T_DOOR + 0.3, t) * (1 - smoothstep(T_DOOR + 1.5, T_DOOR + 7, t))
-        lv['door'] += 0.35 * burst
+        lv['door'] += 0.35 * burst + 0.25 * (t < T_DOOR)
         # he stirs the leaves and wakes the hilt as he passes under the tree
-        near = np.exp(-((p - pf) / 160) ** 2)
+        near = np.exp(-((p - pf) / 160) ** 2) * (t > T_IN)
         lv['leaves'] += 0.2 * near
         lv['hilt'] += 0.4 * near
         fr = room(S, T, lv)
+
+        # the storm outside: thunder rumbles through the cloud over the whole house, fainter each time
+        if len(thunder):
+            hit = thunder[(thunder[:, 0] <= t) & (thunder[:, 0] > t - 0.15)]
+            if len(hit):
+                v = hit[:, 1].max() / 127
+                c = keys(t, [(0, d.max() * 0.45), (T_DOOR, door_c)])
+                fr += light(STORM, 0.8 * v * np.exp(-((d - c) / 900) ** 2) * (0.55 + 0.45 * rng.uniform(size=G.N)))
+        # the storm motif grumbling away at the door: a gust from the door with every note
+        j = int(np.searchsorted(storm_on[:, 0], t, side='right')) - 1 if len(storm_on) else -1
+        if j >= 0 and t - storm_on[j, 0] < 1.2 and t < T_DOOR:
+            a = t - storm_on[j, 0]
+            v = storm_on[j, 1] / 127
+            front = d.max() - 1100 * a
+            fr += light(STORM, v * np.exp(-a / 0.45) * smoothstep(front - 400, front, d))
+            fr += light(RAIN, 0.6 * v * np.exp(-a / 0.3) * np.exp(-((d - front) / 50) ** 2))
+        # the cloud rolling outside until the door opens: over Side, Right and the door
+        out_l = 1 - smoothstep(T_DOOR, T_DOOR + 6, t)
+        cloud = 0.5 + 0.5 * np.cos(2 * np.pi * (d / 600 + 0.2 * T))
+        outside = np.isin(G.seg_of, ['Side', 'Right'])
+        fr += light(STORM, 0.3 * out_l * cloud * outside)
 
         # the gust through the open door: grey rain flooding in over Right and the porch
         if T_DOOR <= t < T_DOOR + 9:
@@ -208,11 +238,11 @@ def render(G, seed=2):
             flood = smoothstep(front - 250, front + 50, d) * np.exp(-a / 3.0)
             fr += light(STORM, 0.7 * flood * (0.7 + 0.3 * np.clip(drip(T), 0, None)))
             fr += light(RAIN, 0.8 * flood * np.clip(drip(T) - 0.8, 0, None))
-        for tb in (T_DOOR, T_DOOR + 0.35):
+        for tb in cracks:
             a = t - tb
             if 0 <= a < 1.0:
                 env = np.exp(-a / 0.05) + 0.7 * np.exp(-((a - 0.13) / 0.03) ** 2)
-                fr += light(BOLT, min(1.0, env) * right * jag * smoothstep(1700, 2300, d))
+                fr += light(BOLT, min(1.0, env) * (right | (G.seg_of == 'Side')) * jag)
                 fr += light(STORM, 0.4 * min(1.0, env))
 
         # each phrase of his motif: a wave of blue rolls out from him over the house
@@ -221,8 +251,13 @@ def render(G, seed=2):
             a = t - sm_on[i]
             r = 40 + 420 * a
             fr += light(SIEGMUND, 0.6 * np.exp(-a / 1.1) * np.exp(-((np.abs(d - p) - r) / 90) ** 2))
-        held = sum(smoothstep(t0 + 1.0, t0 + 2.5, t) * (1 - smoothstep(t0 + 7, t0 + 9.5, t)) for t0 in T_SM)
-        fr += light(SIEGMUND, 0.22 * held * np.exp(-((d - p) / 260) ** 2))
+        held = sum(smoothstep(t0, t0 + 1.0, t) * (1 - smoothstep(t1, t1 + 1.5, t)) for t0, t1 in sm_held)
+        fr += light(SIEGMUND, 0.22 * min(held, 1.0) * np.exp(-((d - p) / 260) ** 2))
+        # the four heaves of his weariness: a great wave of blue over the whole house
+        for th in heaves:
+            a = t - th
+            if 0 <= a < 2.2:
+                fr += light(SIEGMUND, 0.55 * np.exp(-a / 0.7) * (0.5 + 0.5 * np.exp(-((np.abs(d - p) - 700 * a) / 300) ** 2)))
 
         # Siegmund, dripping rain at first; a thump of light at each lurch
         lvl = C['lvl'][f]
@@ -240,7 +275,9 @@ def render(G, seed=2):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction: the thunder on cellos and basses with the timpani
+    rolling under it, the falling chords on trombones and horns, Siegmund's motif on the cellos over the basses,
+    the four heaves on the full strings with horns; a crash where the door bursts open."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -254,76 +291,74 @@ def score(M, G):
     def pan_him(t):
         return pan_at(np.interp(t, C['t'], C['pos']))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('strings', 0.26, 0.3), ('brass', 0.26, 0.32), ('perc', 0.28, 0.28),
-                            ('fx', 0.12, 0.3), ('warm', 0.32, 0.35), ('harp', 0.24, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=3.0)
     door = pan_at(at(G, 'Right', 0.92))
-    hearth = pan_at(at(G, 'Left', 0.45))
     for t, d, m, v, part, k in compose():
-        pa = pan_him(t)
-        if part == 'storm':
-            M.add('low', vc.play(m, v, dur=d * 1.2, release=0.08), t, 0.9, door)
-            M.add('low', cbs.play(m - 12, v), t, 0.7, door)
-        elif part == 'trem':
-            hold('low', ctrem, m, t, t + d, v, door, rise=0.5, fall=5.0, gain=0.6)
-        elif part == 'burst':
-            M.add('perc', crash.play(v), t, 0.9, door)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, door)
-            M.add('perc', roll.play(100, dur=2.5), t + 0.3, 0.7, door)
-            M.add('fx', whoosh(1.2, 5000, 600, 0.7, seed=4), t - 0.1, 1.0, door)
+        if part == 'thunder':
+            o.play('cellos', m + 12 if m < 36 else m, t, 0.1, v, door * 0.5, 0.6)
+            o.play('basses', m + 12 if m < 28 else m, t, 0.1, v - 6, door * 0.5, 0.5)
+        elif part == 'storm':
+            o.play('cellos', m, t, max(d, 0.1), v, door, 0.8)
+            o.play('basses', m - 12 if m >= 40 else m, t, 0.1, v - 6, door, 0.6)
+        elif part == 'crack':
+            if m >= 55:
+                o.play('horns', m - 12, t, d, v, door * 0.6, 0.6)
+            else:
+                o.play('trombones', m, t, d, v, door * 0.6, 0.6)
+                o.play('tuba', m - 12 if m >= 40 else m, t, d, v - 10, 0.0, 0.4)
         elif part == 'siegmund':
-            if m >= note('D4'):
-                hold('brass', horn, m - 12, t, t + d, v - 6, pa, rise=1.2, fall=1.5, gain=0.7)
-            elif m >= note('D3'):
-                hold('strings', vc, m, t, t + d, v, pa, rise=0.4, fall=1.5, gain=0.9)
+            o.play('cellos', m, t, d, v + 10, pan_him(t), 0.9)
+            if d >= 2.0:
+                o.play('horns', m, t, d, v - 14, pan_him(t), 0.35)
+        elif part == 'inner':
+            o.play('violas', m, t, d, v, pan_him(t), 0.55)
+        elif part == 'bass':
+            o.play('basses', m, t, d, v, -0.1, 0.6)
+            o.play('cellos', m, t, d, v - 12, -0.1, 0.35)
+        elif part == 'heave':
+            if m >= 55:
+                o.play('violins', m, t, d, v, 0.3, 0.55)
+                o.play('violas', m - 12, t, d, v - 10, -0.2, 0.35)
             else:
-                M.add('low', vc.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-                M.add('low', cb.play(m - 12, v - 10, dur=d * 1.05, release=0.3), t, 0.7, pa)
-        elif part == 'weary':
-            s = vc if k == 0 else bsn
-            if d > 3:
-                hold('strings', s, m, t, t + d, v, pa, rise=0.5, fall=1.5, gain=0.7)
-            else:
-                M.add('strings', s.play(m, v, dur=d * 1.05, release=0.3), t, 0.9, pa)
-        elif part == 'fall':
-            M.add('perc', timp.play(v, pitch=-3), t, 0.8, hearth)
-            M.add('low', pizz.play(m, v), t, 0.9, hearth)
-        elif part == 'sink':
-            M.add('strings', vc.play(m, v, dur=0.35, release=0.2), t, 0.8, hearth)
-        elif part == 'warm':
-            hold('warm', vc, m, t, t + d, v, hearth * 0.8, rise=6.0, fall=1.5, gain=0.6)
-        elif part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=4.0, fall=1.5, gain=0.7)
-    for tl, _ in lurches():                 # his steps: a tired pizzicato, a muffled drum
-        M.add('low', pizz.play(note('D2') if int(tl * 10) % 2 else note('A1'), 70), tl, 0.8, pan_him(tl))
-        M.add('perc', timp.play(56, pitch=-8), tl, 0.4, pan_him(tl))
-    t_tree = float(C['t'][np.argmin(np.abs(C['pos'] - at(G, 'Porch Front', 0.5)))])
-    for i, m in enumerate(('A4', 'D5', 'F5')):
-        M.add('harp', harp.play(note(m), 60 - 6 * i), t_tree + 0.25 * i, 0.9, pan_at(at(G, 'Porch Front', 0.5)))
+                o.play('cellos', m, t, d, v, -0.2, 0.7)
+                o.play('horns', m + 12 if m < 48 else m, t, d, v - 16, 0.0, 0.4)
+                o.play('basses', m - 12 if m >= 40 else m, t, d, v - 10, 0.2, 0.5)
+    for b in (92, 96):                      # the timpani roll under the thunder
+        o.hit('timpani roll', BAR[b], 100 - 20 * (b == 96), gain=0.6, pan=door * 0.5)
+    for i, b in enumerate(CRACKS):          # lightning over the doorway, and its thunder
+        o.thunder(BAR[b], 0.55 - 0.1 * i, door, gain=0.9, seed=40 + i)
+    for i, b in enumerate(THUNDER[::2]):    # the basses' rolls: thunder grumbling away outside
+        o.thunder(BAR[b] + 0.3, 0.2, door * 0.8, gain=0.7, seed=50 + i)
+    o.boom(T_DOOR, door, 1.0)               # the door bursts open, the storm floods in, lightning cracks
+    o.hit('crash', T_DOOR, 112, gain=0.6, pan=door, fx=True)
+    o.thunder(T_DOOR + 0.35, 0.9, door, gain=1.1, seed=60)
+    o.wind(T_DOOR - 0.5, T_DOOR + 7.0, lambda tt: np.exp(-np.maximum(tt - T_DOOR, 0) / 2.5), door, seed=61)
+    for b in HEAVES:
+        o.hit('timpani', BAR[b], 96, pitch=-7, gain=0.5)
+    for i, (tl, sh) in enumerate(lurches()):    # his steps: a heavy footfall on each lurch, a stumble back
+        pa = pan_him(tl)
+        o.hit('hoof', tl, 92 if sh > 0 else 110, pitch=-6, gain=0.55, pan=pa, fx=True)
+        o.hit('timpani', tl, 50, pitch=-8, gain=0.3, pan=pa, fx=True)
+        if sh < 0:
+            o.hit('hoof soft', tl + 0.18, 100, pitch=-5, gain=0.5, pan=pa, fx=True)
+    pl = pan_at(at(G, 'Left', 0.5))
+    # the storm and the door lead; once he is in, his motif on the cellos is clear and the storm is only at the door
+    o.effects([(0.0, 0.0), (T_DOOR + 2.5, 0.0), (T_DOOR + 6.0, -6.0), (BAR[HEAVES[0]], -6.0), (T_FALL - 0.5, -7.0),
+               (T_FALL + 0.2, -5.0), (D, -8.0)])
+    o.boom(T_FALL + 0.15, pl, 0.55)         # he collapses by the fire
+    o.hit('hoof soft', T_FALL + 0.4, 90, pitch=-8, gain=0.5, pan=pl, fx=True)
+    o.fire(0.0, D, 0.22, pl, crackle=12, seed=62)   # the hearth crackles all through
+    o.wind(0.0, T_DOOR + 1.0, 0.45, door, seed=63)  # the storm outside the door, and after it faintly
+    o.wind(T_DOOR + 5.0, D, 0.22, door, seed=64)
+    rain(M, o, door)
+
+
+def rain(M, o, door):
+    """Rain beyond the door: hissing, a burst of it when the door flies open, then faint."""
+    from pixelhome.audio import SR
+    n = int(D * SR)
+    tt = np.arange(n) / SR
+    lv = np.where(tt < T_DOOR, 0.5, 0.35 + 0.65 * np.exp(-np.maximum(tt - T_DOOR, 0) / 3.0))
+    hiss = o._noise(0, 2500, 11000, 65, n=n) * (0.4 + 0.6 * o._wobble(n, 12, 66, 0.6)) * lv
+    hiss *= np.clip(tt / 1.0, 0, 1) * np.clip((D - tt) / 1.5, 0, 1)
+    M.add('fx', np.vstack([hiss, hiss]), 0.0, 0.3, door)

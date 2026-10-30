@@ -1,24 +1,32 @@
 """The Poisoned Drink: day in the forest. Siegfried stands at the middle of Porch Front with the Ring's gold glint
-on him; Mime waits on Right. The Woodbird darts back in from the free end of Right and gives its warning call
-(Donington 27a): since he tasted the dragon's blood, Siegfried will hear what Mime means, not what he says.
+on him; Mime waits on Right. The Woodbird darts back in from the free end of Right and sings its warning, every
+note a hop and a magenta flash: "Hei! Siegfried gehört nun der Helm und der Ring! O! traute er Mime, dem
+treulosen, nicht!" Since he tasted the dragon's blood, Siegfried will hear what Mime means, not what he says.
 
-Mime creeps up over Porch Right all smiles, his smithing motif (50) sweet in the oboe and his whining nursery song
-(72) on the bassoon, and a soft warm yellow glow pulses round him. But under every phrase his true thoughts break
-through: a sickly poison green wave bursts out of him over the whole house, harder and faster as he gives himself
-away, with his frustrated motif (71) snarling in the low strings and xylophone.
+Mime creeps up over Porch Right all smiles ("Hei! So trink nur, trau meiner Kunst!"), a soft warm yellow glow
+pulsing round him on every sweet note. But as the strings climb and the chromatic runs pour down, his true
+thoughts break through ("hau' ich dem Kind den Kopf erst ab"): sickly poison green waves burst out of him over
+the whole house, harder and faster, until he giggles with glee. "Sauf', und würg dich zu tot!": he holds out
+the drink, a pool of poison green bubbling between them on Porch Front. Nothung's motif rings out on the trumpet
+and the sword strikes: one white flash over the house, and Mime's yellow bursts into sparks that fly out to both
+ends and are gone. Far off at the free end of Right, Alberich's laugh rolls in as a red ripple; then Siegfried's
+horn sounds alone ("Neides Zoll zahlt Nothung"), and the bird flits back to its perch on Right.
 
-He holds out the drink: a pool of poison green bubbles between them on Porch Front. Nothung's motif (43) rings out
-on the trumpet and the sword strikes: one white flash over the house, and Mime's yellow bursts into sparks that fly
-out to both ends and are gone. Far off at the free end of Right, Alberich's laugh, his curse (13) in the basses,
-rolls in as a red ripple. Then Siegfried's motif (53) sounds alone on the horn, and the bird comes back to sing
-(27) and settles on Right.
+The music is Wagner's own: Act II, bars 1386 to 1394, 1569 to 1596 and 1632 to 1644, as Solti's 1958 Vienna
+Philharmonic recording takes them, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the
+birdsong on flutes and violins over murmuring violas, Mime's wheedling on oboes and bassoons and his rising
+venom on clarinets, strings and xylophone, the sword on the trumpet, Alberich's laugh on bassoons and tuba,
+Siegfried on the horn. The Woodbird's warning comes from the printed vocal score (Breitkopf & Härtel, archive.org
+31761034115105, p. 223), played as written on flute. The stage adds the bubbling of the poison, the sword's
+stroke and Mime falling, and Alberich's laugh echoing off the far end; the effects keep out of the bird's way
+and Mime's patter, and come up for the poison and the blow.
 
 compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
 word by Act II's scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF21'
 TITLE = 'The Poisoned Drink'
@@ -29,19 +37,67 @@ VOICEOVER = ('Mime smiles, and offers a drink. But Siegfried can hear what he is
              'The drink is poison.')
 
 K = 10                                      # this scene's place on Act II's shared clock: T = t + 80 K
+EX = excerpt(__file__)                      # Act II, bars 1386-1394, 1569-1596 and 1632-1644, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
 BEAT = 0.5
-T_WARN = 3.5                                # the bird's warning call
-T_CREEP = 7.0                               # Mime creeps up
-T_SWEET = [9.0, 21.0, 33.0]                 # his smithing motif, sweet in the oboe
-T_LAMENT = [14.0, 27.0]                     # his nursery song
-T_THOUGHT = [12.0, 17.5, 22.5, 26.0, 30.0, 33.5, 36.5, 38.8, 40.6]   # his true thoughts breaking through
-T_DRINK = 42.0                              # he holds out the drink
-T_NOTHUNG = 48.6                            # the sword's motif
-T_STRIKE = 50.0                             # the blow
-T_LAUGH = 54.5                              # Alberich's laugh, far off
-T_HERO = 60.0
-T_SONG = 66.0                               # the bird sings again and settles
-D = 80.0
+T_WARN = BAR[1386] + 1.0                    # the bird's warning
+T_CREEP = BAR[1393]                         # Mime creeps up
+T_SWEET = [BAR[1569], BAR[1573], BAR[1589]] # his sweet talk
+T_LAMENT = [BAR[1581], BAR[1591]]
+T_THOUGHT = [BAR[b] for b in (1575, 1577, 1579, 1583, 1584, 1585, 1586, 1593, 1595)]   # his true thoughts
+T_DRINK = BAR[1632]                         # "Sauf', und würg dich zu tot!"
+T_NOTHUNG = BAR[1636]                       # the sword's motif
+T_STRIKE = BAR[1637]                        # the blow
+T_LAUGH = 69.5                              # Alberich's laugh, far off (as the dataset has it sung)
+T_HERO = BAR[1641]                          # Siegfried's horn
+T_SONG = BAR[1643]                          # the bird flits back
+
+
+def _nine(b, notes, last):
+    """A 9-in-6 bar of the Woodbird's song: nine quavers as triplets over the first two beats, the last note on the
+    third (Wagner's footnote) -> [(bar, from, to, note)]."""
+    out, x = [], 0.0
+    for name, u in notes:
+        out.append((b, x * 2 / 27, (x + u) * 2 / 27, name))
+        x += u
+    return out + [(b, 2 / 3, last[1], last[0])]
+
+
+def _four(b, notes):
+    """A 4/4 bar of the song against the 9/8: its first three crotchets fill the first two beats, the fourth the
+    third (Wagner's footnote); notes [(name, from, to)] in quavers -> [(bar, from, to, note)]."""
+    q = lambda x: x / 9 if x <= 6 else 2 / 3 + (x - 6) / 6
+    return [(b, q(x0), q(x1), name) for name, x0, x1 in notes]
+
+
+_T = 2 / 3
+_RUN = [('E5', 1), ('C#5', 1.5), ('B4', 0.5), ('A4', 1), ('F#4', 1), ('A4', 1), ('C#5', 1), ('A4', 1), ('C#5', 1)]
+# The Woodbird's warning, from the vocal score (Breitkopf & Härtel, p. 223): (bar, from, to, note) in bars.
+WOODBIRD = ([(1386, 1 / 3, 8 / 9, 'F#5')] + _nine(1387, _RUN, ('E5', 8 / 9)) + [(1388, 1 / 3, 8 / 9, 'F#5')] +
+            _four(1389, [('E5', 0, _T), ('C#5', _T, 2 * _T), ('B4', 2 * _T, 2), ('A4', 2, 2.5), ('F#4', 2.5, 3),
+                         ('A4', 3, 4), ('C#5', 4, 4.5), ('E5', 4.5, 5), ('F#5', 5, 5.5), ('C#5', 5.5, 6),
+                         ('E5', 6, 7)]) +
+            _four(1390, [('A5', 3, 4), ('A5', 4, 5.5), ('F#5', 5.5, 6), ('E5', 6, 6 + _T), ('E5', 6 + _T, 6 + 2 * _T),
+                         ('C#5', 6 + 2 * _T, 8)]) +
+            _four(1391, [('E5', 0, _T), ('C#5', _T, 2 * _T), ('B4', 2 * _T, 2), ('A4', 2, 2.5), ('F#4', 2.5, 3),
+                         ('A4', 3, 3.5), ('C#5', 3.5, 4), ('E5', 4, 5), ('C#5', 5, 5.5), ('F#5', 5.5, 6),
+                         ('E5', 6, 7)]) +
+            [(1392, 1 / 6, 1 / 3, 'E5'), (1392, 1 / 3, 4 / 9, 'E5'), (1392, 4 / 9, 5 / 9, 'A5'),
+             (1392, 5 / 9, 2 / 3, 'E5'), (1392, 2 / 3, 0.97, 'F#5'),
+             (1393, 1 / 6, 5 / 18, 'E5'), (1393, 5 / 18, 7 / 18, 'E5'), (1393, 7 / 18, 1 / 2, 'A5'),
+             (1393, 1 / 2, 7 / 12, 'E5'), (1393, 7 / 12, 2 / 3, 'C#5'), (1393, 2 / 3, 0.97, 'F#5')])
+
+
+def sung(lines):
+    """A sung line [(bar, from, to, note)] -> [(time, seconds, midi)] on the excerpt's clock."""
+    out = []
+    for b, f0, f1, name in lines:
+        seg = next(s['measures'] for s in EX['segments'] if s['measures'][0] <= b < s['measures'][1])
+        ms, ts = zip(*sorted((m, t) for m, t in EX['bars'] if seg[0] <= m <= seg[1]))
+        t0, t1 = float(np.interp(b + f0, ms, ts)), float(np.interp(b + f1, ms, ts))
+        out.append((t0, t1 - t0, note(name)))
+    return out
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -150,54 +206,42 @@ def woodbird(fr, S, pos, t, lvl, T):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note, tagged: (time, seconds, midi, velocity, part, k, tremolo). The Woodbird's warning ('call') over the
+    orchestra's birdsong ('birdbed') and the forest ('murmur'); Mime's sweet talk ('sweet') and his venom breaking
+    through ('thought'); the drink ('drink'); the sword ('nothung'); Alberich's laugh ('laugh'); Siegfried ('hero')."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for t, m, v, d in play('woodbird_call', T_WARN, 0.5, 0, 92):
-        add(t, d, m, v, 'call')
-    for k, t0 in enumerate(T_SWEET):
-        for t, m, v, d in play('mime', t0, 0.55, 12, 78):
-            add(t, d, m, v, 'sweet', k)
-    for k, t0 in enumerate(T_LAMENT):
-        for t, m, v, d in play('mime_lament', t0, 0.5, 0, 74):
-            add(t, d, m, v, 'lament', k)
-    for k, t0 in enumerate(T_THOUGHT):
-        for t, m, v, d in play('mime_frustrated', t0, 0.4, -12, 92 + 3 * k):
-            add(t, d, m, v, 'thought', k)
-    for m in ('E3', 'F3', 'Ab3', 'B3'):
-        add(T_DRINK, T_STRIKE - T_DRINK, m, 66, 'drink')
-    for t, m, v, d in play('nothung', T_NOTHUNG, 0.35, 0, 118):
-        add(t, d, m, v, 'nothung')
-    add(T_STRIKE, 0.1, 'C1', 125, 'strike')
-    for t, m, v, d in play('curse', T_LAUGH, 0.6, -24, 92):
-        add(t, d, m, v, 'laugh')
-    for k, t0 in enumerate((T_HERO, T_HERO + 3.5)):
-        for t, m, v, d in play('siegfried', t0, 0.55, -12, 98 - 8 * k):
-            add(t, d, m, v, 'hero', k)
-    for t, m, v, d in play('woodbird', T_SONG, 0.55, 0, 88, line='melody'):
-        add(t, d, m, v, 'bird')
-    for t, m, v, d in play('woodbird', T_SONG, 0.55, 0, 56, line='bass'):
-        add(t, d, m, v, 'birdbed')
-    for m in ('E2', 'B2', 'E3'):
-        add(0.0, D, m, 50, 'murmur')
+    for t, d, m, v, h, *tr in tidy(EX['notes']):
+        tr, k = bool(tr and tr[0]), None
+        if t < BAR[1569] - 0.01:
+            part = 'birdbed' if h == 0 and m >= 72 else 'murmur'
+        elif t < T_DRINK - 0.01:
+            part = 'sweet' if v < 80 and h == 0 else 'thought'
+        elif t < T_NOTHUNG - 0.01:
+            part = 'drink'
+        elif t < T_STRIKE + 1.5 and h == 0:
+            part = 'nothung'
+        elif t < T_HERO - 0.01:
+            part = 'laugh' if t >= T_STRIKE + 1.5 else 'drink'
+        else:
+            part = 'hero'
+        N.append((float(t), float(d), int(m), int(v), part, k, tr))
+    for t, d, m in sung(WOODBIRD):
+        N.append((t, d, m, 104, 'call', None, False))
     return sorted(N, key=lambda e: e[0])
 
 
 def bird_track(G):
     """Where the bird is: back in from the free end of Right, a hop on its warning, hops on its song, home."""
-    N = compose()
+    N = [e[:6] for e in compose()]
     rng = np.random.default_rng(271)
     perch, home = at(G, 'Right', 0.2), at(G, 'Right', 0.3)
-    pts = [(0.0, G.pd.max() + 60), (2.0, G.pd.max() + 60), (3.4, perch)]
+    pts = [(0.0, G.pd.max() + 60), (0.4, G.pd.max() + 60), (T_WARN - 0.1, perch)]
     p = perch
     for e in N:
         if e[4] in ('call', 'bird'):
             p = float(np.clip(p + rng.uniform(-40, 40), at(G, 'Right', 0.08), at(G, 'Right', 0.5)))
             pts += [(e[0], pts[-1][1]), (e[0] + 0.25, p)]
-    pts += [(T_SONG + 6.5, p), (T_SONG + 7.5, home)]
+    pts += [(T_CREEP + 1.5, p), (T_CREEP + 2.5, G.pd.max() + 60), (T_SONG, G.pd.max() + 60), (T_SONG + 1.5, home)]
     return lambda t: keys(t, pts)
 
 
@@ -207,7 +251,7 @@ def render(G, seed=21):
     S = stage(G)
     d = S['d']
     L = d.max()
-    N = compose()
+    N = [e[:6] for e in compose()]
     bird = bird_track(G)
     bird_on = np.array([e[0] for e in N if e[4] in ('call', 'bird')])
     sweet = [e for e in N if e[4] in ('sweet', 'lament')]
@@ -297,7 +341,7 @@ def render(G, seed=21):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, the Woodbird's line on flute, and the stage's sounds."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -306,81 +350,56 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.36, 0.25), ('brass', 0.33, 0.3), ('perc', 0.33, 0.28), ('winds', 0.36, 0.32),
-                            ('strings', 0.26, 0.35), ('mallet', 0.22, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    fl = M.sampler('Woodwinds/Flute/susNV/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    ob_st = M.sampler('Woodwinds/Oboe/Stacc/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     bird = bird_track(G)
-    hero = pan_at(at(G, 'Porch Front', 0.5))
-    mime_from, mime_to = pan_at(at(G, 'Right', 0.4)), pan_at(at(G, 'Porch Front', 0.72))
-
-    def pan_mime(t):
-        return mime_from + (mime_to - mime_from) * float(smoothstep(T_CREEP, T_CREEP + 5, t))
-
+    bp = lambda t: pan_at(min(bird(t), G.pd.max()))
+    me = pan_at(at(G, 'Porch Front', 0.5))
+    mime = pan_at(at(G, 'Porch Front', 0.72))
     far = pan_at(G.pd.max())
-    for t, d, m, v, part, k in compose():
-        if part in ('call', 'bird'):
-            M.add('winds', fl.play(m, v, dur=d * 1.1, release=0.15), t, 0.9, pan_at(bird(t)))
-            M.add('winds', ob_st.play(m, v - 22), t, 0.35, pan_at(bird(t)))
+    o = Orchestra(M, level=3.4)
+    bubbles = M.hits('Miscellania Raw/Misc 1/bubbles*.wav')
+    for t, d, m, v, part, k, trem in compose():
+        if part == 'call':                                              # the Woodbird's warning
+            o.play('flutes', m, t, max(d, 0.15), v, bp(t), 0.95)
+            o.play('piccolo', m + 12, t, max(d, 0.15), v - 30, bp(t), 0.2)
         elif part == 'birdbed':
-            M.add('strings', harp.play(m, v), t, 0.6, pan_at(bird(t)))
-        elif part == 'sweet':
-            M.add('winds', ob.play(m, v, dur=d * 1.1, release=0.2), t, 0.8, pan_mime(t))
-            M.add('strings', harp.play(m - 12, v - 16), t, 0.5, pan_mime(t))
-        elif part == 'lament':
-            M.add('winds', bsn.play(m, v, dur=d * 1.1, release=0.2), t, 0.85, pan_mime(t))
-        elif part == 'thought':
-            M.add('mallet', xylo.play(m + 24, v - 8), t, 0.7, pan_mime(t))
-            M.add('low', vcs.play(m, v), t, 0.85, pan_mime(t))
-            M.add('low', cbs.play(m - 12, v - 8), t, 0.6, pan_mime(t))
-            if t == T_THOUGHT[k]:
-                M.add('perc', timp.play(v - 16, pitch=-2), t, 0.5, pan_mime(t))
-        elif part == 'drink':
-            hold('strings', vtrem, m, t, t + d, v, mime_to, rise=1.5, fall=0.3, gain=0.4)
-        elif part == 'nothung':
-            M.add('brass', tpt.play(m, v, dur=d * 1.1, release=0.25), t, 0.95, hero)
-        elif part == 'strike':
-            M.add('perc', crash.play(v), t, 1.0, mime_to)
-            M.add('perc', timp.play(v, pitch=-4), t, 1.0, mime_to)
-            M.add('brass', tbn.play(note('D2'), 118, dur=1.5, release=0.6), t, 0.8, mime_to)
-        elif part == 'laugh':
-            if d > 1.0:
-                hold('low', vc, m + 12, t, t + d, v, far, rise=0.1, fall=0.8, gain=0.6)
-            else:
-                M.add('low', cbs.play(m + 12, v), t, 0.8, far)
-            M.add('brass', tbn.play(m + 12, v - 16, dur=d * 1.05, release=0.3), t, 0.5, far)
-        elif part == 'hero':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.3), t, 0.85, hero)
-            M.add('strings', vc.play(m - 12, v - 16, dur=d * 1.1, release=0.3), t, 0.5, hero)
+            o.play('flutes' if m < 86 else 'piccolo', m, t, d, v + 4, bp(t), 0.4)
+            o.play('violins', m, t, d, v - 10, bp(t), 0.25)
         elif part == 'murmur':
-            hold('strings', vtrem, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.26)
+            o.play('violas trem' if trem and m >= 48 else 'cellos trem' if trem else 'violas' if m >= 48 else 'cellos',
+                   m, t, d, v - 6, 0.0, 0.4)
+        elif part == 'sweet':
+            o.play('oboes' if m >= 58 else 'bassoons', m, t, d, v + 6, mime, 0.6)
+        elif part == 'thought':
+            if m >= 60:
+                o.play('clarinets', m, t, d, v, mime, 0.5)
+                o.play('violins', m, t, d, v - 6, mime, 0.4)
+                if v >= 95:
+                    o.play('flutes' if m < 86 else 'piccolo', m, t, d, v - 16, mime, 0.25)
+            else:
+                o.play('cellos trem' if trem else 'cellos', m, t, d, v, mime, 0.55)
+                o.play('bassoons', m, t, d, v - 10, mime, 0.35)
+        elif part == 'drink':
+            o.play('violas trem' if trem else 'violas' if m >= 48 else 'cellos', m, t, d, v - 4, mime, 0.5)
+        elif part == 'nothung':
+            o.play('trumpets', m, t, d, v + 6, me, 0.9)
+            o.play('violins', m, t, d, v - 10, me, 0.35)
+        elif part == 'laugh':
+            o.play('bassoons', m, t, d, v, far, 0.5)
+            o.play('tuba', m - 12 if m >= 40 else m, t, d, v - 10, far, 0.35)
+        elif part == 'hero':
+            o.play('horns', m, t, d, v + 6, me, 0.85)
+    # the stage: the poison bubbles, the blow, Mime falls, Alberich's laugh echoes off the far end
+    t = T_DRINK + 0.3
+    while t < T_STRIKE:
+        M.add('fx', bubbles.play(70), t, 0.25, mime)
+        t += 1.3
+    o.hit('cymbal swell', T_NOTHUNG - 1.5, 90, gain=0.3, pan=me)
+    o.clash(T_STRIKE, mime, 124, 1.0)
+    o.boom(T_STRIKE + 0.03, mime, 0.8)
+    o.hit('crash', T_STRIKE, 118, gain=0.55, pan=mime)
+    for j in range(5):                                                  # his sparks fly out
+        o.hit('triangle', T_STRIKE + 0.15 + 0.18 * j, 90 - 6 * j, gain=0.25, pan=mime + (j - 2) * 0.2)
+    o.hit('bass drum', T_STRIKE + 1.1, 100, gain=0.5, pan=mime)          # he falls
+    o.hit('gong', T_LAUGH, 84, gain=0.3, pan=far)
+    o.effects([(0, -18), (BAR[1569], -18), (BAR[1569] + 0.1, -10), (T_THOUGHT[3], -6), (T_DRINK, -2),
+               (T_STRIKE + 3, -2), (T_HERO, -12)])

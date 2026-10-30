@@ -1,30 +1,35 @@
 """The Ransom: grey morning on the mountain, Valhalla dim across the porch, and Wotan wants the hoard. Alberich,
-bound, raises the ring to his lips and orders his Nibelungs up out of the earth: a red pulse races from him all
-the way to the free end of Right. They come: wave after wave of orange sparks rushes in from the end of Right,
-along Right and up Porch Right, each carrying a fleck of gold, to the middle of Porch Front, where they drop it
-with a ring of anvils and scurry back the way they came. The Nibelung rhythm drives in the strings, violins
-scurry down the house with every wave, and the heap grows, wider and brighter, while trumpets give the Gold's
-call (Donington 44) three times as it piles up. Alberich's red shrinks with shame at being seen tied up by his
-own slaves, and at his word they flee.
+bound, raises the ring to his lips and orders his Nibelungs up out of the earth, "Wohlan, die Niblungen rief
+ich mir nah": a red pulse races from him all the way to the free end of Right, and their rhythm stirs deep below.
+They come: wave after wave of orange sparks rushes in from the end of Right, along Right and up Porch Right, each
+carrying a fleck of gold, to the middle of Porch Front, where they drop it and scurry back the way they came,
+while Alberich drives them on ("Rasch da! Rasch! ... Fort in die Schachten!"). The procession swells to a
+fortissimo and the heap grows, wider and brighter, flashing gold on the orchestra's calls, until it pours
+down and away and at his word they flee. Alberich's red shrinks with shame at being seen tied up by his own
+slaves. Loge tosses the helmet onto the heap: a violet arc from his hand, and a violet shimmer crowns the gold.
 
-Loge tosses the helmet onto the heap: a violet arc from his hand, the Tarnhelm's chords (Donington 18) on
-muted horns, and a violet shimmer crowns the gold. Then Wotan demands the ring as well. Wotan's spear motif
-(Donington 73) begins in the trombones; Alberich refuses with everything he has left (his red swelling, the
-ring flaring, a frantic bassoon and trombone), and Wotan closes in three times to a rising tremolo and a
-timpani roll.
+Then Wotan wants the ring as well. Alberich refuses with everything he has left ("frevelst, Ewiger, du,
+entreißest du frech mir den Ring!"): his red swelling, the ring flaring, while a steel line points at him from
+Wotan. "Her der Ring!": Wotan closes in, three times, as the bass plunges, and at the bottom of its fall he
+tears the ring from his finger, the whole house flashing red. The gold point and its red glint burst out from
+Alberich in a ring of beads that sweeps over the entire house, then swirl back in from both ends as the music
+climbs, and close onto Wotan's blue as a hard gold point with a red glint. Alberich sinks to a dim, muddy red,
+and shrieks: "Ha!".
 
-He tears it from his finger: the Ring motif (Donington 8) at full force in trumpets, horns, trombones and tubas
-over the G in the basses, a scream, the whole house flashing red. The gold point and its red glint burst out
-from Alberich in a ring of beads that sweeps over the entire house, then swirl back in from both ends, gold
-toward the street and red turned away, and close onto Wotan's blue as a hard gold point with a red glint.
-Alberich sinks to a dim, muddy red. The Ring motif sounds again, softly, in the clarinets, each note a red
-glint on Wotan's hand, and the Valhalla motif answers on a muted horn.
+The music is Wagner's own: Scene 4, bars 2927 to 2934, 2961 to 2980 and 3078 to 3092, as Solti's 1958 Vienna
+Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py): the Nibelungs' rhythm deep in cellos and basses, the procession on the orchestra with the
+Gold's calls on trumpets and horns, Alberich's protest on strings over trombones, the plunge on tubas,
+trombones and basses, the climb and the shriek on the full brass. On top, as a staged production would, kept
+down under Alberich's lines and Wotan's demand: the Nibelungs' scurrying feet coming and going with each wave
+and the clink of each wave's gold on the heap, a rush as they flee, a whoosh as the helmet flies, the blows of
+Wotan's struggle, and a crash and a burst of beads as the ring is torn away.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'RG19'
 TITLE = 'The Ransom'
@@ -35,24 +40,27 @@ DESCRIPTION = ('To buy his freedom, Alberich orders his Nibelungs to carry the w
 VOICEOVER = ('Every scrap of gold he ever made, carried up and heaped at the feet of the gods. '
              'But the god wants one thing more.')
 
+EX = excerpt(__file__)                      # bars 2927-2934, 2961-2980, 3078-3092, Solti 1958
+BAR = {int(m): t for m, t in EX['bars'] if m not in (2935, 2981)}
 BEAT = 0.5
-T_DEMAND = 1.0                              # Wotan: the hoard
-T_CALL = 4.5                                # Alberich lifts the ring and orders them up
-WAVES = [8.0, 11.5, 15.0, 18.5, 22.0, 25.5, 29.0, 32.5]
+T_DEMAND = 0.0                              # Wotan: the hoard
+T_CALL = 0.99                               # Alberich lifts the ring and orders them up
+WAVES = [5.5, 9.3, 12.7, 16.4, 20.1, 23.7, 27.2, 30.8, 34.8, 38.4]
 PER = 8                                     # Nibelungs in a wave
-T_FLEE = 36.0                               # at his word they flee
-T_HELM = 40.0                               # Loge tosses the helmet on the heap
-T_RINGDEM = 44.5                            # Wotan demands the ring
-T_REFUSE = 48.0                             # "my life, but not the ring!"
-PUSHES = [51.0, 52.6, 54.2]
-T_TEAR = 56.0                               # torn from his finger
+T_FLEE = BAR[2977]                          # the procession pours down and away: they flee
+T_HELM = BAR[2980] - 0.6                    # Loge tosses the helmet on the heap
+T_RINGDEM = BAR[3078]                       # Wotan wants the ring
+T_REFUSE = 52.235                           # "frevelst, Ewiger, du!"
+PUSHES = [BAR[3083], BAR[3085], BAR[3086]]  # "Her der Ring!": he closes in as the bass plunges
+T_TEAR = BAR[3087]                          # torn from his finger, at the bottom of the plunge
 RB = 0.55
-T_SWIRL = 57.2                              # the beads swirl back in onto Wotan
-T_ON = 61.0                                 # the ring is his
-T_SOFT = 64.0                               # the Ring again, softly
-T_VALH = 72.5
+T_SWIRL = T_TEAR + 1.2                      # the beads swirl back in onto Wotan as the music climbs
+T_ON = BAR[3090]                            # the ring is his
+T_SCREAM = 82.243                           # "Ha!"
+T_SOFT = 1e9
+T_VALH = 1e9
 NB = 0.45
-D = 80.0
+D = EX['seconds']
 
 ALB = hexc('#ff1000')
 MUD = hexc('#5a1200')
@@ -71,10 +79,6 @@ DAWN2 = hexc('#6a5a8a')
 VAL = hexc('#fff0c0')
 WHITE = hexc('#ffffff')
 
-NIB = [('Bb3', 'A3', 'Bb3'), ('Db4', 'C4', 'Db4'), ('F4', 'E4', 'F4'),
-       ('Gb4', 'F4', 'Gb4'), ('F4', 'E4', 'F4'), ('Db4', 'C4', 'Bb3')]
-
-
 def at(G, seg, u):
     s = G.pd[G.seg[seg]]
     return float(s.min() + u * (s.max() - s.min()))
@@ -82,17 +86,6 @@ def at(G, seg, u):
 
 def grey(c, k):
     return c * (1 - k) + (c @ np.array([0.3, 0.59, 0.11])) * k
-
-
-def nibelung(t0, t1, beat, v0, v1):
-    out, k = [], 0
-    while t0 + k * beat < t1:
-        for j, (off, dur) in enumerate(((0, 0.5), (0.5, 1 / 6), (2 / 3, 1 / 3))):
-            t = t0 + (k + off) * beat
-            u = (t - t0) / (t1 - t0)
-            out.append((t, dur * beat * 0.85, note(NIB[k % 6][j]), int(v0 + (v1 - v0) * max(np.sin(np.pi * u), 0) ** 0.5), k, j))
-        k += 1
-    return out
 
 
 def nibelungs(G):
@@ -106,78 +99,22 @@ def nibelungs(G):
 
 
 def compose(G=None):
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). The Nibelungs' rhythm stirring
+    ('nib'), the procession ('proc', with the Gold's calls 'gold'), Alberich's protest ('refuse'), the plunge as
+    Wotan closes in ('struggle') and the climb and shriek once the ring is torn away ('ringtutti')."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('Db3', 'Ab3', 'F4'):                          # the grey morning, still hanging
-        add(0.0, WAVES[0] - 1.0, m, 62, 'pad')
-    for m in ('G2', 'D3', 'Bb3'):                           # the hush before he asks for the ring
-        add(T_HELM + 3.0, T_REFUSE + 2.5 - T_HELM - 3.0, m, 66, 'pad')
-    for b, d, m in ((0, .5, 'Bb2'), (.5, .5, 'D3'), (1, 1, 'F3'), (2, 1.5, 'Bb2')):
-        add(T_DEMAND + b * BEAT, d * BEAT, m, 104, 'wotan')
-    for b, d, m in ((0, .5, 'F2'), (.5, .5, 'Bb2'), (1, .5, 'Db3'), (1.5, 1.5, 'F3')):
-        add(T_CALL + b * BEAT, d * BEAT, m, 112, 'command')
-    for t, m, v, d in play('ring', T_CALL + 1.0, 0.35, 0, 100):
-        if t < T_CALL + 1.0 + 4.5 * 0.35 and m > note('C3'):
-            add(t, d, m, v, 'ringcall')
-
-    for t, d, m, v, k, j in nibelung(WAVES[0] - 1.0, T_FLEE, NB, 70, 102):
-        add(t, d, m, v, 'nib')
-        if j == 0:
-            add(t, d, m - 24, v - 6, 'nibbass')
-    if G is not None:
-        launch, speed, off, arrive = nibelungs(G)
-        for w, t0 in enumerate(WAVES):
-            for j in range(8):
-                add(t0 + j * 0.12, 0.08, note('Bb5') - (0, 1, 3, 5, 6, 8, 10, 12)[j], 80, 'scurry', w)
-            for k in range(PER):
-                add(arrive[w, k], 0.1, 0, 96 + (k == 0) * 20, 'drop', k)
-    for i, w in enumerate((2, 5, 7)):
-        for t, m, v, d in play('gold', WAVES[w] + 2.0, 0.4, 3, 96 + 8 * i):
-            add(t, d, m, v, 'gold')
-    for t0 in (13.0, 20.5, 27.5):                           # his shame
-        for b, d, m in ((0, 1.5, 'Db3'), (1.5, 1, 'C3'), (2.5, 2.5, 'Bb2')):
-            add(t0 + b * BEAT, d * BEAT, m, 82, 'shame')
-    for b, d, m in ((0, .5, 'Bb2'), (.5, .5, 'Bb2'), (1, 2, 'Gb2')):
-        add(T_FLEE + b * BEAT, d * BEAT, m, 116, 'command')
-    add(T_FLEE + 0.2, 1.2, 'C6', 70, 'flee')
-
-    for t, m, v, d in play('tarnhelm', T_HELM + 0.6, 0.4, 0, 76):
-        if t < T_HELM + 0.6 + 8 * 0.4:
-            add(t, d, m, v, 'tarnhelm')
-    add(T_HELM, 0.6, 'Eb5', 80, 'toss')
-
-    for t, m, v, d in play('spear', T_RINGDEM, BEAT, 0, 108):
-        if t < T_RINGDEM + 3 * BEAT:
-            add(t, d, m, v, 'spear')
-    for b, d, m in ((0, .5, 'Gb3'), (.5, .5, 'F3'), (1, .5, 'Gb3'), (1.5, .5, 'A3'), (2, 1.5, 'Bb3'),
-                    (4, .5, 'Bb3'), (4.5, .5, 'A3'), (5, 2, 'Gb3')):
-        add(T_REFUSE + b * 0.4, d * 0.4, m, 112, 'refuse')
-    add(T_REFUSE + 2.5, T_TEAR - T_REFUSE - 2.5, 'G2', 70, 'tension')
-    add(T_REFUSE + 2.5, T_TEAR - T_REFUSE - 2.5, 'G1', 80, 'roll')
-    for tp in PUSHES:
-        add(tp, 0.5, 'G1', 116, 'push')
-        for m in ('G2', 'D3', 'G3'):
-            add(tp, 0.45, m, 108, 'pushbrass')
-
-    for t, m, v, d in play('ring', T_TEAR, RB, 0, 124):    # full force
-        add(t, d, m, v, 'ringtutti')
-    add(T_TEAR, 1.4, 'G1', 127, 'tear')
-    add(T_TEAR + 0.05, 1.6, 'C6', 120, 'scream')
-    add(T_TEAR + 0.05, 1.6, 'B3', 120, 'screambrass')
-    for b, d, m in ((0, 1.5, 'Eb3'), (1.5, 1.5, 'D3'), (3, 2, 'C3'), (5, 3, 'B2')):
-        add(T_ON + 1.0 + b * 0.45, d * 0.45, m, 84, 'moan')
-    for t, m, v, d in play('ring', T_SOFT, 0.75, 0, 76):
-        if m > note('C3'):
-            add(t, d, m, v, 'ringsoft')
+    for t, d, m, v, h in EX['notes']:
+        if t < BAR[2961] - 0.01:
+            part = 'nib'
+        elif t < T_RINGDEM - 0.01:
+            part = 'gold' if h == 0 and d >= 0.4 and BAR[2966] <= t < BAR[2972] else 'proc'
+        elif t < PUSHES[0] - 0.01:
+            part = 'refuse'
+        elif t < T_TEAR - 0.01:
+            part = 'struggle'
         else:
-            add(t, d, m, v - 10, 'ringbass')
-    for t, m, v, d in play('valhalla', T_VALH, 0.8, 0, 72, line='melody'):
-        add(t, d, m, v, 'valh')
-    add(T_VALH, D - T_VALH, 'Db2', 60, 'valhbass')
+            part = 'ringtutti'
+        N.append((t, d, m, v, part, None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -231,12 +168,12 @@ def render(G, seed=19):
     N = compose(G)
     launch, speed, off, arrive = nibelungs(G)
     back = rng.uniform(900, 1200, launch.shape)
-    nibs = np.array([e[0] for e in N if e[4] == 'nib'])
     drops = np.array(sorted(arrive.ravel()))
     golds = np.array([e[0] for e in N if e[4] == 'gold'])
     soft = np.array([e[0] for e in N if e[4] == 'ringsoft'])
     tutti = np.array([e[0] for e in N if e[4] == 'ringtutti'])
     refuse = np.array([e[0] for e in N if e[4] == 'refuse'])
+    sung = [(t0, who) for t0, t1, who, text in EX['singing'] if T_RINGDEM <= t0 < T_TEAR]
     tw = Flicker(rng, G.N, 2.0, 7.0)
     fl = Flicker(rng, G.N, 3.0, 11.0)
     smoulder = Flicker(rng, G.N, 0.6, 2.4)
@@ -378,12 +315,22 @@ def render(G, seed=19):
             fr += light(RED, on * (0.6 + 0.5 * sp) * blob(wp + 9, 6 + 3 * sp) * (0.6 + 0.4 * tw(t)))
             if T_ON <= t < T_ON + 1.0:
                 fr += light(HOT, 0.8 * np.exp(-(t - T_ON) / 0.2) * blob(wp, 30))
+        for t0, who in sung:                                # the quarrel: each line a wave out from its singer
+            if t0 <= t < t0 + 1.8:
+                a = t - t0
+                c, src = (ALB, ap) if who == 'Alberich' else (SPEAR, wp)
+                fr += light(c, 0.7 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - src) - 600 * a ** 0.7) / 80) ** 2))
+        if T_SCREAM <= t < T_SCREAM + 2.0:                  # "Ha!": a last red flare out from him
+            a = t - T_SCREAM
+            fr += light(ALB, 0.8 * np.exp(-a / 0.4) * blob(ap, 40 + 300 * a))
+            fr += light(RED, 0.4 * np.exp(-a / 0.25) * np.ones(G.N))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """Wagner's notes, orchestrated from the piano reduction, with the ransom's sounds on top."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -399,130 +346,48 @@ def score(M, G):
     def pan_of(k, t):
         return pan_at(np.interp(t, C['t'], C[k]))
 
-    for name, gain, rev in (('winds', 0.18, 0.35), ('strings', 0.15, 0.3), ('low', 0.18, 0.18), ('brass', 0.17, 0.3),
-                            ('perc', 0.2, 0.22), ('anvil', 0.14, 0.25), ('fx', 0.08, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
-    bsus = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vtrem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
-    vas = M.sampler('Strings/Viola Section/spic/*.wav', tune=-12)
-    vcs = M.sampler('Strings/Cello Section/spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    cbs = M.sampler('Strings/Solo Contrabass/Spic/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[5-7]*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_v*.wav')
+    o = Orchestra(M, level=2.25)
+    part = {(e[0], e[2], e[3]): e[4] for e in compose(G)}
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        p = part.get((t, m, v))
+        if p == 'nib':                                      # their rhythm, deep below
+            return [('cellos', 12 if m < 40 else 0, 20, 0.6), ('basses', 0, 20, 0.5)] + \
+                ([('tuba', 12, 10, 0.4)] if h == 1 else [])
+        if p == 'gold':                                     # the Gold's call
+            return [('trumpets', 0, 4, 0.5), ('horns', 0, 0, 0.45)]
+        if p == 'struggle':                                 # the plunge
+            if h == 1:
+                return [('tuba', 0, 0, 0.6), ('trombones', 12, -4, 0.5), ('basses', 0, 0, 0.5)]
+            return [('horns', 0, 0, 0.55), ('violins', 0, -6, 0.4)]
+        if p == 'ringtutti':                                # the climb and the shriek: full brass
+            if h == 1:
+                return [('tuba', 0, 0, 0.55), ('trombones', 0, 0, 0.5), ('cellos', 0, 0, 0.45)]
+            return [('trumpets', 0, -4, 0.45), ('horns', 0, 0, 0.5), ('violins', 0, 0, 0.45)] + \
+                ([('piccolo', 0, -12, 0.3)] if m >= note('C6') else [])
+        return None                                         # the procession and the protest: the orchestra's default
 
-    pitch = np.random.default_rng(4).uniform(-6, 4, 8)
-    for t, d, m, v, part, who in compose(G):
-        pa, pw = pan_of('alb', t), pan_of('wot', t)
-        if part == 'wotan':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.9, pw)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.3), t, 0.7, pw)
-        elif part == 'command':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.2), t, 1.0, pa)
-            M.add('winds', bsus.play(m, v - 10, dur=d, release=0.2), t, 0.7, pa)
-        elif part == 'ringcall':
-            M.add('brass', horn.play(m, v, dur=d, release=0.3), t, 0.8, pa)
-            M.add('fx', whoosh(1.6, 600, 3000, 0.4, seed=7), t, 0.5, 0.6)
-        elif part == 'nib':
-            M.add('strings', vas.play(m, v), t, 1.0, 0.3)
-            M.add('strings', vn.play(m + 12, v - 18), t, 0.6, 0.5)
-        elif part == 'nibbass':
-            M.add('low', cbs.play(m + 12, v), t, 1.0, 0.1)
-            M.add('low', vcs.play(m + 12, v - 10), t, 0.8, 0.1)
-        elif part == 'scurry':
-            M.add('strings', vn.play(m, v), t, 0.7, pan_at(L - 650 * (t - WAVES[who] + 0.2)))
-        elif part == 'drop':
-            M.add('anvil', anvil.play(v, pitch=pitch[who]), t, 1.0, pan_at(pf) + 0.05 * (who - 3.5))
-        elif part == 'gold':
-            M.add('brass', tpt.play(m, v, dur=d, release=0.4), t, 1.0, pan_at(pf) + 0.1)
-            M.add('brass', horn.play(m - 12, v - 12, dur=d, release=0.4), t, 0.6, pan_at(pf) - 0.1)
-        elif part == 'shame':
-            M.add('winds', bsus.play(m, v, dur=d, release=0.3), t, 0.9, pa)
-        elif part == 'flee':
-            for k in range(10):
-                M.add('winds', pic.play(m - 2 * k, v), t + k * 0.06, 0.6, pan_at(pf + (L - pf) * k / 10))
-        elif part == 'tarnhelm':
-            M.add('brass', mute.play(m, v, dur=d, release=0.6), t, 0.8, pan_at(pf))
-        elif part == 'toss':
-            for k in range(8):
-                M.add('fx', harp.play(note('Eb4') + (0, 3, 7, 11, 12, 15, 19, 23)[k], 90), t + k * 0.06, 1.6,
-                      pan_of('loge', t) + (pan_at(pf) - pan_of('loge', t)) * k / 8)
-        elif part == 'spear':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 1.0, pw)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d, release=0.3), t, 0.8, pw)
-        elif part == 'refuse':
-            M.add('winds', bsus.play(m - 12, v, dur=d, release=0.15), t, 1.0, pa)
-            M.add('brass', tbn.play(m - 12, v - 6, dur=d, release=0.15), t, 0.8, pa)
-        elif part == 'tension':
-            for k, mm in enumerate((m, m + 6, m + 12)):
-                hold('strings', vtrem, mm + 12, t, t + d, v + 10 * k, pa + 0.2 * (k - 1), rise=d, fall=0.1, gain=0.6)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.7, 0.0)
-        elif part == 'push':
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, pw)
-        elif part == 'pushbrass':
-            M.add('brass', (tuba if m < note('D3') else tbn).play(m, v, dur=d, release=0.2), t, 0.7, pw)
-        elif part == 'ringtutti':
-            if m >= note('E4'):
-                M.add('brass', tpt.play(m, v, dur=d, release=0.4), t, 1.0, pw + 0.15)
-                M.add('strings', vtrem.play(m + 12, v, dur=d, release=0.4), t, 0.5, pw - 0.2)
-            elif m >= note('C4'):
-                M.add('brass', horn.play(m, v, dur=d, release=0.4), t, 0.9, pw - 0.15)
-                M.add('brass', tpt.play(m, v - 10, dur=d, release=0.4), t, 0.5, pw + 0.15)
-            elif m >= note('C3'):
-                M.add('brass', horn.play(m, v, dur=d, release=0.4), t, 0.9, pw - 0.1)
-                M.add('brass', tbn.play(m, v, dur=d, release=0.4), t, 0.8, pw + 0.1)
-            else:
-                M.add('low', tuba.play(m, v, dur=d, release=0.4), t, 1.0, 0.0)
-                hold('low', cb, m, t, t + d, v, 0.0, rise=0.05, fall=1.0, gain=0.8)
-        elif part == 'tear':
-            M.add('perc', timp.play(v, pitch=-3), t, 1.0, pa)
-            M.add('perc', crash.play(124), t, 1.0, 0.0)
-            M.add('perc', bd.play(v), t, 0.9, pa)
-            M.add('fx', whoosh(1.2, 5000, 300, 0.6, seed=11), t, 0.8, 0.0)
-        elif part == 'scream':
-            hold('strings', vtrem, m, t, t + d, v, pa, rise=0.05, fall=0.6, gain=0.5)
-            for k in range(6):
-                M.add('winds', pic.play(m - 1 - 2 * k, v - 6 * k), t + 0.05 * k, 0.6, pa)
-        elif part == 'screambrass':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.5), t, 1.0, pa)
-        elif part == 'moan':
-            M.add('winds', bsus.play(m - 12, v, dur=d, release=0.3), t, 1.0, pa)
-        elif part == 'ringsoft':
-            M.add('winds', clar.play(m, v, dur=d * 1.05, release=0.3), t, 1.0, pw)
-        elif part == 'ringbass':
-            hold('low', vc, m, t, t + d, v, 0.0, rise=0.5, fall=1.5, gain=0.7)
-        elif part == 'valh':
-            M.add('brass', mute.play(m, v, dur=d * 1.05, release=0.6), t, 0.9, pan_at(pf))
-        elif part == 'pad':
-            hold('strings', vtrem if m >= note('C4') else trem, m, t, t + d, v, 0.3 * ((m % 3) - 1), rise=1.5, fall=1.5, gain=0.6)
-        elif part == 'valhbass':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=2.0, fall=1.0, gain=0.6)
+    o.tutti(EX['notes'], role=role, pan=lambda t, m: pan_of('alb', t) * 0.5)
+    # the stage, ridden: under his commands, up for the procession, well down for the demand, up for the tearing
+    o.effects([(0, -10), (WAVES[2], -3), (T_FLEE + 2, -4), (T_RINGDEM, -12), (PUSHES[0] - 0.3, -4), (T_TEAR - 0.2, 0),
+               (T_ON + 1, -5)])
+    launch, speed, off, arrive = nibelungs(G)
+    for w in range(len(WAVES)):                             # each wave: scurrying feet in from the end, gold dropped
+        t0, t1 = float(launch[w].min()), float(arrive[w].max())
+        o.gallop(t0, t1, 0.22, pan=lambda t, t0=t0, t1=t1: pan_at(L - (L - pf) * (t - t0) / max(t1 - t0, 0.1)),
+                 v=70 + 3 * w, gain=0.5)
+        o.hit('metal', float(np.median(arrive[w])), 70 + 3 * w, gain=0.25, pan=pan_at(pf))
+        o.play('glock', note('E6') - 12 * (w % 2), float(np.median(arrive[w])), 0.2, 80, pan_at(pf), 0.25)
+    M.add('fx', whoosh(1.4, 600, 4000, 0.5, seed=19), T_FLEE, 0.6, pan_at(pf + 600))      # they flee
+    M.add('fx', whoosh(0.7, 2000, 8000, 0.4, seed=20), T_HELM, 0.5, pan_of('loge', T_HELM))   # the helmet flies
+    o.hit('triangle', T_HELM + 0.6, 90, gain=0.3, pan=pan_at(pf))
+    for tp in PUSHES:                                       # he closes in
+        o.hit('timpani', tp, 116, pitch=-4, gain=0.6, pan=pan_of('wot', tp))
+        o.hit('bass drum', tp, 110, gain=0.5, pan=pan_of('wot', tp))
+    pa = pan_of('alb', T_TEAR)
+    o.hit('crash', T_TEAR, 124, gain=0.7, pan=pa)           # torn away
+    o.boom(T_TEAR, pa, 0.9)
+    M.add('fx', whoosh(1.2, 800, 6000, 0.5, seed=21), T_TEAR, 0.6, 0.0)       # the beads burst out
+    M.add('fx', whoosh(T_ON - T_SWIRL, 6000, 800, 0.4, seed=22), T_SWIRL, 0.5, 0.0)   # and swirl back in
+    o.hit('triangle', T_ON, 110, gain=0.4, pan=pan_of('wot', T_ON))
+    o.hit('crash', T_SCREAM, 116, gain=0.45, pan=pan_of('alb', T_SCREAM))

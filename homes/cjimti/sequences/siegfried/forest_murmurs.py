@@ -1,21 +1,25 @@
-"""Forest Murmurs: broad day outside Fafner's cave, and Siegfried lying under the lime tree at Left 0.5. The whole
-house is the forest, alive: the Forest Murmurs (Donington 29) ripple in the strings, and every phrase sends a
-green and gold wave rolling the length of the roofline, one way and then the other, the waves crossing and
-flashing where they meet, while the sun shafts drift through the trees.
+"""Forest Murmurs: broad day outside Fafner's cave, and Siegfried lying under the lime tree at Left 0.5.
 
-He wonders about his mother: innocent delight (28) sparkles in the violins as gold glitter all round him,
-spreading out over Left and Side. Then from the far end of the house a hot magenta point flicks into the trees:
-the Woodbird. On every note of its song (27) it darts a hop along the roofline, white at its heart, trailing
-magenta, wings flickering; on its call (27a) each landing sends a magenta ring out through the green. It sings
-three times, ranging over Right and the porch, and the forest swells under it, green and gold, until it settles
-at Right 0.3 and looks at him.
+The music is Wagner's own: the Forest Murmurs from Act II, their beginning (bars 763 to 771) and then the forest
+in full voice with the Woodbird singing in it (830 to 855), as Solti's 1958 Vienna Philharmonic recording takes
+them. The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): the murmuring figures on
+muted violas and cellos over the horns' low E, the violins' rising delight, the Woodbird's calls on flute, oboe and
+clarinet as Wagner gives them, and the forest's great swells on horns and violins. A production adds the
+forest's own sound: the leaves stirring, rising with each swell and falling back so the bird is clear.
 
-compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
-word by Act II's scenes on a clock that runs on from scene to scene."""
+The whole house is the forest, alive: every bar of the Murmurs sends a green and gold wave rolling the length of
+the roofline, one way and then the other, the waves crossing and flashing where they meet, while the sun shafts
+drift through the trees. The violins' delight sparkles as gold glitter round him over Left and Side. Then from
+the far end of the house a hot magenta point flicks into the trees: the Woodbird. On every note of its song it
+darts a hop along the roofline, white at its heart, trailing magenta, wings flickering, and the first note of
+each call sends a magenta ring out through the green. Each time the forest swells to fortissimo the whole house
+blooms green and gold, and at the end the bird settles at Right 0.3 and looks at him.
+
+compose() tags every note of the excerpt; stage(), forest(), figure() and sparks() are the forest and the cave,
+shared word for word by Act II's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'SF15'
 TITLE = 'Forest Murmurs'
@@ -26,14 +30,13 @@ VOICEOVER = ('Siegfried lies under a linden tree and listens to the forest. '
              'A little bird is singing to him.')
 
 K = 4                                       # this scene's place on Act II's shared clock: T = t + 80 K
-MURMUR = 0.85                               # quarter note of the Forest Murmurs
-T_MURMUR = [0.5 + 5.0 * j for j in range(16)]   # every phrase, 5 s apart
-T_DELIGHT = [17.0, 21.0]                    # innocent delight, the violins
-T_BIRD_IN = 29.0                            # the Woodbird flicks in at the free end of Right
-T_SONG = [30.0, 42.0, 54.0]                 # its song
-T_CALL = [37.5, 49.5, 61.5]                 # its call
-T_SETTLE = 66.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 763-771 and 830-855, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_MURMUR = [t for m, t in EX['bars'] if t < D - 1.0]    # every bar of the Murmurs rolls a wave
+T_DELIGHT = (BAR[770], BAR[772])            # the violins' rising delight
+T_BIRD_IN = BAR[833] + 0.6                  # the Woodbird flicks in at the free end of Right
+T_SETTLE = D - 1.0
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -126,39 +129,37 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). 'delight' is the violins' rising
+    figure, 'song' a note of the Woodbird's calls, 'call' the first note of each call, 'swell' a fortissimo surge,
+    'murmur' everything else."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    for k, t0 in enumerate(T_MURMUR):
-        for t, m, v, d in play('forest_murmurs', t0, MURMUR, 12 if k % 2 else 0, 72 + 3 * (k % 5)):
-            add(t, d, m, v, 'murmur', k)
-    for k, t0 in enumerate(T_DELIGHT):
-        for t, m, v, d in play('innocent_delight', t0, 0.62, 0, 78 + 6 * k):
-            add(t, d, m, v, 'delight', k)
-    for k, t0 in enumerate(T_SONG):
-        for t, m, v, d in play('woodbird', t0, 0.75, 0, 92):
-            add(t, d, m, v, 'song', k)
-    for k, t0 in enumerate(T_CALL):
-        for t, m, v, d in play('woodbird_call', t0, 0.5, 0, 98):
-            add(t, d, m, v, 'call', k)
-    add(0.0, D, 'E2', 60, 'pedal')
-    return sorted(N, key=lambda e: e[0])
+    notes = sorted(EX['notes'])
+    song = [n for n in notes if n[4] == 0 and n[2] >= 76 and n[1] < 1.0 and n[0] >= T_BIRD_IN - 0.1 and n[3] < 110]
+    firsts = accents([(n[0], n[1], n[2], n[3]) for n in song], n=1, space=2.0)
+    for t, d, m, v, h in notes:
+        if v >= 110:
+            part = 'swell'
+        elif T_DELIGHT[0] <= t < T_DELIGHT[1] and h == 0 and d < 1.0:
+            part = 'delight'
+        elif [t, d, m, v, h] in song:
+            part = 'call' if any(abs(t - x) < 0.02 for x in firsts) else 'song'
+        else:
+            part = 'murmur'
+        N.append((t, d, m, v, part, None))
+    return N
 
 
 def bird_hops(G):
     """Where the Woodbird lands on each note of its song and call: [(time, place)]."""
     L = G.pd.max()
     rng = np.random.default_rng(27)
-    song = sorted({t for t, d, m, v, part, k in compose() if part in ('song', 'call') and m >= note('A4')})
+    song = sorted({round(t, 2) for t, d, m, v, part, k in compose() if part in ('song', 'call')})
     lo, hi = at(G, 'Porch Left', 0.3), L - 30
     hops, p = [(T_BIRD_IN, L - 10)], L - 10
     for t in song:
         p = float(np.clip(p + rng.choice([-1, 1]) * rng.uniform(160, 460), lo, hi))
         hops.append((t, p))
-    hops.append((T_SETTLE, at(G, 'Right', BIRD_AT)))
+    hops = [h for h in hops if h[0] < T_SETTLE - 0.5] + [(T_SETTLE, at(G, 'Right', BIRD_AT))]
     return hops
 
 
@@ -179,7 +180,7 @@ def render(G, seed=15):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     S = stage(G)
-    d, mid = S['d'], S['mid']
+    d = S['d']
     L = d.max()
     N = compose()
     B = bird_track(G)
@@ -188,39 +189,46 @@ def render(G, seed=15):
     calls = sorted({e[0] for e in N if e[4] == 'call'})
     rng = np.random.default_rng(seed)
     glit = rng.uniform(at(G, 'Side', 0.1), at(G, 'Porch Left', 0.5), len(delight))
-    swell = [(T_SONG[k], T_SONG[k] + 10) for k in range(3)]
+    swell = sorted({round(e[0], 2) for e in N if e[4] == 'swell'})
+    swell = [s for i, s in enumerate(swell) if i == 0 or s - swell[i - 1] > 1.5]
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
         fr = forest(S, T, START)
 
-        # each phrase of the Murmurs: a green-gold wave rolling the length of the roofline, alternating ways;
-        # where two waves cross they flash
+        # every bar of the Murmurs: a green-gold wave rolling the length of the roofline, one way then the other;
+        # where two waves cross they flash. They soften while the bird sings, so it stands out
+        soft = 1.0 - 0.4 * smoothstep(T_BIRD_IN - 1, T_BIRD_IN + 1, t)
+        fronts = []
         for k, t0 in enumerate(T_MURMUR):
             a = t - t0
             if 0 <= a < 5.0:
-                g = smoothstep(0, 0.5, a) * (1 - smoothstep(4.2, 5.0, a)) * (1 - smoothstep(D - 4.0, D - 0.3, t))
-                one = np.exp(-((d - (a / 4.6) * L) / 340) ** 2)
-                two = np.exp(-((d - L + (a / 4.6) * L) / 340) ** 2)
-                fr += light(DAY, 0.95 * g * np.clip(one + two, 0, 1))
-                core = np.exp(-((d - (a / 4.6) * L) / 70) ** 2) + np.exp(-((d - L + (a / 4.6) * L) / 70) ** 2)
-                fr += light(SUN if k % 2 == 0 else HEAD, 0.9 * g * np.clip(core, 0, 1))
-                fr += light(WHITE, 0.9 * g * np.clip(one * two * 3 - 0.4, 0, 1))
+                g = smoothstep(0, 0.5, a) * (1 - smoothstep(4.2, 5.0, a)) * soft
+                x = (a / 4.6) * L if k % 2 == 0 else L - (a / 4.6) * L
+                fronts.append((x, g))
+                fr += light(DAY, 0.9 * g * np.exp(-((d - x) / 340) ** 2))
+                fr += light(SUN if k % 4 < 2 else HEAD, 0.85 * g * np.exp(-((d - x) / 70) ** 2))
+        for i, (x1, g1) in enumerate(fronts):
+            for x2, g2 in fronts[i + 1:]:
+                if abs(x1 - x2) < 250:
+                    fr += light(WHITE, 0.8 * g1 * g2 * (1 - abs(x1 - x2) / 250) * np.exp(-((d - (x1 + x2) / 2) / 90) ** 2))
 
         # innocent delight: gold glitter all round him on every note
         for j, (t0, dur, m, v, part, k) in enumerate(delight):
             a = t - t0
             if 0 <= a < 0.8:
-                fr += light(SUN, 0.95 * np.exp(-a / 0.2) * np.exp(-((d - glit[j]) / 14) ** 2))
-                fr += light(WHITE, 0.6 * np.exp(-a / 0.08) * np.exp(-((d - glit[j]) / 6) ** 2))
+                fr += light(SUN, 0.95 * np.exp(-a / 0.3) * np.exp(-((d - glit[j]) / (25 + 60 * a)) ** 2))
+                fr += light(WHITE, 0.8 * np.exp(-a / 0.1) * np.exp(-((d - glit[j]) / 10) ** 2))
 
-        # while the bird sings the forest swells green and gold under it
-        for t0, t1 in swell:
-            if t0 <= t < t1 + 2:
-                u = smoothstep(t0, t0 + 2, t) * (1 - smoothstep(t1, t1 + 2, t))
-                breath = 0.5 + 0.5 * np.sin(2 * np.pi * (t - t0) / 2.5)
-                fr += light(DAY, 0.45 * u * (0.6 + 0.4 * breath) * S['trees'])
+        # each fortissimo swell: the whole forest blooms green and gold from the tree out, a white flash at its heart
+        for t0 in swell:
+            a = t - t0
+            if 0 <= a < 3.0:
+                r = 2200 * (1 - np.exp(-a / 0.5))
+                fr += light(SUN, 0.75 * np.exp(-a / 1.0) * smoothstep(r + 200, r - 200, np.abs(d - p_sf)))
+                fr += light(WHITE, 0.8 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p_sf) - r) / 110) ** 2))
+                fr += light(WHITE, 0.5 * np.exp(-a / 0.15) * S['trees'])
 
         # the Woodbird: a hot magenta point, white at its heart, a short comet trail, wings flickering;
         # each landing of its call sends a magenta ring out through the green
@@ -230,16 +238,16 @@ def render(G, seed=15):
             flap = 0.82 + 0.18 * np.sin(2 * np.pi * 11 * t)
             behind = (d - p) * np.sign(v) < 0
             trail = behind * np.exp(-np.abs(d - p) / (18 + 0.08 * abs(v))) * min(1.0, abs(v) / 300)
-            fr = fr * (1 - 0.9 * bl * np.exp(-((d - p) / 30) ** 2))[:, None]
-            fr += light(BIRD, 1.1 * bl * flap * np.exp(-((d - p) / 10) ** 2))
+            fr = fr * (1 - 0.95 * bl * np.exp(-((d - p) / 45) ** 2))[:, None]
+            fr += light(BIRD, 1.2 * bl * flap * np.exp(-((d - p) / 16) ** 2))
             fr += light(BIRD, 0.85 * bl * trail)
             fr += light(WHITE, 0.9 * bl * flap * np.exp(-((d - p) / 3) ** 2))
-            fr += light(BIRD, 0.5 * bl * np.exp(-((d - p) / 45) ** 2))
+            fr += light(BIRD, 0.6 * bl * np.exp(-((d - p) / 70) ** 2))
         for t0 in calls:
             a = t - t0
             if 0 <= a < 1.5 and bl > 0:
                 p = float(np.interp(t0 + 0.25, B['t'], B['p']))
-                fr += light(BIRD, 1.0 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p) - 700 * a) / 80) ** 2))
+                fr += light(BIRD, 1.1 * np.exp(-a / 0.7) * np.exp(-((np.abs(d - p) - 700 * a) / 120) ** 2))
 
         # Siegfried under the tree, stirring when the bird calls
         sl = 0.8 + 0.15 * sum(np.exp(-(t - t0) / 0.4) for t0 in calls if 0 <= t - t0 < 2)
@@ -250,7 +258,7 @@ def render(G, seed=15):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes on the orchestra, the Woodbird where it sings on the house, the leaves stirring around it."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -259,57 +267,35 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.33, 0.3), ('strings', 0.33, 0.38), ('winds', 0.29, 0.35), ('harp', 0.22, 0.4),
-                            ('mallet', 0.15, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vlns = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    fl = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    fls = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     B = bird_track(G)
-    sf = pan_at(at(G, 'Left', TREE_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'murmur':
-            p = -0.7 + 1.4 * ((t - T_MURMUR[k]) / 6.0) if k % 2 == 0 else 0.7 - 1.4 * ((t - T_MURMUR[k]) / 6.0)
-            if d > 1.5:
-                hold('low', vc, m, t, t + d, v - 6, 0.0, rise=1.0, fall=1.5, gain=0.5)
-            else:
-                M.add('strings', vla.play(m, v, dur=d * 1.3, release=0.25), t, 0.55, p)
-        elif part == 'delight':
-            M.add('strings', vln.play(m, v), t, 0.6, sf)
-            M.add('mallet', glock.play(m, v - 26), t, 0.4, sf)
-        elif part == 'song' or part == 'call':
-            p = pan_at(np.interp(t + 0.1, B['t'], B['p']))
-            if m >= note('A4'):
-                if d > 0.9:
-                    hold('winds', fl, m, t, t + d, v, p, rise=0.05, fall=0.4, gain=0.85)
-                else:
-                    M.add('winds', fls.play(m, v), t, 0.9, p)
-                    M.add('winds', ob.play(m, v - 24, dur=d * 1.05, release=0.1), t, 0.4, p)
-            else:
-                M.add('harp', harp.play(m + 12, v - 28), t, 0.6, p)
-        elif part == 'pedal':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=4.0, fall=2.0, gain=0.5)
-            hold('strings', vlns, note('B4'), T_SONG[0] - 1, T_SETTLE + 6, 50, 0.4, rise=4.0, fall=3.0, gain=0.25)
+    bird = lambda tt: pan_at(B['p'][min(len(B['p']) - 1, int(tt / DT))])
+    tree = pan_at(at(G, 'Left', TREE_AT))
+    o = Orchestra(M, level=3.65)
+    parts = {(round(t, 4), m): part for t, d, m, v, part, k in compose()}
+    k = [0]
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m))
+        if part in ('song', 'call'):
+            k[0] += 1
+            return [(('flutes', 'oboes', 'clarinets')[(k[0] // 6) % 3], -12 if m > 88 else 0, 8, 0.6)]
+        if part == 'delight':
+            return [('violins', 0, 4, 0.55)]
+        if part == 'swell':
+            return [('horns', -12, 0, 0.7), ('violins', 0, 0, 0.5), ('flutes', 0, -8, 0.3)]
+        if part == 'murmur' and h == 1 and d >= 1.5:
+            return [('horns', 0, 4, 0.55), ('cellos', 0, -6, 0.35)]
+        return None
+
+    def pan(t, m):
+        if t >= T_BIRD_IN and m >= 76:
+            return bird(t)
+        return tree * 0.5
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.6, role=role, pan=pan)
+    # the leaves: they rise with each swell and fall back so the bird is clear
+    pts = [(0.0, -4), (T_BIRD_IN - 1.0, -4), (T_BIRD_IN, -12)]
+    for t0 in sorted({round(e[0], 1) for e in compose() if e[4] == 'swell'}):
+        pts += [(t0 - 0.3, -12), (t0 + 0.2, -1), (t0 + 2.5, -12)]
+    o.effects(sorted(pts))
+    o.wind(0.0, D, level=0.5, pan=tree * 0.3, seed=16)

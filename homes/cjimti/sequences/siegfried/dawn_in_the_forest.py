@@ -1,46 +1,52 @@
 """Dawn in the Forest: the last of the night outside Fafner's cave. Alberich, hiding at Right 0.3, slips away.
-Then Mime's smithing motif (Donington 50) comes hopping in on the bassoons, and Mime, sulphur yellow, scuttles in
-from the free end of Right with Siegfried, emerald with his white-hot head, striding behind him. They come along
-Right and up the porch to the cave mouth; Mime hops on every note, Siegfried's horn call (48) rings out ahead of
-him in an emerald streak.
 
-At the cave Mime tells him of the dragon: Fafner's motif (57) growls low and the cave mouth throbs ochre. Then
-Siegfried has had enough of him: his strength (53) blasts emerald out to both ends of the house three times and
-Mime bolts, a yellow streak back out the free end of Right.
+The music is Wagner's own, from Act II as Solti's 1958 Vienna Philharmonic recording takes it: day breaking as
+Mime leads Siegfried to the cave (bars 528 to 547), Mime's tale of the dragon's heart and Siegfried's answer,
+"Nothung stoß' ich dem Stolzen ins Herz!" (603 to 610), and Mime's chattering retreat into the hush where the
+Forest Murmurs begin (700 to 715). The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py): the dawn's long lines on clarinets, oboes and violins over the low strings, the dragon's
+tritone tremolo (A flat and D) on cellos and basses, Siegfried's rising resolve on horns and violins, and Mime's
+falling chromatic scales on bassoons and violas. A production adds the morning: the first birds as the light
+comes, Mime's scuttling steps and Siegfried's stride, and a rustle of leaves as the forest wakes.
 
-And the sun comes up. The forest turns from night teal to hard green, and the sunrise breaks through the trees in
-great gold shafts, one after another, each one bursting white where it lands and spreading. The Forest Murmurs
-(29) begin to ripple, and Siegfried walks to the lime tree at Left 0.5 and lies down under it.
+The sun comes up: every long note of the dawn breaks a gold shaft through the trees, bursting white where it
+lands and spreading, and the forest turns from night teal to hard green. Mime, sulphur yellow, scuttles in from
+the free end of Right with Siegfried, emerald with his white-hot head, striding behind him, Mime hopping on every
+note; on the orchestra's two forte chords an emerald streak races ahead of Siegfried. At the cave Mime tells him
+of the dragon: the cave mouth throbs ochre on every note of the tritone tremolo. Siegfried answers him: three
+emerald blasts out to both ends of the house on his last chords. Mime bolts on the falling scales, a yellow
+streak back out the free end of Right, and in the hush the Forest Murmurs begin to ripple green and gold while
+Siegfried walks to the lime tree at Left 0.5 and lies down under it.
 
-compose() holds every note; stage(), forest(), figure() and sparks() are the forest and the cave, shared word for
-word by Act II's scenes on a clock that runs on from scene to scene."""
+compose() tags every note of the excerpt; stage(), forest(), figure() and sparks() are the forest and the cave,
+shared word for word by Act II's scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy, accents
 
 CODE = 'SF14'
 TITLE = 'Dawn in the Forest'
 KIND = 'show'
-DESCRIPTION = ('The dwarf leads Siegfried through the dark to the cave and tells him about the dragon, until '
-               'Siegfried chases him off. Then the sun comes up through the trees in great gold shafts.')
+DESCRIPTION = ('The sun comes up through the trees in great gold shafts as the dwarf leads Siegfried to the cave. '
+               'He tells him about the dragon, until Siegfried chases him off.')
 VOICEOVER = ('Mime brings the boy to the dragon\'s cave, hoping he will learn what fear is. '
              'And the sun comes up.')
 
 K = 3                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_MIME = [3.0, 6.0, 9.0, 12.0]              # Mime's motif as they come in
-T_IN = 3.0                                  # they enter at the free end of Right
-T_HORN = [8.0, 14.0]                        # Siegfried's horn call
-T_CAVE = 18.0                               # they reach the cave mouth
-T_DRAGON = 19.5                             # Mime tells of the dragon
-T_STR = [30.0, 33.5, 37.0]                  # Siegfried's strength: go away!
-T_FLEE = 37.5                               # Mime bolts
-T_SUN = 41.0                                # the sun breaks through: the first shaft
-T_SHAFTS = [41.0, 44.0, 47.0, 50.0, 53.0, 56.0]
-T_MURMUR = [55.0, 60.0, 65.0, 70.0]         # the Forest Murmurs begin
-T_WALK = 50.0                               # Siegfried walks to the lime tree
-T_LIE = 62.0
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 528-547, 603-610 and 700-715, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_SUN = BAR[529]                            # day breaks
+T_SHAFTS = [n[0] for n in EX['notes'] if n[4] == 0 and n[1] >= 0.7 and T_SUN <= n[0] < BAR[542]]
+T_IN = BAR[533]                             # they come in at the free end of Right
+T_HORN = [BAR[542], BAR[545]]               # the forte chords: an emerald streak ahead of him
+T_CAVE = BAR[543]                           # they reach the cave mouth
+T_DRAGON = BAR[603]                         # the dragon's heart
+T_STR = accents([n for n in EX['notes'] if BAR[609] <= n[0] < BAR[611]], n=2, space=0.9)[:3]   # his answer
+T_FLEE = BAR[700]                           # Mime bolts
+T_WALK = BAR[707]                           # Siegfried walks to the lime tree
+T_LIE = BAR[713]
+T_MURMUR = [BAR[712], BAR[713] + 1.0, BAR[714] + 1.5]   # the Forest Murmurs begin
 
 NIGHT = hexc('#14a878')
 MOON = hexc('#6080ff')
@@ -133,35 +139,26 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). 'sun' is a long note of the dawn,
+    'mime' a hop as they come in, 'horn' a forte chord, 'dragon' a note of the tritone tremolo, 'strength' his
+    answer, 'flee' Mime's falling scales, 'murmur' the hush where the Forest Murmurs begin."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_SUN, 'F1', 56, 'pedal')
-    for k, t0 in enumerate(T_MIME):
-        for t, m, v, d in play('mime', t0, 0.34, 0, 84 + 4 * k):
-            add(t, d, m, v, 'mime', k)
-    for k, t0 in enumerate(T_HORN):
-        for t, m, v, d in play('siegfried_horn', t0, 0.3, 5, 100 + 6 * k):
-            add(t, d, m, v, 'horn', k)
-    for t, m, v, d in play('fafner', T_DRAGON, 0.6, 0, 92):
-        add(t, d, m, v, 'dragon')
-    for k, t0 in enumerate(T_STR):
-        for t, m, v, d in play('siegfried', t0, 0.42, -12, 110 + 4 * k):
-            add(t, d, m, v, 'strength', k)
-    for j in range(7):
-        add(T_FLEE + j * 0.22, 0.2, ('F4', 'Eb4', 'Db4', 'C4', 'Bb3', 'Ab3', 'G3')[j], 90 - 4 * j, 'flee')
-    for k, t0 in enumerate(T_SHAFTS):
-        for m in (('E3', 'B3', 'E4', 'Ab4'), ('Db3', 'Ab3', 'E4', 'A4'), ('E3', 'B3', 'Gb4', 'B4'))[k % 3]:
-            add(t0, 3.4, m, 74 + 4 * k, 'sun', k)
-        add(t0, 0.1, ('E5', 'Ab5', 'B5', 'E6', 'Ab5', 'B5')[k], 70, 'glint', k)
-    for k, t0 in enumerate(T_MURMUR):
-        for t, m, v, d in play('forest_murmurs', t0, 0.85, 12, 70 + 4 * k):
-            add(t, d, m, v, 'murmur', k)
-    add(T_SUN, D - T_SUN, 'E2', 62, 'day')
-    return sorted(N, key=lambda e: e[0])
+    for t, d, m, v, h in sorted(EX['notes']):
+        if t < T_DRAGON:
+            if any(abs(t - x) < 0.3 for x in T_HORN) and v >= 80:
+                part = 'horn'
+            elif t >= T_IN and t < T_CAVE and d < 0.7:
+                part = 'mime'
+            else:
+                part = 'sun'
+        elif t < T_FLEE:
+            part = 'dragon' if h == 1 and m < 52 and t < T_STR[0] else 'strength' if t >= T_STR[0] - 0.05 else 'rise'
+        elif t < T_WALK + 2:
+            part = 'flee'
+        else:
+            part = 'murmur'
+        N.append((t, d, m, v, part, None))
+    return N
 
 
 def tracks(G):
@@ -173,11 +170,11 @@ def tracks(G):
     cave_m, cave_s = at(G, 'Porch Front', 0.62), at(G, 'Porch Right', 0.2)
     tree = at(G, 'Left', TREE_AT)
     hop = np.abs(np.sin(np.pi * t / 0.34)) * 10
-    pm = np.array([keys(x, [(T_IN, door), (T_CAVE, cave_m), (T_FLEE, cave_m), (T_FLEE + 3.5, door + 200)]) for x in t])
+    pm = np.array([keys(x, [(T_IN, door), (T_CAVE, cave_m), (T_FLEE + 0.8, cave_m), (T_FLEE + 4.5, door + 200)]) for x in t])
     pm = pm - hop * ((t > T_IN) & (t < T_CAVE))
     ps = np.array([keys(x, [(T_IN + 1.5, door), (T_CAVE + 1.5, cave_s), (T_WALK, cave_s), (T_LIE - 2, tree)])
                    for x in t])
-    lm = np.array([keys(x, [(T_IN, 0.0), (T_IN + 0.6, 0.8), (T_FLEE + 2.5, 0.8), (T_FLEE + 3.5, 0.0)]) for x in t])
+    lm = np.array([keys(x, [(T_IN, 0.0), (T_IN + 0.6, 0.8), (T_FLEE + 3.5, 0.8), (T_FLEE + 4.5, 0.0)]) for x in t])
     ls = np.array([keys(x, [(T_IN + 1.5, 0.0), (T_IN + 2.2, 0.85), (T_LIE, 0.85), (T_LIE + 3, 0.8)]) for x in t])
     return dict(t=t, pm=pm, ps=ps, lm=lm, ls=ls)
 
@@ -186,22 +183,25 @@ def render(G, seed=14):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     S = stage(G)
-    d, mid = S['d'], S['mid']
+    d = S['d']
     L = d.max()
     N = compose()
     C = tracks(G)
     p_alb = at(G, 'Right', ALB_AT)
-    mime_on = np.array(sorted({e[0] for e in N if e[4] == 'mime'}))
+    mime_on = np.array(sorted({round(e[0], 2) for e in N if e[4] in ('mime', 'flee')}))
     dragon = [e for e in N if e[4] == 'dragon']
     strength = sorted({e[0] for e in N if e[4] == 'strength'})
+    flee = accents([(e[0], e[1], e[2], e[3]) for e in N if e[4] == 'flee'], n=1, space=0.55)
+    gloat = [(sg[0], sg[1]) for sg in EX['singing'] if sg[2] == 'Mime' and sg[0] > T_FLEE + 5]
     rng = np.random.default_rng(seed)
     land = rng.uniform(at(G, 'Left', 0.05), L - 60, len(T_SHAFTS))
     land[0] = at(G, 'Right', 0.55)
+    T_SUN_FULL = T_CAVE
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
-        lv = {k: keys(t, [(0, START[k]), (T_SUN - 1, START[k]), (T_SUN + 16, END[k])]) for k in START}
+        lv = {k: keys(t, [(0, START[k]), (T_SUN, START[k]), (T_SUN_FULL, END[k])]) for k in START}
         fr = forest(S, T, lv)
         pm, ps = C['pm'][f], C['ps'][f]
 
@@ -213,7 +213,7 @@ def render(G, seed=14):
 
         # Mime's motif: a yellow blip under him on every hop, a little ripple out
         i = int(np.searchsorted(mime_on, t, side='right')) - 1
-        if i >= 0 and t - mime_on[i] < 0.6 and t < T_CAVE + 1:
+        if i >= 0 and t - mime_on[i] < 0.6 and (t < T_CAVE + 1 or T_FLEE <= t < T_FLEE + 5):
             a = t - mime_on[i]
             fr += light(MIME, 0.6 * np.exp(-a / 0.15) * np.exp(-((np.abs(d - pm) - 300 * a) / 40) ** 2))
 
@@ -240,9 +240,22 @@ def render(G, seed=14):
                 r = 1600 * min(1.0, a / 0.6)
                 fr += light(SIEGFRIED, 0.95 * np.exp(-a / 0.7) * smoothstep(r + 80, r - 80, np.abs(d - ps)))
                 fr += light(HEAD, 0.8 * np.exp(-a / 0.3) * np.exp(-((np.abs(d - ps) - r) / 40) ** 2))
-        if T_FLEE <= t < T_FLEE + 3.5:
+        if T_FLEE <= t < T_FLEE + 4.5:                      # the yellow streak he leaves behind him
             a = t - T_FLEE
-            fr += light(MIME, 0.7 * np.exp(-((d - pm + 80) / 60) ** 2) * (1 - a / 3.5))
+            fr += light(MIME, 0.8 * smoothstep(pm - 500, pm, d) * smoothstep(pm + 20, pm - 10, d) * (1 - a / 4.5))
+
+        # Mime's falling scales: yellow cascades pouring out toward the free end of Right; then, gone, his gloating
+        # voice flickers there among the trees ("Fafner und Siegfried, Siegfried und Fafner")
+        for t0 in flee:
+            a = t - t0
+            if 0 <= a < 1.4:
+                front = pm + 900 * a
+                fr += light(MIME, 0.8 * np.exp(-a / 0.5) * np.exp(-((d - front) / 90) ** 2) * (d < L + 50))
+        for t0, t1 in gloat:
+            if t0 <= t < t1 + 0.8:
+                flick = 0.5 + 0.5 * np.sin(2 * np.pi * 3.0 * (t - t0)) ** 2
+                g = smoothstep(t0, t0 + 0.3, t) * (1 - smoothstep(t1, t1 + 0.8, t))
+                fr += light(MIME, 0.7 * g * flick * smoothstep(at(G, 'Right', 0.6), L, d))
 
         # the sunrise: gold shafts breaking through, each bursting white where it lands and spreading
         for k, t0 in enumerate(T_SHAFTS):
@@ -280,7 +293,7 @@ def render(G, seed=14):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes on the orchestra, and the morning around them."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -289,86 +302,56 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.42, 0.25), ('brass', 0.39, 0.3), ('perc', 0.34, 0.3), ('winds', 0.34, 0.32),
-                            ('strings', 0.34, 0.36), ('harp', 0.29, 0.4), ('mallet', 0.21, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    oboe = M.sampler('Woodwinds/Oboe/Stacc/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vla = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    cym = M.hits('Percussion/susCymb1-cresc-Median*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     C = tracks(G)
-
-    def pan_t(key, t):
-        return pan_at(np.interp(t, C['t'], C[key]))
-
+    pm = lambda tt: pan_at(C['pm'][min(len(C['pm']) - 1, int(tt / DT))])
+    ps = lambda tt: pan_at(C['ps'][min(len(C['ps']) - 1, int(tt / DT))])
     cave = pan_at(at(G, 'Porch Front', 0.5))
-    land = np.random.default_rng(14).uniform(at(G, 'Left', 0.05), G.pd.max() - 60, len(T_SHAFTS))
-    land[0] = at(G, 'Right', 0.55)
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v, cave, rise=2.0, fall=3.0, gain=0.4)
-        elif part == 'mime':
-            p = pan_t('pm', t)
-            M.add('winds', bsn.play(m - 12, v), t, 0.9, p)
-            M.add('winds', oboe.play(m, v - 14), t, 0.5, p)
-        elif part == 'horn':
-            p = pan_t('ps', t)
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v, p, rise=0.05, fall=0.5, gain=0.9)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.15), t, 0.9, p)
-        elif part == 'dragon':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.3), t, 0.95, cave)
-            M.add('low', cb.play(m + 12, v - 12, dur=d * 1.1, release=0.3), t, 0.6, cave)
-        elif part == 'strength':
-            p = pan_t('ps', t)
-            M.add('brass', tpt.play(m, v, dur=d * 1.1, release=0.15), t, 0.85, p)
-            M.add('brass', horn.play(m - 12, v - 8, dur=d * 1.1, release=0.15), t, 0.7, p)
-            if t in [play('siegfried', t0, 0.42, -12)[0][0] for t0 in T_STR]:
-                M.add('perc', timp.play(v, pitch=-3), t, 0.8, p)
-        elif part == 'flee':
-            M.add('winds', bsn.play(m - 12, v), t, 0.9, pan_t('pm', t))
-        elif part == 'sun':
-            p = pan_at(land[k])
-            hold('strings', vla if m < note('C4') else vln, m, t, t + d, v, p, rise=0.6, fall=1.5, gain=0.6)
-            if m == note('E3') or m == note('Db3'):
-                M.add('perc', cym.play(70), t - 1.2, 0.5, p)
-                M.add('harp', harp.play(m + 12, v), t, 0.8, p)
-                M.add('harp', harp.play(m + 19, v - 6), t + 0.12, 0.8, p)
-                M.add('harp', harp.play(m + 24, v - 10), t + 0.24, 0.8, p)
-        elif part == 'glint':
-            M.add('mallet', glock.play(m, v), t, 0.7, pan_at(land[k]))
-        elif part == 'murmur':
-            p = -0.6 + 1.2 * (k % 2)
-            if d > 1.5:
-                hold('strings', vc, m, t, t + d, v, 0.0, rise=0.8, fall=1.0, gain=0.45)
-            else:
-                M.add('strings', vla.play(m, v, dur=d * 1.2, release=0.2), t, 0.6, p)
-        elif part == 'day':
-            hold('low', cb, m, t, t + d, v, 0.0, rise=6.0, fall=2.0, gain=0.5)
+    o = Orchestra(M, level=2.8)
+    parts = {(round(t, 4), m): part for t, d, m, v, part, k in compose()}
+
+    def role(t, d, m, v, h):
+        part = parts.get((round(t, 4), m))
+        if part == 'sun' and h == 0:
+            return [('clarinets', 0, 4, 0.6), ('violins', 0, -4, 0.45)] + ([('oboes', 0, -6, 0.35)] if d >= 1.0 else [])
+        if part == 'mime':
+            return [('bassoons', 0, 4, 0.6), ('violas', 0, -6, 0.35)]
+        if part == 'horn':
+            return [('horns', 0, 6, 0.75), ('trombones', -12, -4, 0.45)]
+        if part == 'dragon':
+            return [('cellos trem', 0, 4, 0.6), ('basses', -12 if m >= 40 else 0, 0, 0.45)]
+        if part in ('rise', 'strength') and h == 0:
+            return [('violins', 0, 2, 0.55), ('horns', -12, 0, 0.6 if part == 'strength' else 0.35)]
+        if part == 'strength' and h == 1:
+            return [('horns', 0, 6, 0.75), ('trombones', 0, 0, 0.55), ('tuba', -12, -6, 0.4)]
+        if part == 'flee':
+            return [('bassoons', 0, 2, 0.55), ('violas', 0, -4, 0.4)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.4 if t < T_IN else 0.75, role=role,
+            pan=lambda t, m: cave * 0.5 if T_CAVE <= t < T_FLEE else 0.0)
+    # the morning: birds come with the light and fall quiet under the talk; their steps; the forest waking
+    o.effects([(0.0, -6), (T_SUN, -2), (T_IN, 0), (T_CAVE, -2), (T_CAVE + 1.5, -9), (T_FLEE - 0.5, -9),
+               (T_FLEE, -2), (T_WALK + 2, -4)])
+    rng = np.random.default_rng(14)
+    for t0 in np.sort(rng.uniform(T_SUN + 1, T_CAVE + 2, 16)):          # the first birds
+        o.hit('triangle', t0, int(rng.uniform(40, 70)), pitch=float(rng.uniform(10, 19)), gain=0.25,
+              pan=float(rng.uniform(-0.9, 0.9)))
+    for t0 in np.sort(rng.uniform(T_WALK, D, 8)):
+        o.hit('triangle', t0, int(rng.uniform(35, 55)), pitch=float(rng.uniform(12, 20)), gain=0.2,
+              pan=float(rng.uniform(-0.9, 0.9)))
+    t = T_IN                                                            # Mime scuttling, Siegfried striding
+    while t < T_CAVE:
+        o.M.add('fx', o.hits['hoof soft'].play(52), t, 0.18, pm(t))
+        t += 0.34
+    t = T_IN + 1.5
+    while t < T_CAVE + 1.5:
+        o.M.add('fx', o.hits['hoof'].play(70), t, 0.2, ps(t))
+        t += 0.6
+    t = T_FLEE + 0.8
+    while t < T_FLEE + 4.5:
+        o.M.add('fx', o.hits['hoof soft'].play(60), t, 0.2, pm(t))
+        t += 0.2
+    o.wind(T_SUN, T_CAVE + 3, level=0.35, pan=0.2, seed=15)            # leaves stirring as the light comes
+    for t0 in T_STR:
+        o.hit('timpani', t0, 112, pitch=-4, gain=0.55, pan=ps(t0))
+    o.hit('crash', T_STR[0], 104, gain=0.35, pan=ps(T_STR[0]))

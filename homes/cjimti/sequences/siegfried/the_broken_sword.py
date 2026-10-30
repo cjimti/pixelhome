@@ -1,37 +1,45 @@
-"""The Broken Sword: Mime has made Siegfried a new sword. He holds it out, and a white steel blade grows along
-Porch Front from his hands toward the anvil while the trumpet gives the Sword motif (Donington 45), the blade
-flashing on every note. Siegfried strides to the anvil and smashes it there: a white flash over the whole house,
-and steel shards fly out in both directions to the ends of the roofline, chased by an orange flare of the
-forge. Mime cringes (Mime frustrated, 71, in the bassoons), dim and shaking.
+"""The Broken Sword: Mime has made Siegfried a new sword. "Ich schuf die Waffe scharf", he says, and holds it out,
+and a white steel blade grows along Porch Front from his hands toward the anvil, gleaming on every note. Siegfried
+takes it and tries it, the strings shivering in a fortissimo tremolo; then, at the top of a run, he smashes it on
+the anvil: a white flash over the whole house, steel shards flying out in both directions to the ends of the
+roofline, chased by an orange flare of the forge. "Da hast du die Stücken, schändlicher Stümper!"
 
-Twice he goes back to the anvil and hammers out another (Mime, obstinate, 51: every blow sparks to both ends of
-the house), and twice Siegfried breaks it, each time harder. After the third the whole house burns emerald with
-his scorn while his audacity (55) storms through the horns and violins, a green shockwave out from him at every
-note, until he flings himself down at the anvil's right hand and Mime creeps back to its left.
+The music is Wagner's own: Act I, bars 314 to 424, as Solti's 1958 Vienna Philharmonic recording takes them, from
+the end of Siegfried's tale of the bear through Mime's offer, the trial and the blow, and Siegfried's whole tirade,
+to Mime's "Nun tobst du wieder wie toll!". The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py): Mime's offer on violins with a trumpet glinting, the trial's tremolo on the violins, Siegfried's
+scorn on horns and violins, trumpets on top at its two climaxes. The staging adds the blow: steel shattering on the
+anvil with a boom, the shards ringing as they fly, a cymbal swelling into it, cymbals and timpani on the climaxes,
+the anvil pounded at their tops, and the forge fire roaring with his anger.
 
-compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
+Mime cringes, dim and shaking. Siegfried's scorn burns the whole house emerald, a surge racing out from him on
+every bar of his tirade and the house blazing at its two climaxes, sparks flying as he pounds the anvil, until
+Mime protests and the fury cools, with Siegfried at the anvil's right hand and Mime creeping back to its left.
+
+compose() tags every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, excerpt, tidy
 
 CODE = 'SF03'
 TITLE = 'The Broken Sword'
 KIND = 'show'
-DESCRIPTION = ('The dwarf holds out a gleaming new sword, and Siegfried shatters it on the anvil. Mime makes '
-               'another, and another, and each one breaks harder than the last.')
+DESCRIPTION = ('The dwarf holds out a gleaming new sword. Siegfried tries it, smashes it to pieces on the anvil, '
+               'and storms at him.')
 VOICEOVER = ('Mime forges sword after sword. '
              'And Siegfried smashes every one of them to pieces.')
 
 K = 2                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
-T_SWORD = [2.0, 24.0, 46.0]                 # Mime holds out a sword: the Sword motif on the trumpet
-SMASH_AFTER = 6.5                           # Siegfried breaks it on the anvil
-T_HAM = [13.0, 35.0]                        # Mime hammers out another
-T_AUD = [57.0, 64.5]                        # Siegfried's scorn
-T_REST = 71.0
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 314-424, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_SWORD = [BAR[321]]                        # "Ich schuf die Waffe scharf": Mime holds out the new sword
+T_TEST = BAR[325]                           # Siegfried takes it and tries it
+T_SMASH = BAR[342]                          # he smashes it on the anvil, at the top of the run
+T_PEAKS = [(BAR[385], BAR[391]), (BAR[402], BAR[418])]     # the two climaxes of his tirade
+T_REST = BAR[419]                           # "Nun tobst du wieder wie toll!"
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -123,37 +131,31 @@ def hero(fr, S, p, lvl, w=16.0):
 
 
 def smashes():
-    return [t0 + SMASH_AFTER for t0 in T_SWORD]
+    return [T_SMASH]
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, k). The right hand under Mime's offer
+    and Siegfried's trial is the Sword's gleam ('sword'); the right hand of everything Siegfried sings is his
+    audacity ('aud'), the loudest notes of the two climaxes 'peak'; 'smash' marks the blow (silent)."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'C1', 60, 'pedal')
-    for k, t0 in enumerate(T_SWORD):
-        for t, m, v, d in play('sword', t0, 0.62, 0, 96 + 6 * k, line='melody'):
-            add(t, d, m, v, 'sword', k)
-    for k, ts in enumerate(smashes()):
-        add(ts, 0.1, 'C1', 110 + 7 * k, 'smash', k)
-        for t, m, v, d in play('mime_frustrated', ts + 1.0, 0.7 - 0.08 * k, 0, 90 + 6 * k):
-            add(t, d, m, v, 'grumble', k)
-        for t, m, v, d in play('mime_frustrated', ts + 2.6, 0.9, -12, 80):
-            add(t, d, m, v, 'grumble', k)
-    for k, t0 in enumerate(T_HAM):
-        for r in range(3):
-            for t, m, v, d in play('mime_obstinate', t0 + r * 2.0, BEAT, -12, 82 + 8 * r + 6 * k):
-                add(t, d, m, v, 'ham', k)
-    for k, t0 in enumerate(T_AUD):
-        for t, m, v, d in play('siegfried_audacity', t0, 0.48, 0, 108 + 6 * k):
-            add(t, d, m, v, 'aud', k)
-            add(t, d, m - 24, v - 14, 'aud_bass', k)
-    for m in ('C3', 'G3', 'C4', 'E4'):
-        add(T_REST, D - T_REST, m, 62, 'glow')
+    for t, d, m, v, h in EX['notes']:
+        part = 'orch'
+        if h == 0 and T_SWORD[0] <= t < T_SMASH:
+            part = 'sword'
+        elif h == 0 and (t < T_SWORD[0] or t > T_SMASH + 0.3):
+            part = 'peak' if any(a <= t < b for a, b in T_PEAKS) and v >= 105 else 'aud'
+        N.append((t, d, m, v, part, 0))
+    N.append((T_SMASH, 0.1, 24, 0, 'smash', 0))
     return sorted(N, key=lambda e: e[0])
+
+
+def fury_at(t):
+    """How hot his scorn burns: from the smash, flaring at the two climaxes, cooling at Mime's protest."""
+    f = 0.3 * smoothstep(T_SMASH, T_SMASH + 0.6, t)
+    for a, b in T_PEAKS:
+        f += 0.45 * smoothstep(a - 0.4, a + 0.4, t) * (1 - smoothstep(b - 0.5, b + 0.8, t))
+    return f * (1 - 0.6 * smoothstep(T_REST - 1, T_REST + 2, t))
 
 
 def render(G, seed=3):
@@ -161,29 +163,34 @@ def render(G, seed=3):
     out = np.zeros((F, G.N, 3))
     S = stage(G)
     d, anvil = S['d'], S['anvil']
-    L = d.max()
     N = compose()
     p_mime, p_hero = at(G, 'Porch Front', MIME_AT), at(G, 'Porch Front', HERO_AT)
     p_strike = at(G, 'Porch Front', 0.56)
-    ham = [(t, 0.85, anvil) for t, _, m, v, part, k in N if part == 'ham']
+    ham = [(t, 0.9, anvil) for t, _, m, v, part, k in N if part == 'peak' and m >= note('G5')]
     ham_t = np.array([h[0] for h in ham])
     sm = smashes()
     shards = [(ts, 1.0 + 0.3 * k, anvil) for k, ts in enumerate(sm)]
     sword = [e for e in N if e[4] == 'sword']
-    grumble = [e for e in N if e[4] == 'grumble']
+    grumble = [(T_REST, 1.2, 60, 100, 'grumble', 0), (BAR[421], 1.2, 60, 100, 'grumble', 0),
+               (BAR[423], 1.0, 60, 100, 'grumble', 0)]
     aud_on = np.array(sorted({e[0] for e in N if e[4] == 'aud'}))
+    surges = []                             # every bar of the tirade: an emerald surge out from him, by its loudness
+    for (m, bt), (_, nt) in zip(EX['bars'], EX['bars'][1:] + [[0, D]]):
+        if T_SMASH + 0.5 < bt < T_REST:
+            vs = [n[3] for n in EX['notes'] if bt <= n[0] < nt]
+            surges.append((bt, (max(vs) / 127) ** 2 if vs else 0.0))
     jag = np.random.default_rng(seed).uniform(0.4, 1.0, G.N)
 
     for f in range(F):
         t = f * DT
         T = t + 80 * K
         lv = dict(LV)
-        fury = smoothstep(sm[2], sm[2] + 0.5, t) * (1 - smoothstep(T_REST - 1, T_REST + 3, t))
+        fury = fury_at(t)
         fr = cave(S, T, lv)
 
         # the blade held out: white steel growing from Mime's hands to the anvil, flashing at each note
         for k, t0 in enumerate(T_SWORD):
-            ts = t0 + SMASH_AFTER
+            ts = sm[k]
             if t0 <= t < ts + 0.05:
                 grow = smoothstep(t0, t0 + 1.5, t)
                 tip = p_mime + 10 + grow * (anvil - p_mime + 15)
@@ -216,7 +223,7 @@ def render(G, seed=3):
             if 0 <= a < 1.0:
                 fr += light(MIME, 0.6 * np.exp(-a / 0.4) * np.exp(-((np.abs(d - p_mime) - 900 * a) / 70) ** 2))
 
-        # Mime hammers another: every blow a white-hot flash and sparks to both ends
+        # the climaxes of his tirade: he pounds the anvil, every top note a white-hot flash and sparks
         i = int(np.searchsorted(ham_t, t, side='right')) - 1
         if i >= 0 and t - ham_t[i] < 1.0:
             a = t - ham_t[i]
@@ -228,6 +235,11 @@ def render(G, seed=3):
         if fury > 0:
             fr = fr * (1 - 0.6 * fury)
             fr += light(SIEGFRIED, fury * (0.45 + 0.15 * np.sin(2 * np.pi * (d / 300 - 1.4 * t))))
+        for bt, sv in surges:
+            a = t - bt
+            if 0 <= a < 1.4:
+                fr += light(SIEGFRIED, 1.3 * sv * np.exp(-a / 0.45) *
+                            np.exp(-((np.abs(d - p_hero) - 1700 * a) / 280) ** 2))
         j = int(np.searchsorted(aud_on, t, side='right')) - 1
         if j >= 0 and t - aud_on[j] < 1.2:
             a = t - aud_on[j]
@@ -237,19 +249,19 @@ def render(G, seed=3):
         ps = p_hero
         for ts in sm:
             ps += (p_strike - p_hero) * smoothstep(ts - 1.6, ts - 0.4, t) * (1 - smoothstep(ts + 1.0, ts + 3.0, t))
-        cringe = max([np.exp(-(t - ts) / 4.0) for ts in sm if ts <= t], default=0.0)
+        cringe = max([np.exp(-(t - ts) / 6.0) for ts in sm if ts <= t], default=0.0)
         shake = 4 * cringe * np.sin(2 * np.pi * 9 * t)
         mlvl = 0.75 - 0.4 * cringe
         if t > T_REST:
             mlvl = keys(t, [(T_REST, mlvl), (D - 4, 0.6)])
         fr = figure(fr, S, p_mime - 12 * cringe + shake, MIME, mlvl)
-        fr = hero(fr, S, ps, keys(t, [(0, 0.8), (T_AUD[0], 1.0), (T_REST, 1.0), (D - 4, 0.8)]))
+        fr = hero(fr, S, ps, keys(t, [(0, 0.8), (T_SMASH, 1.0), (T_REST, 1.0), (D - 2, 0.8)]))
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction; the sword shatters on the anvil."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -258,74 +270,44 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.4, 0.22), ('winds', 0.32, 0.3), ('brass', 0.38, 0.3), ('strings', 0.34, 0.3),
-                            ('perc', 0.36, 0.25), ('mallet', 0.22, 0.32), ('warm', 0.34, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    tpt = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    horn_st = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
-    tuba_st = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    bsn_st = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    xylo = M.sampler('Percussion/Xylo/*.wav')
-    glock = M.sampler('Percussion/Glock/*.wav')
-    anvil = M.hits('Percussion/Anvil_Hit1_*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
     forge = pan_at(at(G, 'Porch Front', 0.5))
-    mime = pan_at(at(G, 'Porch Front', MIME_AT))
-    hero = pan_at(at(G, 'Porch Front', HERO_AT))
-    rng = np.random.default_rng(45)
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=3.0, fall=2.0, gain=0.45)
-        elif part == 'sword':
-            if d > 0.6:
-                hold('brass', tpt, m, t, t + d, v, mime, rise=0.06, fall=0.5, gain=0.85)
-            else:
-                M.add('brass', tpt.play(m, v, dur=d * 1.1, release=0.15), t, 0.85, mime)
-        elif part == 'smash':
-            M.add('perc', crash.play(v), t, 1.0, forge)
-            M.add('perc', anvil.play(v), t, 1.0, forge)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, forge)
-            for j in range(10 + 4 * k):     # the shards: glockenspiel notes scattering out both ways
-                pa = float(np.clip(forge + rng.uniform(-1, 1), -0.9, 0.9))
-                M.add('mallet', glock.play(note('C5') + int(rng.integers(0, 24)), 90 - 3 * j), t + 0.03 + 0.07 * j,
-                      0.6, pa)
-        elif part == 'grumble':
-            M.add('winds', bsn.play(m, v, dur=d * 1.1, release=0.25), t, 0.9, mime)
-            M.add('low', vc.play(m, v - 12, dur=d * 1.1, release=0.25), t, 0.6, mime)
-        elif part == 'ham':
-            M.add('perc', anvil.play(v), t, 0.75, forge)
-            M.add('mallet', xylo.play(m + 12, v - 10), t, 0.6, mime)
-            M.add('winds', bsn_st.play(m, v - 6), t, 0.8, mime)
-        elif part == 'aud':
-            M.add('strings', vln.play(m + 12, v, dur=d, release=0.1), t, 0.8, hero)
-            M.add('brass', horn_st.play(m, v - 6), t, 0.8, hero)
-            if d > 0.6:
-                hold('brass', horn, m, t, t + d, v - 14, hero, rise=0.05, fall=0.3, gain=0.5)
-        elif part == 'aud_bass':
-            M.add('low', tuba_st.play(m, v), t, 0.6, hero)
-            if t in T_AUD:
-                M.add('perc', crash.play(105), t, 0.6, hero)
-        elif part == 'glow':
-            hold('warm', vc if m < note('C4') else horn, m, t, t + d, v, hero * 0.5, rise=2.5, fall=2.0, gain=0.5)
+    hero_p = pan_at(at(G, 'Porch Front', HERO_AT))
+    o = Orchestra(M, level=1.7)
+    tag = {(round(e[0], 4), e[2]): e[4] for e in compose()}
+    trem_a, trem_b = BAR[332], BAR[340]
+
+    def role(t, d, m, v, h):
+        p = tag.get((round(t, 4), m), 'orch')
+        if p == 'sword' and t >= trem_b:    # the run up to the blow: violins and flutes
+            return [('violins', 0, 0, 0.6), ('flutes', 0, -8, 0.4)]
+        if p == 'sword' and t < T_TEST:     # Mime's offer: the strings climb, a trumpet glints on top
+            return [('violins', 0, -4, 0.5), ('clarinets', -12, -10, 0.35)] + \
+                ([('trumpets', 0, -12, 0.35)] if d >= 0.4 else [])
+        if p in ('aud', 'peak'):            # Siegfried's scorn: horns and violins, trumpets at the climaxes
+            parts = [('violins', 0, -2, 0.5), ('horns', -12 if m >= note('C5') else 0, -6, 0.5)]
+            if p == 'peak':
+                parts.append(('trumpets', 0, -10, 0.4))
+            return parts
+        return None
+
+    notes = [n for n in EX['notes'] if not (n[4] == 0 and trem_a <= n[0] < trem_b)]
+    notes += tidy([n for n in EX['notes'] if n[4] == 0 and trem_a <= n[0] < trem_b])
+    o.tutti(sorted(notes), size=lambda t: 0.6 if t < T_SMASH else 1.0, role=role,
+            pan=lambda t, m: hero_p * 0.6 if t > T_SMASH else forge * 0.4)
+    # the blow: steel shattering on the anvil, shards ringing out both ways
+    o.shatter(T_SMASH, forge, 1.0)
+    o.hit('anvil', T_SMASH, 127, gain=0.9, pan=forge)
+    o.boom(T_SMASH, forge, 0.7)
+    rng = np.random.default_rng(341)
+    for k in range(9):
+        o.hit('triangle', T_SMASH + 0.15 + rng.uniform(0, 1.4), int(rng.uniform(70, 110)), gain=0.25,
+              pan=float(rng.uniform(-0.9, 0.9)))
+    o.hit('cymbal swell', T_SMASH - 2.6, 96, gain=0.4, pan=forge)
+    for a, b in T_PEAKS:                    # the climaxes: cymbal and timpani
+        o.hit('crash', a, 115, gain=0.5, pan=hero_p)
+        o.hit('timpani', a, 118, pitch=-4, gain=0.6, pan=hero_p)
+    for t, d, m, v, p, k in compose():      # he pounds the anvil at the top of the climaxes
+        if p == 'peak' and m >= note('G5'):
+            o.hit('anvil', t, 108, gain=0.4, pan=forge)
+    o.fire(0.0, D, lambda tt: 0.25 + 0.35 * fury_at(tt), pan=forge, crackle=6.0)
+    o.effects([(0.0, -2.0), (T_SWORD[0], -8.0), (T_SMASH - 0.5, -8.0), (T_SMASH, 0.0), (D, 0.0)])

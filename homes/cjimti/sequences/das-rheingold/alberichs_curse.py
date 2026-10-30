@@ -1,52 +1,82 @@
-"""Alberich's Curse: Loge unties him. The steel-blue bindings unwind off his red in a widening spiral to a
-falling harp, and Alberich, free and with nothing left, laughs bitterly in the bassoon. Then the grey morning
-drains away into red and black, Valhalla and the meadow sinking out of sight, and he swears that the ring will
-bring ruin and death to whoever holds it.
+"""Alberich's Curse: free, and with nothing left, Alberich stands on the porch while the grey morning drains
+away into red and black, Valhalla and the meadow sinking out of sight. He swears that the ring will bring ruin and
+death to whoever holds it.
 
-The Curse motif (Donington 13), twice: timpani and basses hammer F sharp underneath; the line climbs through
-the half-diminished chord (F sharp, A, C, E) in low clarinets and trombones and falls an octave onto a murky
-low C major. Every note of the climb sends a red ring out from Alberich, wider as it rises, and the ring's red
-glint on Wotan's hand pulses with it; the fall drops a muddy wash over the whole house. The second time is
-slower and louder, trombones and tubas in full, and a tam-tam at the fall. The Ring motif murmurs once more,
-low, in the bassoons (Donington 8a), as an oath kept, not a ritual: no magic, only a promise of what greed for
-the ring will do.
+"Wie durch Fluch er mir geriet, verflucht sei dieser Ring!": his line climbs to its top on "verflucht" and falls an
+octave, every note a red ring out from him, wider as it rises, the ring's red glint on Wotan's hand pulsing with
+each; on "Ring!" a muddy wash drops over the whole house. "Dem Tode verfallen, feßle den Feigen die Furcht":
+the curse climbs again over the strings' tremolo, higher, louder, to a scream on the top of "des Ringes Herr als
+des Ringes Knecht!", and the orchestra crashes down. Then the curse at full force in the whole orchestra, "So segnet
+in höchster Not der Nibelung seinen Ring", the red-black churning; a mocking "behalt ihn nun, hüte ihn wohl!",
+and the last: "Meinem Fluch fliehest du nicht!". And he is gone, fast, back along Porch Left, the length of Left
+and out along Side into the dark, his red trailing mud, as the orchestra rushes after him. The red-black lifts
+as the music settles, the grey dawn and the dim battlements of Valhalla come back, the gods appear on the wings,
+faded toward grey, and Wotan gazes at the ring on his hand, its red glint pulsing.
 
-Then he slinks off: back along Porch Left, the length of Left, and out along Side to its far dark end, in
-halting steps to a creeping bassoon and pizzicato, his red trailing mud, the curse muttering on a muted horn,
-until he is gone. The red-black lifts, the grey dawn and the dim battlements of Valhalla come back, and the
-gods (Fricka, Donner and Froh, all faded toward grey) appear on the wings. Wotan gazes at the ring (its
-motif soft in the clarinets, his red glint pulsing) while Loge flickers. In the last seconds the giants'
-heavy tread sounds in the tubas and timpani, and at the free end of Right the giants appear, Fasolt stone
-grey and Fafner ochre, with Freia's pink between them.
+The music is Wagner's own: Scene 4, bars 3126 to 3130, 3156 to 3163 and 3172 to 3200, as Solti's 1958 Vienna
+Philharmonic recording takes them. The notes come from the Wagner Ring Dataset's piano reduction
+(pixelhome/ring.py). Alberich's curse itself, which the reduction leaves out, is sung by trombones and bassoons
+as written in the vocal score (Schott, Mainz: archive.org dasrheingold00wagn2, pp. 175-177): "Wie durch Fluch
+er mir geriet, verflucht sei dieser Ring!", "Dem Tode verfallen ... des Ringes Herr als des Ringes Knecht!" and
+"behalt' ihn nun, hüte ihn wohl! Meinem Fluch fliehest du nicht!". Under it, the tremolo on the strings', the
+chords on horns and tubas, the curse's full force on the brass, the rush after him on strings and woodwinds. On top,
+as a staged production would, and kept out of the way of his words: a gong and thunder as each curse falls,
+cymbals at the climax, and a rush of wind as he vanishes into the cleft.
 
 compose() holds every note, choreography() every position; render() and score() read both."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import play, MOTIFS
+from pixelhome.ring import Orchestra, accents, excerpt
 
 CODE = 'RG20'
 TITLE = "Alberich's Curse"
 KIND = 'show'
-DESCRIPTION = ("Set free with nothing left, Alberich swears that the ring will bring ruin and death to whoever "
-               "holds it, and the whole house turns red and black. Then he slinks away into the dark, and the "
-               "giants come back for their payment.")
+DESCRIPTION = ("Robbed of everything, Alberich swears that the ring will bring ruin and death to whoever "
+               "holds it, and the whole house turns red and black. Then he vanishes into the dark, and the grey "
+               "morning slowly comes back.")
 VOICEOVER = ('They took his gold, his helmet, and his ring. '
              'So before he goes, he makes them a promise.')
 
-T_UNTIE = 0.8                               # Loge unwinds the bindings
-T_LAUGH = 5.0                               # free: a bitter laugh
-T_DARK = 8.5                                # red and black
-CURSES = [(11.0, 0.6, 0), (25.0, 0.7, 1)]   # (start, beat, which)
-T_OATH = 39.8                               # the Ring, low, in the bassoons
-T_EXIT = 45.0                               # he slinks off
+EX = excerpt(__file__)                      # bars 3126-3130, 3156-3163, 3172-3200, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+BAR[3126] = -BAR[3127]                      # the first range starts half way through bar 3126...
+BAR[3131] = BAR[3130] + (EX['segments'][0]['seconds'] - BAR[3130]) / 0.6     # ...and ends 0.6 into bar 3130
+T_UNTIE = -20.0                             # (already free)
+T_LAUGH = -15.0
+T_DARK = 0.0                                # red and black
+# His curse, from the vocal score: (bar, start, length in quarters, note). 4/4; from bar 3180, 2/2.
+VOICE = [(3126, 3, 0.5, 'F#3'), (3126, 3.5, 0.5, 'F#3'),
+         (3127, 0, 2, 'A3'), (3127, 2, 1, 'A3'), (3127, 3, 0.75, 'A3'), (3127, 3.75, 0.25, 'A3'),
+         (3128, 0, 3, 'C4'), (3128, 3.5, 0.5, 'C4'),
+         (3129, 0, 2, 'E4'), (3129, 2, 1, 'E3'), (3129, 3, 0.5, 'E3'), (3129, 3.5, 0.5, 'C3'), (3130, 0, 2, 'G3'),
+         (3156, 0, 1.25, 'Db3'), (3156, 1.25, 0.25, 'Db3'), (3156, 1.5, 0.5, 'Db3'), (3156, 2, 1, 'F3'),
+         (3156, 3, 0.5, 'F3'),
+         (3157, 0, 1.25, 'Ab3'), (3157, 1.25, 0.25, 'Ab3'), (3157, 1.5, 0.5, 'Ab3'), (3157, 2, 1, 'Db4'),
+         (3157, 3, 0.5, 'Db4'), (3157, 3.5, 0.5, 'Db4'),
+         (3158, 0, 2, 'D4'), (3158, 3.5, 0.5, 'B2'),
+         (3159, 0, 1.5, 'Eb3'), (3159, 1.5, 0.5, 'Eb3'), (3159, 2, 2, 'G3'),
+         (3160, 0, 1.5, 'Bb3'), (3160, 1.5, 0.5, 'Bb3'), (3160, 2, 1, 'Eb4'), (3160, 3, 0.75, 'Eb4'),
+         (3160, 3.75, 0.25, 'D4'),
+         (3161, 0, 1, 'Db4'), (3161, 1.5, 0.5, 'Bb3'), (3161, 2, 1.5, 'Bb3'), (3161, 3.5, 0.5, 'Bb3'),
+         (3162, 0, 1, 'Db4'), (3162, 1.5, 0.25, 'Bb3'), (3162, 1.75, 0.25, 'Bb3'), (3162, 2, 1.5, 'Db4'),
+         (3162, 3.5, 0.5, 'Bb3'), (3163, 0, 1, 'F4'),
+         (3175, 3.5, 0.5, 'F#3'), (3176, 0, 0.75, 'G3'), (3176, 0.75, 0.25, 'E3'), (3176, 1, 1, 'B3'),
+         (3177, 0, 1, 'C4'), (3177, 1, 0.5, 'C4'), (3177, 1.5, 0.5, 'G3'), (3177, 2, 1.5, 'E4'),
+         (3178, 3, 0.5, 'G3'), (3178, 3.5, 0.5, 'G3'),
+         (3179, 0, 1.5, 'F#4'), (3179, 2, 1.5, 'D4'), (3179, 3.5, 0.25, 'C#4'), (3179, 3.75, 0.25, 'C#4'),
+         (3180, 0, 1, 'B3')]
+CURSES = [(BAR[3127] - 0.8, 0, 0)]          # (when it begins, ...)
+FALLS = [BAR[3130], BAR[3163], BAR[3172], BAR[3180]]     # "Ring!", "Knecht!", the full force, "nicht!"
+T_OATH = 1e9
+T_EXIT = BAR[3180]                          # "Sehr schnell": he vanishes into the cleft
 STEPS = 14
-T_GONE = 58.0
-T_CLEAR = 57.0                              # the mist begins to clear
-T_GAZE = 61.0                               # Wotan gazes at the ring
-T_LOGE = 67.5
-T_GIANTS = 72.0                             # their tread; they appear at the end of Right
-D = 80.0
+T_GONE = BAR[3184]
+T_CLEAR = BAR[3188]                         # the mist begins to clear
+T_GAZE = BAR[3194]                          # Wotan gazes at the ring
+T_LOGE = 1e9
+T_GIANTS = 1e9
+D = EX['seconds']
 
 ALB = hexc('#ff1000')
 MUD = hexc('#5a1200')
@@ -82,60 +112,35 @@ def grey(c, k):
     return c * (1 - k) + (c @ np.array([0.3, 0.59, 0.11])) * k
 
 
+def voice():
+    """His curse in seconds: (time, seconds, midi, which statement)."""
+    out = []
+    for b, x, n, name in VOICE:
+        per = 2.0 if b >= 3180 else 4.0
+        tb, tn = BAR[b], BAR.get(b + 1, D)
+        t0 = tb + (tn - tb) * x / per
+        out.append((t0, (tn - tb) * n / per, note(name), 0 if b < 3150 else 1 if b < 3170 else 2))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who). who: the curse (0, 1) and, for its melody, the step."""
+    """Every note, tagged: (time, seconds, midi, velocity, part, who). His curse ('curse', who = (statement, step));
+    under it the orchestra: the left hand's low notes the pedal ('pedal'), the rest 'orch'; from his exit on, the
+    rush after him ('rush') and the music settling ('settle'), Wotan's gaze on its last notes ('gaze'); 'fall'
+    marks where each curse falls."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    for m in ('Db3', 'Ab3', 'F4'):
-        add(0.0, T_DARK + 1.0, m, 60, 'dawn')
-    for k in range(12):                                     # the knots undone
-        add(T_UNTIE + k * 0.28, 0.5, note('Bb5') - (0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19)[k], 88 - 2 * k, 'untie')
-    for t, m, v, d in play('loge_flicker', T_UNTIE + 0.2, 0.2, 0, 80):
-        add(t, d, m, v, 'loge')
-    for j, m in enumerate(('F3', 'E3', 'Eb3', 'D3', 'Db3', 'C3', 'B2', 'Bb2')):
-        add(T_LAUGH + j * 0.2, 0.12, m, 100 - 3 * j, 'laugh')
-    add(T_LAUGH + 1.8, 1.4, 'Gb2', 104, 'scorn')
-    add(T_DARK, T_CLEAR + 3 - T_DARK, 'Gb1', 64, 'darkpedal')
-
-    for t0, cb, which in CURSES:                            # the Curse
-        mel = sorted((b, d, note(n)) for b, d, n in MOTIFS['curse']['notes'] if note(n) >= note('C3') and b < 16)
-        for i, (b, d, m) in enumerate(mel):
-            add(t0 + b * cb, d * cb, m, 100 + 14 * which, 'curse', (which, i))
-        for b in (0, 4, 8, 12, 16):
-            add(t0 + b * cb, 4 * cb, 'Gb1', 104 + 14 * which, 'pedal', (which, -1))
-        for m in ('C3', 'E3', 'G3'):                       # the fall onto murky C major
-            add(t0 + 16 * cb, 4 * cb, m, 96 + 14 * which, 'fall', (which, -1))
-        add(t0 + 16 * cb, 4 * cb, 'C2', 100 + 14 * which, 'fallbass', (which, -1))
-        if which:
-            add(t0 + 16 * cb, 4.0, 'C2', 120, 'gong', (which, -1))
-    for t, m, v, d in play('ring_under', T_OATH, 0.6, -12, 92):
-        add(t, d, m, v, 'oath')
-
-    for k in range(STEPS):                                  # slinking off
-        ts = T_EXIT + k * (T_GONE - T_EXIT) / STEPS
-        add(ts, 0.35, note('E3') - k, 84 - 2 * k, 'slink')
-        add(ts + 0.45, 0.2, note('E2') - k, 70, 'creep')
-    for t, m, v, d in play('curse', T_EXIT + 5.0, 0.55, 0, 70, line='melody'):
-        if note('C3') <= m and t < T_EXIT + 5.0 + 12 * 0.55:
-            add(t, d, m, v, 'mutter')
-
-    for m in ('Db3', 'Ab3', 'F4'):                          # the morning comes back
-        add(T_CLEAR, D - T_CLEAR, m, 58, 'dawn')
-    for t, m, v, d in play('ring', T_GAZE, 0.7, 0, 74):
-        if m > note('C3'):
-            add(t, d, m, v, 'gaze')
-    for t, m, v, d in play('loge_flicker', T_LOGE, 0.22, 0, 76):
-        add(t, d, m, v, 'loge')
-    for t, m, v, d in play('giants', T_GIANTS, 0.5, -12, 70):
-        add(t, d, m, v, 'giants')
-    for b in range(0, 8, 1):                                # their tread
-        add(T_GIANTS + b * 1.0, 0.6, 'C2', 70 + 6 * b, 'tread')
-    for t, m, v, d in play('freia', T_GIANTS + 4.5, 0.4, 12, 60, line='melody'):
-        if t < D - 0.5:
-            add(t, d, m, v, 'freia')
+    for i, (t, d, m, which) in enumerate(voice()):
+        N.append((t, d, m, 112 + 6 * which, 'curse', (which, i)))
+    for t, d, m, v, h in EX['notes']:
+        if t < T_EXIT - 0.01:
+            part = 'pedal' if h == 1 and m < note('C3') else 'orch'
+        elif t < T_CLEAR:
+            part = 'rush'
+        else:
+            part = 'gaze' if t >= T_GAZE and h == 0 else 'settle'
+        N.append((t, d, m, v, part, None))
+    for tf in FALLS:
+        N.append((tf, 2.0, note('C2'), 0, 'fall', (0, -1)))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -188,13 +193,15 @@ def render(G, seed=20):
     N = compose()
     curse = [(e[0], e[2], e[5]) for e in N if e[4] == 'curse']
     falls = sorted({e[0] for e in N if e[4] == 'fall'})
-    pedals = np.array([e[0] for e in N if e[4] == 'pedal'])
+    pedals = np.array(sorted({e[0] for e in N if e[4] == 'pedal'}))
     cnotes = np.array([e[0] for e in N if e[4] == 'curse'])
     gaze = np.array([e[0] for e in N if e[4] == 'gaze'])
     oath = np.array([e[0] for e in N if e[4] == 'oath'])
     tread = np.array([e[0] for e in N if e[4] == 'tread'])
     steps = np.array([e[0] for e in N if e[4] == 'slink'])
     laugh = np.array([e[0] for e in N if e[4] == 'laugh'])
+    force = accents(EX['notes'], BAR[3172], BAR[3175], 90, 3, 0.25)      # the curse at full force
+    rush = accents(EX['notes'], T_EXIT, T_CLEAR + 8, 80, 2, 0.35)        # the orchestra rushing after him
     tw = Flicker(rng, G.N, 2.0, 7.0)
     fl = Flicker(rng, G.N, 3.0, 11.0)
     smoulder = Flicker(rng, G.N, 0.6, 2.4)
@@ -241,13 +248,26 @@ def render(G, seed=20):
         for tc, m, (which, i) in curse:                     # each climbing note: a red ring out from him
             if tc <= t < tc + 2.5:
                 a = t - tc
-                rr = (300 + 55 * (m - 54)) * a ** 0.6 * (1 + 0.3 * which)
-                fr += light(BLOOD, (0.6 + 0.15 * which) * (1 - a / 2.5) * np.exp(-((np.abs(d - ap) - rr) / (60 + 6 * (m - 54))) ** 2))
+                k = max(m - 45, 2)                          # higher notes, wider rings
+                rr = (220 + 30 * k) * a ** 0.6 * (1 + 0.2 * which)
+                fr += light(BLOOD, (0.6 + 0.15 * which) * (1 - a / 2.5) * np.exp(-((np.abs(d - ap) - rr) / (50 + 4 * k)) ** 2))
         for tf in falls:                                    # the fall: a muddy wash sinking over the house
             if tf <= t < tf + 3.5:
                 a = t - tf
                 fr += light(MUD, 0.75 * np.exp(-a / 1.2) * np.ones(G.N))
                 fr += light(BLOOD, 0.5 * np.exp(-a / 0.3) * np.ones(G.N))
+
+        for ta in force:                                    # each blow of the full force: the house flares blood red
+            if ta <= t < ta + 1.0:
+                a = t - ta
+                fr += light(BLOOD, 0.55 * np.exp(-a / 0.25) * np.ones(G.N))
+                fr += light(ALB, 0.6 * np.exp(-a / 0.4) * blob(ap, 120))
+        for ta in rush:                                     # red streaks racing out after him toward Side
+            if ta <= t < ta + 1.2:
+                a = t - ta
+                q = pf + 200 - 1300 * a
+                fr += light(BLOOD, 0.9 * (1 - a / 1.2) * smoothstep(q - 10, q + 10, d) * smoothstep(q + 320, q, d))
+                fr += light(HOT, 0.5 * (1 - a / 1.2) * np.exp(-((d - q) / 14) ** 2))
 
         # the hoard, helmet on top
         fr += light(GOLD, 0.9 * blob(pf, hw) + 0.25 * blob(pf, 2 * hw))
@@ -293,7 +313,7 @@ def render(G, seed=20):
             fr *= 1 - 0.3 * (side * smoothstep(T_GONE - 3, T_GONE, t) * (1 - smoothstep(T_GONE + 2, T_GONE + 6, t)))[:, None]
 
         # the gods, greyed, on the wings as the mist clears
-        gods = smoothstep(T_CLEAR + 3, T_CLEAR + 9, t)
+        gods = smoothstep(T_CLEAR + 1, T_CLEAR + 6, t)
         if gods > 0:
             for (s, u, who), gp in zip(GODS, gpos):
                 if who == 'froh':
@@ -307,7 +327,7 @@ def render(G, seed=20):
                     fr += light(c, gods * (0.6 * blob(gp, 20) + 0.15 * blob(gp, 70)))
 
         # the giants and Freia, appearing at the free end of Right; every tread a thud of their colour
-        gi = smoothstep(T_GIANTS + 1, D - 1.5, t)
+        gi = smoothstep(T_GIANTS + 1, D - 1.5, t) if T_GIANTS < D else 0.0
         if gi > 0:
             tr = last(tread, t, 0.25, 1.0)
             for s, u, col, w in GIANTS:
@@ -320,7 +340,9 @@ def render(G, seed=20):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, Alberich's curse from the vocal score on trombones and
+    bassoons, and the curse's sounds on top."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -330,104 +352,48 @@ def score(M, G):
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
     C = choreography(G)
-    pg = pan_at(at(G, 'Right', 0.865))
-    pv = pan_at(at(G, 'Porch Front', 0.5))
 
     def pan_of(k, t):
         return pan_at(np.interp(t, C['t'], C[k]))
 
-    for name, gain, rev in (('winds', 0.22, 0.35), ('strings', 0.19, 0.3), ('low', 0.24, 0.18), ('brass', 0.22, 0.3),
-                            ('perc', 0.24, 0.25), ('harp', 0.2, 0.4)):
-        M.bus(name, gain=gain, reverb=rev)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
-    bsus = M.sampler('Woodwinds/Bassoon/sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    pic = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vns = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    vatrem = M.sampler('Strings/Viola Section/trem/*.wav', tune=-12)
-    trem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
-    mute = M.sampler('Brass/F Horn/mute/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v[3-6]*.wav')
+    o = Orchestra(M, level=1.55)
+    N = compose()
+    part = {(e[0], e[2], e[3]): e[4] for e in N if e[4] not in ('curse', 'fall')}
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        p = part.get((t, m, v))
+        if p in ('orch', 'pedal') and t < T_EXIT:
+            if BAR[3172] - 0.01 <= t < BAR[3175]:           # the curse at full force: brass
+                if h == 1:
+                    return [('tuba', 0, 20, 0.55), ('trombones', 12, 14, 0.45), ('basses', 0, 20, 0.5)]
+                return [('horns', 0, 6, 0.5), ('trumpets', 0, -8, 0.35), ('violins', 0, 0, 0.4)]
+            if h == 1 and m < note('C3'):                   # the pedal: basses, timpani-dark tuba
+                return [('basses', 0, 20, 0.55), ('tuba', 12, 6, 0.4)]
+            if d < 0.25:                                    # the tremolo
+                return [('violins trem' if m >= 55 else 'violas trem' if m >= 48 else 'cellos trem', 0, 6, 0.4)]
+            return [('horns', 0, 0, 0.45), ('cellos', 0, 0, 0.4)] if m < note('C5') else [('violins', 0, -4, 0.4)]
+        if p == 'rush':                                     # the rush after him
+            return [('violins', 0, 0, 0.5), ('flutes', 0, -10, 0.3)] if h == 0 else \
+                [('cellos', 0, 10, 0.55), ('basses', -12 if m >= 40 else 0, 6, 0.45)]
+        if p in ('settle', 'gaze'):
+            return [('clarinets', 0, 0, 0.45), ('violins', 0, -10, 0.3)] if h == 0 else [('cellos', 0, 6, 0.5)]
+        return None
 
-    for t, d, m, v, part, who in compose():
-        pa, pw = pan_of('alb', t), pan_of('wot', t)
-        if part == 'dawn':
-            hold('strings', vatrem, m, t, t + d, v, {note('Db3'): -0.4, note('Ab3'): 0.4}.get(m, 0.0),
-                 rise=1.0 if t == 0 else 5.0, fall=2.0, gain=0.6)
-        elif part == 'untie':
-            M.add('harp', harp.play(m - 12, v), t, 1.0, pan_of('loge', t))
-        elif part == 'loge':
-            M.add('winds', pic.play(m, v), t, 0.8, pan_of('loge', t))
-            M.add('strings', vns.play(m - 12, v - 15), t, 0.5, pan_of('loge', t))
-        elif part == 'laugh':
-            M.add('winds', bsn.play(m - 12, v), t, 1.0, pa)
-        elif part == 'scorn':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.3), t, 0.9, pa)
-        elif part == 'darkpedal':
-            hold('low', trem, m + 12, t, t + d, v, 0.0, rise=2.5, fall=3.0, gain=1.0)
-        elif part == 'curse':
-            which = who[0]
-            M.add('winds', clar.play(m - 12, v, dur=d * 1.02, release=0.3), t, 1.0, pa)
-            M.add('brass', tbn.play(m - 12 * (m > note('C4')), v - 10 + 10 * which, dur=d, release=0.3), t,
-                  0.6 + 0.4 * which, pa)
-            if which:
-                M.add('brass', horn.play(m, v - 14, dur=d, release=0.3), t, 0.5, pa - 0.15)
-        elif part == 'pedal':
-            M.add('perc', timp.play(v, pitch=-6), t, 1.0, 0.0)
-            M.add('perc', roll.play(v - 30, dur=d * 0.9), t + 0.1, 0.4, 0.0)
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=0.05, fall=0.5, gain=0.8)
-        elif part == 'fall':
-            M.add('brass', tbn.play(m, v, dur=d, release=0.6), t, 0.8, pa + 0.2 * (m % 3 - 1))
-            M.add('winds', clar.play(m, v - 10, dur=d, release=0.6), t, 0.6, pa)
-        elif part == 'fallbass':
-            M.add('low', tuba.play(m, v, dur=d, release=0.6), t, 1.0, 0.0)
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=0.05, fall=1.0, gain=0.8)
-            M.add('perc', bd.play(v), t, 0.7, 0.0)
-        elif part == 'gong':
-            M.add('perc', gong.play(v), t, 0.9, pa)
-        elif part == 'oath':
-            if m < note('C3'):
-                hold('low', vc, m + 12, t, t + d, v, 0.0, rise=0.3, fall=1.0, gain=0.7)
-            else:
-                M.add('winds', bsus.play(m, v, dur=d, release=0.3), t, 1.0, pa)
-        elif part == 'slink':
-            M.add('winds', bsus.play(m - 12, v, dur=d, release=0.15), t, 1.0, pa)
-        elif part == 'creep':
-            M.add('low', pizz.play(m + 12, v), t, 0.9, pa)
-        elif part == 'mutter':
-            M.add('brass', mute.play(m, v, dur=d, release=0.4), t, 0.8, pa)
-        elif part == 'gaze':
-            M.add('winds', clar.play(m, v, dur=d * 1.05, release=0.3), t, 1.0, pw)
-        elif part == 'giants':
-            M.add('brass', tuba.play(m, v, dur=d * 1.1, release=0.3), t, 1.0, pg)
-            M.add('brass', tbn.play(m + 12, v - 16, dur=d * 1.1, release=0.3), t, 0.6, pg)
-        elif part == 'tread':
-            M.add('perc', timp.play(v, pitch=-8), t, 0.9, pg)
-            M.add('perc', bd.play(v), t, 0.6, pg)
-        elif part == 'freia':
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.3), t, 0.7, pg)
+    o.tutti(EX['notes'], role=role, pan=lambda t, m: pan_of('alb', t) * 0.4)
+    for t, d, m, which in voice():                          # the curse: trombones, doubled by bassoons
+        p = pan_of('alb', t)
+        o.play('trombones', m, t, max(d, 0.15), 118 + 4 * which, p, 0.8)
+        o.play('bassoons', m, t, max(d, 0.15), 108, p, 0.45)
+        if m >= note('D4'):                                 # its top notes ring out on the horns too
+            o.play('horns', m, t, max(d, 0.15), 110, p, 0.45)
+    # the stage, ridden: out of the way of his words, up where each curse falls and as he vanishes
+    o.effects([(0, -10), (FALLS[0] - 0.2, -2), (FALLS[0] + 2.5, -10), (FALLS[1] - 0.2, -1), (FALLS[2] + 3, -6),
+               (BAR[3175], -12), (T_EXIT - 0.2, 0), (T_CLEAR, -6)])
+    for k, tf in enumerate(FALLS):                          # each curse falls: a gong, and thunder deep in the rock
+        o.hit('gong', tf, 108 + 5 * k, gain=0.5 + 0.1 * k)
+        o.thunder(tf + 0.05, 0.35 + 0.15 * k, 0.0, 0.8 + 0.1 * k)
+    o.hit('crash', BAR[3172], 124, gain=0.6)                # the full force
+    o.hit('bass drum', BAR[3172], 124, gain=0.7)
+    M.add('fx', whoosh(2.5, 400, 3000, 0.6, seed=20), T_EXIT, 0.8, pan_at(at(G, 'Left', 0.3)))   # into the cleft
+    o.wind(T_EXIT, T_CLEAR + 4, lambda tt: 0.6 * (1 - np.clip((tt - T_EXIT) / (T_CLEAR + 4 - T_EXIT), 0, 1)),
+           pan_at(at(G, 'Left', 0.2)))

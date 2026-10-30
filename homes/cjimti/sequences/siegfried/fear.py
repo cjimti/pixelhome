@@ -1,23 +1,29 @@
-"""Fear: the Wanderer has gone, and Mime is alone at the anvil, shaking. The flickering of Loge's fire (Donington
-20a) runs through the violins and piccolos, and with every phrase of it tongues of fire leap up somewhere on the
-house: a burst of red, orange and amber here, then there, then everywhere at once, more and bigger each time,
-while Mime, sulphur yellow beside the anvil, twitches from side to side. The dragon he fears (Fafner, 57) growls
-in the tubas, and two walls of blood red close in on him from the front corners of the porch, a lurch with every
-note, until the whole house goes up in flame for a moment and he dives behind the anvil.
+"""Fear: the Wanderer has gone, and Mime is alone at the anvil, shaking. "Verfluchtes Licht!": the flickering of
+Loge's fire runs through the violins, and with every flicker tongues of fire leap up somewhere on the house, a
+burst of red, orange and amber here, then there, then everywhere at once, more and bigger as it grows, while
+Mime, sulphur yellow beside the anvil, twitches from side to side. "Dort bricht's durch den Wald": the dragon he
+fears is coming, and two walls of blood red close in on him from the front corners of the porch, a lurch with
+every stride of the bass, until "Fafner! Fafner!" the whole house goes up in flame and he dives behind the anvil.
 
-Siegfried's horn call (48) sounds from the forest and he bursts in at the free end of Right, an emerald comet
-with a white-hot head, and a green wave sweeps the fire off the house from end to end. Mime tries to teach him
-fear: he tells of the fire round a sleeping bride (the magic sleep, 16), and a ring of flame rises round the
-porch with a violet glow on its summit while Siegfried brightens at every note. Fear? He wants to learn it, now:
-his audacity (55) on the horns, each note an emerald blast out to one end of the house or the other. The fire
-sinks; Mime is back by the anvil and Siegfried stands at the forge, ready for the next scene.
+"Heda! Du Fauler!": Siegfried bursts in at the free end of Right, an emerald comet with a white-hot head, and a
+green wave sweeps the fire off the house from end to end. Mime tries to teach him fear: the shudder in the dark
+forest, the heart hammering in the breast, and as the orchestra surges a ring of flame rises round the porch
+with a violet glow on its summit, the fire round a sleeping bride, every surge of it leaping up while Siegfried,
+who has never been afraid, brightens with each one.
+
+The music is Wagner's own: Act I, bars 1916 to 1955 (Mime's terror and Siegfried's return) and 2130 to 2141
+(Mime's description of fear), as Solti's 1958 Vienna Philharmonic recording takes them. The notes come from the
+Wagner Ring Dataset's piano reduction (pixelhome/ring.py), orchestrated by hand and register: the flickering on
+violins and piccolo, the dragon's strides on tuba, cellos and basses, the tremolos on the strings' tremolo. On
+stage: the crackle and roar of the fire Mime sees, growing with his terror, the dragon's growl, a crash as he
+dives behind the anvil, a blow and a rush of air as Siegfried bursts in, and the fire roaring up round the porch;
+the effects stand back under the orchestra's surges.
 
 compose() holds every note; stage(), cave(), figure() and sparks() are the cave, shared word for word by Act I's
 scenes on a clock that runs on from scene to scene."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'SF08'
 TITLE = 'Fear'
@@ -28,16 +34,24 @@ VOICEOVER = ('Alone in the dark, Mime sees fire everywhere. '
              'Then Siegfried bursts in, and asks what fear is.')
 
 K = 7                                       # this scene's place on Act I's shared clock: T = t + 80 K
-BEAT = 0.5
-T_LOGE = [2.0, 6.5, 11.0, 15.5, 20.0, 24.0, 28.0]     # the flickering fire, each phrase bigger
-T_DRAGON = 21.0                             # Fafner in the tubas: the walls of red close in
-T_PANIC = 30.5                              # the whole house in flame; he dives behind the anvil
-T_HORN = 33.5                               # Siegfried's horn call from the forest
-T_BURST = 36.0                              # he bursts in at the free end of Right
-T_ARRIVE = 38.5                             # at the forge
-T_SLEEP = [43.0, 54.0]                      # the fire round the sleeping bride
-T_AUD = 65.0                                # his audacity: he wants to learn fear
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 1916-1955 and 2130-2141, Solti 1958
+D = EX['seconds']
+SEG = [(g['start'], g['start'] + g['seconds']) for g in EX['segments']]
+_M = np.array([m for m, _ in EX['bars']], float)
+_T = np.array([t for _, t in EX['bars']])
+
+
+def bt(m):
+    """Seconds into the scene of measure position m (bar plus fraction)."""
+    return float(np.interp(m, _M, _T))
+
+
+T_DRAGON = bt(1938)                         # "Dort bricht's durch den Wald": the walls of red close in
+T_PANIC = bt(1948)                          # "Fafner!": the whole house in flame; he dives behind the anvil
+T_BURST = bt(1950)                          # "Heda! Du Fauler!": he bursts in at the free end of Right
+T_ARRIVE = bt(1953)                         # at the forge
+T_SLEEP = [SEG[1][0]]                       # the fire round the sleeping bride
+T_END = D
 
 ROCK = hexc('#3a1608')
 EMBER = hexc('#a01a00')
@@ -126,34 +140,26 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'orch' (k the hand, or 'trem');
+    'loge' marks each flicker of the fire (k how far into his terror), 'dragon' each stride of the bass, 'surge'
+    each surge of the fire round the bride."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, T_BURST, 'D2', 60, 'trem')
-    for k, t0 in enumerate(T_LOGE):
-        for t, m, v, d in play('loge_flicker', t0, 0.42 - 0.03 * min(k, 4), 0, 70 + 8 * k):
-            add(t, d, m, v, 'loge', k)
-    for t, m, v, d in play('fafner', T_DRAGON, 0.55, 0, 104):
-        add(t, d, m, v, 'dragon')
-    add(T_PANIC, 0.1, 'C1', 122, 'panic')
-    for t, m, v, d in play('siegfried_horn', T_HORN, 0.4, 0, 100):
-        add(t, d, m, v, 'horn')
-    add(T_BURST, 0.1, 'C1', 120, 'burst')
-    for k, t0 in enumerate(T_SLEEP):
-        for t, m, v, d in play('sleep', t0, 0.5, 0, 70 + 10 * k):
-            add(t, d, m, v, 'sleep', k)
-    for t, m, v, d in play('siegfried_audacity', T_AUD, 0.45, 0, 112):
-        add(t, d, m, v, 'audacity')
-    for m in ('G2', 'D3', 'G3'):
-        add(T_AUD + 7.0, D - T_AUD - 7.0, m, 60, 'glow')
+    for n in tidy(EX['notes']):
+        N.append((n[0], n[1], n[2], n[3], 'orch', 'trem' if n[5] else n[4]))
+    for j, t in enumerate(accents([n for n in EX['notes'] if n[4] == 0], 0.0, T_PANIC, n=1, space=0.55)):
+        N.append((t, 0.3, 0, 90, 'loge', min(6, int(7 * t / T_PANIC))))
+    last = -9.0
+    for t, d, m, v, hand in sorted(EX['notes']):
+        if T_DRAGON <= t < T_PANIC + 0.2 and hand == 1 and t - last > 0.45:
+            N.append((t, max(d, 0.3), m, v, 'dragon', None))
+            last = t
+    for t in accents(EX['notes'], SEG[1][0], D - 0.5, vmin=90, n=2, space=0.45):
+        N.append((t, 0.5, 0, 100, 'surge', None))
     return sorted(N, key=lambda e: e[0])
 
 
 def tongues(G):
-    """Every tongue of fire Mime sees: [(time, where, width, strength)], one per note of the flicker."""
+    """Every tongue of fire Mime sees: [(time, where, width, strength)], one or more per flicker."""
     rng = np.random.default_rng(208)
     out = []
     for t, d, m, v, part, k in compose():
@@ -173,8 +179,8 @@ def render(G, seed=8):
     N = compose()
     tg = tongues(G)
     dragon = np.array([e[0] for e in N if e[4] == 'dragon'])
-    sleep_on = [e for e in N if e[4] == 'sleep']
-    aud = [e for e in N if e[4] == 'audacity']
+    aud = []
+    surges = np.array([e[0] for e in N if e[4] == 'surge'])
     lick = Flicker(np.random.default_rng(seed), G.N, 3.0, 9.0)
     p_mime = at(G, 'Porch Front', MIME_AT)
     p_home = at(G, 'Porch Front', SIEG_AT)
@@ -244,16 +250,24 @@ def render(G, seed=8):
                 fr += light(SIEGFRIED, 0.55 * np.exp(-b / 1.6) * (np.abs(d - ps) < r))
 
             # the fire round the sleeping bride: a ring of flame on the porch, violet on its summit
-            ring = sum(smoothstep(t0, t0 + 2.0, t) * (1 - smoothstep(t0 + 9.0, t0 + 11.5, t)) * (0.8 + 0.2 * k)
-                       for k, t0 in enumerate(T_SLEEP))
+            ring = smoothstep(T_SLEEP[0], T_SLEEP[0] + 3.0, t) * (0.75 + 0.25 * smoothstep(T_SLEEP[0], D - 6, t))
+            q = int(np.searchsorted(surges, t, side='right')) - 1
+            leap = np.exp(-(t - surges[q]) / 0.35) if q >= 0 else 0.0
+            ring *= 1 + 0.45 * leap
             if ring > 0:
                 fr += light(ORANGE, 0.75 * ring * porch * (1 - sleeper) * (0.7 + 0.3 * fl))
                 fr += light(RED, 0.5 * ring * porch * np.clip(-fl, 0, 1))
                 fr += light(VIOLET, 0.8 * ring * sleeper)
+                for tq in surges[max(0, q - 3):q + 1]:          # each surge throws a tongue up somewhere on the ring
+                    a = t - tq
+                    if 0 <= a < 1.0:
+                        pq = pl0 + (pr1 - pl0) * ((tq * 7.31) % 1)
+                        shape = np.exp(-((d - pq) / 70) ** 2) * porch * (1 - sleeper)
+                        fr += light(AMBER, 0.9 * np.exp(-a / 0.35) * shape)
+                        fr += light(HEAT, 0.5 * np.exp(-a / 0.2) * shape ** 4)
             glow = 0.0
-            for t0, dd, m, v, part, k in sleep_on:
-                if 0 <= t - t0 < 1.0 and m >= note('Eb4'):
-                    glow = max(glow, np.exp(-(t - t0) / 0.35))
+            if ring > 0:
+                glow = max(glow, leap)
 
             # his audacity: each note an emerald blast out to one end of the house or the other
             for j, (t0, dd, m, v, part, k) in enumerate(aud):
@@ -273,7 +287,9 @@ def render(G, seed=8):
 
 
 def score(M, G):
-    from pixelhome.audio import SR, whoosh
+    """The real music: the excerpt orchestrated from the piano reduction, and the staging: the fire Mime sees, the
+    dragon's growl, his dive behind the anvil, Siegfried bursting in, the fire round the porch."""
+    from pixelhome.audio import whoosh
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -282,80 +298,34 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.32, 0.22), ('strings', 0.26, 0.3), ('winds', 0.26, 0.32), ('brass', 0.3, 0.3),
-                            ('perc', 0.3, 0.25), ('fx', 0.14, 0.3), ('harp', 0.22, 0.4), ('warm', 0.26, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    vln = M.sampler('Strings/Violin Section/Spic/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    picc = M.sampler('Woodwinds/Piccolo/Stac/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    flute = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    glock = M.sampler('Percussion/Glock/*.wav')
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
     S = stage(G)
-    L = S['d'].max()
-    mime = pan_at(at(G, 'Porch Front', MIME_AT))
-    home = pan_at(at(G, 'Porch Front', SIEG_AT))
-    mouth = pan_at(L)
-    rng = np.random.default_rng(81)
-    for t, d, m, v, part, k in compose():
-        if part == 'trem':
-            hold('low', ctrem, m, t, t + d, v, mime, rise=3.0, fall=1.0, gain=0.55)
-        elif part == 'loge':
-            pa = float(rng.uniform(-0.8, 0.8))
-            M.add('strings', vln.play(m, v), t, 0.8, pa)
-            M.add('winds', picc.play(m, v - 15), t, 0.5, pa)
-            if k >= 3:
-                M.add('harp', glock.play(m + 12, v - 25), t, 0.5, pa)
-        elif part == 'dragon':
-            M.add('low', tuba.play(m, v, dur=d * 1.1, release=0.25), t, 0.95, mime)
-            M.add('low', cb.play(m, v - 10, dur=d * 1.1, release=0.25), t, 0.7, mime)
-            M.add('perc', timp.play(v - 20, pitch=-6), t, 0.6, mime)
-        elif part == 'panic':
-            M.add('perc', crash.play(v), t, 1.0)
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9)
-            M.add('perc', roll.play(110, dur=2.0), t, 0.7)
-            M.add('fx', whoosh(1.5, 300, 4000, 0.8, seed=8), t - 0.2, 1.0)
-        elif part == 'horn':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, mouth)
-        elif part == 'burst':
-            M.add('perc', crash.play(v), t + 2.5, 0.9, home)
-            M.add('perc', timp.play(v, pitch=-3), t + 2.5, 0.9, home)
-            M.add('fx', whoosh(2.5, 600, 5000, 0.8, seed=9), t, 1.0, mouth * 0.5)
-        elif part == 'sleep':
-            if m >= note('C4'):
-                if d > 1.0:
-                    hold('winds', flute if k else clar, m, t, t + d, v, 0.0, rise=0.3, fall=1.2, gain=0.8)
-                else:
-                    M.add('winds', clar.play(m, v, dur=d * 1.1, release=0.3), t, 0.9)
-            else:
-                M.add('harp', harp.play(m, v), t, 0.9)
-                M.add('strings', vc.play(m, v - 10, dur=d * 1.1, release=0.4), t, 0.6)
-        elif part == 'audacity':
-            M.add('brass', horn.play(m, v, dur=d * 1.1, release=0.25), t, 0.95, home)
-            M.add('strings', vc.play(m - 12, v - 10, dur=d * 1.1, release=0.25), t, 0.6, home)
-            M.add('perc', timp.play(v - 25, pitch=-4), t, 0.4, home)
-        elif part == 'glow':
-            hold('warm', vc, m, t, t + d, v, home * 0.5, rise=3.0, fall=1.5, gain=0.55)
+    forge = pan_at(S['anvil'])
+    end = pan_at(G.pd.max())
+    o = Orchestra(M, level=1.8)
+    N = compose()
+
+    def role(t, d, m, v, hand):
+        if T_DRAGON <= t < T_PANIC + 0.5 and hand == 1 and m < 55:             # the dragon: tuba, cellos, basses
+            return [('tuba', 0, 0, 0.7), ('cellos', 0, -4, 0.5), ('basses', -12 if m >= 40 else 0, -6, 0.45)]
+        if t < T_BURST and hand == 0 and d < 0.25 and m >= 72:                  # the flicker: violins and piccolo
+            return [('violins', 0, -4, 0.5), ('piccolo', 0, -16, 0.3)]
+        return None
+
+    o.tutti([e[:4] + (e[5] if e[5] in (0, 1) else 0, e[5] == 'trem') for e in N if e[4] == 'orch'],
+            size=lambda t: 0.7 if t < T_DRAGON else 1.0, role=role)
+    rng = np.random.default_rng(8)
+    strides = [e for e in N if e[4] == 'dragon']
+    for t, d, m, v, part, k in strides[::3]:
+        o.thunder(t, 0.15 + 0.08 * min(5, int(4 * (t - T_DRAGON) / (T_PANIC - T_DRAGON + 1e-9))),
+                  float(rng.choice([-0.7, 0.7])), 0.45)
+    fear = lambda tt: 0.1 + 0.6 * smoothstep(0.0, T_PANIC, tt) * (1 - smoothstep(T_BURST, T_BURST + 1.0, tt))
+    o.fire(0.0, T_BURST + 1.5, fear, 0.0, crackle=16, seed=808)
+    o.hit('crash', T_PANIC, 120, gain=0.55, pan=forge)                          # he dives behind the anvil
+    o.hit('anvil', T_PANIC + 0.25, 100, gain=0.35, pan=forge)
+    o.boom(T_BURST, end, 0.8)                                                   # Siegfried bursts in
+    M.add('fx', whoosh(1.6, 300, 3000, 0.7, seed=81), T_BURST, 0.9, end)
+    o.wind(T_BURST, T_ARRIVE + 3, 0.6, lambda tt: end + (forge - end) * smoothstep(T_BURST, T_ARRIVE, tt))
+    o.fire(T_SLEEP[0], D + 0.5, lambda tt: 0.3 + 0.4 * smoothstep(T_SLEEP[0], D - 4, tt), forge, crackle=10,
+           seed=809)
+    o.effects([(0, -4), (T_DRAGON, -4), (T_PANIC, 0), (T_BURST + 2, 0), (T_BURST + 4, -6), (T_SLEEP[0], -6),
+               (T_SLEEP[0] + 8, -9), (D, -7)])

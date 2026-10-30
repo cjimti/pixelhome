@@ -1,21 +1,29 @@
 """Hoiho!: a red dawn on the shore. Hagen, ultraviolet by his spear at the hall doors, puts the great cowhorn to
 his lips and calls the Gibichung vassals to arms: "Hoiho! Hoihohoho!" Each blast is a shock of violet out of him
 with an orange front racing to both ends of the house in a second, the doors flaring, the whole shore jolting
-awake. From far off the cowhorns answer, a semitone apart (C, D flat, D), from the river end of Right, from the
-far end of the Side, from the front of Left: each answer flashes its end of the house orange and wakes that run
-for good, so the house lights up run by run.
+awake. His cries ("Wehe! Wehe! Waffen!") wake the runs one by one in torch orange, and the cowhorns answer from
+far off, a semitone higher each time, from the left and then from the river end of Right, each flashing its end
+of the house. He knocks the house violet with "Not ist da! Not!", and blows his last great "Hoiho!".
 
-Then the vassals' call (Donington 54) breaks out in the trombones, "Hoiho! Hagen! Welche Not?", every note a hard
-hit that throws one whole run into torch orange, round the house, faster and faster as the men run up, while the
-first torches catch here and there in sprays of sparks. Hagen answers on his falling tritone (61a), the house
-flashing violet from the doors; at the end the shore stands in full red dawn, waiting for its men.
+Then the men answer from every side: "Was tost das Horn? Wir kommen mit Waffen!", every entry a run thrown into
+torch orange, round the house, faster and faster as they run up, while the first torches catch here and there in
+sprays of sparks, until they hail him all together, "Hoiho! Hagen!", and the shore stands in full red dawn.
+
+The music is Wagner's own: the start of Act II, scene 3 (bars 389 to 406, 419 to 431 and 437 to 457), as Solti's
+1958 Vienna Philharmonic recording takes it, from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py),
+orchestrated by hand and register: the cowhorn's C on horns and trombones, the bass on cellos, basses and tuba,
+the upper parts on strings and woodwinds. Hagen's own line is not in the reduction; it comes from the printed
+vocal score (Klindworth, Schott 1900, archive.org gtterdmmerungerl00wagn, pp. 150-152) and is played as written on
+trombones and bassoons. So are the stage cowhorns that answer him (D flat on the left, D on the right), which
+the reduction leaves out. Each blast of his horn lands with a drum and timpani blow, his men's weapons clatter
+and their feet come running as they muster.
 
 compose() holds every note; stage(), shore(), figure(), torches(), crowd() and sparks() are the shore, shared word
 for word by Act II's scenes (GD15-GD21) on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD16'
 TITLE = 'Hoiho!'
@@ -25,13 +33,36 @@ DESCRIPTION = ('At dawn Hagen blows the great cowhorn and calls his men to arms.
 VOICEOVER = ('Hagen blows the war horn. Hoiho! Hoiho! From every side, the men come running.')
 
 K = 1                                       # this scene's place on Act II's shared clock: T = t + 80 K
-T_CALL = [2.0, 10.5, 19.0, 27.5]            # Hagen's cowhorn blasts
-ANSWERS = [(5.0, 'Right', 1.0, 'Db'), (13.5, 'Side', 0.0, 'D'), (22.0, 'Left', 0.15, 'Db'), (30.0, 'Right', 0.55, 'D'),
-           (31.2, 'Side', 0.4, 'Db'), (32.4, 'Left', 0.6, 'D')]
-T_VASSALS = [35.0, 40.0, 44.5, 48.5, 52.0, 55.0]   # the vassals' call, closer and closer
-T_TRITONE = [59.0, 63.0]                    # Hagen answers
-T_LAST = 67.0                               # one last great blast
-D = 80.0
+EX = excerpt(__file__)                      # Act II, bars 389-406, 419-431 and 437-457, Solti 1958
+D = EX['seconds']
+_BARS = [(m, t) for m, t in EX['bars']]
+
+
+def bar(pos):
+    """Seconds into the excerpt of a (fractional) bar position."""
+    seg = [b for b in _BARS if abs(b[0] - pos) < 20]
+    return float(np.interp(pos, [b[0] for b in seg], [b[1] for b in seg]))
+
+
+T_CALL = [bar(389), bar(393.333), bar(395.333), bar(427.333)]   # his cowhorn, then "Hoiho!", twice, and again
+ANSWERS = [(bar(401), 'Right', 1.0), (bar(403.333), 'Side', 0.0), (bar(405.25), 'Left', 0.15),
+           (bar(421), 'Left', 0.6), (bar(425), 'Right', 0.55), (bar(437.75), 'Side', 0.4)]
+STAGE_HORNS = [(bar(421), bar(423), 'Db3', 3), (bar(425), bar(427), 'D3', 4)]   # the cowhorns on the stage: (t0, t1, note, answer)
+T_TRITONE = [bar(419.333), bar(423.333)]    # "Not ist da!", "Not!": the house knocked violet
+T_LAST = bar(429.333)                       # one last great blast
+T_MEN = bar(437)                            # the men answer from every side
+# Hagen's line, from the vocal score: (bar, beat, beats, note); 3/4 except 397-398 and 405-406 in 4/4
+VOICE = [(393, 1, 1, 'Bb3'), (393, 2, 4, 'C4'), (395, 1, 1, 'Bb3'), (395, 2, 1.5, 'C4'), (396, 0.5, 0.5, 'C4'),
+         (396, 1, 2, 'C4'),
+         (397, 1, 1, 'C4'), (397, 2, 1.5, 'C4'), (397, 3.5, 0.5, 'C4'), (398, 0, 0.5, 'C4'), (398, 0.5, 0.5, 'C4'),
+         (398, 1.5, 0.75, 'C4'), (398, 2.25, 0.25, 'C4'), (398, 2.5, 1.5, 'C4'), (399, 0, 3, 'C4'),
+         (401, 0, 2, 'D4'), (401, 2, 1, 'C4'), (403, 1, 3, 'D4'), (404, 1, 1, 'C4'),
+         (405, 1, 2, 'C4'), (405, 3, 1, 'C4'), (406, 1, 2, 'C4'), (406, 3, 1, 'C4'),
+         (419, 1, 6, 'Db4'), (421, 1, 1, 'Ab3'), (421, 2, 2, 'Ab3'),
+         (423, 1, 4.5, 'D4'), (425, 0, 2, 'D4'), (425, 2, 0.5, 'C#4'), (426, 0, 1.5, 'B3'), (426, 1.5, 0.5, 'C#4'),
+         (427, 1, 1, 'Bb3'), (427, 2, 4, 'C4'), (429, 1, 1, 'Bb3'), (429, 2, 1.5, 'C4'), (430, 0.5, 0.5, 'C4'),
+         (430, 1, 2, 'C4')]
+FOUR = (397, 398, 405, 406)
 
 NIGHT = hexc('#1a2ab0')
 MOON = hexc('#80a0ff')
@@ -143,31 +174,35 @@ def sparks(S, hits, t, seed, n=14, reach=1.0):
     return out
 
 
+def voice():
+    """Hagen's line in seconds: (time, seconds, midi)."""
+    out = []
+    for b, x, n, name in VOICE:
+        per = 4 if b in FOUR else 3
+        t0 = bar(b + x / per)
+        b1, x1 = b, x + n
+        while x1 > (4 if b1 in FOUR else 3) + 1e-9:
+            x1 -= 4 if b1 in FOUR else 3
+            b1 += 1
+        out.append((t0, bar(b1 + x1 / (4 if b1 in FOUR else 3)) - t0, note(name)))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
-    N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'C2', 60, 'pedal')
-    for k, t0 in enumerate(T_CALL):         # "Hoiho! Hoihohoho!" on the cowhorn: a long C, then three short
-        add(t0, 1.6, 'C3', 112 + 4 * k, 'horn', k)
-        for j in range(3):
-            add(t0 + 1.9 + j * 0.35, 0.3, 'C3', 104 + 4 * k, 'horn', k)
-        add(t0, 0.5, 'C2', 118, 'boom', k)
-    for i, (t0, run, u, pitch) in enumerate(ANSWERS):
-        add(t0, 1.2, pitch + '3', 96 + 3 * i, 'answer', i)
-    for k, t0 in enumerate(T_VASSALS):
-        for t, m, v, d in play('vassals', t0, 0.42 - 0.025 * k, 0, 100 + 4 * k):
-            add(t, d, m, v, 'vassals', k)
+    """Every note: (time, seconds, midi, velocity, part, k). The excerpt's notes are 'score'; Hagen's line is
+    'voice', the stage cowhorns 'answer'. 'boom' (each blast of his horn), 'vassals' (each entry of his men) and
+    'tritone' (his "Not!") mark moments for the lights and the stage; they make no sound."""
+    N = [(t, d, m, v, 'score', h) for t, d, m, v, h in EX['notes']]
+    N += [(t, d, m, 112, 'voice', None) for t, d, m in voice()]
+    for t0, t1, m, k in STAGE_HORNS:
+        N.append((t0, t1 - t0, note(m), 104, 'answer', k))
+    for k, t0 in enumerate(T_CALL):
+        N.append((t0, 0.5, 36, 0, 'boom', k))
+    N.append((T_LAST, 0.5, 36, 0, 'boom', len(T_CALL)))
+    for k, (t0, t1, who, text) in enumerate(s for s in EX['singing'] if s[2] != 'Hagen'):
+        N.append((t0, t1 - t0, 48, 0, 'vassals', k))
     for k, t0 in enumerate(T_TRITONE):
-        for t, m, v, d in play('hagen', t0, 1.0, -12, 112):
-            add(t, d, m, v, 'tritone', k)
-    add(T_LAST, 2.4, 'C3', 124, 'horn', 4)
-    add(T_LAST, 0.5, 'C2', 124, 'boom', 4)
-    for m in ('C3', 'Eb3', 'G3'):
-        add(T_LAST + 3.0, D - T_LAST - 3.0, m, 64, 'held')
+        N.append((t0, 1.0, 36, 0, 'tritone', k))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -181,9 +216,11 @@ def render(G, seed=16):
     blasts = sorted({e[0] for e in N if e[4] == 'boom'})
     vas = [e for e in N if e[4] == 'vassals']
     tri = sorted({e[0] for e in N if e[4] == 'tritone'})
+    sung = [e[0] for e in N if e[4] == 'voice']
+    acc = accents(EX['notes'], vmin=88, n=3, space=0.25)
     rng = np.random.default_rng(seed)
     catches = [(float(t), float(rng.uniform(0.9, 1.2)), float(rng.uniform(40, L - 40)))
-               for t in np.sort(rng.uniform(T_VASSALS[1], T_LAST + 4, 26))]
+               for t in np.sort(rng.uniform(T_LAST, D, 26))]
     seg = G.seg_of
 
     for f in range(F):
@@ -194,7 +231,7 @@ def render(G, seed=16):
         fr = shore(S, T, lv)
 
         # the runs the answering horns have woken stay lit in torch orange, and pulse with the vassals' call
-        for t0, run, u, pitch in ANSWERS:
+        for t0, run, u in ANSWERS:
             if t >= t0:
                 a = t - t0
                 woke = 0.5 * smoothstep(0, 1.5, a) * (1 - smoothstep(T_LAST + 2, T_LAST + 10, t))
@@ -220,8 +257,8 @@ def render(G, seed=16):
             a = t - t0
             if 0 <= a < 0.9:
                 run = RUNS[j % len(RUNS)]
-                fr += light(TORCH, (0.75 + 0.05 * k) * np.exp(-a / 0.28) * (seg == run))
-                fr += light(FLAME, 0.4 * np.exp(-a / 0.1) * (seg == run))
+                fr += light(TORCH, 0.95 * np.exp(-a / 0.4) * (seg == run))
+                fr += light(FLAME, 0.6 * np.exp(-a / 0.15) * (seg == run))
 
         # the first torches catching: sprays of sparks here and there
         fr += light(FLAME, np.clip(sparks(S, catches, t, 16, n=10, reach=0.4), 0, 1))
@@ -232,6 +269,18 @@ def render(G, seed=16):
             if 0 <= a < 2.0:
                 fr += light(HAGEN, 0.85 * np.exp(-a / 0.7) * smoothstep(1500 * a + 80, 1500 * a - 80, np.abs(d - p_h)))
 
+        # every note he sings rolls a violet ripple out of him; the orchestra's hits flare the doors and the shore
+        for t0 in sung:
+            a = t - t0
+            if 0 <= a < 1.4:
+                r = 1300 * a
+                fr += light(HAGEN, 0.95 * np.exp(-a / 0.6) * np.exp(-((np.abs(d - p_h) - r) / 140) ** 2))
+        for t0 in acc:
+            a = t - t0
+            if 0 <= a < 0.6:
+                fr += light(HALL, 0.9 * np.exp(-a / 0.2) * S['porch'] * S['doors'])
+                fr += light(TORCH, 0.4 * np.exp(-a / 0.22) * S['shore'])
+
         # Hagen at the doors, swelling with each blast
         swell = sum(np.exp(-(t - t0) / 0.8) for t0 in blasts if 0 <= t - t0 < 4)
         lvl = HAGEN_LVL[0] + (HAGEN_LVL[1] - HAGEN_LVL[0]) * smoothstep(T_LAST, T_LAST + 8, t)
@@ -241,7 +290,8 @@ def render(G, seed=16):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction, Hagen's line and the stage cowhorns from the vocal
+    score, and the stage: his horn's blows, the men's feet and weapons."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -250,62 +300,42 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.48, 0.25), ('brass', 0.48, 0.3), ('horns', 0.45, 0.45), ('perc', 0.42, 0.3),
-                            ('strings', 0.4, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tbn_st = M.sampler('Brass/Tenor Trombone/stac/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ctrem = M.sampler('Strings/Cello Section/trem/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    bd = M.hits('Percussion/BDrumNewhit_v6*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
-
+    o = Orchestra(M, level=1.85)
+    # the stage backs off under his calls and comes up as his men come running; it dips again as they hail him
+    o.effects([(0, -10), (T_MEN, -10), (T_MEN + 1.0, 0), (bar(454), 0), (bar(456), -5), (D, -5)])
     ph = pan_at(at(G, *HAGEN_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', ctrem, m + 12, t, t + d, v + 20, 0.0, rise=2.0, fall=2.0, gain=0.7)
-        elif part == 'horn':                # the cowhorn: horn and trombone in unison, rough and loud
-            if d > 1.0:
-                hold('horns', horn, m, t, t + d, v, ph, rise=0.08, fall=0.4, gain=0.9)
-                hold('horns', tbn, m, t, t + d, v - 8, ph, rise=0.08, fall=0.4, gain=0.6)
-            else:
-                M.add('horns', horn.play(m, v, dur=d, release=0.12), t, 0.9, ph)
-                M.add('horns', tbn_st.play(m, v - 8), t, 0.6, ph)
-        elif part == 'boom':
-            M.add('perc', timp.play(v, pitch=-5), t, 0.9, ph)
-            M.add('perc', bd.play(v), t, 0.7, ph)
-            if k == 4:
-                M.add('perc', crash.play(120), t, 0.8, ph)
-        elif part == 'answer':
-            run, u = ANSWERS[k][1], ANSWERS[k][2]
-            p = pan_at(at(G, run, u))
-            hold('horns', horn, m, t, t + d, v, p, rise=0.1, fall=0.6, gain=0.55)
-        elif part == 'vassals':
-            M.add('brass', tbn_st.play(m, v), t, 0.9, 0.0)
-            M.add('low', tuba.play(m - 12, v - 10, dur=d * 1.1, release=0.15), t, 0.7, 0.0)
-            if d >= 0.25:
-                M.add('perc', timp.play(v - 14, pitch=-3), t, 0.5, 0.0)
+
+    def role(t, d, m, v, h):
+        if t < T_CALL[1] and h == 1 and d > 0.6 and m in (48, 60):          # his cowhorn's C
+            return [('horns', 0, 10, 0.9), ('trombones', 0, 4, 0.6)]
+        return None
+
+    o.tutti(tidy(EX['notes']), size=lambda t: 0.75 if t >= T_MEN else 1.0, role=role)
+    N = compose()
+    for t, d, m, v, part, k in N:
+        if part == 'voice':                 # Hagen: trombones and bassoons, where he stands
+            o.play('trombones', m, t, max(d, 0.15), v, ph, 0.85)
+            o.play('bassoons', m, t, max(d, 0.15), v - 8, ph, 0.5)
+        elif part == 'answer':              # the stage cowhorns, far off at their end of the house
+            p = pan_at(at(G, ANSWERS[k][1], ANSWERS[k][2]))
+            for oct_ in (0, 12):
+                o.play('horns', m + oct_, t, d, v - 6 * (oct_ > 0), p, 0.7)
+            o.play('trombones', m, t, d, v - 10, p, 0.4)
+        elif part == 'boom':                # each blast of his horn: a blow at the doors
+            o.boom(t, ph, 0.75 if k < len(T_CALL) else 1.0)
+            if k >= len(T_CALL) - 1:
+                o.hit('crash', t, 118, gain=0.6, pan=ph)
         elif part == 'tritone':
-            hold('low', tuba, m, t, t + d, v, ph, rise=0.1, fall=1.0, gain=0.9)
-            M.add('brass', tbn.play(m + 12, v - 10, dur=d, release=0.5), t, 0.7, ph)
-            M.add('perc', timp.play(v, pitch=-6), t, 0.8, ph)
-        elif part == 'held':
-            hold('strings', vc, m, t, t + d, v, 0.0, rise=3.0, fall=1.5, gain=0.5)
+            o.hit('timpani', t, 120, pitch=-6, gain=0.8, pan=ph)
+            o.hit('gong', t, 100, gain=0.4, pan=ph)
+    # the men come running from every side, weapons clattering as they muster
+    rng = np.random.default_rng(16)
+    ends = [pan_at(at(G, 'Right', 1.0)), pan_at(at(G, 'Side', 0.0)), pan_at(at(G, 'Left', 0.15))]
+    for k, e in enumerate(ends):
+        t0 = T_MEN + 0.6 + 3.5 * k
+        o.gallop(t0, D - 0.5, 0.30, pan=lambda t, e=e, t0=t0: e * (1 - 0.6 * smoothstep(t0, D, t)), v=80 + 6 * k,
+                 gain=0.45)
+    for t, d, m, v, part, k in N:
+        if part == 'vassals' and k % 2 == 0:
+            o.clash(t + 0.05, float(rng.uniform(-0.8, 0.8)), 96 + int(rng.integers(0, 16)), 0.35)
+    o.hit('cymbal swell', D - 4.5, 100, gain=0.45)

@@ -2,41 +2,47 @@
 slate washed with dusk violet) Wotan stands in his deep blue at the left of Porch Front and Brünnhilde kneels a
 little way off, her silver dimmed, while the clouds over the wings turn slowly toward evening.
 
-She pleads. Her love (Donington 87) rises on a solo horn in E major over hushed strings: every long note a
-pulse of her silver that swells out across the porch and onto the wings, every little triplet pickup a ripple
-of gold glints running from her toward him. At the top of each phrase the silver reaches the ends of the house.
-Then she reminds him of the Wälsungs: the tragic destiny of the Volsungs (Donington 66) in the trombones and
-tubas, in C minor, each heavy chord a wash of indigo over the whole roof, and with it a faint ghost of
-Siegmund's blue on Right where his story began. Wotan's light shrinks under it.
+The music is Wagner's own: Act III, bars 1032 to 1040 and 1132 to 1163, as Solti's 1958 Vienna Philharmonic
+recording takes them. She pleads ("O sag, Vater! Sieh mir ins Auge; schweige den Zorn"), then tells him what she
+saw when she went to Siegmund to announce his death ("Tod kündend trat ich vor ihn"): his need, his lament, his
+love and his defiance, swelling to "Meinem Ohr erscholl, mein Aug' erschaute, was tief im Busen das Herz zu
+heil'gem Beben mir traf!" The notes come from the Wagner Ring Dataset's piano reduction (pixelhome/ring.py): her
+plea on horns and violins over violas and cellos, the death-announcement's heavy chords on trombones and tuba,
+the great swell on doubled violins and clarinets over horns and the low strings. The stage is heard too: the last
+of the storm's wind sighs away, each gold glint toward him is a harp note, a gong opens the memory of Siegmund's
+death and every wash of indigo is a muffled timpani stroke, and a cymbal swell, cymbals and drum carry the blaze. Throughout, the effects stay well back: the scene is her
+plea, and her music must be clear.
 
-She only did what he truly wished in his heart. Devotion (Donington 80) in the violins, in thirds, over a
-G flat glow in the violas: a warm rose-gold breathes across the house, she rises and moves toward him, a
-bridge of light grows between the two of them, his hard blue softens and her silver warms toward gold. To
-close, the opening of her love once more on an oboe, the two lights a hand's breadth apart.
+Her plea: every long note a pulse of her silver that swells out across the porch and onto the wings, every
+quick note below it a gold glint running from her toward him, and her light breathes with the music. Then the
+memory of Siegmund: each heavy chord a wash of indigo over the whole roof, and a ghost of Siegmund's blue on
+Right where his story began; Wotan's light shrinks under it. As she sings of the hero's love a warm rose-gold
+breathes across the house, she rises and moves toward him, a bridge of light grows between them, and on the
+climax it blazes in waves out from the two of them, his hard blue softening and her silver warming toward gold.
+It settles as her phrase ends, the two lights a hand's breadth apart.
 
-compose() holds every note, choreography() every position; render() and score() read both."""
+compose() tags every note of the excerpt, choreography() every position; render() and score() read both."""
 import numpy as np
-from pixelhome.audio import note
 from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker
-from pixelhome.leitmotifs import MOTIFS, play
+from pixelhome.ring import Orchestra, excerpt
 
 CODE = 'WK25'
 TITLE = 'Was It So Shameful?'
 KIND = 'show'
-DESCRIPTION = ('Alone on the rock with her angry father, Brünnhilde pleads her case. She only did what he truly '
-               'wanted in his heart, she tells him, and slowly his hard blue light begins to soften.')
+DESCRIPTION = ('Alone on the rock with her angry father, Brünnhilde pleads her case. She tells him what she saw '
+               'in Siegmund\'s heart, and slowly his hard blue light begins to soften.')
 VOICEOVER = ('The storm is over. Now it is just a father and his daughter on a mountain, '
              'and she has one chance to make him understand.')
 
-LBEAT = 0.7                                 # a quarter note of her love
-T_PLEA = 3.0                                # Brünnhilde's love, on the horn
-T_VF = 27.0                                 # the destiny of the Volsungs
-VBEAT = 0.95
-T_DEV = 45.0                                # Devotion
-DBEAT = 0.95
-T_CODA = 66.0                               # her love once more, on an oboe
-CBEAT = 0.8
-D = 80.0
+EX = excerpt(__file__)                      # Act III, bars 1032-1040 and 1132-1163, Solti 1958
+SING = EX['singing']
+D = EX['seconds']
+line = lambda w: next(x for x in SING if x[3].startswith(w))
+T_PLEA = 0.0                                # "O sag, Vater!"
+T_VF = line('Tod kündend')[0]               # the memory of Siegmund's death
+T_DEV = line('tönend')[0]                   # his lament, his love: devotion
+T_CODA = line('traurigsten')[0]             # the great swell
+T_END = line('zu heil')[0]                  # settling
 T0 = 80.0 * 24                              # the opera's clock at our start: steady motion carries across the cuts
 
 WOTAN = hexc('#1a3cff')
@@ -55,6 +61,17 @@ ROCK, DUSK = hexc('#38468a'), hexc('#7a40d0')
 def at(G, seg, u):
     s = G.pd[G.seg[seg]]
     return float(s.min() + u * (s.max() - s.min()))
+
+
+def onsets(notes, win=0.06):
+    """Chords: (time, weight) where weight is the summed velocity of the notes struck together."""
+    out = []
+    for t, d, m, v, h in notes:
+        if out and t - out[-1][0] < win:
+            out[-1][1] += v / 127
+        else:
+            out.append([t, v / 127])
+    return np.array(out)
 
 
 def mix(a, b, w):
@@ -76,40 +93,33 @@ def stage(d, ta, porch):
 
 
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, who)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, who). Before the memory of Siegmund
+    the right hand's long notes are her plea ('plea'), the rest 'bed'; then 'vf' (the death-announcement), 'dev'
+    (devotion) and 'swell' (the climax and its close). Silent markers (velocity 0): 'pick' (a glint toward him) on
+    quick left-hand notes of the plea, 'chord' on the heavy chords of the memory, 'surge' on the climax's accents."""
     N = []
-
-    def add(t, d, m, v, part, who=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, who))
-
-    add(0.0, T_PLEA + 1.0, 'E2', 52, 'pad')                 # the last of the storm, settling
-    add(0.0, T_PLEA + 1.0, 'B2', 48, 'pad')
-    for t, m, v, d in play('brunnhilde_love', T_PLEA, LBEAT, 0, 94):
-        add(t, d, m, v + 8 * (d >= 2.5 * LBEAT), 'plea', 'b')
-    chords = [(0, ('E2', 'B3', 'E4', 'Ab4')), (8, ('E2', 'B3', 'E4', 'Ab4')), (12, ('A2', 'A3', 'Db4', 'E4')),
-              (16, ('Gb2', 'A3', 'Db4', 'Gb4')), (20, ('A2', 'A3', 'Db4', 'E4')), (24, ('Ab2', 'B3', 'E4', 'Ab4')),
-              (28, ('E2', 'B3', 'E4', 'Ab4'))]
-    for i, (b, ms) in enumerate(chords):
-        b1 = chords[i + 1][0] if i + 1 < len(chords) else 32.5
-        for m in ms:
-            add(T_PLEA + b * LBEAT, (b1 - b) * LBEAT, m, 58 if m != ms[0] else 62, 'bed')
-    for t, m, v, d in play('volsung_fate', T_VF, VBEAT, 0, 100):
-        add(t, d, m, v, 'vf')
-    add(T_VF, 16 * VBEAT, 'C2', 70, 'roll')
-    for t, m, v, d in play('devotion', T_DEV, DBEAT, 0, 88):
-        add(t, d, m, v, 'dev')
-    for b, ms in ((0, ('Gb2', 'Db3', 'Bb3')), (6, ('Db2', 'Ab3', 'F3')), (8, ('Eb2', 'Bb2', 'Gb3')),
-                  (12, ('B1', 'Gb3', 'Eb3')), (16, ('Gb2', 'Db3', 'Bb3'))):
-        dur = {0: 6, 6: 2, 8: 4, 12: 4, 16: 5}[b]
-        for m in ms:
-            add(T_DEV + b * DBEAT, dur * DBEAT, m, 60, 'devbed')
-    for t, m, v, d in play('brunnhilde_love', T_CODA, CBEAT, 0, 80):
-        if t < T_CODA + 8 * CBEAT:
-            add(t, d, m, v, 'coda', 'b')
-    for m in ('E2', 'B2', 'E3', 'Ab3', 'B3'):
-        add(T_CODA, D - T_CODA - 0.5, m, 54, 'bed')
-    add(72.5, 3.0, 'B1', 70, 'wotan', 'w')                 # Wotan, quietly: he is listening
-    add(75.0, 4.0, 'E2', 66, 'wotan', 'w')
+    for t, d, m, v, h in EX['notes']:
+        if t < T_VF:
+            part = 'plea' if h == 0 and d >= 0.6 else 'bed'
+        elif t < T_DEV:
+            part = 'vf'
+        elif t < T_CODA:
+            part = 'dev'
+        else:
+            part = 'swell'
+        N.append((t, d, m, v, part, h))
+    last = -9.0
+    for t, d, m, v, h in EX['notes']:
+        if t < T_VF and h == 1 and d < 0.6 and t - last > 0.35:
+            N.append((t, 0.3, m, 0, 'pick', None))
+            last = t
+    ons = onsets(EX['notes'])
+    med = np.median(ons[:, 1])
+    for t, w in ons:
+        if T_VF <= t < T_DEV and w > med:
+            N.append((float(t), 1.0, 40, 0, 'chord', None))
+        if T_CODA <= t < T_END and w > 1.3 * med:
+            N.append((float(t), 1.0, 60, 0, 'surge', None))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -157,13 +167,22 @@ def render(G, seed=25):
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
     sig = d[G.seg['Right']].min() + 0.35 * (d[G.seg['Right']].max() - d[G.seg['Right']].min())
     tw = Flicker(np.random.default_rng(2501), G.N, 1.5, 5.0)
-    plea = [(e[0], e[1]) for e in N if e[4] in ('plea', 'coda')]
-    pt = np.array([p[0] for p in plea])
-    longs = [p[0] for p in plea if p[1] >= 2.0 * LBEAT * 0.9]
-    picks = [p[0] for p in plea if p[1] < 0.5]
-    vch = np.array(sorted({e[0] for e in N if e[4] == 'vf'}))
-    dev = np.array(sorted({e[0] for e in N if e[4] == 'dev'}))
-    peaks = [T_PLEA + 15 * LBEAT, T_PLEA + 20 * LBEAT]
+    plea = sorted({(e[0], e[1]) for e in N if e[4] == 'plea'})
+    pt = np.array(sorted({e[0] for e in N if e[3] > 0 and e[5] == 0}))
+    longs = [p[0] for p in plea]
+    picks = [e[0] for e in N if e[4] == 'pick']
+    vch = np.array([e[0] for e in N if e[4] == 'chord'])
+    dev = np.array(sorted({e[0] for e in N if e[4] in ('dev', 'swell') and e[3] > 0}))
+    surge = [e[0] for e in N if e[4] == 'surge']
+    peaks = sorted(plea, key=lambda p: -p[1])[:2]
+    peaks = [p[0] for p in peaks]
+    ons = onsets(EX['notes'])                                                   # the music's loudness, 0..1
+    env = np.zeros(F)
+    for t0, w in ons:
+        f0 = int(t0 / DT)
+        n = min(F - f0, nframes(2.0))
+        env[f0:f0 + n] += w * np.exp(-np.arange(n) * DT / 0.6)
+    env = np.clip(env / np.percentile(env, 95), 0, 1.2)
 
     def recent(ts, t, tau, span=3.0):
         i = int(np.searchsorted(ts, t, side='right')) - 1
@@ -177,8 +196,9 @@ def render(G, seed=25):
         fate = smoothstep(T_VF - 1, T_VF + 1, t) * (1 - smoothstep(T_DEV - 3, T_DEV, t))
         devo = smoothstep(T_DEV - 1, T_DEV + 4, t)
         warmth = 0.15 * smoothstep(T_PLEA, T_VF, t) + 0.45 * smoothstep(T_DEV, T_CODA, t)
-        lvl = 0.5 + 0.2 * smoothstep(T_PLEA, T_PLEA + 8, t) + 0.15 * devo - 0.1 * fate
-        soft = 0.55 * smoothstep(T_DEV + 2, T_CODA + 4, t)
+        lvl = 0.5 + 0.2 * smoothstep(T_PLEA, T_PLEA + 8, t) + 0.15 * devo - 0.1 * fate + 0.2 * env[f]
+        soft = 0.55 * smoothstep(T_DEV + 2, T_END, t)
+        peak = smoothstep(T_CODA, T_CODA + 3, t) * (1 - smoothstep(T_END, D - 1, t))
 
         # her plea: long notes swell silver out over the house, pickups ripple gold toward him
         for ts in longs:
@@ -186,7 +206,7 @@ def render(G, seed=25):
                 age = t - ts
                 r = 700 * smoothstep(0, 2.2, age) + 1500 * any(abs(ts - p) < 0.05 for p in peaks) * smoothstep(0, 2.2, age)
                 band = np.exp(-((np.abs(d - pb) - r) / 220) ** 2) * (1 - age / 3.0)
-                fr += light(mix(SILVER, WARM, warmth), 0.55 * band)
+                fr += light(mix(SILVER, WARM, warmth), 0.7 * band)
         for ts in picks:
             if ts <= t < ts + 1.2:
                 age = t - ts
@@ -196,10 +216,16 @@ def render(G, seed=25):
             mid = 0.5 * (pw + pb)
             dp = recent(dev, t, 1.2, 6.0)
             br = 0.55 + 0.45 * np.sin(2 * np.pi * (np.abs(d - mid) / 700 - 0.11 * ta))
-            fall = 1 - 0.35 * smoothstep(T_CODA + 4, D, t)
+            fall = 1 - 0.35 * smoothstep(T_END, D, t)
             fr *= 1 - 0.45 * devo * fall
-            fr += light(ROSE, devo * fall * (0.3 + 0.16 * dp) * br)
-            fr += light(GLINT, devo * fall * (0.2 + 0.2 * dp) * br ** 3 * (0.7 + 0.3 * tw(ta)))
+            fr += light(ROSE, devo * fall * (0.25 + 0.16 * dp + 0.25 * env[f]) * br)
+            fr += light(GLINT, devo * fall * (0.2 + 0.2 * dp + 0.2 * peak) * br ** 3 * (0.7 + 0.3 * tw(ta)))
+        for ts in surge:                                # the climax: blazing waves out from the two of them
+            if ts <= t < ts + 2.0:
+                age = t - ts
+                r = 30 + 1200 * smoothstep(0, 1.8, age)
+                mid = 0.5 * (pw + pb)
+                fr += light(mix(ROSE, GLINT, 0.5), 0.75 * (1 - age / 2.0) * np.exp(-((np.abs(d - mid) - r) / 160) ** 2))
 
         # the destiny of the Volsungs: indigo over everything, and Siegmund's ghost on Right
         vp = recent(vch, t, 0.6)
@@ -211,7 +237,7 @@ def render(G, seed=25):
                 age = t - vch[i]
                 wave = np.exp(-((np.abs(d - pw) - 1500 * age / 1.6) / 220) ** 2) * (1 - age / 1.6)
             tex = 0.6 + 0.4 * np.sin(2 * np.pi * (d / 260 + 0.04 * ta)) * np.sin(2 * np.pi * (d / 610 - 0.03 * ta))
-            fr += light(FATE_HI, fate * (0.22 * tex + 0.22 * vp * tex + 0.4 * wave))
+            fr += light(FATE_HI, fate * (0.22 * tex + 0.3 * vp * tex + 0.6 * wave))
             fr += light(SIEGMUND, fate * (0.35 + 0.3 * vp) * np.exp(-((d - sig) / 40) ** 2))
 
         # the bridge between them
@@ -236,7 +262,8 @@ def render(G, seed=25):
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction: her plea on horns and violins over violas and cellos,
+    the memory of Siegmund's death on trombones and tuba, the swell on doubled violins and clarinets over horns."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -252,61 +279,66 @@ def score(M, G):
     def pan_of(who, t):
         return pan_at(np.interp(t, C['t'], C[who]))
 
-    for name, gain, rev in (('strings', 0.13, 0.42), ('low', 0.14, 0.25), ('brass', 0.15, 0.38), ('winds', 0.15, 0.42),
-                            ('perc', 0.12, 0.35)):
-        M.bus(name, gain=gain, reverb=rev)
-    vn = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    va = M.sampler('Strings/Viola Section/susvib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    ob = M.sampler('Woodwinds/Oboe/Vib/*.wav', tune=-12)
-    cl = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    roll = M.hits('Percussion/Timpani/Rolls/*.wav')
-
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=0.8, fall=1.0, gain=1.0):
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            e = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * e, t, gain, pan)
-            t += step
-
-    for t, d, m, v, part, who in compose():
-        if part == 'pad':
-            hold('low', vc, m, t, t + d, v, pf, rise=0.1, fall=2.0, gain=0.8)
-        elif part == 'plea':
-            M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.5), t, 1.1, pan_of('b', t))
+    o = Orchestra(M, level=LEVEL)
+    for t, d, m, v, part, h in compose():
+        if part == 'pick':                                                 # a gold glint running toward him
+            o.play('harp', m + 12, t, 0.3, 76, pan_of('b', t), 0.25)
+            continue
+        if part == 'chord':                                                # each wash of indigo: a muffled stroke
+            o.hit('timpani', t, 92, pitch=-7, gain=0.45, pan=pf, fx=True)
+            continue
+        if part == 'surge':                                                # the blaze: cymbal and drum
+            o.hit('crash', t, 90, gain=0.22, pan=pf)
+            o.hit('bass drum', t, 96, gain=0.3, pan=pf)
+            continue
+        if v == 0:
+            continue
+        pb, pw = pan_of('b', t), pan_of('w', t)
+        if part == 'plea':
+            o.play('horns', m, t, d, v + 6, pb, 0.9)
+            o.play('violins', m, t, d, v - 10, pb, 0.4)
         elif part == 'bed':
-            s = cb if m < note('C3') else va if m < note('D4') else vn
-            hold('strings', s, m, t, t + d, v, -0.3 + 0.6 * ((m * 5) % 12) / 11, rise=1.2, fall=1.4, gain=0.7)
-        elif part == 'vf':
-            if m >= note('C4'):
-                M.add('brass', horn.play(m, v - 10, dur=d * 1.05, release=0.5), t, 0.8, pf - 0.1)
-            elif m >= note('B2'):
-                M.add('brass', tbn.play(m, v, dur=d * 1.05, release=0.5), t, 0.9, pf + 0.1)
-                M.add('low', vc.play(m, v - 14, dur=d * 1.05, release=0.5), t, 0.6, sig)
+            if h == 0:
+                o.play('violins', m, t, d, v - 4, pb, 0.55)
+            elif m >= 48:
+                o.play('violas' if m >= 55 else 'cellos', m, t, d, v - 2, pf, 0.6)
             else:
-                M.add('low', tuba.play(m, v, dur=d * 1.05, release=0.6), t, 1.0, pf)
-                M.add('low', cb.play(m + 12, v - 10, dur=d, release=0.5), t, 0.6, pf)
-        elif part == 'roll':
-            M.add('perc', roll.play(v, dur=d), t, 0.6, pf)
-        elif part == 'dev':
-            M.add('strings', vn.play(m, v, dur=d * 1.05, release=0.6), t, 0.9, pan_of('b', t) - 0.1)
-            M.add('winds', cl.play(m - 12, v - 16, dur=d * 1.05, release=0.5), t, 0.6, pan_of('w', t))
-        elif part == 'devbed':
-            hold('strings', va if m >= note('C3') else cb, m, t, t + d, v, pf + 0.2 * ((m % 3) - 1), rise=1.0,
-                 fall=1.2, gain=0.75)
-        elif part == 'coda':
-            M.add('winds', ob.play(m, v, dur=d * 1.05, release=0.5), t, 1.0, pan_of('b', t))
-        elif part == 'wotan':
-            M.add('brass', tbn.play(m + 12, v, dur=d, release=0.8), t, 0.9, pan_of('w', t))
-            hold('low', tuba, m + 12, t, t + d, v - 6, pan_of('w', t), rise=0.3, fall=1.5, gain=0.6)
+                o.play('cellos', m, t, d, v, pf, 0.6)
+                o.play('basses', m, t, d, v - 8, pf, 0.4)
+        elif part == 'vf':
+            if h == 1 and d >= 0.4:
+                o.play('trombones', m, t, d, v + 4, pf, 0.75)
+                o.play('tuba' if m < 48 else 'horns', m, t, d, v - 4, pw, 0.55)
+                if m < 50:
+                    o.play('cellos', m, t, d, v - 10, sig, 0.45)
+            elif h == 1:
+                o.play('cellos', m, t, d, v, pf, 0.55)
+            else:
+                o.play('violins', m, t, d, v - 4, pb, 0.55)
+                o.play('clarinets', m - 12, t, d, v - 14, pw, 0.35)
+        else:
+            if h == 0:
+                o.play('violins', m, t, d, v, pb - 0.1, 0.65)
+                o.play('violins', m, t, d, v - 8, pb + 0.15, 0.4)
+                if d >= 0.4:
+                    o.play('clarinets', m - 12, t, d, v - 12, pw, 0.45)
+            elif m >= 50:
+                if d >= 0.4:
+                    o.play('horns', m, t, d, v - 2, pw, 0.6 + 0.2 * (part == 'swell'))
+                else:
+                    o.play('violas', m, t, d, v - 4, pf, 0.5)
+            else:
+                o.play('cellos', m, t, d, v, pf, 0.65)
+                o.play('basses', m, t, d, v - 8, pf, 0.45)
+                if part == 'swell' and d >= 0.6:
+                    o.play('tuba', m, t, d, v - 12, pf, 0.35)
+    o.hit('timpani roll', T_CODA - 1.0, 84, gain=0.35, pan=pf)
+    # the stage: the last of the storm's wind sighing away over the wings; a gong under the memory of his death
+    o.wind(0.0, T_DEV + 4.0, level=lambda tt: 0.35 * (1 - smoothstep(T_VF, T_DEV + 3.0, tt)), pan=-0.3)
+    o.hit('gong', T_VF, 90, gain=0.4, pan=sig, fx=True)
+    o.hit('cymbal swell', T_CODA - 2.5, 96, gain=0.4, pan=pf)
+    # the fader: this is her plea; the effects stay far back, a breath of wind and no more
+    o.effects([(0.0, -6), (3.0, -14), (D, -14)])
+
+
+LEVEL = 2.4

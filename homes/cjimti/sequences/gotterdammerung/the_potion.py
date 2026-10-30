@@ -1,25 +1,27 @@
-"""The Potion: the hall of the Gibichungs, the four of them in it as Siegfried's arrival left them. Gutrune comes
-down from beside the throne with the drinking horn to Siegfried, her motif (Donington 40) sending waves of rose
-out over the whole house.
+"""The Potion: the hall of the Gibichungs, the four of them in it as Siegfried's arrival left them.
 
-He lifts it to Brünnhilde: "Vergäss' ich alles, was du mir gabst" — the first thing he drinks to is her, and her
-motif (88) on the horns floods the house silver, a field of silver points standing over every run. Then he
-drinks. The potion of forgetting (19) sounds in the clarinets and low strings, slow chords, and with each a tide
-of sickly violet pours out of him along the roofline, and the silver points go out one after another under it
-until there is nothing left of her.
+The music is Wagner's own, Act I as Solti's 1958 recording takes it: Gutrune's welcome as she brings the drinking
+horn (bars 473-476); Siegfried's toast, "Vergäss' ich alles, was du mir gabst ... Brünnhilde, bring' ich dir!"
+(484-495); and the love potion taking him, "Die so mit dem Blitz den Blick du mir seng'st", her lowered eyes,
+"Ha, schönstes Weib!" to "zünden mein Blut!" (506-522). The notes come from the Wagner Ring Dataset's piano
+reduction (pixelhome/ring.py): Gutrune's music on oboes and clarinets, the potion on clarinets and bassoons, the
+passion on the full orchestra. His toast is not in the reduction; it is played as he sings it, on horns and
+cellos, from the printed vocal score (Schott, Pl. 23263, pp. 68-69; archive.org gtterdmmerung00wagn_0). A gong
+scrape as he drinks, a cymbal swell as the love potion takes him.
 
-He looks at Gutrune, and the love potion (39) takes him: every note of its long climbing line slams a whole run
-alternately emerald and rose, rings of both colours running out from the two of them, faster and brighter, until
-her motif comes back in full and the whole house surges rose and emerald together. In the shadows Hagen's tritone
-lands twice, the hall knocked dark and a black-violet shock out from him; then the hall settles, Gutrune at
-Siegfried's side.
+Gutrune comes down from beside the throne with the drinking horn, rose waves out from her on each chord. He lifts
+it to Brünnhilde and the house fills with a field of silver points, every note he sings a silver wave out from
+him. Then he drinks, and a tide of sickly violet pours out of him along the roofline while the silver points go
+out one after another. The love potion takes him: every note of its climbing lines slams a whole run, emerald and
+rose by turns, rings running out from the two of them; as she lowers her eyes the whole house surges rose and
+emerald together, and his passion drives the slams on to the end.
 
-compose() holds every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
+compose() tags every note; stage(), hall(), figure(), wave() and blow() are the hall, shared word for word by
 Act I's hall scenes (GD07-GD12) on a clock that runs on from scene to scene."""
 import numpy as np
 from pixelhome.audio import note
-from pixelhome.fx import DT, hexc, light, smoothstep, nframes, keys, Flicker, smooth_noise
-from pixelhome.leitmotifs import play, melody
+from pixelhome.fx import DT, hexc, light, smoothstep, nframes, Flicker, smooth_noise
+from pixelhome.ring import Orchestra, accents, excerpt, tidy
 
 CODE = 'GD10'
 TITLE = 'The Potion'
@@ -30,17 +32,31 @@ VOICEOVER = ('Siegfried raises the cup to Brunnhilde, and drinks. '
              'In one swallow he forgets her completely.')
 
 K = 3                                       # this scene's place on Act I's shared clock: T = t + 80 K
-T_GUT = [1.0, 7.5]                          # Gutrune brings the horn
-T_WALK = (2.0, 9.0)
-T_TOAST = 11.0                              # he drinks to Brunnhilde: her motif, silver
-T_DRINK = 17.5                              # the potion
-PBEAT = 0.7
-T_LOVE = 30.5                               # the love potion takes him
-LBEAT = 0.36
-T_GUT2 = 47.5                               # her motif in full, rose and emerald together
-T_HAGEN = [57.0, 63.5]
-T_SETTLE = 68.0
-D = 80.0
+EX = excerpt(__file__)                      # Act I, bars 473-476, 484.5-495 and 506-522, Solti 1958
+BAR = {int(m): t for m, t in EX['bars']}
+D = EX['seconds']
+T_WALK = (0.5, BAR[476])                    # "Willkommen, Gast": Gutrune brings him the horn
+T_TOAST = BAR[485]                          # he drinks to Brünnhilde: silver
+T_DRINK = BAR[494]                          # he drinks: the potion
+T_LOVE = BAR[506]                           # the love potion takes him
+T_GUT2 = BAR[511]                           # she lowers her eyes: her music in full, rose and emerald together
+T_PASSION = BAR[513]                        # "Ha, schönstes Weib!"
+T_SETTLE = BAR[520]
+# His toast, from the vocal score (Schott, Pl. 23263, pp. 68-69; archive.org gtterdmmerung00wagn_0):
+# (bar, beat, beats, note as written for tenor, sounding an octave lower). 3/4, E flat major.
+TOAST = [(484, 2.5, 0.5, 'Bb4'),
+         (485, 0, 0.75, 'Eb5'), (485, 0.75, 0.25, 'G4'), (485, 1, 1, 'D5'), (485, 2, 1, 'C5'),
+         (486, 0, 1 / 3, 'Bb4'), (486, 1 / 3, 1 / 3, 'Ab4'), (486, 2 / 3, 1 / 3, 'G4'), (486, 1, 1, 'F4'),
+         (486, 2.75, 0.25, 'Bb4'),
+         (487, 0, 0.75, 'Eb5'), (487, 0.75, 0.25, 'G4'), (487, 1, 0.75, 'C5'), (487, 1.75, 0.25, 'Eb4'),
+         (487, 2, 1 / 3, 'G4'), (487, 2 + 1 / 3, 1 / 3, 'Ab4'), (487, 2 + 2 / 3, 1 / 3, 'Bb4'),
+         (488, 0, 2, 'C5'),
+         (489, 2.5, 0.5, 'F4'), (490, 0, 2, 'Ab4'), (490, 2, 1, 'C5'),
+         (491, 0, 0.75, 'C5'), (491, 0.75, 0.25, 'Db5'), (491, 1, 4 / 3, 'Eb5'), (491, 7 / 3, 1 / 3, 'Db5'),
+         (491, 8 / 3, 1 / 3, 'C5'),
+         (492, 0, 1, 'Eb5'), (492, 1, 1, 'Db5'),
+         (493, 0, 1, 'F5'), (493, 1, 0.5, 'Db5'), (493, 1.5, 0.5, 'Bb4'), (493, 2, 0.75, 'G4'), (493, 2.75, 0.25, 'F4'),
+         (494, 0, 2, 'Db5')]
 
 AMBER = hexc('#ff8a20')
 PURPLE = hexc('#6a10c0')
@@ -146,32 +162,30 @@ def blow(fr, S, p, a, s=1.0):
     return fr
 
 
+def toast():
+    """His toast in seconds: (time, seconds, midi as sung)."""
+    seg = next(g for g in EX['segments'] if g['measures'][0] == 484.5)
+    bars = [(484.5, seg['start'])] + sorted((m, t) for m, t in EX['bars'] if 485 <= m <= 495)
+    when = lambda pos: float(np.interp(pos, [b[0] for b in bars], [b[1] for b in bars]))
+    out = []
+    for b, x, n, name in TOAST:
+        a = max(b + x / 3, 484.5)
+        t0 = when(a)
+        out.append((t0, when(b + (x + n) / 3) - t0, note(name) - 12))
+    return out
+
+
 def compose():
-    """Every note: (time, seconds, midi, velocity, part, k)."""
+    """Every note of the excerpt, tagged: (time, seconds, midi, velocity, part, hand, trem): Gutrune's welcome
+    'gutrune', the toast's accompaniment 'toast', the potion 'potion', the love potion 'love', her lowered eyes
+    'gutrune2', his passion 'passion'; and his sung toast, 'voice'."""
     N = []
-
-    def add(t, d, m, v, part, k=None):
-        N.append((float(t), float(d), note(m) if isinstance(m, str) else int(m), int(v), part, k))
-
-    add(0.0, D, 'Bb1', 56, 'pedal')
-    for k, t0 in enumerate(T_GUT):
-        for t, m, v, d in play('gutrune', t0, 0.5, -12, 90 + 6 * k):
-            add(t, d, m, v, 'gutrune', k)
-    for t, m, v, d in play('brunnhilde', T_TOAST, 0.62, 0, 100):
-        add(t, d, m, v, 'toast')
-    for t, m, v, d in play('potion', T_DRINK, PBEAT, -12, 92):
-        add(t, d, m, v, 'potion')
-    for t, m, v, d in play('love_potion', T_LOVE, LBEAT, 0, 104):
-        add(t, d, m, v, 'love')
-    for t, m, v, d in play('gutrune', T_GUT2, 0.55, -12, 112):
-        add(t, d, m, v, 'gutrune', 2)
-    for m in ('Bb2', 'D3', 'F3', 'Bb3'):
-        add(T_GUT2, 6.6, m, 92, 'swell')
-    for k, t0 in enumerate(T_HAGEN):
-        for t, m, v, d in play('hagen', t0, 0.7, 0, 118 - 6 * k):
-            add(t, d, m, v, 'hagen', k)
-    for t, m, v, d in play('gutrune', T_SETTLE + 1.0, 0.75, -24, 74):
-        add(t, d, m, v, 'gutrune', 3)
+    for t, d, m, v, h, trem in tidy(EX['notes']):
+        part = ('gutrune' if t < T_TOAST else 'toast' if t < T_DRINK else 'potion' if t < T_LOVE else 'love'
+                if t < T_GUT2 else 'gutrune2' if t < T_PASSION else 'passion')
+        N.append((t, d, m, v, part, h, trem))
+    for t, d, m in toast():
+        N.append((t, d, m, 92, 'voice', 0, False))
     return sorted(N, key=lambda e: e[0])
 
 
@@ -182,19 +196,18 @@ def render(G, seed=10):
     d = S['d']
     L = d.max()
     N = compose()
-    gut = [e for e in N if e[4] == 'gutrune']
-    toast = [e for e in N if e[4] == 'toast']
-    pot = sorted({e[0] for e in N if e[4] == 'potion'})
-    love = melody('love_potion')
-    love_t = [T_LOVE + b * LBEAT for b, _, _ in love]
-    lo, hi = min(m for _, _, m in love), max(m for _, _, m in love)
-    hag = [e for e in N if e[4] == 'hagen']
+    gut = [e for e in N if e[4] in ('gutrune', 'gutrune2') and e[5] == 0 and e[1] >= 0.4]
+    sung = [e for e in N if e[4] == 'voice']
+    pot = [T_DRINK + 0.2, T_DRINK + 1.6, T_DRINK + 3.0]
+    love_t = accents([e for e in N if e[4] in ('love', 'passion') and e[5] == 0], n=1, space=0.3)
+    love_m = [max(e[2] for e in N if abs(e[0] - t0) < 0.02 and e[5] == 0) for t0 in love_t]
+    lo, hi = min(love_m), max(love_m)
     p_gun, p_hag, p_sf = at(G, *GUNTHER_AT), at(G, *HAGEN_AT), at(G, *SIEGFRIED_AT)
     g0, g1 = at(G, *GUTRUNE_FROM), at(G, *GUTRUNE_AT)
     runs = ['Porch Front', 'Right', 'Left', 'Porch Right', 'Side', 'Porch Left']
     rng = np.random.default_rng(seed)
     pts = rng.uniform(0, L, 70)                     # the silver of her memory, point by point
-    out_at = T_DRINK + 0.6 + np.sort(rng.uniform(0, 10.5, 70))[rng.permutation(70)]
+    out_at = T_DRINK + 0.4 + np.sort(rng.uniform(0, 5.5, 70))[rng.permutation(70)]
     tw = rng.uniform(0, 2 * np.pi, 70)
 
     for f in range(F):
@@ -204,18 +217,18 @@ def render(G, seed=10):
         p_gut = g0 + (g1 - g0) * smoothstep(*T_WALK, t)
 
         # Gutrune's motif: rose waves out from her over the whole house
-        for t0, dur, m, v, part, k in gut:
+        for t0, dur, m, v, part, h, _ in gut:
             a = t - t0
-            if 0 <= a < 1.5 and (m >= note('C4') or k == 3):
-                fr += light(GUTRUNE, (0.7 + 0.15 * (k == 2)) * wave(S, p_gut, a, 1300.0, 140.0, 0.7))
-                fr += light(GUTRUNE, 0.35 * np.exp(-a / 0.3) * S['porch'] * (k < 3))
+            if 0 <= a < 1.5:
+                fr += light(GUTRUNE, (0.7 + 0.15 * (part == 'gutrune2')) * wave(S, p_gut, a, 1300.0, 140.0, 0.7))
+                fr += light(GUTRUNE, 0.35 * np.exp(-a / 0.3) * S['porch'])
 
         # the toast to Brunnhilde: silver floods the house, a field of silver points over every run
         mem = smoothstep(T_TOAST, T_TOAST + 1.5, t)
-        for t0, dur, m, v, part, k in toast:
+        for t0, dur, m, v, part, h, _ in sung:          # every note he sings to her: a silver wave from him
             a = t - t0
             if 0 <= a < 1.6:
-                fr += light(SILVER, 0.75 * wave(S, p_sf, a, 1500.0, 160.0, 0.8))
+                fr += light(SILVER, (0.6 + 0.4 * (m >= note('Eb4'))) * wave(S, p_sf, a, 1300.0, 180.0, 0.9))
         if mem > 0:
             alive = (t < out_at).astype(float)
             dying = np.exp(-np.clip(t - out_at, 0, None) / 0.15) * (t >= out_at)
@@ -238,21 +251,22 @@ def render(G, seed=10):
             fr += light(POTION, 0.35 * smoothstep(T_DRINK, T_DRINK + 3, t) * (1 - smoothstep(T_LOVE - 2, T_LOVE, t)))
 
         # the love potion: every note slams a whole run, emerald and rose by turns, rings out from both of them
-        for i, ((b, dur, m), t0) in enumerate(zip(love, love_t)):
+        for i, (m, t0) in enumerate(zip(love_m, love_t)):
             a = t - t0
+            dur = 0.4
             if 0 <= a < 2.0:
                 u = (m - lo) / (hi - lo)
                 run = G.seg_of == runs[i % len(runs)]
                 col = SIEGFRIED if i % 2 == 0 else GUTRUNE
-                g = (0.7 + 0.3 * u) * np.exp(-a / (0.35 + dur * LBEAT))
+                g = (0.7 + 0.3 * u) * np.exp(-a / (0.35 + dur))
                 fr = fr * (1 - 0.6 * np.exp(-a / 0.4) * run)[:, None]
                 fr += light(col, g * run)
                 fr += light(col, 0.75 * wave(S, p_sf if i % 2 == 0 else p_gut, a, 1500.0, 110.0, 0.6))
 
         # her motif in full: the whole house surges rose and emerald together, the two colours chasing
-        if T_GUT2 <= t < T_GUT2 + 9.0:
+        if T_GUT2 <= t < T_PASSION + 1.0:
             a = t - T_GUT2
-            g = smoothstep(0, 0.5, a) * (1 - smoothstep(6.0, 9.0, a))
+            g = smoothstep(0, 0.5, a) * (1 - smoothstep(T_PASSION - T_GUT2 - 1.0, T_PASSION - T_GUT2 + 1.0, a))
             ph = np.sin(2 * np.pi * (d / 300 - 0.9 * a))
             fr += light(GUTRUNE, 0.9 * g * np.clip(ph, 0, 1))
             fr += light(SIEGFRIED, 0.9 * g * np.clip(-ph, 0, 1))
@@ -276,14 +290,12 @@ def render(G, seed=10):
         fr += light(HEAD, 0.8 * (0.85 + 0.15 * burn) * np.exp(-((d - p_sf) / 6) ** 2))
         if T_DRINK - 0.5 <= t < T_LOVE:          # the memory leaving him: a violet veil over his head
             fr += light(POTION, 0.5 * np.exp(-((d - p_sf) / 30) ** 2) * smoothstep(T_DRINK - 0.5, T_DRINK, t))
-        for t0, dur, m, v, part, k in hag:
-            fr = blow(fr, S, p_hag, t - t0, 1.0 if m < note('C3') else 0.6)
         out[f] = fr
     return np.clip(out, 0, 1)
 
 
 def score(M, G):
-    from pixelhome.audio import SR
+    """Wagner's notes, orchestrated from the piano reduction; his toast sung on horns and cellos."""
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
@@ -292,70 +304,30 @@ def score(M, G):
         x = np.interp(dd, ds, xs)
         return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    for name, gain, rev in (('low', 0.34, 0.25), ('brass', 0.32, 0.3), ('strings', 0.3, 0.35), ('winds', 0.3, 0.35),
-                            ('perc', 0.32, 0.3)):
-        M.bus(name, gain=gain, reverb=rev)
-    oboe = M.sampler('Woodwinds/Oboe/Sus/*.wav', tune=-12)
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
-    tuba = M.sampler('Brass/Tuba/sus/*.wav', tune=-12)
-    vln = M.sampler('Strings/Violin Section/susVib/*.wav', tune=-12)
-    vc = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
-    cb = M.sampler('Strings/Solo Contrabass/SusNV/*.wav', tune=-12)
-    harp = M.sampler('Strings/Harp/*.wav')
-    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
-    crash = M.hits('Percussion/cymbal-crash1_f*.wav')
-    gong = M.hits('Percussion/gongHit_f*.wav')
-    tri = M.hits('Percussion/Triangle3-Hit*.wav')
+    o = Orchestra(M, level=2.4)
+    sf = pan_at(at(G, *SIEGFRIED_AT))
+    gut = lambda t: pan_at(at(G, *GUTRUNE_FROM) + (at(G, *GUTRUNE_AT) - at(G, *GUTRUNE_FROM)) * smoothstep(*T_WALK, t))
 
-    def hold(bus, s, m, t0, t1, vel, pan=0.0, step=2.5, rise=1.5, fall=1.5, gain=1.0):
-        """A note sustained from t0 to t1 (and released over `fall`): overlapping windows of its sample."""
-        a0 = s.play(m, vel)
-        step = min(step, (a0.shape[1] / SR - 0.35) / 2)
-        w = int(2 * step * SR)
-        win = np.hanning(w)
-        t = t0 - step
-        while t < t1 + fall:
-            a = s.play(m, vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
-            a = a * win[:a.shape[1]]
-            tt = t + np.arange(a.shape[1]) / SR
-            env = np.clip((tt - t0) / rise, 0, 1) * np.clip(1 - (tt - t1) / fall, 0, 1)
-            M.add(bus, a * env, t, gain, pan)
-            t += step
+    def role(t, d, m, v, h):
+        if t < T_TOAST or T_GUT2 <= t < T_PASSION:          # Gutrune's music: oboes and clarinets, violas under
+            return ([('oboes', 0, 8, 0.6), ('violins', 0, -8, 0.35)] if h == 0 else
+                    [('clarinets', 0, 4, 0.55), ('violas', 0, -6, 0.4)])
+        if t < T_DRINK:                                     # under the toast: soft strings, clarinets
+            return [('violins' if m >= 55 else 'violas', 0, -6, 0.4)] if h == 0 else [('cellos', 0, -4, 0.45)]
+        if t < T_LOVE:                                      # the potion: clarinets and bassoons, low and slow
+            return [('clarinets', 0, 6, 0.6)] if h == 0 else [('bassoons', 0, 4, 0.6)]
+        return None
 
-    sf, hag = pan_at(at(G, *SIEGFRIED_AT)), pan_at(at(G, *HAGEN_AT))
-    gut = pan_at(at(G, *GUTRUNE_AT))
-    for t, d, m, v, part, k in compose():
-        if part == 'pedal':
-            hold('low', cb, m + 12, t, t + d, v, 0.0, rise=4.0, fall=2.0, gain=0.5)
-        elif part == 'gutrune':
-            if m >= note('C4'):
-                M.add('winds', oboe.play(m - 12, v, dur=d * 1.1, release=0.3), t, 0.85, gut)
-            else:
-                M.add('strings', vc.play(m, v - 10, dur=d * 1.1, release=0.3), t, 0.6, gut)
-        elif part == 'toast':
-            if d > 1.0:
-                hold('brass', horn, m, t, t + d, v, sf, rise=0.2, fall=1.0, gain=0.8)
-            else:
-                M.add('brass', horn.play(m, v, dur=d * 1.05, release=0.3), t, 0.85, sf)
-            M.add('strings', harp.play(m + 12, 70), t, 0.5, sf)
-            if t == T_TOAST:
-                M.add('perc', tri.play(90), t, 0.6, sf)
-        elif part == 'potion':
-            hold('winds', clar, m, t, t + d, v, sf, rise=0.6, fall=1.5, gain=0.7)
-            hold('low', vc, m - 12, t, t + d, v - 8, sf, rise=0.8, fall=1.5, gain=0.6)
-            if m == min(e[2] for e in compose() if e[4] == 'potion' and e[0] == t):
-                M.add('perc', gong.play(70), t, 0.5, sf)
-        elif part == 'love':
-            M.add('strings', vln.play(m, v, dur=d * 1.2, release=0.3), t, 0.8, sf)
-            M.add('winds', oboe.play(m - 12, v - 14, dur=d * 1.1, release=0.3), t, 0.45, gut)
-        elif part == 'swell':
-            hold('brass', horn, m, t, t + d, v, 0.0, rise=0.3, fall=2.0, gain=0.55)
-            if m == note('Bb2'):
-                M.add('perc', crash.play(110), t, 0.7)
-                M.add('perc', timp.play(110, pitch=-4), t, 0.8)
-        elif part == 'hagen':
-            M.add('low', tuba.play(m - 12, v, dur=d * 1.2, release=0.4), t, 1.0, hag)
-            M.add('low', tbn.play(m, v - 10, dur=d * 1.2, release=0.4), t, 0.7, hag)
-            M.add('perc', timp.play(v, pitch=-7 if m < note('C3') else -3), t, 0.9, hag)
+    o.tutti([[t, d, m, v, h, tr] for t, d, m, v, part, h, tr in compose() if part != 'voice'],
+            size=lambda t: 1.0 if t >= T_PASSION else 0.7, role=role,
+            pan=lambda t, m: gut(t) if t < T_TOAST or T_GUT2 <= t < T_PASSION else sf if t < T_LOVE else 0.0)
+    for t, d, m in toast():                                  # his toast: horns and cellos, as he sings it
+        o.play('horns', m, t, max(d, 0.15), 100, sf, 0.75)
+        o.play('cellos', m, t, max(d, 0.15), 92, sf, 0.45)
+    # the stage: the drink, and the love potion taking hold
+    o.hit('triangle', T_WALK[1] - 0.3, 70, gain=0.25, pan=sf)          # the horn handed over
+    o.hit('gong scrape', T_DRINK + 0.2, 96, gain=0.45, pan=sf)        # he drinks: the forgetting
+    o.hit('cymbal swell', T_LOVE - 1.4, 92, gain=0.4)
+    o.hit('crash', T_PASSION, 112, gain=0.45)
+    o.hit('timpani roll', T_SETTLE - 1.0, 100, pitch=-4, gain=0.4)
+    o.effects([(0, -10), (D, -10)])
