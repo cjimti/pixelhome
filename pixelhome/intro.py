@@ -20,7 +20,7 @@ RED = hexc('#ff0800')
 WAVE = ('Left', 'Porch Front', 'Right')
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
-          'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent'}
+          'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -255,7 +255,39 @@ def _bed_die_walkure(n, rng, s0, s1):
     return [(pulse, -41.0, None), (storm, -36.0, pre), (horns, -34.0, post)]
 
 
-BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure}
+def _bed_siegfried(n, rng, s0, s1):
+    """B flat minor, as Siegfried begins: a timpani roll on the low B flat and the bassoons brooding over the Ring
+    before the first word, the roll alone under the voice, and after the last word Siegfried's horn call."""
+    from .audio import SR, Hits, Sampler
+    from .leitmotifs import play
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    T = n / SR
+    rolls = Hits('Percussion/Timpani/Rolls/*.wav', rng)
+    roll = np.zeros((2, n))
+    for t in np.arange(0.0, T, 2.8):
+        a = rolls.play(80, pitch=-4, dur=3.0)
+        k0 = int(t * SR)
+        k = min(n - k0, a.shape[1])
+        roll[:, k0:k0 + k] += a[:, :k]
+    roll *= np.clip(np.arange(n) / SR / 0.8, 0, 1)
+    brood = track(Sampler('Woodwinds/Bassoon/sus/*.wav', rng, tune=-12), play('ring_under', 0.2, 0.5, 3, 80), 0.4)
+    horn = track(Sampler('Brass/F Horn/sus/*.wav', rng, tune=-12), play('siegfried_horn', s1 + 0.4, 0.3, 5, 100), 0.4)
+    pre, post = slice(0, int(min(s0, 3.2) * SR)), slice(int((s1 + 0.4) * SR), int(min(T, s1 + 2.8) * SR))
+    return [(roll, -42.0, None), (brood, -36.0, pre), (horn, -34.0, post)]
+
+
+BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
+        'siegfried': _bed_siegfried}
 
 
 def _rms(x):
