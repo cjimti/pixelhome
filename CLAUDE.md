@@ -7,9 +7,11 @@ they need local tools CI doesn't have.
 
 ## Sequence contract
 
-- File: `homes/<home>/sequences/<occasion>/<name>.py`. The folder is the occasion and must be an id
-  in `pixelhome/occasions.py`. The id on the site is `<occasion>/<name>` with `_` changed to `-`.
-- Module constants: `CODE` (unique per home: the occasion's `prefix` from `occasions.py` plus two
+- File: `homes/<home>/sequences/<playlist>/<name>.py`. The folder is the playlist: an occasion's id (its own
+  playlist) or one of `PLAYLISTS` in `pixelhome/occasions.py`, which puts it under an occasion (the Nightmare
+  Before Christmas under Halloween, each Ring opera under the Ring Cycle). The id on the site is
+  `<playlist>/<name>` with `_` changed to `-`; moving a playlist to another occasion changes no ids or paths.
+- Module constants: `CODE` (unique per home: the playlist's `prefix` from `occasions.py` plus two
   digits, e.g. `XM01`..`XM10`; Halloween's originals are `SC1`.. and `NT1`..), `TITLE`,
   `KIND` (`'show'` or `'ambient'`), `DESCRIPTION` (one or two sentences for the card).
 - `render(G, seed=N) -> ndarray (F, G.N, 3)`, float PWM 0..1, node (channel) order.

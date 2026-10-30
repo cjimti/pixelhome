@@ -14,6 +14,9 @@
     return;
   }
   const occasion = Object.fromEntries(CAT.occasions.map((o) => [o.id, o]));
+  const playlist = Object.fromEntries(CAT.occasions.flatMap((o) => (o.playlists || []).map((p) => [p.id, p])));
+  // an occasion shows its playlists by name when it has more than one, or when its one isn't its own
+  const named = (o) => (o.playlists || []).length > 1 || (o.playlists || []).some((p) => p.id !== o.id);
   // Start the list at the next holiday (a holiday stays first through the day after it); undated ones last.
   {
     const d = new Date(Date.now() - 864e5);
@@ -229,32 +232,48 @@
     const sel = $('occasions');
     sel.replaceChildren();
     const counts = {};
-    home.sequences.forEach((s) => { counts[s.occasion] = (counts[s.occasion] || 0) + 1; });
+    home.sequences.forEach((s) => {
+      counts['o:' + s.occasion] = (counts['o:' + s.occasion] || 0) + 1;
+      counts['p:' + s.playlist] = (counts['p:' + s.playlist] || 0) + 1;
+    });
     sel.append(new Option(`All occasions (${home.sequences.length})`, ''));
-    CAT.occasions.filter((o) => counts[o.id]).forEach((o) => sel.append(new Option(`${o.label} (${counts[o.id]})`, o.id)));
+    CAT.occasions.filter((o) => counts['o:' + o.id]).forEach((o) => {
+      sel.append(new Option(`${o.label} (${counts['o:' + o.id]})`, 'o:' + o.id));
+      if (named(o)) {
+        o.playlists.filter((p) => counts['p:' + p.id])
+          .forEach((p) => sel.append(new Option(`\u2003${p.label} (${counts['p:' + p.id]})`, 'p:' + p.id)));
+      }
+    });
 
     const groups = $('groups');
     groups.replaceChildren();
     for (const o of CAT.occasions) {
-      const list = home.sequences.filter((s) => s.occasion === o.id);
-      if (!list.length) continue;
+      if (!home.sequences.some((s) => s.occasion === o.id)) continue;
       const g = el('div', 'group');
       g.dataset.occasion = o.id;
       g.style.setProperty('--c', o.accent);
       g.append(el('h3', null, o.label));
-      for (const s of list) {
-        const b = el('button', 'item');
-        b.type = 'button';
-        const r1 = el('span', 'r1');
-        r1.append(el('span', 'c', s.code), el('span', 't', s.title));
-        if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
-        if (s.introData) r1.append(Object.assign(el('span', 'k', 'Intro'), { title: 'Has a spoken intro' }));
-        r1.append(el('span', 'dur', fmt(s.seconds, false)));
-        b.append(r1, el('span', 'd', s.description));
-        b.addEventListener('click', () => { choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
-        b._seq = s;
-        cards.set(s.id, b);
-        g.append(b);
+      for (const p of o.playlists || [{ id: o.id }]) {
+        const list = home.sequences.filter((s) => s.occasion === o.id && (s.playlist || s.occasion) === p.id);
+        if (!list.length) continue;
+        const sub = el('div', 'sub');
+        sub.style.setProperty('--c', p.accent || o.accent);
+        if (named(o)) sub.append(el('h4', null, p.label));
+        g.append(sub);
+        for (const s of list) {
+          const b = el('button', 'item');
+          b.type = 'button';
+          const r1 = el('span', 'r1');
+          r1.append(el('span', 'c', s.code), el('span', 't', s.title));
+          if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
+          if (s.introData) r1.append(Object.assign(el('span', 'k', 'Intro'), { title: 'Has a spoken intro' }));
+          r1.append(el('span', 'dur', fmt(s.seconds, false)));
+          b.append(r1, el('span', 'd', s.description));
+          b.addEventListener('click', () => { choose(s); trackSeq('select_sequence', s, { source: 'card' }); });
+          b._seq = s;
+          cards.set(s.id, b);
+          sub.append(b);
+        }
       }
       groups.append(g);
     }
@@ -266,14 +285,21 @@
     let shown = 0;
     $('occasions').value = filters.occasion;
     document.querySelectorAll('#kinds button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === filters.kind)));
+    const f = filters.occasion;
+    const inScope = (s) => !f || (f.startsWith('p:') ? (s.playlist || s.occasion) === f.slice(2) : s.occasion === f.slice(2));
     document.querySelectorAll('.group').forEach((g) => {
       let n = 0;
-      g.querySelectorAll('.item').forEach((c) => {
-        const s = c._seq;
-        const ok = (!filters.occasion || s.occasion === filters.occasion) && (!filters.kind || s.kind === filters.kind) &&
-          (!q || `${s.code} ${s.title} ${s.description}`.toLowerCase().includes(q));
-        c.hidden = !ok;
-        n += ok;
+      g.querySelectorAll('.sub').forEach((sub) => {
+        let m = 0;
+        sub.querySelectorAll('.item').forEach((c) => {
+          const s = c._seq;
+          const ok = inScope(s) && (!filters.kind || s.kind === filters.kind) &&
+            (!q || `${s.code} ${s.title} ${s.description}`.toLowerCase().includes(q));
+          c.hidden = !ok;
+          m += ok;
+        });
+        sub.hidden = !m;
+        n += m;
       });
       g.hidden = !n;
       shown += n;
@@ -306,11 +332,12 @@
   function trackSeq(name, meta, params = {}) {
     const m = meta && (meta.introOf || meta);
     if (!m) return;
-    track(name, { home: H.home.id, sequence_id: m.id, occasion: m.occasion, kind: m.kind, ...params });
+    track(name, { home: H.home.id, sequence_id: m.id, occasion: m.occasion, playlist: m.playlist, kind: m.kind, ...params });
   }
   const wide = matchMedia('(min-width: 760px)');     // sidebar layout: the list scrolls on its own
-  function setAccent(occ) {
-    document.documentElement.style.setProperty('--accent', (occasion[occ] || CAT.occasions[0] || { accent: '#ff6a1f' }).accent);
+  function setAccent(meta) {
+    const o = playlist[meta.playlist] || occasion[meta.occasion] || CAT.occasions[0] || { accent: '#ff6a1f' };
+    document.documentElement.style.setProperty('--accent', o.accent);
   }
 
   function mark(meta) {
@@ -337,7 +364,7 @@
       Object.assign($('introFseq'), { href: meta.intro, download: `${meta.introName}.fseq` });
       Object.assign($('introAudio'), { href: meta.introAudio, download: `${meta.introName}.mp3` });
     }
-    setAccent(meta.occasion);
+    setAccent(meta);
     document.title = `${meta.title} · Pixelhome`;
   }
 
@@ -593,7 +620,7 @@
   sel.addEventListener('change', () => { openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
 
   function fromHash() {
-    const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/occasion/name
+    const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/playlist/name
     return { home: CAT.homes.find((h) => h.id === hid), seqId: rest.join('/') };
   }
   window.addEventListener('hashchange', () => {

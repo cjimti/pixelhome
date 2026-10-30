@@ -2,7 +2,7 @@
 import glob, importlib.util, os
 from dataclasses import dataclass
 from .home import Home
-from .occasions import BY_ID, KINDS
+from .occasions import BY_ID, KINDS, PLAYLIST, PLAYLISTS, playlists
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOMES = os.path.join(ROOT, 'homes')
@@ -12,6 +12,7 @@ HOMES = os.path.join(ROOT, 'homes')
 class Sequence:
     home: str
     occasion: str
+    playlist: str
     id: str
     path: str
     code: str
@@ -36,18 +37,21 @@ def load_home(home_id):
 
 
 def sequences(home_id, occasion=None):
-    """All sequences of a home (or of one occasion), validated, sorted by occasion order then code.
-    Only the requested occasion's modules are imported, so a broken file elsewhere doesn't get in the way."""
+    """All sequences of a home, validated, sorted by occasion, playlist, then code. `occasion` narrows it to one
+    playlist folder, or to every playlist of an occasion; only those modules are imported, so a broken file
+    elsewhere doesn't get in the way."""
     out = []
     base = os.path.join(HOMES, home_id, 'sequences')
-    for path in sorted(glob.glob(os.path.join(base, occasion or '*', '*.py'))):
+    folders = playlists(occasion) if occasion in BY_ID else [occasion or '*']
+    for path in sorted(p for f in folders for p in glob.glob(os.path.join(base, f, '*.py'))):
         stem = os.path.splitext(os.path.basename(path))[0]
         if stem.startswith('_'):
             continue
-        occasion = os.path.basename(os.path.dirname(path))
-        if occasion not in BY_ID:
-            raise SystemExit(f'{path}: unknown occasion folder {occasion!r} (see pixelhome/occasions.py)')
-        s = Sequence(home_id, occasion, f"{occasion}/{stem.replace('_', '-')}", path, '', '', '', '')
+        playlist = os.path.basename(os.path.dirname(path))
+        if playlist not in PLAYLIST:
+            raise SystemExit(f'{path}: unknown playlist folder {playlist!r} (see pixelhome/occasions.py)')
+        s = Sequence(home_id, PLAYLIST[playlist]['occasion'], playlist, f"{playlist}/{stem.replace('_', '-')}",
+                     path, '', '', '', '')
         mod = s.load()
         missing = [k for k in ('CODE', 'TITLE', 'KIND', 'DESCRIPTION', 'render') if not hasattr(mod, k)]
         if missing:
@@ -57,7 +61,8 @@ def sequences(home_id, occasion=None):
         s.code, s.title, s.kind, s.description = mod.CODE, mod.TITLE, mod.KIND, mod.DESCRIPTION
         out.append(s)
     order = {o: i for i, o in enumerate(BY_ID)}
-    out.sort(key=lambda s: (order[s.occasion], s.kind != 'show', s.code))
+    within = {p['id']: i + 1 for i, p in enumerate(PLAYLISTS)}           # an occasion's own playlist first
+    out.sort(key=lambda s: (order[s.occasion], within.get(s.playlist, 0), s.kind != 'show', s.code))
     codes = [s.code for s in out]
     dup = {c for c in codes if codes.count(c) > 1}
     if dup:

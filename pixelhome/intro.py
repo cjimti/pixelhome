@@ -1,10 +1,11 @@
-"""Spoken intros: a short clip to schedule before a sequence, a line read in a cloned voice over the occasion's
-bed, with the house showing the voice as a red waveform out from the centre of Left, Porch Front and Right.
+"""Spoken intros: a short clip to schedule before a sequence, a line read in a cloned voice over the playlist's (or
+its occasion's) bed, with the house showing the voice as a red waveform out from the centre of Left, Porch Front and
+Right.
 
 A sequence opts in with `VOICEOVER = "the line"`: a line to set the mood, which is followed by the card's
 DESCRIPTION so the street knows what to look for (a string of pixels is abstract). Optionally `VOICEOVER_TAKE = n`
 for a different reading, `VOICEOVER_VOICE = name` for another reference voice than the occasion's. `python -m pixelhome intro` renders it
-locally to homes/<home>/intros/<occasion>/<name>.mp3 plus <name>.json, the voice's loudness at 40 fps; both are
+locally to homes/<home>/intros/<playlist>/<name>.mp3 plus <name>.json, the voice's loudness at 40 fps; both are
 committed, and the build turns the JSON into the FSEQ. Voices are ~10 s reference recordings in
 ~/.cache/pixelhome/voice/<name>.wav, never committed; Chatterbox runs in its own venv (scripts/audio-setup.sh).
 """
@@ -18,7 +19,8 @@ EXAGGERATION, CFG = 0.5, 0.5            # Chatterbox's defaults: the reading tha
 RED = hexc('#ff0800')
 WAVE = ('Left', 'Porch Front', 'Right')
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
-VOICES = {'halloween': 'halloween-accent'}  # the owner's voice, as re-read with the slight British accent
+VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
+          'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -81,7 +83,7 @@ def _parts(text, limit=200):
 
 def _jobs(mod, s):
     """One reading per part: the mood line, then the description."""
-    voice = getattr(mod, 'VOICEOVER_VOICE', VOICES.get(s.occasion, s.occasion))
+    voice = getattr(mod, 'VOICEOVER_VOICE', VOICES.get(s.playlist, VOICES.get(s.occasion, s.occasion)))
     ref = os.path.join(_cache(), 'voice', voice + '.wav')
     if not os.path.exists(ref):
         raise SystemExit(f'{s.id}: no reference voice {ref}')
@@ -182,7 +184,78 @@ def _bed_halloween(n, rng, s0, s1):
             (bell, -33.0, slice(b0, int(2.5 * SR))), (wind, -50.0, None)]
 
 
-BEDS = {'halloween': _bed_halloween}
+def _bed_das_rheingold(n, rng, s0, s1):
+    """E flat under the voice, as the Prelude begins: the double basses' low E flat, the bassoons' B flat a
+    moment later, and before the first word the horns rise through the Nature motif. Violas hold the chord while
+    it speaks; after the last word a muted horn gives the Gold's call in E flat."""
+    from .audio import SR, Sampler, note
+    from .leitmotifs import play
+    T = n / SR
+
+    def track(s, notes, release=0.4):
+        out = np.zeros((2, n))
+        for t, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    def drone(s, notes, t0, vel, step=2.5):
+        """Sustained notes from t0 to the end: overlapping windows of the sample past its attack."""
+        out = np.zeros((2, n))
+        w = int(2 * step * SR)
+        win = np.hanning(w)
+        for m in notes:
+            for t in np.arange(t0 - step, T, step):
+                a = s.play(note(m), vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
+                a = a * win[:a.shape[1]]
+                k0 = int(t * SR)
+                if k0 < 0:
+                    a, k0 = a[:, -k0:], 0
+                k = min(n - k0, a.shape[1])
+                out[:, k0:k0 + k] += a[:, :k]
+        rise = np.clip((np.arange(n) / SR - t0) / 1.2, 0, 1)
+        return out * rise
+
+    low = drone(Sampler('Strings/Solo Contrabass/SusNV/*.wav', rng, tune=-12), ['Eb1', 'Eb2'], 0.0, 90)
+    fifth = drone(Sampler('Woodwinds/Bassoon/sus/*.wav', rng, tune=-12), ['Bb1'], 0.9, 80)
+    violas = drone(Sampler('Strings/Viola Section/susvib/*.wav', rng, tune=-12), ['Eb3', 'G3', 'Bb3'], s0, 60)
+    horns = track(Sampler('Brass/F Horn/sus/*.wav', rng, tune=-12), play('nature', 0.2, 0.3, 12, 84), 0.8)
+    call = track(Sampler('Brass/F Horn/mute/*.wav', rng, tune=-12), play('gold', s1 + 0.45, 0.3, -4, 96), 0.6)
+    pre, post = slice(0, int(min(s0, 3.8) * SR)), slice(int((s1 + 0.45) * SR), int((s1 + 2.7) * SR))
+    return [(low, -38.0, None), (fifth, -44.0, None), (violas, -45.0, slice(int(s0 * SR), int(s1 * SR))),
+            (horns, -35.0, pre), (call, -34.0, post)]
+
+
+def _bed_die_walkure(n, rng, s0, s1):
+    """D minor, as Die Walküre begins: low strings racing up the storm motif over a D tremolo before the first
+    word, the tremolo alone under the voice, and after the last word the horns give the Valkyries' call."""
+    from .audio import SR, Sampler, note
+    from .leitmotifs import play
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    T = n / SR
+    trem = Sampler('Strings/Cello Section/trem/*.wav', rng, tune=-12)
+    pulse = track(trem, [(t, note(m), 76, 2.6) for t in np.arange(0.0, T, 2.2) for m in ('D2', 'A2')], 0.6)
+    pulse *= np.clip(np.arange(n) / SR / 0.8, 0, 1)
+    storm = track(Sampler('Strings/Cello Section/spic/*.wav', rng, tune=-12), play('storm', 0.2, 0.2, 0, 100), 0.1)
+    horns = track(Sampler('Brass/F Horn/sus/*.wav', rng, tune=-12), play('valkyries', s1 + 0.4, 0.28, 0, 100), 0.4)
+    pre, post = slice(0, int(min(s0, 3.2) * SR)), slice(int((s1 + 0.4) * SR), int(min(T, s1 + 2.8) * SR))
+    return [(pulse, -41.0, None), (storm, -36.0, pre), (horns, -34.0, post)]
+
+
+BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure}
 
 
 def _rms(x):
@@ -194,7 +267,7 @@ def _at(x, db, part=None):
     return x * 10 ** ((db - _rms(x if part is None else x[:, part])) / 20)
 
 
-def mix(files, occasion, seed):
+def mix(files, playlist, seed):
     """Readings of the parts -> (stereo mix, voice loudness per frame)."""
     import pedalboard as pb
     from .audio import SR
@@ -210,12 +283,12 @@ def mix(files, occasion, seed):
     voice = _at(voice + 0.07 * room(voice.astype(np.float32), SR), -17.0, slice(s, s + len(dry)))
     t = np.arange(n) / SR
     out = voice
-    if occasion in BEDS:
+    if playlist in BEDS:
         lvl = np.convolve(np.abs(voice[0]), np.ones(SR // 4) / (SR // 4), 'same')
         duck = 1 - 0.5 * np.clip(lvl / (np.percentile(lvl[s:s + len(dry)], 90) + 1e-9), 0, 1)
         said = np.flatnonzero(np.abs(dry) > 0.05 * np.abs(dry).max())       # where the words actually are
         s0, s1 = PRE + said[0] / SR, PRE + said[-1] / SR
-        bed = sum(_at(x, db, part) for x, db, part in BEDS[occasion](n, np.random.default_rng(seed), s0, s1))
+        bed = sum(_at(x, db, part) for x, db, part in BEDS[playlist](n, np.random.default_rng(seed), s0, s1))
         out = voice + bed * duck
     out = out * np.clip(t / 0.4, 0, 1) * np.clip((n / SR - t) / 1.6, 0, 1)
     out = pb.Pedalboard([pb.Limiter(threshold_db=-2.0, release_ms=120), pb.Gain(-1.0)])(out.astype(np.float32), SR)
@@ -240,7 +313,8 @@ def intro(want, occasion=None):
     os.makedirs(os.path.join(_cache(), 'intro-voice'), exist_ok=True)
     _takes([j for _, js in todo for j in js])
     for s, js in todo:
-        audio, env = mix([j['out'] for j in js], s.occasion, int(hashlib.sha256(s.id.encode()).hexdigest()[:8], 16))
+        bed = s.playlist if s.playlist in BEDS else s.occasion
+        audio, env = mix([j['out'] for j in js], bed, int(hashlib.sha256(s.id.encode()).hexdigest()[:8], 16))
         mp3, js = paths(s)
         write_mp3(mp3, audio)
         with open(js, 'w') as f:
