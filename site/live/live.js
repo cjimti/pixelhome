@@ -230,8 +230,10 @@
   music.preload = 'auto';
   let soundOn = false, seekedAt = 0, wake = null;
   // A phone takes a moment to start sounding after a seek, so a seek aims this far ahead of the house.
-  // It is measured with the music muted, before anyone hears it, and kept for the next song.
+  // Measured on each seek and remembered on this phone, so it is usually right first time. (Never muted while
+  // measuring: an iPhone pauses music that a page unmutes without a tap.)
   let lead = 0.15, lockId = 0, locking = false;
+  try { const v = parseFloat(localStorage.getItem('pixelhome.live.lead')); if (v >= 0 && v <= 1.5) lead = v; } catch (e) { /* no storage */ }
   const audioClock = () => soundOn && !locking && cur && music.dataset.key === cur.key && !music.paused && !music.seeking && music.readyState >= 2;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   async function until(ok, id, ms = 6000) {
@@ -243,7 +245,7 @@
   }
   // how far the music is behind the house, in seconds: the middle of a few readings once it plays smoothly
   async function behind(id) {
-    if (!(await until(() => !music.seeking && !music.paused && music.readyState >= 3, id))) return null;
+    if (!(await until(() => !music.seeking && !music.paused && music.readyState >= 2, id))) return null;
     await sleep(250);
     const r = [];
     for (let i = 0; i < 5; i++) {
@@ -252,12 +254,10 @@
     }
     return id === lockId ? r.sort((a, b) => a - b)[2] : null;
   }
-  // Put the music in step without being heard: muted, aim, measure how late it came out, aim again, unmute.
+  // Put the music in step: aim ahead by the lead, measure how late it came out, and aim again only if it's off.
   async function lockOn() {
     const id = ++lockId;
     locking = true;
-    music.muted = true;
-    $('soundText').textContent = 'Getting in step…';
     if (music.readyState >= 1 || (await until(() => music.readyState >= 1, id, 10000))) {
       for (let i = 0; i < 4; i++) {
         const at = livePos() + lead;
@@ -266,14 +266,15 @@
         if (music.paused) music.play().catch(blocked);   // the first time, still inside the tap
         const err = await behind(id);
         if (err === null || Math.abs(err) < 0.03) break;
-        if (Math.abs(err) < 1) lead = Math.min(1.5, Math.max(0, lead + err));   // more is a seek that didn't take
+        if (Math.abs(err) >= 1) continue;                // a seek that didn't take; nothing to learn
+        lead = Math.min(1.5, Math.max(0, lead + err));
+        try { localStorage.setItem('pixelhome.live.lead', lead.toFixed(3)); } catch (e) { /* no storage */ }
+        if (Math.abs(err) < 0.06) break;                 // close enough not to make another gap in the sound
       }
     }
-    if (id !== lockId) return;                           // muted, or a newer song took over
+    if (id !== lockId) return;                           // sound turned off, or a newer song took over
     locking = false;
     seekedAt = performance.now();
-    music.muted = false;
-    showSound();
   }
   function syncAudio() {
     if (!soundOn || !cur || !cur.audio) {
@@ -282,7 +283,6 @@
     }
     if (music.dataset.key !== cur.key) {
       music.dataset.key = cur.key;
-      music.muted = true;
       music.src = cur.audio;
       music.play().catch(blocked);
       lockOn();
@@ -324,7 +324,7 @@
     showSound();
     keepAwake(soundOn);
     track(soundOn ? 'live_sound_on' : 'live_sound_off', { sequence_id: cur ? cur.meta.id : '' });
-    if (!soundOn) { lockId++; locking = false; music.pause(); music.muted = false; return; }
+    if (!soundOn) { lockId++; locking = false; music.pause(); return; }
     // this tap is what lets the phone play sound: start the element now, even before there's a song
     if (cur && cur.audio) syncAudio();
     else {
