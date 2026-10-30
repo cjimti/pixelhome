@@ -220,6 +220,8 @@ body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px,
 .doc { max-width: 960px; margin: 0 auto; padding: 8px 16px max(40px, env(safe-area-inset-bottom)); display: grid; gap: 44px; }
 .doc > * { min-width: 0; }
 .doc section > p { max-width: 70ch; margin: 0 0 14px; }
+.doc section > h3 { font-size: 20px; margin: 26px 0 10px; }
+.doc section > ul:not([class]) { max-width: 70ch; margin: 0 0 14px; padding-left: 20px; display: grid; gap: 8px; }
 .doc h1 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(40px, 7vw, 76px); line-height: 0.95; margin: 4px 0 16px; }
 .doc h2 { font-size: clamp(26px, 3.4vw, 34px); margin-bottom: 14px; }
 .doc code { font-family: var(--mono); font-size: 0.88em; color: var(--accent); }
@@ -299,6 +301,19 @@ body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px,
 .hw .injpt { fill: none; stroke: #ff4d6d; stroke-width: 4; }
 .hw .plbl { font-size: 26px; font-weight: 600; fill: #ff4d6d; }
 .hw .street { font-family: "JetBrains Mono", monospace; font-size: 24px; fill: var(--muted); text-anchor: middle; letter-spacing: 0.2em; text-transform: uppercase; }
+/* live relay */
+.net .house { fill: var(--raised); stroke: var(--muted); stroke-width: 2; stroke-linejoin: round; }
+.net .csub { font-size: 20px; }
+.net .dots.sm { stroke-width: 5; stroke-dasharray: 0 8; }
+.net .cloud { fill: none; stroke: #f6821f; stroke-width: 2; stroke-dasharray: 10 8; }
+.net .cfname { font-family: "JetBrains Mono", monospace; font-size: 22px; fill: #f6821f; letter-spacing: 0.04em; }
+.net .link { fill: none; stroke-width: 4; }
+.net .hop { font-size: 26px; font-weight: 600; }
+.net .phone rect { fill: #060504; stroke: var(--muted); stroke-width: 2; }
+.net .rule { stroke: var(--line); stroke-width: 2; }
+.net .fix { font-size: 26px; font-weight: 600; }
+.net .fix .num { fill: var(--accent); font-family: "JetBrains Mono", monospace; }
+.net .fixsub { font-size: 22px; fill: var(--muted); }
 .legend { margin: 16px 0 0; display: grid; gap: 8px 20px; }
 .legend div { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
 .legend dt { font-weight: 600; min-width: 6.5em; display: flex; align-items: center; gap: 8px; }
