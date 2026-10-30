@@ -20,7 +20,8 @@ RED = hexc('#ff0800')
 WAVE = ('Left', 'Porch Front', 'Right')
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
-          'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent'}
+          'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
+          'gotterdammerung': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -286,8 +287,40 @@ def _bed_siegfried(n, rng, s0, s1):
     return [(roll, -42.0, None), (brood, -36.0, pre), (horn, -34.0, post)]
 
 
+def _bed_gotterdammerung(n, rng, s0, s1):
+    """E flat minor, as Götterdämmerung begins in the Norns' night: a low E flat held by the basses, the Norns'
+    motif in the cellos before the first word, and after the last word Hagen's falling tritone on the tubas over a
+    timpani stroke."""
+    from .audio import SR, Hits, Sampler, note
+    from .leitmotifs import play
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    T = n / SR
+    cb = Sampler('Strings/Solo Contrabass/SusNV/*.wav', rng, tune=-12)
+    low = track(cb, [(t, note('Eb2'), 84, 2.6) for t in np.arange(0.0, T, 2.2)], 0.6)
+    low *= np.clip(np.arange(n) / SR / 1.0, 0, 1)
+    norns = track(Sampler('Strings/Cello Section/susvib/*.wav', rng, tune=-12), play('norns', 0.2, 0.22, -12, 90), 0.5)
+    hagen = track(Sampler('Brass/Tuba/sus/*.wav', rng, tune=-12), play('hagen', s1 + 0.4, 0.5, -12, 110), 0.5)
+    timp = np.zeros((2, n))
+    a = Hits('Percussion/Timpani/Timpani1_Hit*.wav', rng).play(110, pitch=-6)
+    k0 = int((s1 + 0.9) * SR)
+    k = max(0, min(n - k0, a.shape[1]))
+    timp[:, k0:k0 + k] += a[:, :k]
+    pre, post = slice(0, int(min(s0, 3.2) * SR)), slice(int((s1 + 0.4) * SR), int(min(T, s1 + 2.8) * SR))
+    return [(low, -42.0, None), (norns, -35.0, pre), (hagen + 0.6 * timp, -33.0, post)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
-        'siegfried': _bed_siegfried}
+        'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung}
 
 
 def _rms(x):

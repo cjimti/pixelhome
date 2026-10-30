@@ -34,6 +34,7 @@ PLAYLISTS = [
     dict(id='das-rheingold', occasion='ring-cycle', label='Das Rheingold', accent='#e8b923', prefix='RG'),
     dict(id='die-walkure', occasion='ring-cycle', label='Die Walküre', accent='#e2502c', prefix='WK'),
     dict(id='siegfried', occasion='ring-cycle', label='Siegfried', accent='#20e050', prefix='SF'),
+    dict(id='gotterdammerung', occasion='ring-cycle', label='Götterdämmerung', accent='#a040ff', prefix='GD'),
 ]
 
 BY_ID = {o['id']: o for o in OCCASIONS}
