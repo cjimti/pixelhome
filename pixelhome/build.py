@@ -1,5 +1,5 @@
 """Render sequences into the static site (dist/) and local previews."""
-import glob, hashlib, json, os, shutil, subprocess, sys, time
+import glob, hashlib, json, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
@@ -106,6 +106,22 @@ def _build_one(args):
     return meta
 
 
+def _stamp(out):
+    """Point each page at its own scripts and styles with ?v=<content hash>, so a browser never runs an old copy."""
+    for page in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
+        base = os.path.dirname(page)
+
+        def tag(m):
+            f = os.path.join(base, m.group(2))
+            if not os.path.isfile(f):
+                return m.group(0)
+            return f'{m.group(1)}="{m.group(2)}?v={hashlib.sha256(open(f, "rb").read()).hexdigest()[:10]}"'
+        with open(page) as fh:
+            html = fh.read()
+        with open(page, 'w') as fh:
+            fh.write(re.sub(r'(src|href)="([^":?#]+\.(?:js|css))"', tag, html))
+
+
 def _has_music(s):
     return os.path.exists(os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3'))
 
@@ -115,6 +131,7 @@ def build(out, want):
     if os.path.exists(out):
         shutil.rmtree(out)
     shutil.copytree(site, out)
+    _stamp(out)
     homes, jobs, quiet = [], [], 0
     engine = _engine_hash()
     for h in catalog.homes():

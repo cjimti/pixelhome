@@ -106,13 +106,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 .sets li span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--dot); flex: none; }
 .sets time { font-variant-numeric: tabular-nums; color: var(--muted); }
 .sets li span em { font-style: normal; font-size: 13px; color: var(--muted); }
-.sets li:has(> .set) { display: block; padding: 0; }
-.sets .set { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 5.5em 1fr auto;
-  gap: 12px; align-items: center; padding: 9px 0; cursor: pointer; }
-.sets .set::after { content: "+"; color: var(--muted); font-size: 18px; line-height: 1; padding-right: 2px; }
-.sets .set[aria-expanded="true"]::after { content: "\2212"; }
-.sets .set:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.sets .sdesc { margin: -2px 0 10px calc(5.5em + 12px); font-size: 14px; color: var(--muted); }
+.sets .sdesc { grid-column: 2; margin: -6px 0 0 19px; font-size: 14px; line-height: 1.35; color: var(--muted); }
 .sets li.past { opacity: 0.4; }
 .sets li.now { font-weight: 600; }
 .sets li.now time { color: var(--ink); }
