@@ -199,9 +199,7 @@
     const w = whenNight(nx.n, now);
     return `${w === 'Tonight' ? 'Next show' : `${w}’s shows start`}: ${nx.b.label} at ${at(nx.b.start)}.`;
   }
-  // the week ahead, night by night, starting with the night whose shows aren't over yet; tapping a set shows
-  // what it is (kept open across the half-minute refresh)
-  const opened = new Set();
+  // the week ahead, night by night, starting with the night whose shows aren't over yet, each set with what it is
   function renderTimes() {
     const now = Date.now(), first = thisNight(now);
     const week = first ? nights.filter((n) => n.date >= first.date && Date.parse(n.lightsOn) < now + 7 * 864e5) : [];
@@ -227,25 +225,9 @@
         l.textContent = b.label;
         const extra = [b.note, li.className === 'now' ? 'on now' : ''].filter(Boolean).join(' \u00b7 ');
         if (extra) l.append(Object.assign(document.createElement('em'), { textContent: extra }));
+        li.append(t, l);
         const desc = (sets[b.playlist] || {}).desc;
-        if (desc) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'set';
-          btn.setAttribute('aria-expanded', String(opened.has(b.start)));
-          btn.append(t, l);
-          const d = Object.assign(document.createElement('p'), { className: 'sdesc', textContent: desc });
-          d.hidden = !opened.has(b.start);
-          btn.addEventListener('click', () => {
-            const open = d.hidden;
-            d.hidden = !open;
-            btn.setAttribute('aria-expanded', String(open));
-            if (open) opened.add(b.start); else opened.delete(b.start);
-          });
-          li.append(btn, d);
-        } else {
-          li.append(t, l);
-        }
+        if (desc) li.append(Object.assign(document.createElement('p'), { className: 'sdesc', textContent: desc }));
         list.append(li);
       }
       box.append(h, list);
