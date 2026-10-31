@@ -1,6 +1,6 @@
 """Shot Down: the coffin sleigh is chased across the sky by searchlights and flak, hit, and falls in flames.
 
-The coffin sleigh comes in from the free end of Right on a jaunty major waltz of the king's theme, sleigh bells
+The coffin sleigh comes in from the free end of Right on a jaunty major waltz of Jack's theme, sleigh bells
 jingling, a gold glow round it and a present popping off the roof on every downbeat as it delivers along the
 wings. Then the siren starts: three icy searchlights stab up and rake the roof, closing on the sleigh, and the
 king's theme turns minor and driving. Flak bursts (gold and white flashes throwing sparks) chase the sleigh as it
@@ -8,7 +8,7 @@ dodges back and forth across the house, each one closer. A burst hits it (a red 
 then another, then a direct hit: the whole house flashes white and orange, the sleigh becomes a fireball, and it
 falls with a long trail of fire and smoke to the porch, the cemetery, where it crashes in a blast of flame.
 The embers die into a hush. Down in Halloween Town the news arrives: the town comes up grey and violet, its
-windows dim, and slow tolls ripple out from the porch while the king's theme mourns on cellos and a choir.
+windows dim, and slow tolls ripple out from the porch while Jack's theme mourns on cellos and a choir.
 
 compose() lays the music end to end (pixelhome/nightmare.py); render() and score() both read its events."""
 import numpy as np
@@ -19,10 +19,10 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, PUMPKIN, FLA
 CODE = 'NM16'
 TITLE = 'Shot Down'
 KIND = 'show'
-DESCRIPTION = ('The coffin sleigh delivers along the wings until searchlights rake the roof and flak bursts chase '
-               'it back and forth. It is hit, bursts into flame and falls onto the porch, and Halloween Town '
-               'goes grey with mourning.')
-VOICEOVER = ('Over the sleeping world the sleigh flew on, until the searchlights found it.')
+DESCRIPTION = ("Jack's coffin sleigh delivers along the wings until searchlights rake the roof and flak bursts chase it "
+    'back and forth. It is hit, bursts into flame and falls onto the porch, and Halloween Town goes grey with '
+    'mourning.')
+VOICEOVER = "Over the sleeping world Jack's sleigh flew on, until the searchlights found it."
 
 SMOKE = hexc('#606878')
 

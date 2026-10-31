@@ -6,7 +6,7 @@ house hammers ring in turn on the beat, each strike a white flash and a spray of
 A minor (a busy, mechanical tune on xylophone, pizzicato and bassoon over an oom-pah). The toys come out wrong.
 A shrunken head rides in on Right and shrivels to a point in a green flash; a striped snake on Porch Front
 swallows a little Christmas tree whole, star and all, a bulge sliding down it; a yellow duck on Left honks, bares
-white fangs and bites, flashing the wing red. On Porch Front the rag doll sews the red suit to her theme: a red
+white fangs and bites, flashing the wing red. On Porch Front Sally sews the red suit to her theme: a red
 span grows a stitch at a time with white trim at its ends. On Left, four skeleton reindeer are fitted with
 harnesses, a red strap and a gold bell flashing on each with a jingle. Then the whole works runs flat out: the
 belt at double speed, toys streaming, hammers on every corner on every beat, the band in full, and a last crash
@@ -23,8 +23,8 @@ CODE = 'NM10'
 TITLE = 'The Workshop'
 KIND = 'show'
 DESCRIPTION = ('A conveyor belt of toys runs the whole roof while hammers spark at every corner. The toys come out '
-               'wrong: a shrinking head, a snake that swallows a tree, a duck with fangs. The red suit is sewn and the '
-               'skeleton reindeer get their harnesses.')
+    "wrong: a shrinking head, a snake that swallows a tree, a duck with fangs. Jack's red suit is sewn and "
+    'the skeleton reindeer get their harnesses.')
 VOICEOVER = ('All of Halloween Town went to work making Christmas. '
              'They did it the only way they knew how.')
 
@@ -42,7 +42,7 @@ def compose():
     C.mark('wrong')
     C.play('workshop', style='march', bpm=132, tag='wrong')         # the toys come out wrong
     C.mark('suit')
-    C.play('sally', style='waltz', bars=(0, 4), bpm=120, tag='suit')    # the rag doll sews the suit
+    C.play('sally', style='waltz', bars=(0, 4), bpm=120, tag='suit')    # Sally sews the suit
     C.mark('reindeer')
     C.play('workshop', style='drive', bars=(0, 4), bpm=132, tag='reindeer')   # harnesses for the reindeer
     C.mark('finale')
@@ -213,7 +213,7 @@ def render(G, seed=10):
                 fr += light(RED, 1.0 * np.exp(-a / 0.5) * (S.run['Left'] | S.run['Side'] | S.run['Porch Left']))
             fr += S.burst([(T_DUCK, 1.0, P['duck'])], t, seed=33, n=20, reach=0.7, colors=(WHITE, RED, YELLOW))
 
-        # the red suit, sewn on Porch Front by the rag doll, a stitch at a time
+        # the red suit, sewn on Porch Front by Sally, a stitch at a time
         if M['suit'] - 0.5 <= t < M['finale'] + 1.0:
             lv = smoothstep(M['suit'] - 0.5, M['suit'], t) * smoothstep(M['finale'] + 1.0, M['finale'], t)
             fr = fr * (1 - 0.4 * lv * S.porch[:, None])

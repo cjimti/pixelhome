@@ -1,15 +1,15 @@
-"""Fetch in the Graveyard: the ghost dog rises from his grave, chases a bone round the roof, and the two wander
+"""Fetch in the Graveyard: Zero rises from his grave, chases a bone round the roof, and the two wander
 off into strange woods until dawn.
 
 The graveyard in moonlight, the Pumpkin King on the porch. Out on Right a grey headstone glows, a white mist climbs
-out of it and the ghost dog's nose lights up in a burst of orange that floods the wing: woof. His own little tune
+out of it and Zero's nose lights up in a burst of orange that floods the wing: woof. His own little tune
 plays on the glockenspiel while he bounds about his grave. The king throws a rib bone: it flies along the roof in
-a white streak to the far end of Left, and the dog dashes after it, past the king, the whole way round the porch,
-and catches it in a spray of sparks (woof). He trots back with it and drops it at the king's feet. A second throw
+a white streak to the far end of Left, and the dog dashes after it, past Jack, the whole way round the porch,
+and catches it in a spray of sparks (woof). He trots back with it and drops it at Jack's feet. A second throw
 sends it out to the free end of Right; the third and biggest flies over the left wing and off down the Side, and
-the dog races after it into the dark, the king following. Then a long walk all night: the two come back in from
+the dog races after it into the dark, Jack following. Then a long walk all night: the two come back in from
 the free end of Right into woods that turn grey-green and strange, dark trunks swaying and pale green eyes
-glinting, the dog's nose lighting the way ahead while the king's lament plays on a far-off celesta. Dawn breaks
+glinting, the dog's nose lighting the way ahead while Jack's lament plays on a far-off celesta. Dawn breaks
 pale from the porch outwards and the woods fade to a pale pink-gold.
 
 compose() lays the music end to end (pixelhome/nightmare.py): render() and score() both read its events, so every
@@ -23,9 +23,9 @@ from pixelhome.nightmare import (drift, Chart, Band, Stage, pulse, NOSE, BONE, W
 CODE = 'NM03'
 TITLE = 'Fetch in the Graveyard'
 KIND = 'show'
-DESCRIPTION = ('The ghost dog rises from his grave on the right wing, nose aglow, and races round the house after '
-               'the bones the king throws. Then the two wander off into grey-green woods until a pale dawn.')
-VOICEOVER = ('Only one friend follows the king everywhere. He is small, and see-through, and his nose glows.')
+DESCRIPTION = ('Zero rises from his grave on the right wing, nose aglow, and races round the house after the bones Jack '
+    'throws. Then the two wander off into grey-green woods until a pale dawn.')
+VOICEOVER = 'Only one friend follows Jack everywhere. Zero is small, and see-through, and his nose glows.'
 
 MOSS = hexc('#40c070')
 SAGE = hexc('#90b8a0')
@@ -50,7 +50,7 @@ def compose():
             C.mark(f'back{i}')
             C.play('zero', style='march', bpm=132, tag=f'back{i}', transpose=2 * i)
     C.mark('follow')
-    C.play('zero', style='hold', bpm=100, tag='follow', transpose=4)        # the king follows him off
+    C.play('zero', style='hold', bpm=100, tag='follow', transpose=4)        # Jack follows him off
     C.mark('woods')
     C.play('king', style='arp', bars=(0, 8), bpm=84, tag='woods')           # all night through the woods
     C.mark('dawn')
@@ -84,7 +84,7 @@ def bone_at(S, t):
 
 
 def dog_at(S, t):
-    """Where the ghost dog is and which way he faces, and whether he carries the bone."""
+    """Where Zero is and which way he faces, and whether he carries the bone."""
     grave, king, targets = places(S)
     if t < M['throw0'] + 0.3:
         hop = 30 * np.sin(2 * np.pi * 0.5 * (t - M['play'])) if t >= M['play'] else 0.0
@@ -103,7 +103,7 @@ def dog_at(S, t):
                 p = keys(t, [(tb, targets[i]), (tn - 0.3, home)])
                 return p, (1 if home > targets[i] else -1), t < tn - 0.3
             prev = home
-    # the woods: back in from the free end of Right, nosing about ahead of the king
+    # the woods: back in from the free end of Right, nosing about ahead of Jack
     if t >= M['woods']:
         k = king_at(S, t)[0]
         return k - 60 - 50 * np.sin(2 * np.pi * 0.23 * (t - M['woods'])), -1, False
@@ -199,7 +199,7 @@ def render(G, seed=3):
             if bp > -10:
                 fr = S.sprite(fr, bp, [(1, BONE, 1.0), (0, WHITE, 0.7), (-1, BONE, 1.0)], 1.0)
             fr += light(WHITE, 0.4 * S.blob(bp, 30))
-        # the throw: a flash off the king; the catch and the drop: sparks
+        # the throw: a flash off Jack; the catch and the drop: sparks
         for k in range(THROWS):
             a = t - M[f'throw{k}']
             if 0 <= a < 0.6:
@@ -226,7 +226,7 @@ def render(G, seed=3):
         if -15 < dp < S.L + 15:
             fr = S.zero(fr, float(dp), dlvl, dfac, t, nose=1.0 + 0.3 * beat)
 
-        # the king: on the porch for the throws, follows the dog off, walks back in through the woods
+        # Jack: on the porch for the throws, follows the dog off, walks back in through the woods
         kp, kf = king_at(S, t)
         klvl = up * (1 - smoothstep(M['woods'] - 0.6, M['woods'] - 0.2, t) + smoothstep(M['woods'], M['woods'] + 1.5, t))
         if -15 < kp < S.L + 15:
@@ -285,7 +285,7 @@ def score(M_, G):
         B.woof(tc + 0.05, pan=pb, big=1.0)
         B.woof(tc + 0.35, pan=pb, big=0.8)
         if i < THROWS - 1:
-            B.hit('wood', M[f'throw{i + 1}'] - 0.3, 90, gain=0.4, pan=pa)           # he drops it at the king's feet
+            B.hit('wood', M[f'throw{i + 1}'] - 0.3, 90, gain=0.4, pan=pa)           # he drops it at Jack's feet
     B.woof(M['follow'] + 1.5, pan=-0.9, big=0.5)                                    # far off, down the Side
     # the woods: a far-off bark now and then, the wind among the trunks; dawn: a held chord and a woof
     B.wind(M['woods'], M['dawn'] + 2.0, level=0.3, pan=0.0, seed=33)

@@ -225,6 +225,16 @@
     return `${m}:${(tenths ? r.toFixed(1) : Math.round(r).toString()).padStart(tenths ? 4 : 2, '0')}`;
   }
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  // how long a set runs: its shows, and with their spoken intros (intros are 40 fps)
+  function runtime(list) {
+    const shows = list.filter((s) => s.kind === 'show');
+    const bare = shows.reduce((t, s) => t + s.seconds, 0);
+    const full = bare + shows.reduce((t, s) => t + (s.introFrames || 0) / 40, 0);
+    const min = (x) => `${Math.max(1, Math.round(x / 60))} min`;
+    const r = el('span', 'rt', full - bare >= 30 ? `${min(bare)} \u00b7 ${min(full)} w/ intros` : min(bare));
+    r.title = `${shows.length} show${shows.length === 1 ? '' : 's'}`;
+    return r;
+  }
 
   function renderLibrary() {
     const home = H.home;
@@ -252,13 +262,20 @@
       const g = el('div', 'group');
       g.dataset.occasion = o.id;
       g.style.setProperty('--c', o.accent);
-      g.append(el('h3', null, o.label));
+      const h3 = el('h3', null, o.label);
+      h3.append(runtime(home.sequences.filter((s) => s.occasion === o.id)));
+      g.append(h3);
       for (const p of o.playlists || [{ id: o.id }]) {
         const list = home.sequences.filter((s) => s.occasion === o.id && (s.playlist || s.occasion) === p.id);
         if (!list.length) continue;
         const sub = el('div', 'sub');
         sub.style.setProperty('--c', p.accent || o.accent);
-        if (named(o)) sub.append(el('h4', null, p.label));
+        if (named(o)) {
+          const h4 = el('h4', null, p.label);
+          h4.append(runtime(list));
+          sub.append(h4);
+        }
+        if (p.desc) sub.append(el('p', 'pd', p.desc));
         g.append(sub);
         for (const s of list) {
           const b = el('button', 'item');
@@ -266,6 +283,7 @@
           const r1 = el('span', 'r1');
           r1.append(el('span', 'c', s.code), el('span', 't', s.title));
           if (s.kind === 'ambient') r1.append(el('span', 'k', 'All night'));
+          if (s.kind === 'intermission') r1.append(el('span', 'k', 'Intermission'));
           if (s.introData) r1.append(Object.assign(el('span', 'k', 'Intro'), { title: 'Has a spoken intro' }));
           r1.append(el('span', 'dur', fmt(s.seconds, false)));
           b.append(r1, el('span', 'd', s.description));

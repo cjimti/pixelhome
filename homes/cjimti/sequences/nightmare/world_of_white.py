@@ -10,8 +10,8 @@ fight: children in bright hats on the two wings hurl snowballs the whole length 
 streaks that burst where they land, while warm windows glow. Fourth, the carollers: a row of candles on Porch
 Front, each glowing as the choir sings its note, and on the porch sides couples kiss under the mistletoe in pink
 bursts. Fifth, a key higher on the whole band: a toy train chugs round the house from the free end of Right,
-red engine, coloured cars and white puffs of smoke, with the king running after it. It ends with the whole house
-in Christmas colour and the king in the middle of it, sparkling.
+red engine, coloured cars and white puffs of smoke, with Jack running after it. It ends with the whole house
+in Christmas colour and Jack in the middle of it, sparkling.
 
 compose() lays the music end to end (pixelhome/nightmare.py): render() and score() both read its events, so every
 bulb, snowball and kiss lands on the music."""
@@ -23,9 +23,9 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, RED, GREEN, GOLD, BL
 CODE = 'NM05'
 TITLE = 'A World of White'
 KIND = 'show'
-DESCRIPTION = ('The king lands in Christmas Town and the house fills with it bit by bit: snow, coloured bulbs run by '
-               'run, snowballs flying the length of the roof, carollers, kisses, and a toy train going round.')
-VOICEOVER = ('He lands in something cold, and soft, and white. And everything around him is glowing.')
+DESCRIPTION = ('Jack lands in Christmas Town and the house fills with it bit by bit: snow, coloured bulbs run by run, '
+    'snowballs flying the length of the roof, carollers, kisses, and a toy train going round.')
+VOICEOVER = 'Jack lands in something cold, and soft, and white. And everything around him is glowing.'
 
 SNOWY = hexc('#7090d0')
 PINE = hexc('#00b020')
@@ -74,7 +74,7 @@ def throws():
 
 
 def king_at(S, t):
-    """Where the king is: he lands mid-porch and rushes from sight to sight."""
+    """Where Jack is: he lands mid-porch and rushes from sight to sight."""
     mid = S.mid
     if t < M['bulbs']:
         return mid, (1 if int(max(t - M['snow'], 0) / (6 * 0.2)) % 2 else -1)
@@ -246,21 +246,21 @@ def render(G, seed=5):
                 if (tb - M['train']) / (60 / 320) % 3 < 0.5:
                     fr += light(WHITE, 0.6 * np.exp(-a / 0.5) * S.blob(pp + 30 * a, 12 + 25 * a))
 
-        # the finale: the whole house in Christmas colour, bursts round the king
+        # the finale: the whole house in Christmas colour, bursts round Jack
         if t >= M['finale']:
             a = t - M['finale']
             fr += light(WHITE, 0.8 * np.exp(-a / 0.3) * np.ones(G.N))
             fr += S.burst([(M['finale'] + k * 0.35, 1.2, mid + (k - 2) * 220) for k in range(5)], t, seed=11,
                           n=20, colors=(RED, GREEN, GOLD, BLUE, WHITE))
 
-        # downbeats flash a white wash out from the king in the fuller verses
+        # downbeats flash a white wash out from Jack in the fuller verses
         if M['bulbs'] <= t < M['finale']:
             for t0 in downs[(downs <= t) & (downs > t - 1.0) & (downs >= M['bulbs'])]:
                 a = t - t0
                 kp = king_at(S, t0)[0]
                 fr += light(ICE, 0.35 * np.exp(-a / 0.35) * np.exp(-((np.abs(d - kp) - 900 * a) / 60) ** 2))
 
-        # the king
+        # Jack
         kp, kf = king_at(S, t)
         if land and -15 < kp < S.L + 15:
             spark = pulse(t, tune_t, 0.2)

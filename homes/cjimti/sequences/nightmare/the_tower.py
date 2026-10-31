@@ -1,6 +1,6 @@
 """Experiments in the Tower: the Pumpkin King shuts himself in his tower and tries to work Christmas out.
 
-The porch is the tower's lit window, with the king at his bench on Porch Front and the wings dim violet with
+The porch is the tower's lit window, with Jack at his bench on Porch Front and the wings dim violet with
 beakers glowing green. A busy patter (bassoon and pizzicato, an original tune that runs the notes of his own theme
 in quick eighths) drives the experiments, one after another, each lighting the whole house: a green scanner beam
 sweeps the roofline end to end and back, bleeping as it crosses the toy on his bench; beakers bubble, green, violet
@@ -26,10 +26,9 @@ from pixelhome.nightmare import (THEMES, Chart, Band, Stage, pulse, ORANGE, PUMP
 CODE = 'NM07'
 TITLE = 'Experiments in the Tower'
 KIND = 'show'
-DESCRIPTION = ('Locked in his tower, the Pumpkin King scans, boils, dissects and scribbles equations across the '
-               'whole roof while days and nights race by, until a spark over the porch: he will do Christmas himself.')
-VOICEOVER = ('Locked in his tower, the Pumpkin King set out to solve Christmas, like a scientist. '
-             'It would not be solved.')
+DESCRIPTION = ('Locked in his tower, Jack scans, boils, dissects and scribbles equations across the whole roof while '
+    'days and nights race by, until a spark over the porch: he will do Christmas himself.')
+VOICEOVER = 'Locked in his tower, Jack set out to solve Christmas, like a scientist. It would not be solved.'
 
 CHALK = hexc('#e8f0ff')
 SCAN = hexc('#40ffa0')
@@ -49,9 +48,9 @@ def _eighths(bars):
     return mel
 
 
-# The tower patter: an original tune for this scene, the king's own notes (A, C, E, F) run in quick eighths, as if
+# The tower patter: an original tune for this scene, Jack's own notes (A, C, E, F) run in quick eighths, as if
 # his lament had been put to work. It turns back into his theme, in major, at the eureka.
-THEMES.setdefault('tower patter', dict(meter=4, bpm=144, name="The tower patter: the king at work, A minor",
+THEMES.setdefault('tower patter', dict(meter=4, bpm=144, name="The tower patter: Jack at work, A minor",
     melody=_eighths(['A3 C4 E4 F4 E4 C4 A3 C4', 'D4 F4 A4 G#4 A4 F4 D4 F4', 'E4 G#4 B4 E4 D4 B3 G#3 B3',
                      'A3 C4 E4 A4 E4*2 A3*2', 'F4 A4 C5 B4 A4 F4 C4 F4', 'D4 F4 A4 D5 C5 A4 F4 D4',
                      'E4 G#4 B4 D5 C5 B4 A4 G#4', 'A4 E4 C4 E4 A3*4']),
@@ -286,7 +285,7 @@ def render(G, seed=7):
                 front = p_king + sd * (200 + 1100 * b)
                 fr += light(FLAME, 1.2 * np.exp(-b / 0.45) * np.exp(-((d - front) / 110) ** 2))
 
-        # the king himself, at his bench; he paces through the days, slumps in the gloom, stands tall at the eureka
+        # Jack himself, at his bench; he paces through the days, slumps in the gloom, stands tall at the eureka
         pk = p_king
         if M['days'] <= t < M['gloom']:
             pk = p_king + 50 * np.sin(2 * np.pi * (t - M['days']) * 0.9)

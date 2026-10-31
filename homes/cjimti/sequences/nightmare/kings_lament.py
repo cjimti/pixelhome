@@ -3,7 +3,7 @@
 The last of the party dies away on the porch (a few orange and green sparks, the town's windows going out) and the
 graveyard comes up in moonlight: night blue on every run, the big moon over the porch, grey headstones and a slow
 mist on the wings, and the spiral hill curling on Left, pale stripes winding in towards its top. The Pumpkin King
-stands in the middle of the porch, then trudges out along Porch Left and onto Left with the ghost dog trailing
+stands in the middle of the porch, then trudges out along Porch Left and onto Left with Zero trailing
 behind him, nose glowing. His lament plays in A minor, slowly, on a lone oboe over a harp; every note he sighs
 sends a pale ripple out from him along the roof. At the foot of the hill the strings take the tune and he climbs,
 slowly, while the curl turns under him. At the top he turns to the moon and the lament swells on the whole band:
@@ -21,10 +21,10 @@ from pixelhome.nightmare import (drift, Chart, Band, Stage, pulse, ORANGE, SLIME
 CODE = 'NM02'
 TITLE = "The King's Lament"
 KIND = 'show'
-DESCRIPTION = ('The Pumpkin King slips away from the party and trudges out along the left wing, the ghost dog '
-               'behind him, to climb the spiral hill under the moon. At his saddest note the hill unrolls flat.')
-VOICEOVER = ('The party is over, and the king is tired of being king. He walks out alone, to the hill where '
-             'nobody follows.')
+DESCRIPTION = ('Jack slips away from the party and trudges out along the left wing, Zero behind him, to climb Spiral '
+    'Hill under the moon. At his saddest note the hill unrolls flat.')
+VOICEOVER = ('The party is over, and Jack is tired of being the Pumpkin King. He walks out alone, to the hill where '
+    'nobody follows.')
 
 HILL = hexc('#5a8cff')
 PALE = hexc('#b8d0ff')
@@ -55,7 +55,7 @@ def hill_at(S):
 
 
 def jack_path(S, t):
-    """Where the king is, and which way he faces."""
+    """Where Jack is, and which way he faces."""
     h = hill_at(S)
     foot = S.at('Left', 0.95)
     p = keys(t, [(0, S.mid), (M['solo'] + 1.0, S.mid), (M['climb'] - 0.5, foot), (M['swell'] - 1.0, h)])
@@ -132,7 +132,7 @@ def render(G, seed=2):
         if M['swell'] <= t < T_FLAT + 1:
             fr += light(VIOLET, 0.25 * beat * wings)
 
-        # the ghost dog trails him out, waits at the foot of the hill, and comes up to him at the end
+        # Zero trails him out, waits at the foot of the hill, and comes up to him at the end
         if t < M['solo'] + 1.0:
             dp, dfac = dog_p, -1
         elif t < M['swell']:
@@ -143,7 +143,7 @@ def render(G, seed=2):
         dog_lvl = smoothstep(0.8, 2.5, t)
         fr = S.zero(fr, float(dp), 0.9 * dog_lvl, dfac, t, nose=1.0)
 
-        # the king himself
+        # Jack himself
         glow = 0.4 + 0.5 * swell + 0.4 * pulse(t, sighs, 0.25) * (t >= M['swell'])
         fr = S.jack(fr, p, smoothstep(0, 1.0, t), facing=facing, glow=glow)
         out[f] = fr * float(smoothstep(D, D - 1.5, t))

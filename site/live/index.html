@@ -70,6 +70,7 @@ body { font-family: var(--body); font-size: 16px; line-height: 1.45; -webkit-tex
 .now { display: grid; gap: 4px; }
 .kicker { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); transition: color 0.4s; }
 h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: clamp(40px, 12vw, 60px); line-height: 0.95; text-transform: uppercase; }
+.setdesc { margin: 4px 0 0; font-size: 15px; font-style: italic; color: var(--ink); opacity: 0.85; }
 .desc { margin: 6px 0 0; color: var(--muted); }
 .sound {
   margin-top: auto; width: 100%; min-height: 64px; display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -95,6 +96,27 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 .card a { color: var(--accent); }
 .card .close { margin-top: 6px; min-height: 52px; border: 0; border-radius: 14px; background: var(--accent); color: #140b05;
   font: 600 17px var(--body); cursor: pointer; }
+.times { border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+.times h2 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 30px; line-height: 1; text-transform: uppercase; }
+.times .when { margin: 10px 0 0; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.sets { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.sets li { display: grid; grid-template-columns: 5.5em 1fr; gap: 12px; align-items: center; padding: 9px 0;
+  border-bottom: 1px solid var(--line); font-size: 17px; }
+.sets li span { display: flex; align-items: center; gap: 10px; }
+.sets li span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--dot); flex: none; }
+.sets time { font-variant-numeric: tabular-nums; color: var(--muted); }
+.sets li span em { font-style: normal; font-size: 13px; color: var(--muted); }
+.sets li:has(> .set) { display: block; padding: 0; }
+.sets .set { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 5.5em 1fr auto;
+  gap: 12px; align-items: center; padding: 9px 0; cursor: pointer; }
+.sets .set::after { content: "+"; color: var(--muted); font-size: 18px; line-height: 1; padding-right: 2px; }
+.sets .set[aria-expanded="true"]::after { content: "\2212"; }
+.sets .set:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.sets .sdesc { margin: -2px 0 10px calc(5.5em + 12px); font-size: 14px; color: var(--muted); }
+.sets li.past { opacity: 0.4; }
+.sets li.now { font-weight: 600; }
+.sets li.now time { color: var(--ink); }
+.tnote { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .onair i { animation: none; } }
 </style>
 </head>
@@ -110,10 +132,16 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
   <section class="now" aria-live="polite">
     <p class="kicker" id="kicker">Live</p>
     <h1 id="title">Just a moment</h1>
+    <p class="setdesc" id="setdesc" hidden></p>
     <p class="desc" id="desc">Finding out what the house is playing.</p>
   </section>
   <button class="sound" id="sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" id="soundIcon"></svg><span id="soundText">Tap to hear the music</span></button>
   <p class="note" id="note">The music plays from your phone, in time with the lights.</p>
+  <section class="times" id="times" hidden aria-labelledby="timesTitle">
+    <h2 id="timesTitle">Show times</h2>
+    <div class="week" id="timesWeek"></div>
+    <p class="tnote" id="timesNote"></p>
+  </section>
 </main>
 <dialog id="about" aria-labelledby="aboutTitle">
   <div class="card">

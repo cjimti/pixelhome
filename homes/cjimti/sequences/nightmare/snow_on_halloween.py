@@ -7,7 +7,7 @@ jingling; then streaks back in from that end and over the whole house, a red and
 and out along Side, and where he passed the first snow begins to fall. To the wonder theme on celesta, white
 flakes twinkle down on the town for the first time, a glint on every note. Then the citizens play in it, the
 town's march and the wonder theme braided in turns: snowballs fly from run to run and splat white on the march's
-downbeats, and on the wonder's phrases the three troublemakers ride a sled from the porch down a wing in a spray
+downbeats, and on the wonder's phrases Lock, Shock and Barrel ride a sled from the porch down a wing in a spray
 of snow. The violet and orange is gradually dusted white, and the town sparkles to the last chord.
 
 compose() lays the music end to end (pixelhome/nightmare.py); render() and score() both read its events."""
@@ -19,9 +19,9 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, PUMPKIN, VIO
 CODE = 'NM19'
 TITLE = 'Snow on Halloween Town'
 KIND = 'show'
-DESCRIPTION = ('The Pumpkin King says sorry and Santa streaks off over the house in his red and gold sleigh. Behind '
-               'him, for the first time, snow falls on Halloween Town: snowballs fly, a sled races down a wing, and '
-               'the violet and orange turns white.')
+DESCRIPTION = ('Jack says sorry and Santa streaks off over the house in his red and gold sleigh. Behind him, for the '
+    'first time, snow falls on Halloween Town: snowballs fly, a sled races down a wing, and the violet and '
+    'orange turns white.')
 VOICEOVER = ('Christmas was put right that night. And then, for the very first time, it began to snow.')
 
 FROST = hexc('#e8f0ff')
@@ -31,7 +31,7 @@ def compose():
     C = Chart()
     C.rest(1.0)
     C.mark('sorry')
-    C.play('king', style='hold', bars=(12, 16), bpm=84, tag='sorry')        # the king says sorry
+    C.play('king', style='hold', bars=(12, 16), bpm=84, tag='sorry')        # Jack says sorry
     C.mark('santa')
     C.play('santa', style='march', bars=(0, 8), bpm=112, tag='santa')       # Santa flies off to put it right
     C.mark('snow')
@@ -120,7 +120,7 @@ def render(G, seed=19):
         for gt, gp in zip(glints[(glints <= t) & (glints > t - 0.5)], glint_p[(glints <= t) & (glints > t - 0.5)]):
             a = t - gt
             fr += light(WHITE, 0.9 * np.exp(-a / 0.12) * S.blob(gp, 10 + 30 * a))
-        # the king and Santa on the porch: he bows on each downbeat, Santa glows, laughs, leaps into his sleigh
+        # Jack and Santa on the porch: he bows on each downbeat, Santa glows, laughs, leaps into his sleigh
         jl = up * (1.0 - smoothstep(t_sn, t_sn + 2.0, t))
         if jl > 0:
             bow = 1.0 - 0.45 * pulse(t, sorry_downs, 0.6)
@@ -161,7 +161,7 @@ def render(G, seed=19):
                 b = a - 0.7
                 fr += light(WHITE, 1.0 * np.exp(-b / 0.25) * S.blob(pb, 30 + 200 * b))
                 fr += light(ICE, 0.5 * np.exp(-b / 0.4) * S.blob(pb, 60))
-        # the sled: the three troublemakers riding down a wing in a spray of snow
+        # the sled: Lock, Shock and Barrel riding down a wing in a spray of snow
         for ts, pa, pb in sleds:
             a = t - ts
             dur = 3.6

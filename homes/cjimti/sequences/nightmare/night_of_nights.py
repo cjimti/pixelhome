@@ -21,8 +21,8 @@ CODE = 'NM01'
 TITLE = 'The Night of Nights'
 KIND = 'show'
 DESCRIPTION = ('Halloween Town turns up a run at a time and sings its march, a note each. A scarecrow rides in and '
-               'bursts into flame, and out of the fountain rises the Pumpkin King.')
-VOICEOVER = ('Every year, one town waits all year for a single night. Tonight is that night.')
+    'bursts into flame, and out of the fountain rises Jack Skellington, the Pumpkin King.')
+VOICEOVER = 'Every year, Halloween Town waits all year for a single night. Tonight is that night.'
 
 STRAW = hexc('#e8c040')
 CAT = hexc('#40ff20')
@@ -195,7 +195,7 @@ def score(M_, G):
     for i, pp in enumerate(pans):
         t = gather[min(i + 1, len(gather) - 1)]
         B.hit('slapstick' if i % 2 else 'wood', t, 110, gain=0.7, pan=pp)
-    # the ride: hooves from the right end to the porch, then the fire and the king's pillar of flame
+    # the ride: hooves from the right end to the porch, then the fire and Jack's pillar of flame
     B.effects([(0, -2), (M['ride'], 0), (M['fire'], 2), (M['king'] + 1, -6)])
     B.gallop(M['ride'], M['fire'], beat=60 / 132 * 1.0, pan=lambda tt: 0.9 - 0.75 * (tt - M['ride']) / (M['fire'] - M['ride']))
     B.boom(M['fire'], pan=S.pan(p_burn))

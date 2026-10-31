@@ -3,12 +3,12 @@ bit of it wrong.
 
 A meeting bell, and Halloween Town comes up in violet and orange, the citizens crowding in a face at a time round
 the porch sides and both wings to the march (bassoon and pizzicato). The mayor's face glows by the stage. On Porch
-Front the king shows his treasures one by one, each unveiled in a sparkle of the Christmas Town tune on celesta
+Front Jack shows his treasures one by one, each unveiled in a sparkle of the Christmas Town tune on celesta
 and sleigh bells, and each time the town's march answers with what the crowd makes of it: a red present with a
 gold bow (they lean in; it snaps at them, red jaws and white flashes, and they flinch), a red and white stocking
 (something lumpy and green is in it: a foot? they gasp), a shining gold ornament (one green citizen slides up and
 swallows it with a crunch), and a teddy bear (the whole crowd shrieks and scatters to the ends of the house).
-Then he tells them about the king of Christmas, and in their heads he becomes a monster: a huge red body swells
+Then he tells them about Jack of Christmas, and in their heads he becomes a monster: a huge red body swells
 over the porch, and two great lobster claws on the porch sides snap on the downbeats to low brass and anvils
 while the crowd comes running back and roars on every snap. The two tunes collide: the town's march on tuba and
 buzzing trombone across the left of the house in orange and green, the Christmas tune on piccolo and glockenspiel
@@ -25,9 +25,9 @@ from pixelhome.nightmare import (drift, Chart, Band, Stage, pulse, ORANGE, PUMPK
 CODE = 'NM06'
 TITLE = 'Show and Tell'
 KIND = 'show'
-DESCRIPTION = ('On the porch the king shows the town a present, a stocking, an ornament and a teddy bear, and the '
-               'crowd round the house gets each one wrong. Then giant red claws snap over the porch and the town roars.')
-VOICEOVER = ('The king calls a town meeting. He has seen something wonderful. Now he only has to explain it.')
+DESCRIPTION = ('On the porch Jack shows the town a present, a stocking, an ornament and a teddy bear, and the crowd '
+    'round the house gets each one wrong. Then giant red claws snap over the porch and the town roars.')
+VOICEOVER = 'Jack calls a town meeting. He has seen something wonderful. Now he only has to explain it.'
 
 TEDDY = hexc('#c06020')
 LUMP = hexc('#40c020')
@@ -180,7 +180,7 @@ def render(G, seed=6):
                     sh = pulse(t, react_beats[3][:4], 0.15)
                     fr += light(ICE, 0.6 * sh * (S.wings | S.run['Side']))
 
-        # the king of Christmas, as they imagine him: a red body swelling over the porch, two lobster claws
+        # Jack of Christmas, as they imagine him: a red body swelling over the porch, two lobster claws
         vis = smoothstep(M['claws'], M['claws'] + 2.5, t) * (1 - smoothstep(M['collide'], M['collide'] + 1.5, t))
         vis = max(vis, smoothstep(M['roar'] - 0.5, M['roar'] + 0.5, t))
         if vis > 0:
@@ -223,13 +223,13 @@ def render(G, seed=6):
             fr += S.burst([(M['hit'] + k * 0.12, 1.2, mid + (k - 2) * 300) for k in range(5)], t, seed=13, n=18,
                           colors=(PUMPKIN, SLIME, RED, WHITE))
 
-        # the mayor by the stage: worried at every scare, beaming for the claws
+        # the Mayor by the stage: worried at every scare, beaming for the claws
         happy = keys(t, [(0, 1.0), (M['r0'], 1.0), (M['r0'] + 0.3, 0.0), (M['stocking'], 0.6), (M['r1'] + 0.5, 0.0),
                          (M['ornament'], 0.6), (M['r2'] + 1.6, 0.0), (M['teddy'], 0.5), (M['r3'] + 0.2, 0.0),
                          (M['claws'] + 2.0, 0.0), (M['claws'] + 4.0, 1.0)])
         fr = S.mayor(fr, may_p + 30 * scatter * -1, smoothstep(M['gather'], M['gather'] + 1, t), happy)
 
-        # the king on the stage, presenting
+        # Jack on the stage, presenting
         kp = king_p if t < M['claws'] else mid
         tell = pulse(t, downs, 0.3) * (M['claws'] <= t < M['collide'])
         fr = S.jack(fr, kp, up, facing=-1 if t < M['claws'] else 1, glow=0.35 + 0.4 * tell + 0.3 * joy * beat)

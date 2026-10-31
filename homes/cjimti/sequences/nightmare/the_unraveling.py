@@ -1,17 +1,17 @@
-"""The Unraveling: the boogeyman's last game, and the Pumpkin King pulls the thread that undoes him.
+"""The Unraveling: Oogie Boogie's last game, and the Pumpkin King pulls the thread that undoes him.
 
-The boogeyman's lair glows blacklight violet with green pulsing through it. Santa hangs tied on the left of Porch
-Front, the fire pit simmers red on Porch Left, and the boogeyman lurks dim on the right of the porch. The rag doll
+Oogie Boogie's lair glows blacklight violet with green pulsing through it. Santa hangs tied on the left of Porch
+Front, the fire pit simmers red on Porch Left, and Oogie Boogie lurks dim on the right of the porch. Sally
 slips in from the free end of Right on a hushed pizzicato of her theme, along the wing and round the porch to
-Santa, and the boogeyman lights up: caught. To his swung shuffle he gloats, pulsing on the beat, and rolls dice down
+Santa, and Oogie Boogie lights up: caught. To his swung shuffle he gloats, pulsing on the beat, and rolls dice down
 the right wing four times (white dice tumbling, pips showing), and on the last roll the captives slide toward the
 pit as its flames leap. Then a white-orange streak bursts in from the free end of Right with a boom: the Pumpkin
-King. They fight in turns, the boogeyman's theme against the king's. Blades fly from the sack at him and he hops
-aside; he lunges back with orange blows; the boogeyman spins a slot machine on the right wing (three reels of
-colours stopping one by one on skulls, a green jackpot, the skulls flying at him); the king strikes again. Then he
+King. They fight in turns, Oogie Boogie's theme against Jack's. Blades fly from the sack at him and he hops
+aside; he lunges back with orange blows; Oogie Boogie spins a slot machine on the right wing (three reels of
+colours stopping one by one on skulls, a green jackpot, the skulls flying at him); Jack strikes again. Then he
 catches a gold thread in the burlap and pulls, backing away along the wing: the sack shrinks and pours out as a
 swarm of green bugs that scatter over the whole roof, down to one last little bug crawling along the porch, which
-is squashed with a white splat. Santa and the rag doll are free: the lair warms to red, blue and white on the
+is squashed with a white splat. Santa and Sally are free: the lair warms to red, blue and white on the
 king's theme in major.
 
 compose() lays the music end to end (pixelhome/nightmare.py); render() and score() both read its events."""
@@ -23,10 +23,10 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, PUMPKIN, FLA
 CODE = 'NM18'
 TITLE = 'The Unraveling'
 KIND = 'show'
-DESCRIPTION = ('In the boogeyman\'s glowing lair the rag doll is caught freeing Santa, dice tumble down the wing and '
-               'the fire pit flares. The Pumpkin King bursts in, dodges blades and a slot machine of skulls, and '
-               'pulls the thread that pours the boogeyman out as a swarm of bugs across the whole roof.')
-VOICEOVER = ('Deep beneath the town, the boogeyman was rolling the dice. But somebody was coming.')
+DESCRIPTION = ("In Oogie Boogie's glowing lair Sally is caught freeing Santa, dice tumble down the wing and the fire pit "
+    'flares. Jack bursts in, dodges blades and a slot machine of skulls, and pulls the thread that pours '
+    'Oogie Boogie out as a swarm of bugs across the whole roof.')
+VOICEOVER = 'Deep beneath the town, Oogie Boogie was rolling the dice. But Jack was coming.'
 
 STEEL = hexc('#d0e8ff')
 REEL = [RED, GOLD, GREEN, BLUE, VIOLET]
@@ -36,17 +36,17 @@ def compose():
     C = Chart()
     C.rest(1.5)
     C.mark('sneak')
-    C.play('sally', style='arp', bars=(0, 4), bpm=96, tag='sneak')              # the rag doll slips in
+    C.play('sally', style='arp', bars=(0, 4), bpm=96, tag='sneak')              # Sally slips in
     C.mark('caught')
     C.rest(1.0)                                                                  # caught
     C.mark('gloat')
     C.play('boogey', style='shuffle', bars=(0, 8), bpm=132, tag='gloat')         # dice, and toward the pit
     C.mark('burst')
-    C.rest(1.2)                                                                  # the king bursts in
+    C.rest(1.2)                                                                  # Jack bursts in
     C.mark('trick1')
     C.play('boogey', style='drive', bars=(0, 4), bpm=150, tag='trick1')          # blades
     C.mark('dodge1')
-    C.play('king', style='drive', bars=(0, 4), bpm=150, tag='dodge1')            # the king strikes back
+    C.play('king', style='drive', bars=(0, 4), bpm=150, tag='dodge1')            # Jack strikes back
     C.mark('trick2')
     C.play('boogey', style='drive', bars=(4, 8), bpm=150, tag='trick2')          # the slot machine
     C.mark('dodge2')
@@ -84,7 +84,7 @@ class Places:
 
 
 def jack_path(S, P):
-    """The king's position through the fight: hops aside on the blades, lunges in on his blows."""
+    """Jack's position through the fight: hops aside on the blades, lunges in on his blows."""
     pts = [(M['burst'], S.L + 20), (M['burst'] + 0.6, P.jack0)]
     for tag, lunge in (('trick1', False), ('dodge1', True), ('trick2', False), ('dodge2', True)):
         downs = C.downbeats(tag)
@@ -142,14 +142,14 @@ def render(G, seed=18):
         flick = 0.7 + 0.3 * np.sin(21 * t + d / 6) * np.sin(5 * t - d / 13)
         fr += light(FLAME, up * flare * S.blob(P.pit, 70 + 160 * flare) * flick)
         fr += light(GOLD, 0.6 * up * flare * S.blob(P.pit, 25 + 40 * flare) * flick)
-        # Santa, tied (and the rag doll beside him once caught), sliding toward the pit on the last roll
+        # Santa, tied (and Sally beside him once caught), sliding toward the pit on the last roll
         slide = smoothstep(tip, tip + 3.0, t) * (1 - smoothstep(t_la + 1.5, t_sa + 1.5, t))
         ps = P.santa + (P.pit + 70 - P.santa) * slide
         pr = P.sally + (P.pit + 135 - P.sally) * slide
         if t < t_sa:
             fr += light(RED, 0.25 * up * S.blob(ps, 50))
         fr = S.santa(fr, ps, up, facing=1)
-        # the rag doll sneaking in from the free end of Right, tiptoeing on the beat
+        # Sally sneaking in from the free end of Right, tiptoeing on the beat
         if t >= t_sn:
             psal = np.interp(t, [t_sn, t_ca], [S.L + 15, P.sally]) if t < t_ca else pr
             if t_sa <= t:
@@ -157,7 +157,7 @@ def render(G, seed=18):
             tip_toe = 0.8 + 0.2 * pulse(t, sneak_steps, 0.12) if t < t_ca else 1.0
             fr += light(SALLY, 0.3 * S.blob(psal, 60))
             fr = S.sally(fr, psal, tip_toe, facing=-1)
-        # the boogeyman: dim and lurking, lights up when she's caught, pulses with his shuffle, unravels
+        # Oogie Boogie: dim and lurking, lights up when she's caught, pulses with his shuffle, unravels
         if t < t_un + 4.5:
             size = 1.0 - smoothstep(t_un, t_un + 4.2, t) * 0.92
             lit = 0.35 + 0.65 * smoothstep(t_ca, t_ca + 0.2, t)
@@ -181,7 +181,7 @@ def render(G, seed=18):
                     fr = S.sprite(fr, pdie, px, 1.0 if a < 1.8 else (2.2 - a) / 0.4)
                     if 0.9 <= a < 1.3:
                         fr += light(RED, 0.8 * np.exp(-(a - 0.9) / 0.15) * S.blob(pdie, 50))
-        # the king bursts in from the free end of Right
+        # Jack bursts in from the free end of Right
         if t_bu <= t < t_bu + 1.0:
             a = t - t_bu
             fr += light(ORANGE, 0.8 * np.exp(-((a - 0.6) / 0.15) ** 2) * np.ones(G.N))
@@ -199,7 +199,7 @@ def render(G, seed=18):
                 pb = P.oog + 60 + 1100 * a
                 fr += light(STEEL, 1.0 * smoothstep(pb - 70, pb, d) * smoothstep(pb + 6, pb, d))
                 fr += light(WHITE, 0.6 * S.blob(pb, 10))
-        # the king's blows: orange bursts between them
+        # Jack's blows: orange bursts between them
         for tb in blows[(blows <= t) & (blows > t - 0.5)]:
             a = t - tb
             fr += light(ORANGE, 0.9 * np.exp(-a / 0.12) * S.blob(P.oog + 75, 50))
@@ -260,7 +260,7 @@ def render(G, seed=18):
                 pl = p_last - 90 * (sq - t_la)
                 fr += light(WHITE, 1.0 * np.exp(-b / 0.1) * S.blob(pl, 40))
                 fr += light(BUG, 0.5 * np.exp(-b / 0.4) * S.blob(pl, 15))
-        # saved: the lair warms to Santa's red, the rag doll's blue and the king's white
+        # saved: the lair warms to Santa's red, Sally's blue and Jack's white
         if t >= t_sa:
             fr += light(RED, 0.4 * saved * (S.run['Left'] | S.run['Side'] | S.run['Porch Left']))
             fr += light(SALLY, 0.45 * saved * (S.run['Right'] | S.run['Porch Right']))

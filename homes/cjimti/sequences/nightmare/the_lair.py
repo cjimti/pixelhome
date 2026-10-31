@@ -1,7 +1,7 @@
 """The Boogeyman's Lair: a blacklit gambling den under the town, and a swing number for its host.
 
 The den comes up in blacklight violet with green glow pulsing along the roof. Santa hangs tied on Porch Left, red
-and white, struggling. Out of the porch grows the boogeyman, a huge lumpy burlap sack glowing under the
+and white, struggling. Out of the porch grows Oogie Boogie, a huge lumpy burlap sack glowing under the
 blacklight with two dark eyes and a grin, to a low buzzing trombone glissando, and the band strikes up his swung
 shuffle: trombones on the tune, a walking bass, a ride cymbal. He dances on every beat (he swells and sways), every
 note he sings throws burlap-gold light out along the porch, and the wings flash violet and green on the backbeat.
@@ -21,13 +21,12 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, FLAME, SLIME, VIOLET
                                  BURLAP, BUG)
 
 CODE = 'NM13'
-TITLE = "The Boogeyman's Lair"
+TITLE = "Oogie Boogie's Lair"
 KIND = 'show'
-DESCRIPTION = ('A huge burlap sack runs a blacklit gambling den and sings a swing number at his prisoner: watch '
-               'the roulette wheel spin on the left wing, dice tumble on the right, and the fire pit flare under '
-               'Santa on the porch.')
-VOICEOVER = ('Deep under the town, where the dice never stop rolling, the boogeyman has a guest. And he loves '
-             'to play.')
+DESCRIPTION = ('Oogie Boogie, a huge burlap sack, runs a blacklit gambling den and sings a swing number at Santa: watch '
+    'the roulette wheel spin on the left wing, dice tumble on the right, and the fire pit flare under Santa '
+    'on the porch.')
+VOICEOVER = ('Deep under the town, where the dice never stop rolling, Oogie Boogie has a guest. And he loves to play.')
 
 LIME = hexc('#9aff00')
 PIP = hexc('#f0ffd0')
@@ -39,7 +38,7 @@ def compose():
     C = Chart()
     C.rest(2.5)                                                 # the den comes up; Santa hangs tied
     C.mark('rise')
-    C.rest(2.0)                                                 # the boogeyman grows up out of the porch
+    C.rest(2.0)                                                 # Oogie Boogie grows up out of the porch
     C.mark('song')
     C.play('boogey', style='shuffle', bpm=BPM, tag='song')      # he sings and dances
     C.mark('wheel')
@@ -220,7 +219,7 @@ def render(G, seed=13):
         if fire > 0.3:
             fr += light(RED, 0.4 * fire * wr * S.blob(dn.santa, 40))
 
-        # ---- the boogeyman: grows up out of the porch, then dances on every beat
+        # ---- Oogie Boogie: grows up out of the porch, then dances on every beat
         grow = smoothstep(M['rise'], M['song'], t)
         if grow > 0:
             k = int(np.searchsorted(beats, t, side='right'))

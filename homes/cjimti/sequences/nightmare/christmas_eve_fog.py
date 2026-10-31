@@ -1,14 +1,14 @@
-"""Fog on Christmas Eve: the town sees its king off, a fog stops him, and the ghost dog's nose lights the way.
+"""Fog on Christmas Eve: the town sees its king off, a fog stops him, and Zero's nose lights the way.
 
 The Halloween town at night, everyone out: the citizens pop up along the wings and the porch a beat at a time, bobbing
 in orange, green, violet and bone, to their march played quietly, while the coffin sleigh waits on the right wing
 (four skeleton reindeer, the dark coffin, the Pumpkin King at the reins) and he stands on the porch. Then a thick
-grey fog rolls in from both ends of the house and swallows everything, crowd, sleigh and all, to the king's lament
-in A minor on low strings and the wind. Out of the grey a small red-orange nose lights on the porch: the ghost dog,
+grey fog rolls in from both ends of the house and swallows everything, crowd, sleigh and all, to Jack's lament
+in A minor on low strings and the wind. Out of the grey a small red-orange nose lights on the porch: Zero,
 to his own glockenspiel tune, his glow pushing the fog back a little more on every note; he barks. The king's
 theme turns to A major as the dog flies along Porch Right to the head of the team, and the reindeer light up gold
 one by one. The sleigh bells start, a gold ring bursts off the sleigh and it takes off, accelerating round the
-porch and along the left wing and away down Side, the whole band on the king's triumph; behind it the fog is torn
+porch and along the left wing and away down Side, the whole band on Jack's triumph; behind it the fog is torn
 open into a lane of clear night, gold sparkle and twinkling stars. The dog's tune comes back on the celesta as the
 bells fade away down Side, the lane glittering.
 
@@ -21,10 +21,9 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, PUMPKIN, SLIME, VIOL
 CODE = 'NM14'
 TITLE = 'Fog on Christmas Eve'
 KIND = 'show'
-DESCRIPTION = ('The town gathers to see the coffin sleigh off, but a fog swallows the house. Watch for the ghost '
-               "dog's glowing nose: it leads the team round the porch and away down the side, tearing a clear lane "
-               'through the fog.')
-VOICEOVER = ('On Christmas Eve the whole town came out to see their king fly. And then the fog rolled in.')
+DESCRIPTION = ("The town gathers to see Jack's coffin sleigh off, but a fog swallows the house. Watch for Zero's glowing "
+    'nose: it leads the team round the porch and away down the side, tearing a clear lane through the fog.')
+VOICEOVER = 'On Christmas Eve all of Halloween Town came out to see Jack fly. And then the fog rolled in.'
 
 CROWD = (PUMPKIN, SLIME, VIOLET, BONE)
 FOGC = hexc('#9aa4b4')
@@ -86,7 +85,7 @@ T_GONE = M['launch'] + 7.5                  # and is gone down Side
 
 def team(S, fr, p, lvl, t, gold=1.0, lit=4):
     """The coffin sleigh behind the nose at p, facing toward Side: four skeleton reindeer (lit of them glowing), the
-    coffin with red trim, the king at the reins."""
+    coffin with red trim, Jack at the reins."""
     x = p + 9 * 4.5
     for i in range(4):
         leap = 0.75 + 0.25 * np.sin(2 * np.pi * (2.5 * t + i / 4))
@@ -158,7 +157,7 @@ def render(G, seed=14):
         beat = pulse(t, beats, 0.15)
         fr = S.town(t, lv=up * (0.9 + 0.1 * beat), mist=0.5)
 
-        # ---- the citizens gather, bobbing; the king on the porch
+        # ---- the citizens gather, bobbing; Jack on the porch
         crowd = smoothstep(M['away'], M['away'] - 3, t)
         for p, ta, col in zip(spots, arrive, ccol):
             if t < ta:
@@ -212,7 +211,7 @@ def render(G, seed=14):
         fm = fogn(t)
         fr = fr * (1 - (0.75 + 0.2 * fm) * thick)[:, None] + light(FOGC, (0.22 + 0.5 * fm) * thick)
 
-        # ---- the ghost dog: his nose lights the grey, every note brighter; he flies to the head of the team
+        # ---- Zero: his nose lights the grey, every note brighter; he flies to the head of the team
         if M['nose'] <= t < T_OFF:
             nb = 1.0 + 0.6 * pulse(t, nose_t, 0.25)
             fr += light(NOSE, 0.5 * grow * nb * S.blob(np_, 60 + 10 * nb))
@@ -221,7 +220,7 @@ def render(G, seed=14):
             fr += light(NOSE, 0.6 * S.blob(p, 50))
             fr = S.zero(fr, p, 1.0, facing=-1, t=t)
 
-        # ---- his triumph: each note of the king's theme throws gold out from the team
+        # ---- his triumph: each note of Jack's theme throws gold out from the team
         for times, src in ((lead_t, np_ if t < T_OFF else p), (launch_t, p if p > 60 else mid)):
             for j in np.flatnonzero((times <= t) & (times > t - 0.9)):
                 b = t - times[j]

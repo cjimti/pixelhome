@@ -13,9 +13,9 @@ they need local tools CI doesn't have.
   `<playlist>/<name>` with `_` changed to `-`; moving a playlist to another occasion changes no ids or paths.
 - Module constants: `CODE` (unique per home: the playlist's `prefix` from `occasions.py` plus two
   digits, e.g. `XM01`..`XM10`; Halloween's originals are `SC1`.. and `NT1`..), `TITLE`,
-  `KIND` (`'show'` or `'ambient'`), `DESCRIPTION` (one or two sentences for the card).
+  `KIND` (`'show'`, `'ambient'` or `'intermission'`), `DESCRIPTION` (one or two sentences for the card).
 - `render(G, seed=N) -> ndarray (F, G.N, 3)`, float PWM 0..1, node (channel) order.
-- Length: shows 40-90 s, ambient loops 120-180 s (`looped()`). Every frame ships to the site and
+- Length: shows 40-90 s, ambient loops 120-180 s (`looped()`), intermissions 300 s. Every frame ships to the site and
   to FPP, so length is size. Render time should stay under ~15 s; vectorize over pixels with numpy.
 - Module docstring: `"""Title: what happens, for someone reading the code."""`
 - Files starting with `_` are ignored by discovery. A sequence imports only from `pixelhome` and
@@ -47,6 +47,18 @@ loops, `candle_bed`.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.
+
+## Intermissions and show times
+
+A playlist's `intermission.py` (`KIND = 'intermission'`) plays for five minutes before each of its sets in a night's
+rotation. It is built on `pixelhome/intermission.py`'s `countdown()`: the house stays lit while a fill closes in on
+the porch, so the street can see how long is left; its score marks each minute and calls the street back at the
+finale (`MARKS`), at about -19 dBFS.
+`homes/<home>/schedule.py` says which sets play which nights at clock times (and which loops keep the house lit
+by day and late at night: it is never dark). The build works it out against the
+catalog into `data/<home>/schedule.json` (the Live page's show times), and `scripts/fpp_sync.py --apply` writes
+the same nights into FPP (a playlist per kind of night and the whole schedule), uploads what changed and removes
+what the site doesn't have. Change the schedule, `make verify`, then sync.
 
 ## Music (optional)
 
