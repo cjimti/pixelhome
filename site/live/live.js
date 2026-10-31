@@ -21,6 +21,10 @@
     return;
   }
   const accents = Object.fromEntries(CAT.occasions.map((o) => [o.id, o.accent]));
+  const sets = Object.fromEntries(CAT.occasions.flatMap((o) => o.playlists.map((p) => [p.id, p])));
+  // show times, worked out by the build from the house's schedule (the same times FPP plays at)
+  let SCHED = null;
+  try { SCHED = await (await fetch(`${ROOT}data/${HOUSE}/schedule.json`)).json(); } catch (e) { /* no show times */ }
 
   // ---------- the house (the same scene as the main page, from the street, still) ----------
   const canvas = $('view');
@@ -170,9 +174,105 @@
     return null;
   }
 
+  // ---------- show times ----------
+  const tz = SCHED ? SCHED.timezone : undefined;
+  const clock = new Intl.DateTimeFormat([], { timeZone: tz, hour: 'numeric', minute: '2-digit' });
+  const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const weekday = new Intl.DateTimeFormat([], { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' });
+  const at = (iso) => clock.format(new Date(iso));
+  const nights = SCHED ? SCHED.nights.filter((n) => n.blocks.length) : [];
+  // the night whose shows aren't all over yet
+  const thisNight = (now = Date.now()) => nights.find((n) => Date.parse(n.blocks[n.blocks.length - 1].end) > now);
+  function nextSet(now = Date.now()) {
+    for (const n of nights) for (const b of n.blocks) if (b.kind === 'set' && Date.parse(b.start) > now) return { n, b };
+    return null;
+  }
+  function whenNight(n, now = Date.now()) {
+    const today = ymd.format(now), tomorrow = ymd.format(now + 864e5);
+    if (n.date === today) return 'Tonight';
+    if (n.date === tomorrow) return 'Tomorrow night';
+    return weekday.format(new Date(`${n.date}T12:00:00Z`));
+  }
+  function nextLine(now = Date.now()) {
+    const nx = nextSet(now);
+    if (!nx) return '';
+    const w = whenNight(nx.n, now);
+    return `${w === 'Tonight' ? 'Next show' : `${w}’s shows start`}: ${nx.b.label} at ${at(nx.b.start)}.`;
+  }
+  // the week ahead, night by night, starting with the night whose shows aren't over yet; tapping a set shows
+  // what it is (kept open across the half-minute refresh)
+  const opened = new Set();
+  function renderTimes() {
+    const now = Date.now(), first = thisNight(now);
+    const week = first ? nights.filter((n) => n.date >= first.date && Date.parse(n.lightsOn) < now + 7 * 864e5) : [];
+    $('times').hidden = !week.length;
+    const box = $('timesWeek');
+    box.textContent = '';
+    for (const n of week) {
+      const h = document.createElement('h3');
+      h.className = 'when';
+      h.textContent = whenNight(n, now);
+      const list = document.createElement('ol');
+      list.className = 'sets';
+      for (const b of n.blocks) {
+        if (b.kind !== 'set') continue;
+        const li = document.createElement('li');
+        const s = Date.parse(b.start), e = Date.parse(b.end);
+        li.className = e <= now ? 'past' : s <= now ? 'now' : '';
+        li.style.setProperty('--dot', b.accent);
+        const t = document.createElement('time');
+        t.dateTime = b.start;
+        t.textContent = at(b.start);
+        const l = document.createElement('span');
+        l.textContent = b.label;
+        const extra = [b.note, li.className === 'now' ? 'on now' : ''].filter(Boolean).join(' \u00b7 ');
+        if (extra) l.append(Object.assign(document.createElement('em'), { textContent: extra }));
+        const desc = (sets[b.playlist] || {}).desc;
+        if (desc) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'set';
+          btn.setAttribute('aria-expanded', String(opened.has(b.start)));
+          btn.append(t, l);
+          const d = Object.assign(document.createElement('p'), { className: 'sdesc', textContent: desc });
+          d.hidden = !opened.has(b.start);
+          btn.addEventListener('click', () => {
+            const open = d.hidden;
+            d.hidden = !open;
+            btn.setAttribute('aria-expanded', String(open));
+            if (open) opened.add(b.start); else opened.delete(b.start);
+          });
+          li.append(btn, d);
+        } else {
+          li.append(t, l);
+        }
+        list.append(li);
+      }
+      box.append(h, list);
+    }
+    const n = week[0];
+    $('timesNote').textContent = n ? `Five-minute intermissions between sets. The lights are on day and night; the shows `
+      + `start around ${at(n.blocks[0].start)}.` : '';
+  }
+  renderTimes();
+  setInterval(renderTimes, 30e3);
+
   // ---------- what the house is doing ----------
-  // the night loops run after the shows are over; say so before what the loop is
-  const LATE = 'You’re up late! Technically this isn’t a light show, just something to keep the house lit at night. Come back tomorrow evening for the fun sequences.';
+  // the loops keep the house lit before and after the shows; say so before what the loop is
+  function dayText(now = Date.now()) {
+    const n = thisNight(now);
+    const tonight = n && whenNight(n, now) === 'Tonight';
+    if (tonight) return `Come back tonight for the shows: they start at ${at(n.blocks[0].start)}. Until then, something mellow.`;
+    return `Something mellow for the daytime. ${nextLine(now)}`.trim();
+  }
+  function lateText(now = Date.now()) {
+    const n = thisNight(now);
+    if (n && Date.parse(n.blocks[0].start) > now && whenNight(n, now) === 'Tonight')
+      return `The shows start at ${at(n.blocks[0].start)}. Until then, something gentle to keep the house lit.`;
+    const next = nextLine(now);
+    return 'You’re up late! Technically this isn’t a light show, just something to keep the house lit at night. '
+      + (next || 'Come back tomorrow evening for the fun sequences.');
+  }
   let state = null, anchor = null, recv = 0;   // the last report, and when it arrived here
   let cur = null;                              // what is loaded and showing: find() plus data
   let wanted = null;                           // what the house is on (may still be loading)
@@ -181,9 +281,11 @@
   function setAccent(occ) {
     document.documentElement.style.setProperty('--accent', accents[occ] || '#ff6a1f');
   }
-  function show(kicker, title, desc, on) {
-    $('kicker').textContent = kicker;
+  function show(kicker, title, desc, on, set) {
+    $('kicker').textContent = set ? `${kicker} \u00b7 ${set.label}` : kicker;
     $('title').textContent = title;
+    $('setdesc').textContent = set ? set.desc || '' : '';
+    $('setdesc').hidden = !(set && set.desc);
     $('desc').textContent = desc;
     $('onair').classList.toggle('off', !on);
     document.title = on ? `${title} · Live · Pixelhome` : 'Live · Pixelhome';
@@ -203,13 +305,17 @@
   async function apply(st) {
     state = st;
     if (st.status === 'offline') return dark('Live', 'The house is offline', 'We can’t reach the lights right now. Keep this page open; it will join in when they’re back.');
-    if (st.status !== 'playing') return dark('Live', 'The show is resting', 'The lights are taking a break. Keep this page open; it will join in when the show starts again.');
+    if (st.status !== 'playing') return dark('Live', 'The show is resting', `The lights are taking a break. Keep this page open; it will join in when the show starts again. ${nextLine()}`.trim());
     anchor = { ms: st.ms + (st.age || 0), recv: performance.now() };
     const w = find(st.seq);
     if (!w) return dark('Now playing', 'Something special', 'This one isn’t on the website yet, so just watch the house!', true);
     setAccent(w.meta.occasion);
-    const desc = w.meta.kind === 'ambient' && !w.intro ? `${LATE} ${w.meta.description}` : w.meta.description;
-    show('Now playing', w.intro ? `${w.meta.title} Intro` : w.meta.title, desc, true);
+    const kind = w.intro ? 'intro' : w.meta.kind;
+    const desc = kind === 'ambient' ? `${w.meta.playlist === 'daytime' ? dayText() : lateText()} ${w.meta.description}`
+      : kind === 'intermission' ? `${nextLine() || 'The next show starts when the lights meet in the middle.'} ${w.meta.description}`
+      : w.meta.description;
+    show(kind === 'intermission' ? 'Intermission' : 'Now playing', w.intro ? `${w.meta.title} Intro` : w.meta.title, desc, true,
+      sets[w.meta.playlist]);
     if (cur && cur.key === w.key) { syncAudio(); return; }
     if (wanted && wanted.key === w.key) return;   // already loading
     wanted = w;

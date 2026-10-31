@@ -1,20 +1,20 @@
-"""Bring Him Back: the three troublemakers fetch the man in red, and get the wrong one first.
+"""Bring Him Back: Lock, Shock and Barrel fetch the man in red, and get the wrong one first.
 
-The Halloween town at night. The three troublemakers pop up over the porch (the devil, the witch and the skeleton, a
+The Halloween town at night. Lock, Shock and Barrel pop up over the porch (the devil, the witch and the skeleton, a
 slapstick each) and scamper off along Porch Right and the right wing to their own patter, out of the free end of
 Right, through the holiday doors. The far end of Right blooms in pastel stripes (an egg-coloured door) and they
 haul a sack back in to the porch. It bursts open with a slide whistle and out hops a big pastel bunny, pink ears
 first, lilac body, the porch flooding pink, lemon and lilac on every hop to its own perky tune. The Pumpkin King
 flares up on Porch Front in a roar of low brass and the whole house flashes orange: wrong one. The bunny hops off
-out of the end of Right and the troublemakers scurry after it.
+out of the end of Right and Lock, Shock and Barrel scurry after it.
 
 Second try: the right wing turns into a snowy Christmas town (coloured bulbs, snow, a warm golden door). The
 three creep in from the free end; three knocks flash at the door; Santa steps out to the first notes of his own
 carol and the sack comes down over him with a whoosh and a thump. They lumber back to the porch in their walking
 bathtub (white enamel, gold claw feet stepping), the sack bumping behind, red flashing through it as he
-struggles. At the porch the sack falls away: the king greets Santa grandly to Santa's carol on warm brass, gold
+struggles. At the porch the sack falls away: Jack greets Santa grandly to Santa's carol on warm brass, gold
 sparks on every note, bows, and takes the red coat himself; his own theme rings out in A major as he orders his
-guest taken somewhere comfortable. The troublemakers drag Santa off the other way to the boogeyman's shuffle,
+guest taken somewhere comfortable. Lock, Shock and Barrel drag Santa off the other way to Oogie Boogie's shuffle,
 down Porch Left and the left wing and away along Side, a green glow of the lair swallowing them.
 
 compose() lays the music end to end (pixelhome/nightmare.py); render() and score() read its marks and events."""
@@ -26,10 +26,10 @@ from pixelhome.nightmare import (Chart, Band, Stage, THEMES, pulse, ORANGE, PUMP
 CODE = 'NM12'
 TITLE = 'Bring Him Back'
 KIND = 'show'
-DESCRIPTION = ('The three troublemakers go through the holiday doors and come back with a pastel bunny, so the '
-               'king sends them again: watch the right wing turn to snow, the sack come down over Santa, and the '
-               'walking bathtub haul him home.')
-VOICEOVER = ('The king sent three little troublemakers to fetch the man in red. What could possibly go wrong?')
+DESCRIPTION = ('Lock, Shock and Barrel go through the holiday doors and come back with a pastel bunny, so Jack sends '
+    'them again: watch the right wing turn to snow, the sack come down over Santa, and the walking bathtub '
+    'haul him home.')
+VOICEOVER = 'Jack sent Lock, Shock and Barrel to fetch Santa Claus. What could possibly go wrong?'
 
 PINK = hexc('#ff60b8')
 LEMON = hexc('#fff040')
@@ -97,7 +97,7 @@ def compose():
     C.mark('bunny')
     play_local(C, 'nm12 bunny', BUNNY, style='march', tag='bunny')
     C.mark('angry')
-    C.rest(2.6)                                                     # the king flares: wrong one
+    C.rest(2.6)                                                     # Jack flares: wrong one
     C.mark('back')
     C.play('trio', style='drive', bars=(4, 8), bpm=400, tag='back')     # the bunny hops off, they scurry after
     C.mark('xmas')
@@ -109,11 +109,11 @@ def compose():
     C.mark('tub')
     C.play('trio', style='drive', bpm=400, tag='tub')               # the walking bathtub lumbers home
     C.mark('greet')
-    C.play('santa', style='march', bars=(0, 4), bpm=104, tag='greet')   # the king greets him grandly
+    C.play('santa', style='march', bars=(0, 4), bpm=104, tag='greet')   # Jack greets him grandly
     C.mark('order')
     C.play('king', style='waltz', bars=(0, 2), bpm=100, major=True, tag='order')   # somewhere comfortable...
     C.mark('away')
-    C.play('boogey', style='shuffle', bars=(0, 4), bpm=132, tag='away')  # ...the boogeyman's
+    C.play('boogey', style='shuffle', bars=(0, 4), bpm=132, tag='away')  # ...Oogie Boogie's
     C.rest(1.8)
     C.mark('end')
     return C
@@ -149,7 +149,7 @@ def tub(S, fr, p, lvl, t, step):
 
 
 def trio_glow(S, fr, p, t, downs, lvl=1.0):
-    """The troublemakers' colours around them and on their run, cycling devil red, witch violet, skeleton green on
+    """Lock, Shock and Barrel's colours around them and on their run, cycling devil red, witch violet, skeleton green on
     each bar, and a wash over both wings on every downbeat."""
     k = int(np.searchsorted(downs, t, side='right'))
     col = (RED, VIOLET, SLIME)[k % 3]
@@ -186,7 +186,7 @@ def render(G, seed=12):
         beat = pulse(t, beats, 0.15)
         fr = S.town(t, lv=up * (0.85 + 0.12 * beat), mist=0.6)
 
-        # ---- the troublemakers pop up and scamper off along Porch Right and the right wing
+        # ---- Lock, Shock and Barrel pop up and scamper off along Porch Right and the right wing
         if tm['out'] <= t < tm['door1']:
             a = t - tm['out']
             p = keys(t, [(tm['out'] + 2.0, mid + 40), (tm['door1'], L + 60)])
@@ -225,7 +225,7 @@ def render(G, seed=12):
                 col = [PINK, LEMON, LILAC][k % 3]
                 fr += light(col, 0.55 * hp * S.porch + 0.25 * S.porch)
                 fr += light(col, 0.35 * hp * S.wings)
-            elif t < tm['back']:                            # cowering under the king's roar
+            elif t < tm['back']:                            # cowering under Jack's roar
                 p = mid + 40 + 110 * np.sin(len(bunny_beats) * 1.3)
                 facing, hp = 1, 0.0
             else:                                           # hops off out of the end of Right
@@ -237,7 +237,7 @@ def render(G, seed=12):
             if tm['haul1'] <= t < tm['angry']:
                 fr = S.trio(fr, mid + 260, 0.9, -1, t=t, bounce=0.5)
 
-        # ---- the king flares: wrong one!
+        # ---- Jack flares: wrong one!
         if tm['angry'] <= t < tm['back'] + 1.5:
             a = t - tm['angry']
             if a < 0.7:
@@ -292,7 +292,7 @@ def render(G, seed=12):
             fr = S.trio(fr, p + 18, 1.0, -1, gap=3, t=t, bounce=0.6)
             fr += light(ENAMEL, 0.25 * bump * S.blob(p, 60))
 
-        # ---- the king greets Santa grandly, and takes his job
+        # ---- Jack greets Santa grandly, and takes his job
         if tm['greet'] <= t < tm['away'] + 1.0:
             a = t - tm['greet']
             if a < 0.8:                                     # the sack falls away
@@ -321,7 +321,7 @@ def render(G, seed=12):
                 b = t - order_t[j]
                 fr += light(FLAME, 0.7 * np.exp(-b / 0.35) * np.exp(-((np.abs(d - p_king) - 150 - 1000 * b) / 80) ** 2))
 
-        # ---- the troublemakers drag Santa off the other way, to the boogeyman
+        # ---- Lock, Shock and Barrel drag Santa off the other way, to Oogie Boogie
         if tm['away'] <= t:
             a = t - tm['away']
             p = keys(t, [(tm['away'], p_santa), (tm['end'] - 1.6, -120)])
@@ -396,7 +396,7 @@ def score(M_, G):
     hops = [b[0] for b in C.beats if b[2] == 'bunny']
     for i, th in enumerate(hops):
         M_.add('fx', slide(0, 0.12, 500, 900 + 60 * (i % 4), 0.16, amp=0.12), th, 1.0, S.pan(S.mid))
-    # the king's roar: wrong one!
+    # Jack's roar: wrong one!
     ta = M['angry']
     for m, sec, g in ((45, 'trombones', 0.8), (48, 'trombones', 0.7), (52, 'horns', 0.7), (33, 'tuba', 0.8),
                       (57, 'trumpets', 0.5)):

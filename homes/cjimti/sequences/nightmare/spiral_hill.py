@@ -9,8 +9,8 @@ from pixelhome.fx import DT, hexc, perc, keys, nframes, looped
 CODE = 'NM21'
 TITLE = 'Spiral Hill'
 KIND = 'ambient'
-DESCRIPTION = ('A full moon over the porch and the curl of the hill on the left wing. Now and then a lone '
-               'figure walks in along the right wing and stands under the moon a while.')
+DESCRIPTION = ('A full moon over the porch and the curl of Spiral Hill on the left wing. Now and then Jack walks in '
+    'along the right wing and stands under the moon a while.')
 
 NIGHT = hexc('#0c1c70')
 HILL = hexc('#2c50b0')

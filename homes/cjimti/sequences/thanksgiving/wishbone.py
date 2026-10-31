@@ -1,419 +1,628 @@
-"""Wishbone: The porch is the wishbone. Porch Left and Porch Right are its two prongs, the Porch Front
-is the keel where they join. The wings are two people gripping the ends: Left in cranberry, Right in
-gold. As they pull, the bone shifts toward whoever leads, and the light along it shows the stress in
-the bone: dim ivory where it is thick, amber and then white-hot where it is thin and at the roots of
-the prongs. Stress above a threshold builds fatigue damage, which crackles. In round one the right
-hand slips and the left one flies backwards. In round two the damage piles up at a flaw near the root
-of the left prong until the bone snaps there. Both halves recoil, and gold, holding the keel, wins
-the wish."""
+"""Wishbone: The porch is the wishbone, the keel in the middle of Porch Front and a prong down each porch side;
+the wings are the two people pulling it, Left (and Side behind it) in cranberry, Right in gold. The bone draws
+itself out of the keel, gold comes in from the free end of Right, cranberry pops up on Left, and they size each
+other up on alternate beats before a four-count squeeze.
+
+While they pull, the whole porch is a tug of war: the bone splits into cranberry and gold territory at a flag that
+sways back and forth with whoever is winning, stress stripes crawl in from both grips toward the flag and tighten
+and heat from ivory to white as the tension rises, every heave on the beat pulses the bone and both wings, and the
+wings haul stripes outward, faster on the side that is winning. Creaks are white bursts that ring out along the
+bone. In round one gold's hand slips: the grip shoots out the free end of Right and cranberry falls over
+backwards, a jolt running out Left and Side to the back of the house. They regrip, count again faster, and round
+two sways harder and faster, in G now, with two near-snaps at the flaw (a flicker, a beat of frozen silence, then
+relief) and a last frantic heave. Then a second of stillness, and SNAP: the two halves fly across the house to the
+free ends, cranberry's short piece out the back of Side, gold's long piece with the keel out the end of Right,
+trailing gold dust. Gold flares at the end, the wish sweeps back over the whole outline, and the house marches
+in gold, the wings answering each other, to a last full-house chord."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, smoothstep, lerp, Flicker, colormap, nframes
 
 CODE = 'TG01'
 TITLE = 'Wishbone'
 KIND = 'show'
-DESCRIPTION = ('The porch is the wishbone and the wings pull it. Light shows the stress in the bone as it creaks and '
-               'crackles; one hand slips, they grip again, and it snaps at the weakest spot. Gold makes the wish.')
+DESCRIPTION = ('A tug of war across the porch: the wishbone sways, creaks and nearly snaps, one hand slips, they '
+               'grip again, and it breaks, flinging both halves to the ends of the house. Gold makes the wish.')
+VOICEOVER = "Two hands, one wishbone, and only one of them gets the wish."
 
 IVORY = hexc('#ffb070')
-CRANBERRY = hexc('#c0102a')
-GOLD = hexc('#ffb000')
-AMBER = hexc('#ff8a18')
-WARM = hexc('#ffe0b8')
+CRANBERRY = hexc('#d0102a')
+GOLD = hexc('#ffa800')
+AMBER = hexc('#ff7a10')
+WARM = hexc('#ffd8a8')
+WHITE = hexc('#fff4e8')
 BROWN = hexc('#4a1604')
-D = 62.0
-B0, B1 = 897.0, 2030.0            # bone ends: the grips at the two porch-side corners
-FLAW = 1286.0                     # a thin spot near the root of the left prong
-T_SLIP, T_SNAP = 18.0, 41.0
 
-stress_map = colormap([(0.0, (1.0, 0.69, 0.44)), (0.35, (1.0, 0.45, 0.12)), (0.6, (1.0, 0.3, 0.03)),
-                       (0.85, (1.0, 0.55, 0.15)), (1.0, (1.0, 0.8, 0.55))])
-SEED = 31
-JOLT = 1200                       # how fast the slip's jolt runs out along the left wing, units/s
-WISH_AT, SPREAD = 3, 650          # after the snap the wish leaves the keel at WISH_AT s and spreads SPREAD units/s
-COUNT1, COUNT2 = (6.8, 7.4, 8.0), (22.2, 22.8, 23.4)    # the countdown squeezes before each round
-SGRID = np.arange(B0 - 200, B1 + 200, 1.0)               # bone coordinates
-# the tug: tension and how far the bone has been dragged (+ toward the right person)
-T_KEYS = [(0, 0), (8.4, 0), (9.2, 0.55), (11, 0.7), (12.5, 0.5), (14, 0.8), (16, 0.65), (17.6, 0.85),
-          (T_SLIP, 0.9), (T_SLIP + 0.05, 0), (23.5, 0), (24.5, 0.6), (27, 0.75), (28, 0.6), (30, 0.85),
-          (32.5, 0.8), (34, 0.95), (35.5, 0.85), (37.5, 1.0), (39, 0.92), (40.4, 1.08), (T_SNAP, 1.12)]
-X_KEYS = [(0, 0), (8.4, 0), (10, 9), (11.5, -6), (13, -12), (14.5, 5), (16.2, 14), (17.6, 3), (T_SLIP, 0),
-          (T_SLIP + 0.35, -75), (T_SLIP + 0.9, -52), (T_SLIP + 1.5, -63), (21.5, -40), (23.5, 0),
-          (26, -8), (28.5, 6), (31, 14), (33, 4), (35, 16), (37.5, 22), (39.5, 18), (T_SNAP, 26)]
+D = 90.0
+BEAT, BAR = 0.5, 2.0                    # 120 to the minute, four to the bar
+G0, G1 = 893.0, 2033.0                  # the grips: the porch's front corners, the ends of the bone
+KEEL = 1486.0                           # the middle of Porch Front
+FLAW = 1240.0                           # the thin spot near the root of cranberry's prong
+ROOTS = (1311.0, 1660.0)
+END = 2512.0
 
+T_IN = (1.0, 3.0, 5.0)                  # the bone draws itself, gold enters, cranberry pops up
+COUNT1 = (10.0, 10.5, 11.0, 11.5)
+T_PULL1, T_SLIP = 12.0, 28.0
+COUNT2 = (34.0, 34.5, 35.0, 35.5)
+T_PULL2 = 36.0
+NEAR = (44.0, 54.0)                     # near-snaps: flicker 0.5 s, then a frozen beat
+T_STILL, T_SNAP = 63.0, 64.0
+FLY_L, FLY_R = 1.3, 1.6                 # how long each half takes to fly to its free end
+T_WISH, T_MARCH, T_FINAL = 68.0, 70.0, 86.0
+JOLT = 1200.0                           # the slip's jolt, units/s out along Left and Side
 
-def weakness(s):
-    """Thickness: prongs thin, keel thick, roots of the prongs where stress concentrates, one flaw."""
-    w = np.where((s > 1311) & (s < 1660), 0.3, 0.55)
-    w = w + 0.35 * np.exp(-((s - 1311) / 80) ** 2) + 0.3 * np.exp(-((s - 1660) / 80) ** 2)
-    return w + 0.4 * np.exp(-((s - FLAW) / 14) ** 2)
+stress_map = colormap([(0.0, (1.0, 0.69, 0.44)), (0.4, (1.0, 0.45, 0.1)), (0.7, (1.0, 0.3, 0.03)),
+                       (0.9, (1.0, 0.65, 0.3)), (1.1, (1.0, 0.95, 0.85))])
 
 
-def tension(t):
-    T = keys(t, T_KEYS) if t < T_SNAP else 0.0
-    return T * (1 + 0.06 * np.sin(2 * np.pi * 1.3 * t) * (T > 0))
+def sway(t0, t1, period, amp, b0, b1, sign):
+    """Keyframes swinging +-amp every half period around a bias drifting b0 -> b1."""
+    pts, t, s = [], t0 + period / 2, sign
+    while t <= t1 + 1e-6:
+        pts.append((t, b0 + (b1 - b0) * (t - t0) / (t1 - t0) + s * amp))
+        s, t = -s, t + period / 2
+    return pts
 
 
-def drag(t, T):
-    return keys(t, X_KEYS) + (2.5 * np.sin(2 * np.pi * 2.1 * t) * T if t < T_SNAP else 0)
+# how far the bone has been dragged (+ toward gold) and the tension in it
+X_KEYS = ([(0, 0), (T_PULL1, 0), (13.5, 70), (15, 110), (16.5, 30), (18, -90), (19.5, -130), (20.5, -60),
+           (21.5, 40), (22.5, 120), (23, 70), (23.5, -10), (24, -60), (24.5, 0), (25, 70), (25.5, 10), (26, 110),
+           (27, 150), (T_SLIP, 170), (T_SLIP + 0.25, -300), (T_SLIP + 0.6, -200), (T_SLIP + 0.95, -260),
+           (T_SLIP + 1.4, -215), (30, -235), (31.5, -60), (32, 0), (T_PULL2, 0)]
+          + sway(T_PULL2, NEAR[0], 4, 110, 0, -40, 1) + [(NEAR[0] + 1, -40), (46, 0)]
+          + sway(46, NEAR[1], 2, 150, 0, 30, -1) + [(NEAR[1] + 1, 30), (55, 0)]
+          + sway(55, 62, 1, 70, 0, 90, 1) + [(T_STILL, 100), (T_SNAP, 100)])
+T_KEYS = [(0, 0), (T_PULL1, 0), (12.5, 0.35), (16, 0.45), (20, 0.52), (24, 0.62), (27, 0.72), (T_SLIP, 0.8),
+          (T_SLIP + 0.05, 0), (T_PULL2, 0), (36.5, 0.45), (43.5, 0.72), (NEAR[0], 0.9), (NEAR[0] + 0.5, 1.0),
+          (NEAR[0] + 1, 0.35), (46, 0.5), (53.5, 0.88), (NEAR[1], 0.95), (NEAR[1] + 0.5, 1.05), (NEAR[1] + 1, 0.4),
+          (55.5, 0.6), (62, 1.05), (T_STILL, 1.1), (T_STILL + 0.05, 0.12), (T_SNAP, 0.15), (T_SNAP + 0.01, 0)]
 
 
-def materials(G, seed=SEED):
-    """Everything render() draws from the rng: flicker, bone grain, and the crackle (time, bone coordinate)
-    wherever stress above a threshold builds fatigue."""
+def pulling(t):
+    return (T_PULL1 <= t < T_SLIP) or (T_PULL2 <= t < T_STILL)
+
+
+def frozen(t):
+    """1 in the beat of frozen silence after each near-snap, and in the stillness before the snap."""
+    f = max([smoothstep(n + 0.45, n + 0.5, t) * (1 - smoothstep(n + 0.95, n + 1.05, t)) for n in NEAR])
+    return max(f, float(T_STILL <= t < T_SNAP))
+
+
+def heave(t):
+    """A pulse on every beat while they pull."""
+    if not pulling(t) or frozen(t) > 0.5:
+        return 0.0
+    return float(np.exp(-((t + 1e-6) % BEAT) / 0.12))
+
+
+def motion():
+    """Per frame: drag, its velocity, tension, and the integrated phases of the bone's stripes and each wing's."""
+    F = nframes(D)
+    ts = np.arange(F) * DT
+    X = np.array([keys(t, X_KEYS) for t in ts])
+    T = np.array([keys(t, T_KEYS) for t in ts])
+    V = np.gradient(X, DT)
+    fz = np.array([frozen(t) for t in ts])
+    lam = 200 - 150 * np.clip(T, 0, 1)                       # stripes tighten with the tension
+    speed = (1 + 5 * np.clip(T, 0, 1.1)) * (1 - fz)          # crawl rate in stripes/s, capped at about 6
+    ph = np.cumsum(2 * np.pi * speed * DT)
+    lead = np.clip(V / 200, -1, 1)
+    effL = T * (0.6 + 0.4 * np.clip(-lead, 0, 1)) * (1 - 0.6 * fz)
+    effR = T * (0.6 + 0.4 * np.clip(lead, 0, 1)) * (1 - 0.6 * fz)
+    idle = np.array([0.18 * smoothstep(6.5, 8, t) * (t < T_SNAP) for t in ts])
+    phL = np.cumsum(2 * np.pi * (0.4 + 3 * (effL + idle)) * DT)
+    phR = np.cumsum(2 * np.pi * (0.4 + 3 * (effR + idle)) * DT)
+    return X, V, T, lam, ph, effL + idle, effR + idle, phL, phR, fz
+
+
+def creaks(seed=31):
+    """(time, bone coordinate, strength) of every creak: sparse in round one, on the off-beats and then every
+    eighth as round two builds; most of them at the flaw and the roots of the prongs."""
     rng = np.random.default_rng(seed)
-    tremble = Flicker(rng, G.N, 4.0, 7.0)
-    slow = Flicker(rng, G.N, 0.2, 0.8)
-    grain = 0.82 + 0.1 * np.sin(SGRID * 0.37) * np.sin(SGRID * 0.061) + 0.08 * np.interp(
-        SGRID, SGRID[::9], rng.uniform(-1, 1, len(SGRID[::9])))
-    w, ok = weakness(SGRID), (SGRID > B0 + 10) & (SGRID < B1 - 10)
-    pops = []
-    for f in range(nframes(D)):
-        t = f * DT
-        rate = np.clip(tension(t) * w - 0.5, 0, None) * ok
-        cr = rate.sum() * DT * 2.2
-        for _ in range(rng.poisson(cr) if t < T_SNAP and cr > 0 else 0):
-            pops.append((t, rng.choice(SGRID, p=rate / rate.sum())))
-    return tremble, slow, grain, pops
+    times = list(np.arange(16.75, 27.5, 2.0)) + list(np.arange(26.25, 27.9, 0.5))
+    times += list(np.arange(37.75, 43.9, 1.5)) + list(np.arange(46.75, 53.9, 1.0)) + list(np.arange(51.25, 53.9, 1.0))
+    times += list(np.arange(55.75, 59.9, 0.5)) + list(np.arange(60.0, 62.9, 0.25))
+    out = []
+    for t in sorted(times):
+        r = rng.uniform()
+        s = (FLAW + rng.normal(0, 25)) if r < 0.4 else (rng.choice(ROOTS) + rng.normal(0, 30)) if r < 0.7 \
+            else rng.uniform(G0 + 40, G1 - 40)
+        out.append((float(t), float(s), float(0.55 + 0.45 * min(1, keys(t, T_KEYS)))))
+    return out
 
 
-def render(G, seed=SEED):
+def flight(u, c0, h0, c1, h1, dur):
+    """A half of the bone thrown from (centre c0, half-length h0) to (c1, h1): fast out, slowing into the end."""
+    v = np.clip(u / dur, 0, 1)
+    e = 1 - (1 - v) ** 2.2
+    return c0 + (c1 - c0) * e, h0 + (h1 - h0) * e
+
+
+def render(G, seed=31):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     n = G.N
     pdp = G.pd[G.path]
-    LW = pdp < 893                 # Side + Left wing: the left person
-    RW = pdp > 2034                # Right wing: the right person
-    tremble, slow, grain, pops = materials(G, seed)
-    sgrid = SGRID
-    pop_t = np.array([p[0] for p in pops])
-    pop_s = np.array([p[1] for p in pops])
-    gripL_keys = [(0, 0), (4, 0), (6, 0.2), (T_SLIP, 0.22), (T_SLIP + 0.4, 0.6), (19.5, 0.2), (50, 0.2),
-                  (58, 0)]
+    LW = pdp < G0                           # cranberry's side: Left and Side behind it
+    RW = pdp > G1                           # gold's side: Right
+    PORCH = ~LW & ~RW
+    dl = np.clip(G0 - pdp, 0, None)         # distance out from each grip
+    dr = np.clip(pdp - G1, 0, None)
+    side_dim = np.where(pdp < 490, 0.75, 1.0)
+    rng = np.random.default_rng(seed)
+    twinkle = Flicker(rng, n, 0.6, 2.5)
+    tremble = Flicker(rng, n, 5.0, 9.0)
+    sparks_v = rng.uniform(300, 1300, 14) * np.where(np.arange(14) % 2, 1, -1)
+    sparks_l = rng.uniform(0.3, 0.7, 14)
+    X, V, T, lam, ph, effL, effR, phL, phR, fz = motion()
+    CR = creaks(seed)
+    cr_t = np.array([c[0] for c in CR])
+    # where each half of the bone starts and ends its flight
+    cl0, hl0 = (G0 + FLAW) / 2, (FLAW - G0) / 2
+    cr0, hr0 = (FLAW + G1) / 2, (G1 - FLAW) / 2
+    cl1, hl1, cr1, hr1 = 60.0, 60.0, END - 90.0, 90.0
+    us = np.linspace(0, FLY_R, 600)
+    fronts = np.array([sum(flight(u, cr0, hr0, cr1, hr1, FLY_R)) for u in us])
+    t_pass = T_SNAP + np.interp(pdp, fronts, us, left=0.0, right=1e9)          # when the gold half passed each pixel
+    t_pass = np.where(pdp < FLAW, 1e9, t_pass)
+    usl = np.linspace(0, FLY_L, 400)
+    backs = np.array([np.subtract(*flight(u, cl0 + 100, hl0, cl1, hl1, FLY_L)) for u in usl])  # trailing edge
+    t_passl = T_SNAP + np.interp(-pdp, -backs, usl, left=0.0, right=1e9)
+    t_passl = np.where(pdp > G0 + 100, 1e9, t_passl)
+    gold_land = T_SNAP + FLY_R
 
     for f in range(F):
         t = f * DT
-        buf = np.zeros((n, 3))
-        buf += light(BROWN, keys(t, [(0, 0), (2, 0.08), (58, 0.08), (62, 0)]) * (1 + 0.2 * slow(t)))
-        T = tension(t)
-        x = drag(t, T)
-        appear = smoothstep(0.5, 3.5, t)
+        buf = light(BROWN, keys(t, [(0, 0), (1, 0.08), (87, 0.08), (90, 0)]) * np.ones(n))
+        Tf, x, hv, fzf = T[f], X[f], heave(t), fz[f]
 
-        sigma = T * weakness(sgrid)
-
-        # the bone, drawn in its own coordinates s = pd - offset
+        # ---------------- the bone, until it snaps ----------------
         if t < T_SNAP:
-            s = pdp - x
-            inside = np.clip((s - B0) / 3 + 0.5, 0, 1) * np.clip((B1 - s) / 3 + 0.5, 0, 1)
-            st = np.interp(s, sgrid, sigma)
-            g = np.interp(s, sgrid, grain)
-            base = (0.3 * appear) * g
-            heat = np.clip(st, 0, 1)
-            col = lerp(IVORY, stress_map(heat), np.clip(heat * 1.6, 0, 1)[:, None])
-            buf += light(1.0, inside * (base + 0.45 * heat ** 1.5)) * col
-        else:
+            reach = 590 * smoothstep(T_IN[0], T_IN[0] + 1.8, t)
+            drawn = np.clip((reach - np.abs(pdp - KEEL)) / 20, 0, 1) * PORCH
+            s = pdp - x                                         # bone coordinates
+            flag = KEEL
+            side = np.clip((s - flag) / 40 + 0.5, 0, 1)         # 0 cranberry's territory, 1 gold's
+            tint = lerp(CRANBERRY, GOLD, side[:, None])
+            base = lerp(IVORY, tint, 0.75 * smoothstep(T_PULL1 - 2, T_PULL1, t))
+            weak = 1 + 0.5 * np.exp(-((s - FLAW) / 70) ** 2) + 0.3 * (np.exp(-((s - ROOTS[0]) / 80) ** 2) +
+                                                                     np.exp(-((s - ROOTS[1]) / 80) ** 2))
+            k = 2 * np.pi / lam[f]
+            arg = np.where(s < flag, k * (s - G0), -k * (s - G1))      # crests crawl in from both grips
+            crest = (0.5 + 0.5 * np.cos(arg - ph[f])) ** (1 + 4 * min(1, Tf))
+            idle = 0.35 * smoothstep(T_IN[0] + 1.8, T_IN[0] + 3, t)
+            amp = np.maximum(0.12 + 0.6 * min(1.1, Tf), idle) * weak * (1 - 0.5 * fzf)
+            stc = stress_map(np.clip(Tf * weak * 0.85, 0, 1.1))
+            dim = 1 - 0.65 * fzf
+            buf += light(1.0, drawn * (0.4 + 0.12 * hv) * dim) * base
+            buf += light(1.0, drawn * np.clip(amp * crest * (1 + 0.5 * hv), 0, 1.2)) * stc
+            # the flag: a bright seam where the two territories meet
+            fl = np.exp(-((s - flag) / 10) ** 2) * drawn * smoothstep(T_PULL1 - 1, T_PULL1, t) * (Tf > 0.02)
+            buf += light(WARM, (0.55 + 0.3 * hv) * fl * dim)
+            # the tip of the bone drawing itself
+            if t < T_IN[0] + 2:
+                tip = np.exp(-((np.abs(pdp - KEEL) - reach) / 12) ** 2) * PORCH
+                buf += light(WARM, 0.9 * tip * smoothstep(T_IN[0], T_IN[0] + 0.2, t))
+            # the stillness: only the flaw, glowing hotter
+            if T_STILL <= t < T_SNAP:
+                u = t - T_STILL
+                buf += light(WHITE, (0.2 + 0.6 * u) * (1 + 0.3 * tremble(t)) * np.exp(-((pdp - FLAW - x) / (30 - 20 * u)) ** 2))
+
+        # ---------------- creaks: white bursts ringing out along the bone ----------------
+        for i in np.nonzero((t - cr_t >= 0) & (t - cr_t < 0.5))[0]:
+            u = t - cr_t[i]
+            p, a = CR[i][1] + keys(cr_t[i], X_KEYS), CR[i][2]
+            buf += light(WHITE, a * np.exp(-u / 0.07) * np.exp(-((pdp - p) / 14) ** 2))
+            ring = np.exp(-((np.abs(pdp - p) - 650 * u) / 25) ** 2) * np.exp(-u / 0.18) * PORCH
+            buf += light(WARM, 0.75 * a * ring)
+
+        # ---------------- near-snaps: a flicker at the flaw, then the frozen beat ----------------
+        for tn in NEAR:
+            u = t - tn
+            if 0 <= u < 0.5:
+                fl = float(np.sin(2 * np.pi * 8 * u) > 0)
+                buf += light(WHITE, (0.5 + 0.5 * fl) * np.exp(-((pdp - FLAW - x) / (60 + 200 * u)) ** 2))
+            if 0.5 <= u < 1.0:
+                buf += light(WHITE, 0.5 * np.exp(-((pdp - FLAW - x) / 12) ** 2))
+
+        # ---------------- the two people ----------------
+        if t < T_SNAP + 1.5:
+            gone = 1 - smoothstep(T_SNAP, T_SNAP + 1.2, t)
+            # gold enters from the free end of Right, cranberry pops up on Left
+            inR = (pdp >= END - 479 * smoothstep(T_IN[1], T_IN[1] + 1.4, t))
+            inL = dl <= 893 * smoothstep(T_IN[2], T_IN[2] + 1.4, t)
+            if t < T_IN[1] + 1.6:
+                head = END - 479 * smoothstep(T_IN[1], T_IN[1] + 1.4, t)
+                buf += light(WARM, 0.9 * np.exp(-((pdp - head) / 12) ** 2) * (t >= T_IN[1]))
+            if T_IN[2] <= t < T_IN[2] + 1.0:
+                buf += light(WARM, np.exp(-(t - T_IN[2]) / 0.25) * np.exp(-(dl / 40) ** 2) * LW)
+            # the regrip: gold sweeps back in from the free end, cranberry flashes up
+            if T_SLIP + 4 <= t < T_SLIP + 6:
+                rg = smoothstep(T_SLIP + 4, T_SLIP + 4.6, t)
+                inR = inR & (pdp >= END - 479 * rg)
+                buf += light(WARM, 0.9 * np.exp(-((pdp - (END - 479 * rg)) / 12) ** 2) * (rg < 1))
+                buf += light(WARM, np.exp(-max(0, t - T_SLIP - 4.5) / 0.25) * np.exp(-(dl / 60) ** 2) * LW
+                             * (t >= T_SLIP + 4.5))
+            haulL = (0.5 + 0.5 * np.cos(2 * np.pi * dl / 120 - phL[f])) ** 3
+            haulR = (0.5 + 0.5 * np.cos(2 * np.pi * dr / 120 - phR[f])) ** 3
+            eL, eR = effL[f], effR[f]
+            Lw = (0.22 + 0.3 * eL + 0.2 * hv) + (0.15 + 0.5 * eL) * haulL
+            Rw = (0.22 + 0.3 * eR + 0.2 * hv) + (0.15 + 0.5 * eR) * haulR
+            Lw = Lw * (1 - 0.35 * np.clip(dl / 893, 0, 1)) * side_dim
+            Rw = Rw * (1 - 0.3 * np.clip(dr / 479, 0, 1))
+            # the slip: gold's grip shoots out the free end, cranberry falls back, a jolt to the back of the house
+            if T_SLIP <= t < T_SLIP + 4.5:
+                u = t - T_SLIP
+                Rw = Rw * (1 - 0.7 * smoothstep(0, 0.2, u) * (1 - smoothstep(3.5, 4.0, u)))
+                buf += light(GOLD, np.exp(-((pdp - (G1 + 1000 * u)) / 22) ** 2) * (u < 0.6) * RW)
+                buf += light(CRANBERRY, 0.9 * np.exp(-((dl - JOLT * u) / 80) ** 2) * np.exp(-u / 1.0) * LW)
+                th = 893 / JOLT
+                if u >= th:                 # he lands at the back of Side
+                    buf += light(WARM, 0.9 * np.exp(-(u - th) / 0.3) * np.exp(-(pdp / 70) ** 2))
+                if 2.0 <= u < 4.0:          # gets up, dusts off, grumbles on the beats
+                    Lw = Lw * (0.7 + 0.5 * np.exp(-((u + 1e-6) % BEAT) / 0.1))
+            # sizing each other up before round one: grip flares out along the wings on alternate beats
+            if 7.0 <= t < COUNT1[0]:
+                k = int((t - 7.0) / BEAT)
+                u = t - 7.0 - k * BEAT
+                w = np.exp(-((np.where(k % 2 == 0, dl, dr) - 900 * u) / 50) ** 2) * np.exp(-u / 0.3)
+                buf += light(WARM, 0.7 * w * (LW if k % 2 == 0 else RW))
+            # the countdowns: each squeeze throws a flash out from both grips, brighter each time
+            for i, tc in enumerate(COUNT1 + COUNT2):
+                u = t - tc
+                if 0 <= u < 0.45:
+                    a = (0.5 + 0.15 * (i % 4)) * np.exp(-u / 0.15)
+                    w = np.exp(-((np.minimum(dl + 1e9 * ~LW, dr + 1e9 * ~RW) - 1500 * u) / 60) ** 2)
+                    buf += light(WARM, a * w)
+                    buf += light(IVORY, 0.4 * a * PORCH)
+            buf += light(CRANBERRY, Lw * inL * LW * gone)
+            buf += light(GOLD, Rw * inR * RW * gone)
+
+        # ---------------- SNAP ----------------
+        if t >= T_SNAP:
             u = t - T_SNAP
-            # two pieces recoil, each a damped spring overshooting and settling
-            xl = x - 70 * (1 - np.exp(-u / 0.25) * np.cos(9 * u)) * 1.0
-            xr = x + 45 * (1 - np.exp(-u / 0.3) * np.cos(8 * u))
-            for lo, hi_, off, who in ((B0, FLAW, xl, 0), (FLAW, B1, xr, 1)):
-                s = pdp - off
-                inside = np.clip((s - lo) / 3 + 0.5, 0, 1) * np.clip((hi_ - s) / 3 + 0.5, 0, 1)
-                g = np.interp(s, sgrid, grain)
-                if who == 1:
-                    wish = smoothstep(1.2, 4.5, u)
-                    gc = lerp(IVORY, GOLD, wish)
-                    I = inside * g * (0.3 + 0.25 * wish * (0.7 + 0.3 * np.sin(s * 0.03 - 2.2 * t)))
-                    buf += light(1.0, I * keys(t, [(T_SNAP, 1), (55, 1), (61, 0)])) * gc
-                else:
-                    sulk = keys(t, [(T_SNAP, 0.3), (T_SNAP + 3, 0.22), (50, 0.12), (58, 0)])
-                    buf += light(lerp(IVORY, CRANBERRY, smoothstep(0.5, 3, u)), inside * g * sulk)
-            # the snap: a hot flash at the break and splinters flying both ways
-            buf += light(WARM, np.exp(-u / 0.12) * np.exp(-((pdp - FLAW - x) / 30) ** 2))
-            for k in range(14):
-                sgn = 1 if k % 2 else -1
-                v = 200 + 45 * k
-                p = FLAW + x + sgn * v * u
-                buf += light(IVORY, 0.7 * np.exp(-u / 0.35) * np.exp(-((pdp - p) / 3) ** 2))
-            # the wish: gold spreads out of the keel to the whole house, then fades
-            dist = np.abs(pdp - 1486)
-            reach = SPREAD * max(0, u - WISH_AT)
-            spread = np.clip((reach - dist) / 300, 0, 1)
-            tw = (0.5 + 0.5 * slow(t)) ** 3
-            buf += light(GOLD, 0.22 * spread * (0.7 + 0.3 * tw) * keys(t, [(T_SNAP, 1), (54, 1), (61, 0)]))
+            buf += light(WHITE, np.exp(-u / 0.1) * np.exp(-((pdp - FLAW - X[f]) / 140) ** 2))
+            buf += light(WARM, 0.55 * np.exp(-u / 0.18) * PORCH)
+            for k in range(14):             # splinters both ways
+                p = FLAW + 100 + sparks_v[k] * 0.5 * (1 - np.exp(-u / 0.5))
+                buf += light(WHITE, 0.8 * np.exp(-u / sparks_l[k]) * np.exp(-((pdp - p) / 5) ** 2))
+            off = 100.0                     # where the bone was dragged when it broke
+            beat_l = np.exp(-((t + 1e-6 - BEAT) % BAR) / 0.15) * (T_MARCH <= t < T_FINAL)
+            # cranberry's short half flies out the back of Side
+            c, h = flight(u, cl0 + off, hl0, cl1, hl1, FLY_L)
+            body = np.clip((h - np.abs(pdp - c)) / 8 + 0.5, 0, 1)
+            col = lerp(IVORY, CRANBERRY, smoothstep(0, 0.8, u))
+            tail = np.exp(-np.clip(pdp - (c + h), 0, None) / 120) * (pdp > c + h) * (u < FLY_L + 0.4) \
+                * (pdp < cl0 + off + hl0) * np.exp(-max(0, u - FLY_L) / 0.15)
+            sulk = keys(t, [(T_SNAP, 0.85), (T_SNAP + FLY_L, 0.85), (T_SNAP + FLY_L + 0.8, 0.4), (84, 0.4), (89, 0)])
+            buf += light(1.0, body * sulk * (1 + 0.3 * beat_l)) * col + light(CRANBERRY, 0.5 * tail)
+            agl = t - t_passl
+            buf += light(CRANBERRY, 0.6 * np.where(agl >= 0, np.exp(-np.clip(agl, 0, None) / 0.9), 0)
+                         * (0.5 + 0.5 * twinkle(t)) ** 2)
+            if u >= FLY_L:
+                v = u - FLY_L
+                buf += light(WARM, 0.8 * np.exp(-v / 0.3) * np.exp(-(pdp / 160) ** 2))
+            # gold's long half, with the keel, flies out the end of Right trailing gold dust
+            c, h = flight(u, cr0 + off, hr0, cr1, hr1, FLY_R)
+            body = np.clip((h - np.abs(pdp - c)) / 8 + 0.5, 0, 1)
+            col = lerp(IVORY, GOLD, smoothstep(0, 0.6, u))
+            beat_ = np.exp(-((t + 1e-6) % BEAT) / 0.15) * (T_MARCH <= t < T_FINAL)
+            buf += light(1.0, body * keys(t, [(T_SNAP, 1.0), (gold_land, 1.0), (T_WISH + 2, 0.45), (87, 0.45), (90, 0)])
+                         * (1 + 0.5 * beat_)) * col
+            buf += light(WARM, 0.7 * np.exp(-((pdp - (c + h)) / 18) ** 2) * (u < FLY_R))
+            age = t - t_pass
+            dust = np.where(age >= 0, np.exp(-np.clip(age, 0, None) / 1.6), 0) * (1 - smoothstep(T_WISH, T_WISH + 1, t))
+            buf += light(GOLD, 0.75 * dust * (0.55 + 0.45 * twinkle(t)) ** 2)
+            if t >= gold_land:              # it lands: a flare at the end, throbbing on the beats until the wish
+                v = t - gold_land
+                buf += light(WARM, np.exp(-v / 0.25) * np.exp(-((END - pdp) / 220) ** 2))
+                if t < T_WISH:
+                    thr = np.exp(-((t + 1e-6) % BEAT) / 0.15)
+                    buf += light(GOLD, (0.3 + 0.35 * thr) * np.exp(-((END - pdp) / (150 + 60 * v)) ** 2))
+            # the losers' wings fall dark around the flight; Left and Right keep an ember
+            buf += light(CRANBERRY, 0.18 * LW * side_dim * (1 - smoothstep(T_WISH + 0.5, T_WISH + 1.5, t)))
+            buf += light(GOLD, 0.2 * RW * (1 - smoothstep(T_WISH, T_WISH + 1, t)))
 
-        # crackle where the bone is fatigued
-        for i in np.nonzero((t - pop_t >= 0) & (t - pop_t < 0.25))[0]:
-            uu = t - pop_t[i]
-            buf += light(WARM, 0.8 * np.exp(-uu / 0.06) * np.exp(-((pdp - pop_s[i] - x) / 2.5) ** 2))
-
-        # the two people: wings glow with their grip, straining with the tension
-        effort = T * (1 + 0.12 * tremble(t))
-        gl = keys(t, gripL_keys)
-        grR = keys(t, [(0, 0), (4, 0), (6, 0.2), (50, 0.2), (58, 0)])
-        left_lag = np.clip((893 - pdp) / 500, 0, 1)
-        right_lag = np.clip((pdp - 2034) / 480, 0, 1)
-        if t >= 0:
-            # the Left person: strain gathers toward the grip
-            Lw = gl * (1 - 0.5 * left_lag) + 0.5 * effort * np.exp(-left_lag * 4)
-            if T_SLIP <= t < T_SLIP + 2:                       # falls backwards: a jolt runs to the far end
-                uu = t - T_SLIP
-                Lw = Lw + 0.6 * np.exp(-((left_lag * 893 - JOLT * uu) / 90) ** 2) * np.exp(-uu / 0.8)
-            buf += light(CRANBERRY, Lw * LW)
-            Rw = grR * (1 - 0.5 * right_lag) + 0.5 * effort * np.exp(-right_lag * 4)
-            if T_SLIP <= t < T_SLIP + 1.6:                     # the slip: the grip slides out along the wing
-                uu = t - T_SLIP
-                gp = 2040 + 520 * uu
-                Rw = Rw * (1 - smoothstep(0, 0.2, uu) * 0.6) + 0.7 * np.exp(-((pdp - gp) / 20) ** 2) * np.exp(-uu / 0.5)
-            if t >= T_SNAP:                                    # the winner's wing lights up with the wish
-                uu = t - T_SNAP
-                Rw = Rw + 0.35 * smoothstep(0.5, 2.5, uu) * keys(t, [(T_SNAP, 1), (55, 1), (60, 0)])
-            buf += light(GOLD, Rw * RW)
-        # round two: grip, then three countdown squeezes
-        for tc in COUNT2:
-            uu = t - tc
-            if 0 <= uu < 0.4:
-                pulse = np.exp(-uu / 0.1)
-                buf += light(CRANBERRY, 0.6 * pulse * np.exp(-((pdp - 893) / 25) ** 2))
-                buf += light(GOLD, 0.6 * pulse * np.exp(-((pdp - 2034) / 25) ** 2))
-        for tc in COUNT1:
-            uu = t - tc
-            if 0 <= uu < 0.4:
-                pulse = np.exp(-uu / 0.1)
-                buf += light(CRANBERRY, 0.6 * pulse * np.exp(-((pdp - 893) / 25) ** 2))
-                buf += light(GOLD, 0.6 * pulse * np.exp(-((pdp - 2034) / 25) ** 2))
+        # ---------------- the wish: gold sweeps back over the whole outline ----------------
+        if t >= T_WISH:
+            u = t - T_WISH
+            fp = END - END / (T_MARCH - T_WISH) * u
+            behind = np.clip((pdp - fp) / 30, 0, 1)
+            fade = keys(t, [(T_WISH, 1), (87, 1), (90, 0)])
+            if t < T_MARCH + 0.3:
+                buf += light(WARM, np.exp(-((pdp - fp) / 25) ** 2))
+            glow = (0.34 - 0.12 * smoothstep(T_MARCH, T_MARCH + 0.5, t)) * behind * (0.75 + 0.25 * twinkle(t))
+            if t >= T_MARCH:
+                v = t - T_MARCH
+                ab = np.abs(pdp - KEEL)
+                beat = np.exp(-((t + 1e-6) % BEAT) / 0.12)
+                down = np.exp(-((t + 1e-6) % BAR) / 0.25)
+                if t < 78:                  # stripes run out from the keel, one wavelength a beat
+                    st = (0.5 + 0.5 * np.cos(2 * np.pi * (ab / 200 - v / BEAT))) ** 3
+                    buf += light(GOLD, (0.6 + 0.3 * beat) * st)
+                    buf += light(WARM, 0.6 * down * np.exp(-(ab / 120) ** 2))
+                elif t < 84:                # the wings answer each other on the half bars, stripes running inward
+                    half = int(((t - 78) % BAR) / (BAR / 2))
+                    mine = (pdp < KEEL) if half == 0 else (pdp >= KEEL)
+                    st = (0.5 + 0.5 * np.cos(2 * np.pi * (ab / 160 + v / BEAT))) ** 3
+                    colw = AMBER if half == 0 else GOLD
+                    buf += light(colw, (0.45 + 0.4 * beat) * st * mine)
+                    buf += light(GOLD, 0.25 * st * ~mine)
+                    buf += light(CRANBERRY, 0.3 * beat * mine * LW * (half == 0))
+                else:                       # the build: stripes tighten and quicken into the last chord
+                    w = lerp(200, 60, smoothstep(84, T_FINAL, t))
+                    st = (0.5 + 0.5 * np.cos(2 * np.pi * (ab / w - v / BEAT * 200 / w * 0.5))) ** 3
+                    buf += light(GOLD, (0.5 + 0.3 * smoothstep(84, T_FINAL, t)) * st * (t < T_FINAL))
+                if t >= T_FINAL:            # the last chord: the whole house in gold, a ring out from the keel
+                    w2 = t - T_FINAL
+                    buf += light(WARM, 0.8 * np.exp(-w2 / 0.35))
+                    buf += light(WHITE, 0.6 * np.exp(-((ab - 1200 * w2) / 60) ** 2) * np.exp(-w2 / 0.8))
+                    glow = glow * (1 + 0.6 * np.exp(-w2 / 1.5))
+                    buf += light(GOLD, 0.5 * np.exp(-w2 / 2.0) * fade)
+            buf += light(GOLD, glow * fade)
+            # cranberry's half still sulks at the back of Side, its ember warming a little in the gold
         out[f][G.path] = buf
-    return out
+    return np.clip(out, 0, 1, out=out)
 
 
 # ---------------------------------------------------------------- music ----------------------------------------------
-# A tug of war in F major and 6/8, on the lights' own countdown pulse (a dotted quarter is the gap between squeezes).
-# A clarinet sings the wishbone's tune while it appears. In each round a tuba and pizzicato oom-pa-pa leans toward
-# whoever is winning, a horn heaves on every rise in tension, violins tremble higher as it builds, and every fatigue
-# crack in the lights crackles where it happens. The slip is a slide whistle and a pratfall, the snap a slapstick with
-# xylophone splinters, the loser sulks on a trombone, and the wish is the tune again, on horn, as the gold spreads.
+# A tug-of-war polka in F, 120 to the minute and four to the bar, on the same beat that pulses the lights. A fiddle
+# plays the tune over tuba and banjo oom-pah; a horn heaves with every rise in the tension, tremolo violins climb
+# with it, a snare drives the rounds and each creak is a woodblock where it happens. The slip is a slide whistle
+# up the right wing and a whoosh and a thump out to the back of the house; round two jumps up to G. Each near-snap
+# cuts the band dead for its frozen beat. The snap is a slapstick and a crash, the two halves whoosh to the ends
+# (a sad trombone where cranberry lands, a harp and glockenspiel where gold lands), the wish sweeps back on a harp
+# glissando, and the tune marches home on trumpets and horn to a last full chord.
 
-BEAT = COUNT1[1] - COUNT1[0]                # 0.6 s, a dotted quarter
-E8, BAR = BEAT / 3, 2 * BEAT
-CH = {'F': (53, 57, 60), 'Bb': (50, 53, 58), 'C': (48, 52, 55), 'Dm': (50, 53, 57), 'Gm': (50, 55, 58),
-      'C7': (48, 52, 58)}
-ROOT = {'F': (29, 36), 'Bb': (34, 29), 'C': (36, 31), 'Dm': (38, 33), 'Gm': (31, 38), 'C7': (36, 31)}
-TUNE = [(0, 0, 'A4', 2), (0, 2, 'G4', 1), (0, 3, 'F4', 2), (0, 5, 'C4', 1), (1, 0, 'F4', 2), (1, 2, 'A4', 1),
-        (1, 3, 'C5', 3), (2, 0, 'D5', 2), (2, 2, 'C5', 1), (2, 3, 'Bb4', 2), (2, 5, 'G4', 1)]
-OPEN = [(3, 0, 'A4', 3), (3, 3, 'G4', 2)]   # (bar, eighth, note, eighths); this ending leaves it on the dominant
-HOME = [(3, 0, 'G4', 2), (3, 2, 'E4', 1), (3, 3, 'F4', 3)]
-TUNE_CH = ['F', 'F', 'F', 'F', 'Bb', 'C', 'F', 'C']                  # by half bar
-ROUND1 = ['F', 'F', 'Bb', 'C', 'F', 'Dm', 'Bb', 'C']
-ROUND2 = ['F', 'F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'Bb', 'C', 'Dm', 'Bb', 'Gm', 'C7', 'C7', 'C7']
-SCALE = [53, 55, 57, 58, 60, 62, 64, 65]    # F major from F3
+CH = {'F': (53, 57, 60), 'Bb': (53, 58, 62), 'C7': (52, 55, 58), 'Gm': (55, 58, 62), 'Dm': (53, 57, 62),
+      'C': (52, 55, 60)}
+ROOT = {'F': (41, 48), 'Bb': (46, 41), 'C7': (36, 43), 'Gm': (43, 38), 'Dm': (38, 45), 'C': (36, 43)}
+TUNE = [(0, 'C5', 1), (1, 'A4', .5), (1.5, 'C5', .5), (2, 'F5', 1), (3, 'C5', 1),
+        (4, 'D5', 1), (5, 'C5', .5), (5.5, 'A4', .5), (6, 'G4', 2),
+        (8, 'Bb4', 1), (9, 'A4', .5), (9.5, 'Bb4', .5), (10, 'D5', 1), (11, 'Bb4', 1),
+        (12, 'A4', 1), (13, 'G4', .5), (13.5, 'A4', .5), (14, 'F4', 2),
+        (16, 'C5', 1), (17, 'A4', .5), (17.5, 'C5', .5), (18, 'F5', 1), (19, 'E5', .5), (19.5, 'F5', .5),
+        (20, 'G5', 1), (21, 'F5', .5), (21.5, 'E5', .5), (22, 'D5', 2),
+        (24, 'C5', .5), (24.5, 'D5', .5), (25, 'C5', .5), (25.5, 'A4', .5), (26, 'Bb4', 1), (27, 'G4', 1),
+        (28, 'F4', 2), (30, 'C4', 1), (31, 'F4', 1)]
+HALVES = ['F', 'F', 'C7', 'C7', 'Bb', 'Bb', 'F', 'F', 'F', 'F', 'C7', 'C7', 'F', 'C7', 'F', 'F']
 
 
 def score(M, G):
     from pixelhome.audio import SR, note, slide, whoosh
     n = note
-    clar = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
-    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
-    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
+    fid = M.sampler('Strings/Solo Violin/spic/*.wav', tune=-12)
+    banjo = M.sampler('Strings/Solo Violin/Pizz/*.wav')
     tuba = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
-    pizz = M.sampler('Strings/Cello Section/pizzT/*.wav', tune=-12)
-    vpizz = M.sampler('Strings/Solo Violin/Pizz/*.wav')
-    cello = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
+    horn = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
+    hstab = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
+    tpt = M.sampler('Brass/Trumpet/stac/*.wav', tune=-12)
+    tpt_s = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
+    tbn = M.sampler('Brass/Tenor Trombone/sus/*.wav', tune=-12)
+    fall = M.sampler('Brass/OldTrombone/Fall/*.wav', tune=-12)
+    clar = M.sampler('Woodwinds/Clarinet/stac/*.wav', tune=-12)
+    bsn = M.sampler('Woodwinds/Bassoon/stac/*.wav', tune=-12)
     trem = M.sampler('Strings/Violin Section/Trem/*.wav', tune=-12)
+    cello = M.sampler('Strings/Cello Section/susvib/*.wav', tune=-12)
     harp = M.sampler('Strings/Harp/*.wav')
-    mar = M.sampler('Percussion/Marimba/*.wav', tune=-12)
     xylo = M.sampler('Percussion/Xylo/*.wav', tune=-12)
     glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
-    bone = M.sampler('Brass/OldTrombone/Fall/*.wav', tune=-12)
+    mar = M.sampler('Percussion/Marimba/*.wav', tune=-12)
     wood = M.hits('VSCO 1 Percussion/varWood/wood_click*.wav')
     clave = M.hits('Percussion/Claves1_Hit*.wav')
     slap = M.hits('VSCO 1 Percussion/varWood/slapstick[0-9].wav')
     guiro = M.hits('VSCO 1 Percussion/varWood/guiro_short*.wav')
-    vibra = M.hits('VSCO 1 Percussion/varWood/vibraslap*.wav')
+    snare = M.hits('Percussion/Snare2-HitSN*.wav')
+    sroll = M.hits('Percussion/Snare2-rollSN*.wav')
     crash = M.hits('Percussion/cymbal-crash1_f*.wav')
+    cswell = M.hits('Percussion/susCymb1-cresc-Short*.wav')
     bd = M.hits('Percussion/BDrumNewhit_v[4-7]*.wav')
     timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
     troll = M.hits('Percussion/Timpani/Rolls/*.wav')
+    ratchet = M.hits('Percussion/Ratchet1-Fast*.wav')
 
-    for name, gain, rev in (('melody', 0.32, 0.25), ('brass', 0.24, 0.25), ('bass', 0.42, 0.08), ('pizz', 0.26, 0.15),
-                            ('strings', 0.22, 0.3), ('harp', 0.3, 0.3), ('mallet', 0.36, 0.2), ('perc', 0.55, 0.12),
-                            ('drums', 0.55, 0.18), ('crackle', 1.3, 0.12), ('fx', 0.16, 0.25)):
-        M.bus(name, gain=gain, reverb=rev)
+    for name, gain, rev in (('tune', 0.5, 0.2), ('brass', 0.4, 0.22), ('bass', 0.6, 0.08), ('banjo', 0.7, 0.12),
+                            ('strings', 0.3, 0.3), ('harp', 0.4, 0.3), ('mallet', 0.42, 0.2), ('perc', 0.6, 0.12),
+                            ('drums', 0.62, 0.15), ('crack', 1.1, 0.12), ('fx', 0.28, 0.25)):
+        M.bus(name, gain=0.62 * gain, reverb=rev)
 
     order = np.argsort(G.pd)
     xs, ds = G.pos[order, 0], G.pd[order]
     x0, x1 = xs.min(), xs.max()
 
-    def pan_at(d):                          # path distance -> left/right across the facade, as seen from the street
+    def pan_at(d):
         x = np.interp(d, ds, xs)
-        return 0.85 * (2 * (x - x0) / (x1 - x0) - 1)
+        return float(0.85 * (2 * (x - x0) / (x1 - x0) - 1))
 
-    def travel(sig, d0, d1):                # a sound that moves along the roofline from d0 to d1 while it plays
+    def travel(sig, d0, d1):
         a = (np.linspace(pan_at(d0), pan_at(d1), sig.shape[1]) + 1) * np.pi / 4
         return sig * np.sqrt(2) * np.vstack([np.cos(a), np.sin(a)])
 
-    def tones(chord, centre):               # the chord's tones, in any octave, nearest a pitch
-        allm = [m + 12 * o for m in CH[chord] for o in (-1, 0, 1)]
-        return min(allm, key=lambda m: abs(m - centre))
+    gl, gr, keel = pan_at(G0), pan_at(G1), pan_at(KEEL)
 
-    keel, gl, gr = float(pan_at((B0 + B1) / 2)), float(pan_at(B0)), float(pan_at(B1))
-    g1 = COUNT1[0] - 5 * BAR                # the intro's bars lead straight into the first countdown
+    def tune(t0, inst, bus, vel, shift=0, gain=1.0, pan=0.0, upto=32, legato=0.9):
+        for b, m, ln in TUNE:
+            if b < upto:
+                M.add(bus, inst.play(n(m) + shift, vel, dur=ln * BEAT * legato, release=0.12), t0 + b * BEAT, gain, pan)
 
-    def tune(t0, phrase, inst, bus, vel, gain=1.0, pan=0.0):
-        for b, e, m, ln in phrase:
-            M.add(bus, inst.play(n(m), vel, dur=ln * E8 * 0.95, release=0.15), t0 + b * BAR + e * E8, gain, pan)
+    def oompah(t0, t1, shift=0, vel=90, snare_on=True, cut=()):
+        k = 0
+        while t0 + k * BEAT < t1 - 1e-6:
+            t = t0 + k * BEAT
+            if any(c <= t < c + 1.0 for c in cut):
+                k += 1
+                continue
+            c = HALVES[(k // 2) % 16]
+            if k % 2 == 0:
+                M.add('bass', tuba.play(ROOT[c][(k // 2) % 2] + shift, vel + 10), t, 1.0, -0.1)
+                M.add('drums', bd.play(vel - 10), t, 0.5)
+            else:
+                for m in CH[c]:
+                    M.add('banjo', banjo.play(m + 12 + shift, vel - 5), t, 0.6, 0.15)
+                if snare_on:
+                    M.add('drums', snare.play(vel - 20), t, 0.45, 0.05)
+            k += 1
 
-    def accomp(t0, bars, chords, vel=80):   # harp on the half bars, pizz bass on the beats
-        for h in range(2 * bars):
-            c, t = chords[h % len(chords)], t0 + h * BEAT
-            M.add('bass', pizz.play(ROOT[c][h % 2] + 12, vel), t, 0.8, -0.2)
-            for i, m in enumerate(CH[c]):
-                M.add('harp', harp.play(m + 12, vel - 10), t + 0.03 * i, 0.7, 0.25)
+    # ---- the bone draws itself, gold comes in, cranberry pops up, they size each other up ----
+    for i in range(10):
+        for sgn in (-1, 1):
+            M.add('harp', harp.play([53, 57, 60, 65, 69, 72, 77, 81, 84, 89][i], 70 + 3 * i), T_IN[0] + 0.18 * i,
+                  0.6, pan_at(KEEL + sgn * 59 * i))
+    M.add('fx', travel(slide(0.0, 1.4, 500, 1300, 1.5, 0.5), END, G1), T_IN[1], 1.0)
+    for i, m in enumerate(('C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'C6')):
+        M.add('mallet', xylo.play(n(m), 90), T_IN[1] + 0.2 * i, 0.8, pan_at(END - 479 * i / 6))
+    M.add('bass', tuba.play(n('F1'), 115), T_IN[2], 1.0, gl)
+    M.add('perc', slap.play(110), T_IN[2], 0.8, gl)
+    for i, m in enumerate(('F4', 'A4', 'C5', 'F5')):
+        M.add('tune', clar.play(n(m), 95), T_IN[2] + 0.12 * i, 0.9, pan_at(G0 - 220 * i))
+    oompah(4.0, COUNT1[0], vel=78, snare_on=False)
+    tune(2.0, clar, 'tune', 70, upto=8)
+    for k in range(6):                      # sizing up: cranberry, gold, cranberry, gold
+        t = 7.0 + k * BEAT
+        M.add('brass', hstab.play(n('C4') + (0 if k % 2 == 0 else 7), 100), t, 0.9, gl if k % 2 == 0 else gr)
 
-    # ---- 0-6.8: the bone appears, the tune; the two people take hold ----
-    M.add('strings', cello.play(n('F2'), 60, dur=6.2, release=0.8), g1, 0.9, keel)
-    M.add('strings', cello.play(n('C3'), 50, dur=6.2, release=0.8), g1, 0.7, keel)
-    for i in range(12):                     # a harp rolls up as the bone fades in, grip to grip
-        m = [41, 48, 53, 57, 60, 65][i % 6] + 12 * (i // 6)
-        M.add('harp', harp.play(m, 70 + 2 * i), g1 + i * E8, 0.9, gl + (gr - gl) * i / 11)
-    tune(g1 + BAR, TUNE + OPEN, clar, 'melody', 70)
-    accomp(g1 + BAR, 4, TUNE_CH, 58)
-    M.add('pizz', vpizz.play(n('F4'), 90), g1 + 3 * BAR, 1.0, gl)            # cranberry takes hold
-    M.add('pizz', vpizz.play(n('C5'), 90), g1 + 3 * BAR + BEAT, 1.0, gr)     # then gold
-
-    # ---- the countdowns: three squeezes at the grips, then the pull ----
+    # ---- the countdowns and the pulls ----
     def countdown(times, notes):
         for i, (tc, m) in enumerate(zip(times, notes)):
             for p in (gl, gr):
-                M.add('perc', clave.play(100 + 10 * i), tc, 1.0, p)
-            M.add('mallet', mar.play(n(m), 108 + 8 * i), tc, 1.0, keel)
-            M.add('drums', timp.play(90 + 12 * i, pitch=2 * i), tc, 0.7)
+                M.add('perc', clave.play(100 + 8 * i), tc, 1.0, p)
+            M.add('mallet', mar.play(n(m), 108 + 6 * i), tc, 1.0, keel)
+            M.add('drums', timp.play(90 + 10 * i, pitch=2 * i), tc, 0.7)
 
-    countdown(COUNT1, ('C4', 'D4', 'E4'))
-    countdown(COUNT2, ('F4', 'G4', 'A4'))
+    countdown(COUNT1, ('C4', 'D4', 'E4', 'F4'))
+    countdown(COUNT2, ('D4', 'E4', 'F#4', 'G4'))
+    M.add('drums', sroll.play(70, dur=2.0), COUNT2[0] - 2.0, 0.5)
 
-    # ---- the rounds: oom-pa-pa leaning to whoever leads, violins rising with the tension ----
-    def rnd(t0, start, end, chords, hush=None):   # t0 is a bar line on the round's grid; the band stops at hush
-        k = int(np.ceil((start - t0) / BEAT))
-        while t0 + k * BEAT < end:
-            t = t0 + k * BEAT
-            T = tension(t)
-            c = chords[min(len(chords) - 1, k // 2)]
-            lean = float(np.clip(drag(t, T) / 40, -0.6, 0.6))
-            if k % 2 == 0:
-                Tm = tension(t + BEAT)
-                M.add('strings', trem.play(tones(c, 62 + 14 * Tm), int(45 + 55 * Tm), dur=min(BAR, end - t),
-                                           release=0.1), t, 1.0, keel)
-            if not (hush and t >= hush):
-                M.add('bass', tuba.play(ROOT[c][k % 2], int(58 + 42 * T)), t, 1.0, lean)
-                for e in (1, 2):
-                    for m in CH[c] if t + e * E8 < end else ():
-                        M.add('pizz', pizz.play(m, int(48 + 36 * T)), t + e * E8, 0.6, lean)
-            k += 1
+    def pull_hit(t, shift):
+        M.add('drums', crash.play(118), t, 0.8)
+        M.add('drums', bd.play(124), t, 1.0)
+        M.add('bass', tuba.play(41 + shift - 12, 120), t, 1.0)
+        for m in CH['F']:
+            M.add('brass', hstab.play(m + shift, 115), t, 0.9)
 
-    rnd(COUNT1[-1], T_KEYS[1][0], T_SLIP, ROUND1)
-    rnd(COUNT2[-1], T_KEYS[10][0], T_SNAP, ROUND2, hush=T_KEYS[-2][0])   # all hold their breath for the last heave
-    heaves = []                             # every rise in tension, back-to-back rises taken as one
-    for (ta, va), (tb, vb) in zip(T_KEYS, T_KEYS[1:]):
-        if vb > va:
-            heaves[-1:] = [(heaves[-1][0], tb, vb)] if heaves and heaves[-1][1] == ta else heaves[-1:] + [(ta, tb, vb)]
-    for ta, tb, vb in heaves:               # a horn swells over each and is cut off by the slip or the snap; a bassoon grunts
-        p = float(np.clip(drag(tb, vb) / 40, -0.6, 0.6))
-        cut = tb in (T_SLIP, T_SNAP)
-        M.add('brass', horn.play(SCALE[min(7, int(vb * 7))] - 12 + 12 * (ta > T_SLIP and vb > 0.9), int(42 + 50 * vb),
-                                 dur=tb - ta + (0 if cut else 0.15), release=0.04 if cut else 0.3), ta, 1.0, p)
-        M.add('melody', bsn.play(n('F2') + (ta > T_SLIP) * 2, 100, dur=0.3), ta, 0.8, p)
-    M.add('drums', troll.play(70, dur=T_SNAP - 38.6), 38.6, 0.7, keel)
+    pull_hit(T_PULL1, 0)
+    oompah(T_PULL1, T_SLIP, vel=96)
+    tune(T_PULL1, fid, 'tune', 100)
+    pull_hit(T_PULL2, 2)
+    oompah(T_PULL2, T_STILL, shift=2, vel=104, cut=[n_ + 0.5 for n_ in NEAR])
+    tune(T_PULL2, fid, 'tune', 108, shift=2)
+    tune(T_PULL2 + 16, fid, 'tune', 112, shift=2, upto=26)
+    tune(T_PULL2 + 16, tpt, 'brass', 100, shift=2 - 12, upto=26, gain=0.7)
+    M.add('drums', sroll.play(80, dur=T_STILL - 55), 55.0, 0.5)
 
-    # ---- the crackle: every fatigue crack in the lights, where it is on the house ----
-    pops = materials(G)[3]
-    buf = np.zeros((2, int(T_SNAP * SR) + SR))
-    k = np.arange(int(0.004 * SR))
-    for i, (tp, sp) in enumerate(pops):
-        T = tension(tp)
-        b = np.diff(M.rng.normal(0, 1, len(k) + 1)) * np.exp(-k / (0.0006 * SR)) * M.rng.uniform(0.3, 1.0)
-        s, a = int(tp * SR), (pan_at(sp + drag(tp, T)) + 1) * np.pi / 4
-        buf[0, s:s + len(k)] += b * np.cos(a) * 0.25
-        buf[1, s:s + len(k)] += b * np.sin(a) * 0.25
-        if i % 6 == 0:
-            M.add('perc', wood.play(int(M.rng.uniform(40, 70))), tp, 0.35, float(pan_at(sp + drag(tp, T))))
-    M.add('crackle', buf, 0.0)
+    # tremolo violins climb with the tension, a bar at a time; a horn heaves on every rise
+    for t in np.arange(T_PULL1, T_STILL, BAR):
+        if T_SLIP <= t < T_PULL2:
+            continue
+        Tm = float(keys(t + 1, T_KEYS))
+        shift = 2 if t >= T_PULL2 else 0
+        m = 60 + shift + int(round(10 * min(Tm, 1.1)))
+        cut = min([c + 0.5 for c in NEAR if c + 0.5 > t] + [T_STILL, T_SLIP if t < T_SLIP else 1e9])
+        dur = min(BAR, cut - t)
+        M.add('strings', trem.play(m, int(55 + 50 * min(Tm, 1)), dur=dur, release=0.05), t, 1.0, keel)
+        M.add('strings', trem.play(m - 5, int(50 + 45 * min(Tm, 1)), dur=dur, release=0.05), t, 0.7, keel)
+    for t in np.arange(T_PULL1, T_STILL, BEAT * 2):
+        if T_SLIP <= t < T_PULL2 or any(c + 0.5 <= t < c + 1.0 for c in NEAR):
+            continue
+        x0_, x1_ = keys(t, X_KEYS), keys(t + 1, X_KEYS)
+        p = float(np.clip((x1_ - x0_) / 100, -0.7, 0.7))
+        if abs(x1_ - x0_) > 40:              # a heave toward whoever is pulling: a horn grunt on that side
+            M.add('brass', horn.play(n('F3') + (2 if t >= T_PULL2 else 0) + (7 if x1_ > x0_ else 0),
+                                     int(70 + 40 * min(1, keys(t, T_KEYS))), dur=0.8, release=0.1), t, 0.8, p)
 
-    # ---- the slip: gold's grip slides out along the wing, cranberry falls over backwards ----
-    M.add('fx', travel(slide(0.0, 0.5, 1600, 420, 0.6), 2040, 2040 + 520 * 0.6), T_SLIP, 1.0)
-    M.add('perc', guiro.play(127), T_SLIP, 1.6, gr)
-    M.add('perc', clave.play(127), T_SLIP, 1.4, gr)
-    M.add('fx', travel(whoosh(893 / JOLT, 2500, 300, 0.6, seed=5), 893, 0), T_SLIP, 1.4)
-    th = T_SLIP + 893 / JOLT                # the jolt reaches the far end: he lands
-    M.add('drums', bd.play(120), th, 1.0, -0.85)
-    M.add('drums', timp.play(115, pitch=-3), th, 0.8, -0.85)
-    M.add('perc', slap.play(110), th, 0.9, -0.85)
-    M.add('bass', tuba.play(n('F1'), 115), th, 1.0, -0.6)
-    mid = (B0 + B1) / 2
-    for (ta, xa), (tb, xb) in zip(X_KEYS[9:12], X_KEYS[10:13]):   # the bone wobbles where it was flung
-        f0, f1 = (500, 850) if xb > xa else (850, 560)
-        M.add('fx', slide(0.0, tb - ta, f0, f1, tb - ta, 0.4), ta, 0.6, float(pan_at(mid + xa)))
-    t = X_KEYS[11][0] + 0.1                 # he gets up, dusts off, grumbles
-    for i, m in enumerate(('A2', 'Bb2', 'B2', 'C3')):
-        M.add('melody', bsn.play(n(m), 90), t + i * E8, 0.9, gl)
-    M.add('melody', bsn.play(n('F3'), 100), t + 1.0, 0.9, gl)
-    M.add('melody', bsn.play(n('C3'), 90), t + 1.0 + 2 * E8, 0.9, gl)
+    # every creak where it happens: a woodblock, and a ratchet for the louder ones
+    for tc, sc, a in creaks():
+        p = pan_at(sc + keys(tc, X_KEYS))
+        M.add('perc', wood.play(int(60 + 50 * a)), tc, 0.8, p)
+        if a > 0.85:
+            M.add('perc', guiro.play(int(70 + 40 * a)), tc, 0.4, p)
+
+    # near-snaps: a crack and a crash, then the whole band stops dead for the frozen beat
+    for tn in NEAR:
+        M.add('perc', ratchet.play(110, dur=0.5), tn, 0.7, pan_at(FLAW))
+        M.add('drums', cswell.play(90, dur=0.5), tn, 0.6, pan_at(FLAW))
+        M.add('perc', slap.play(100), tn + 0.45, 0.7, pan_at(FLAW))
+        M.add('drums', timp.play(110, pitch=-2), tn + 1.0, 0.7)
+        M.add('brass', tbn.play(n('A2') if tn == NEAR[0] else n('C3'), 90, dur=0.9, release=0.2), tn + 1.0, 0.8)
+
+    # the slip: gold's grip slides out the right wing, cranberry falls over to the back of the house
+    M.add('fx', travel(slide(0.0, 0.5, 900, 2000, 0.6), G1, END), T_SLIP, 1.2)
+    M.add('perc', guiro.play(127), T_SLIP, 1.2, gr)
+    M.add('fx', travel(whoosh(893 / JOLT, 2500, 300, 0.7, seed=5), G0, 0), T_SLIP, 1.4)
+    th = T_SLIP + 893 / JOLT
+    M.add('drums', bd.play(127), th, 1.0, -0.85)
+    M.add('drums', timp.play(118, pitch=-3), th, 0.8, -0.85)
+    M.add('perc', slap.play(115), th, 0.9, -0.85)
+    M.add('bass', tuba.play(n('F1'), 118), th, 1.0, -0.6)
+    for i, (ta, tb) in enumerate(((T_SLIP + 0.25, T_SLIP + 0.6), (T_SLIP + 0.6, T_SLIP + 0.95), (T_SLIP + 0.95, T_SLIP + 1.4))):
+        M.add('fx', slide(0.0, tb - ta, 500 if i % 2 else 820, 820 if i % 2 else 520, tb - ta, 0.4), ta, 0.7, gl)
+    for k in range(4):                      # gets up and grumbles on the beats
+        M.add('tune', bsn.play(n(('C3', 'Bb2', 'A2', 'F2')[k]), 100), T_SLIP + 2 + k * BEAT, 0.9, gl)
     for i, m in enumerate(('C5', 'A4')):    # gold: tsk tsk
-        M.add('pizz', vpizz.play(n(m), 80), t + 1.9 + i * E8, 1.0, gr)
-    for i, m in enumerate(('F2', 'C3', 'A3', 'F4')):
-        M.add('harp', harp.play(n(m), 60), t + 2.3 + 0.05 * i, 0.8, keel)
+        M.add('banjo', banjo.play(n(m), 90), T_SLIP + 3.5 + i * 0.25, 1.0, gr)
+    M.add('fx', travel(slide(0.0, 0.6, 1300, 600, 0.65), END, G1), T_SLIP + 4, 1.0)     # the regrip
+    M.add('bass', tuba.play(n('F1'), 110), T_SLIP + 4.5, 1.0, gl)
 
-    # ---- the snap: a slapstick at the flaw, splinters both ways, the halves spring back ----
-    xs_ = drag(T_SNAP, 0.0)
-    ps = float(pan_at(FLAW + xs_))
-    M.add('perc', slap.play(127), T_SNAP, 1.0, ps)
-    k = np.arange(int(0.05 * SR))                 # the crack itself: the crackle's voice, enormous
-    crack = np.diff(M.rng.normal(0, 1, len(k) + 1)) * np.exp(-k / (0.008 * SR))
-    M.add('crackle', np.vstack([crack, crack]) * 0.5, T_SNAP, 1.0, ps)
-    M.add('drums', crash.play(118), T_SNAP, 0.8, ps)
-    M.add('drums', bd.play(125), T_SNAP, 1.0, ps)
-    M.add('drums', timp.play(120, pitch=-2), T_SNAP, 0.8, ps)
-    M.add('bass', tuba.play(n('F1'), 120), T_SNAP)
-    M.add('bass', tuba.play(n('C2'), 115), T_SNAP, 0.7)
-    for m in CH['F']:
-        M.add('pizz', pizz.play(m, 120), T_SNAP, 0.8, ps)
-    for k in range(14):
-        sgn, u = (1 if k % 2 else -1), 0.03 * k + 0.02
-        M.add('mallet', xylo.play(SCALE[7 - k // 2] + 12, 115 - 4 * k), T_SNAP + u, 0.8,
-              float(pan_at(FLAW + xs_ + sgn * (200 + 45 * k) * u)))
-    pl, pr = float(pan_at((B0 + FLAW) / 2 + xs_ - 70)), float(pan_at((FLAW + B1) / 2 + xs_ + 45))
-    M.add('perc', vibra.play(100), T_SNAP + 0.05, 0.7, pl)
-    M.add('perc', vibra.play(100), T_SNAP + 0.08, 0.7, pr)
-    M.add('fx', slide(0.0, 0.25, 950, 480, 0.4, 0.5), T_SNAP + 0.1, 0.7, pl)
-    M.add('fx', slide(0.0, 0.3, 800, 520, 0.45, 0.5), T_SNAP + 0.15, 0.7, pr)
-    M.add('brass', bone.play(n('D3'), 100), T_SNAP + 0.9, 0.9, pl)            # cranberry sulks
-    for i in range(15):                     # the gold half becomes the wish: a harp sweeps up through it
-        M.add('harp', harp.play(SCALE[i % 7] + 12 * (i // 7), 70 + 2 * i), T_SNAP + 1.2 + 0.12 * i, 0.8, pr)
+    # the stillness: nothing but a tiny creak; then the SNAP
+    M.add('perc', wood.play(50), T_STILL + 0.5, 0.5, pan_at(FLAW))
+    pf = pan_at(FLAW + 100)
+    M.add('perc', slap.play(127), T_SNAP, 1.0, pf)
+    k = np.arange(int(0.06 * SR))
+    crack = np.diff(M.rng.normal(0, 1, len(k) + 1)) * np.exp(-k / (0.01 * SR))
+    M.add('crack', np.vstack([crack, crack]) * 0.6, T_SNAP, 1.0, pf)
+    M.add('drums', crash.play(127), T_SNAP, 1.0, pf)
+    M.add('drums', bd.play(127), T_SNAP, 1.0, pf)
+    M.add('drums', timp.play(124, pitch=-2), T_SNAP, 0.9, pf)
+    M.add('bass', tuba.play(n('G1'), 124), T_SNAP, 1.0)
+    for m in (55, 59, 62, 67):
+        M.add('brass', hstab.play(m, 124), T_SNAP, 1.0, pf)
+    for k in range(10):
+        M.add('mallet', xylo.play(n('G6') - 2 * k, 112 - 4 * k), T_SNAP + 0.04 * k, 0.7, pan_at(FLAW + (-1) ** k * 80 * k))
+    M.add('fx', travel(whoosh(FLY_L, 3000, 400, 0.9, seed=11), FLAW, 0), T_SNAP, 1.2)
+    M.add('fx', travel(slide(0.0, FLY_L, 1100, 380, FLY_L, 0.45), FLAW, 0), T_SNAP, 0.8)
+    M.add('fx', travel(whoosh(FLY_R, 300, 3200, 0.9, seed=12), FLAW, END), T_SNAP, 1.2)
+    M.add('fx', travel(slide(0.0, FLY_R, 500, 1500, FLY_R, 0.45), FLAW, END), T_SNAP, 0.8)
+    tl, tg = T_SNAP + FLY_L, T_SNAP + FLY_R
+    M.add('drums', bd.play(110), tl, 0.8, -0.85)
+    M.add('brass', fall.play(n('D3'), 105), tl + 0.3, 0.9, -0.8)                       # cranberry sulks
+    M.add('drums', crash.play(110), tg, 0.7, 0.85)
+    M.add('mallet', glock.play(n('G5'), 110), tg, 1.0, 0.85)
+    for i in range(12):
+        M.add('harp', harp.play([67, 71, 74, 79, 83, 86][i % 6] - 12 + 12 * (i // 6), 90), tg + 0.05 * i, 0.7, 0.85)
+    for k in range(int((T_WISH - tg) / BEAT) + 1):    # gold throbs at the end on the beats
+        t = np.ceil(tg / BEAT) * BEAT + k * BEAT
+        if t < T_WISH:
+            M.add('mallet', glock.play(n('D5') + (5 if k % 2 else 0), 80 + 4 * k), t, 0.7, 0.85)
+    M.add('drums', troll.play(80, dur=T_WISH - tg), tg, 0.6, 0.6)
 
-    # ---- the wish: gold spreads out of the keel to the whole house; the tune comes home on the horn ----
-    tw = T_SNAP + WISH_AT
-    keel_d = 1486.0
-    for sgn, far in ((-1, keel_d), (1, G.length - keel_d)):
-        steps = int(far / SPREAD / E8)
-        for i in range(steps + 1):          # harp runs out with the gold, both ways, one note per eighth
-            m = SCALE[i % 7] + 12 + 12 * (i // 7)
-            M.add('harp', harp.play(min(m, n('F6')), 72), tw + i * E8, 0.6, float(pan_at(keel_d + sgn * SPREAD * i * E8)))
-    M.add('mallet', glock.play(n('C6'), 60), tw, 0.5, keel)
-    tune(tw, TUNE + OPEN, clar, 'melody', 86)
-    tune(tw + 4 * BAR, TUNE + HOME, horn, 'brass', 100, 1.1)
-    for b, e, m, ln in TUNE + HOME:         # the clarinet a third under the horn's second time
-        low = [k for k in range(n(m) - 1, n(m) - 5, -1) if k % 12 in {5, 7, 9, 10, 0, 2, 4}][1]
-        M.add('melody', clar.play(low, 70, dur=ln * E8 * 0.95), tw + (4 + b) * BAR + e * E8, 0.6, -0.15)
-    accomp(tw, 8, TUNE_CH, 84)
-    for b in (2, 6):                        # the loser grumbles on the left, off the beat
-        M.add('melody', bsn.play(n('C3'), 80), tw + b * BAR + 4 * E8, 0.8, gl)
-        M.add('melody', bsn.play(n('F2'), 80), tw + b * BAR + 5 * E8, 0.8, gl)
-    tf = tw + 8 * BAR                       # the last chord holds while the gold fades
-    hold = D - tf - 1.0
-    for m, inst, bus, v in ((n('F2'), cello, 'strings', 70), (n('C3'), cello, 'strings', 62),
-                            (n('A3'), horn, 'brass', 70), (n('F4'), clar, 'melody', 70)):
-        M.add(bus, inst.play(m, v, dur=hold, release=1.5), tf, 1.0, 0.15)
-    M.add('bass', pizz.play(n('F2'), 90), tf, 0.9)
-    for i, m in enumerate(('F2', 'C3', 'F3', 'A3', 'C4', 'F4', 'A4', 'C5')):
-        M.add('harp', harp.play(n(m), 75), tf + 0.06 * i, 0.8, gl + (gr - gl) * i / 7)
-    M.add('mallet', glock.play(n('F5'), 55), tf + 2 * BAR, 0.5, keel)
-    M.add('harp', harp.play(n('F3'), 60), tf + 4 * BAR, 0.7, keel)
+    # the wish sweeps back over the whole house on a harp glissando
+    gl_notes = [m for m in range(n('G3'), n('G6')) if m % 12 in (7, 9, 11, 0, 2, 4, 6)]
+    for i, m in enumerate(gl_notes):
+        u = i / (len(gl_notes) - 1)
+        M.add('harp', harp.play(m, 88), T_WISH + u * (T_MARCH - T_WISH - 0.1), 0.6, pan_at(END * (1 - u)))
+    M.add('drums', cswell.play(100, dur=T_MARCH - T_WISH), T_WISH, 0.6)
+
+    # the march: the tune on trumpets and horn in G, the wings answering, a build, the last chord
+    pull_hit(T_MARCH, 2)
+    oompah(T_MARCH, T_FINAL, shift=2, vel=108)
+    tune(T_MARCH, tpt_s, 'brass', 108, shift=2 - 12, gain=0.9, legato=0.85)
+    tune(T_MARCH, fid, 'tune', 100, shift=2, upto=16)
+    tune(T_MARCH, horn, 'brass', 96, shift=2 - 24, gain=0.6, legato=0.85)
+    for k in range(12):                     # 78-84: the wings answer each other, left (amber) then right (gold)
+        t = 78 + k * (BAR / 2)
+        left = k % 2 == 0
+        M.add('banjo' if left else 'mallet', (clar if left else xylo).play(n('B4') if left else n('D5'), 100),
+              t, 0.8, -0.6 if left else 0.6)
+    for k in range(int((T_FINAL - T_MARCH) / BAR)):
+        M.add('mallet', glock.play(n('D5') + (0, 5, 7, 12)[k % 4], 90), T_MARCH + k * BAR, 0.6, keel)
+    M.add('drums', troll.play(100, dur=2.0), 84.0, 0.7)
+    tf = T_FINAL
+    pull_hit(tf, 2)
+    hold = D - tf - 1.2
+    for m, inst, bus, v in ((n('G2'), cello, 'strings', 90), (n('D3'), cello, 'strings', 84),
+                            (n('B3'), horn, 'brass', 96), (n('G4'), tpt_s, 'brass', 96), (n('D4'), horn, 'brass', 90)):
+        M.add(bus, inst.play(m, v, dur=hold, release=1.5), tf, 1.0)
+    for i, m in enumerate(('G2', 'D3', 'G3', 'B3', 'D4', 'G4', 'B4', 'D5')):
+        M.add('harp', harp.play(n(m), 92), tf + 0.05 * i, 0.8, -0.8 + 1.6 * i / 7)
+    M.add('drums', timp.play(118), tf + 1.0, 0.6)
+    M.add('mallet', glock.play(n('G5'), 100), tf, 0.8)

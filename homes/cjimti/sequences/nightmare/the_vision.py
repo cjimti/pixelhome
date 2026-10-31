@@ -1,8 +1,8 @@
-"""The Rag Doll's Vision: alone at night, the rag doll holds a flower that becomes a little Christmas tree and
+"""The Rag Doll's Vision: alone at night, Sally holds a flower that becomes a little Christmas tree and
 bursts into flames, and she sings her worry to the sky.
 
 Night falls from the porch outward: the whole house a deep night blue, stars twinkling on every run, crickets.
-On Porch Front the rag doll (blue face, red hair, patchwork) holds a flower, pink petals around a gold heart, that
+On Porch Front Sally (blue face, red hair, patchwork) holds a flower, pink petals around a gold heart, that
 sways and glows to a harp playing her theme's chords. On a celesta's phrase of the Christmas wonder tune it grows
 into a little Christmas tree, a green span widening over the porch, bulbs popping on red, gold and blue with each
 note and a star on top. Then it bursts into flames: a white flash, a roar, fire climbing over the porch and a red
@@ -21,12 +21,11 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, FLAME, VIOLE
                                  GOLD, ICE, RED, GREEN, BLUE, PINK, SALLY)
 
 CODE = 'NM11'
-TITLE = "The Rag Doll's Vision"
+TITLE = "Sally's Vision"
 KIND = 'show'
-DESCRIPTION = ('Alone under the stars, the rag doll\'s flower becomes a little Christmas tree over the porch and '
-               'bursts into flames. Then she sings her worry to the night, the house a slow, starry sky full of embers.')
-VOICEOVER = ('The rag doll had a feeling about the Pumpkin King\'s plan. '
-             'A terrible, fiery feeling.')
+DESCRIPTION = ("Alone under the stars, Sally's flower becomes a little Christmas tree over the porch and bursts into "
+    'flames. Then she sings her worry to the night, the house a slow, starry sky full of embers.')
+VOICEOVER = "Sally had a feeling about Jack's plan. A terrible, fiery feeling."
 
 EMBER = hexc('#ff6010')
 
@@ -166,7 +165,7 @@ def render(G, seed=11):
             fr += light(SALLY, 0.6 * lv * min(pk, 1.0) * np.ones(G.N))
             fr += light(VIOLET, 0.5 * lv * min(pk, 1.0) * (S.wings | S.run['Side']))
 
-        # the rag doll: she shies back from the flames
+        # Sally: she shies back from the flames
         back = 30 * smoothstep(M['flames'], M['flames'] + 0.3, t) * (1 - smoothstep(M['song'], M['song'] + 3, t))
         fr = S.sally(fr, p_doll - back, smoothstep(1.5, 3.0, t), facing=1)
         fr += light(SALLY, 0.35 * smoothstep(1.5, 3.0, t) * S.blob(p_doll - back - 20, 50))

@@ -18,10 +18,9 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, drift, ORANGE, PUMPK
 CODE = 'NM17'
 TITLE = 'The King in the Cemetery'
 KIND = 'show'
-DESCRIPTION = ('The fallen Pumpkin King lies in a stone angel\'s arms on the porch while the house stays cold and '
-               'grey. Then a spark catches, fire climbs out along the roof, and he races off with the whole house '
-               'blazing orange.')
-VOICEOVER = ('In a lonely cemetery, a fallen king wondered what he had done. And then he remembered who he was.')
+DESCRIPTION = ("Jack lies in a stone angel's arms on the porch while the house stays cold and grey. Then a spark "
+    'catches, fire climbs out along the roof, and he races off with the whole house blazing orange.')
+VOICEOVER = 'In a lonely cemetery, Jack wondered what he had done. And then he remembered who he was.'
 
 STONE = hexc('#a8b0c0')
 COLD = hexc('#5070a0')

@@ -2,13 +2,13 @@
 
 A snowy night over a sleeping town: deep blue sky, snow twinkling, four houses glowing a sleepy warm along the front
 (two on the right wing, one on the porch, one on the left wing). The coffin sleigh gallops in from the free end of
-Right behind the ghost dog's nose, sleigh bells on every beat and the citizens' march turned into a gleeful drive.
+Right behind Zero's nose, sleigh bells on every beat and the citizens' march turned into a gleeful drive.
 At each house it pulls up: a present drops down the chimney (a gold streak and a thump), the house lights up
 warm, the present jiggles, and pops open: a green snake slithers out along the roof, a jack-in-the-box springs a
 leering green head up and down on its spring, a bat flaps off toward the back of the house, a hungry wreath chomps.
 Each house screams, flashing red and white, and the red runs along its run. Then the alarm spreads: sirens wail, the
 houses flash police red and blue, and three searchlights sweep the sky back and forth. The sleigh comes round
-again from the right end on a victory lap, the king throwing gold sparks on every downbeat, sure they're all
+again from the right end on a victory lap, Jack throwing gold sparks on every downbeat, sure they're all
 delighted, while the beams chase after him, and he heads away down Side as the first flak bursts behind him.
 
 compose() lays the music end to end (pixelhome/nightmare.py); render() and score() read its marks and events, and
@@ -21,10 +21,9 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, PUMPKIN, SLIME, VIOL
 CODE = 'NM15'
 TITLE = 'Special Delivery'
 KIND = 'show'
-DESCRIPTION = ('The Pumpkin King drops presents down four chimneys along the roof, and each one pops open and the '
-               'house screams. Then the sirens start and searchlights sweep the house, while he waves, delighted.')
-VOICEOVER = ('Over the sleeping houses, the Pumpkin King made his rounds, with a very special present for '
-             'every child.')
+DESCRIPTION = ('Jack drops presents down four chimneys along the roof, and each one pops open and the house screams. '
+    'Then the sirens start and searchlights sweep the house, while he waves, delighted.')
+VOICEOVER = 'Over the sleeping houses, Jack made his rounds, with a very special present for every child.'
 
 BPM = 150
 BEAT = 60 / BPM

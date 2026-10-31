@@ -25,9 +25,9 @@ from pixelhome.nightmare import (drift, Chart, Band, Stage, pulse, RED, PINK, GR
 CODE = 'NM04'
 TITLE = 'The Doors in the Trees'
 KIND = 'show'
-DESCRIPTION = ('A ring of trees with doors lights up one by one round the house as the king passes: a heart, an egg, '
-               'a shamrock, a turkey, a firework, a jack-o\'-lantern. Then the Christmas tree on the porch opens.')
-VOICEOVER = ('Lost in the woods at dawn, the king finds a circle of trees. Every one of them has a door.')
+DESCRIPTION = ('A ring of trees with doors lights up one by one round the house as Jack passes: a heart, an egg, a '
+    "shamrock, a turkey, a firework, a jack-o'-lantern. Then the Christmas tree on the porch opens.")
+VOICEOVER = 'Lost in the woods at dawn, Jack finds a circle of trees. Every one of them has a door.'
 
 SAGE = hexc('#40a070')
 SKY = hexc('#2858b0')
@@ -203,7 +203,7 @@ def render(G, seed=4):
             fr += light(WHITE, 0.95 * lv * np.exp(-((ph - 0.5) / 0.05) ** 2) * inside)
             fr += light(WHITE, 0.6 * swirl * (1 - fall) * S.blob(mid, 60 + 100 * (1 - fall)))
 
-        # the king: walks round, hurries back, spins in the swirl and is sucked in
+        # Jack: walks round, hurries back, spins in the swirl and is sucked in
         kp, kf = king_at(S, t)
         if t >= M['swirl']:
             a = t - M['swirl']

@@ -21,7 +21,8 @@ WAVE = ('Left', 'Porch Front', 'Right')
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
-          'gotterdammerung': 'halloween-accent'}
+          'gotterdammerung': 'halloween-accent', 'thanksgiving': 'halloween-accent',
+          'chef-charlie': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -361,9 +362,128 @@ def _bed_nightmare(n, rng, s0, s1):
     return [(voices, -38.0, None), (pizz, -33.0, pre), (bass, -38.0, pre), (box, -34.0, post)]
 
 
+def _bed_thanksgiving(n, rng, s0, s1):
+    """G major, warm and cosy, from the Thanksgiving intermission's waltz: before the first word a solo fiddle plays
+    its opening (D, G, B, up to a held D) over a low G; while it speaks a soft house organ holds G, C, Em and D
+    with the cellos on the root; after the last word the organ comes home to G and a clarinet answers, down to G."""
+    from .audio import SR, Sampler, Synth, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    beat = 0.36
+    head = [(0, 1, 'D4'), (1, 1, 'G4'), (2, 1, 'B4'), (3, 2.6, 'D5')]
+    fiddle = track(Sampler('Strings/Solo Violin/Arco Vib/*.wav', rng, tune=-12),
+                   [(0.3 + b * beat, note(m), 84 + 8 * (i == 3), d * beat) for i, (b, d, m) in enumerate(head)], 0.5)
+    walk = [(['B3', 'D4', 'G4'], 'G2'), (['C4', 'E4', 'G4'], 'C2'), (['B3', 'E4', 'G4'], 'E2'), (['A3', 'D4', 'F#4'], 'D2')]
+    chords = [(0.0, ['B3', 'D4', 'G4'], 'G2')]
+    for i, c0 in enumerate(np.arange(s0, s1 - 2.5, 3.5)):       # a chord every 3.5 s while it speaks
+        chords.append((float(c0), *walk[i % len(walk)]))
+    home = s1 + 0.4
+    chords += [(max(s1 - 0.8, chords[-1][0] + 0.8), ['A3', 'C4', 'F#4'], 'D2'), (home, ['B3', 'D4', 'G4'], 'G2')]
+    ends = [c[0] for c in chords[1:]] + [T]
+    organ = Synth('Keys/House Organ').render(
+        [(c0, note(m), 38, c1 - c0 + 0.1) for (c0, triad, _), c1 in zip(chords, ends) for m in triad], T + 2)[:, :n]
+    organ = organ * np.clip(t / 1.0, 0, 1)
+    cello = Sampler('Strings/Cello Section/susvib/*.wav', rng, tune=-12)
+    low = np.zeros((2, n))
+    for (c0, _, root), c1 in zip(chords, ends):
+        a = cello.play(note(root), 64, dur=c1 - c0 + 0.3, release=0.6)
+        k0 = int(c0 * SR)
+        k = min(n - k0, a.shape[1])
+        low[:, k0:k0 + k] += a[:, :k] * np.clip(np.arange(k) / (0.4 * SR), 0, 1)
+    answer = [(0, 1, 'E5'), (1, 1, 'D5'), (2, 1, 'B4'), (3, 1, 'A4'), (4, 2, 'G4')]
+    clar = track(Sampler('Woodwinds/Clarinet/susLong/*.wav', rng, tune=-12),
+                 [(home + 0.1 + b * beat, note(m), 80 - 3 * i, d * beat * 0.95) for i, (b, d, m) in enumerate(answer)],
+                 0.4)
+    pre, post = slice(int(0.3 * SR), int(min(s0, 2.4) * SR)), slice(int((home + 0.1) * SR), int(min(T, home + 2.4) * SR))
+    return [(organ, -38.0, None), (low, -41.0, None), (fiddle, -34.0, pre), (clar, -34.0, post)]
+
+
+def _bed_chef_charlie(n, rng, s0, s1):
+    """F major, a cool jazz trio at 120, swung (original, in the idiom of pixelhome/chef_charlie.py). Before the first
+    word the piano plays a little phrase up an F major seventh and back down to A over brushes and a walking bass;
+    while it speaks the piano comps softly on Fmaj7, Dm7, Gm7 and C7 (rootless voicings, two beats each) with the bass
+    walking and brushes on the snare; after the last word the piano answers with a tag down to F and the trio closes
+    on a soft Fmaj9."""
+    from .audio import SR, Sampler, note
+    from .chef_charlie import brush_swish, brush_tap, voicing, bass_note, _swing
+    T = n / SR
+    beat = 0.5
+
+    def at(b):                                       # beat -> seconds, the off-beat eighths swung
+        return float(_swing(b)) * beat
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    piano = Sampler('Keys/Upright Nr1/*_mf_*.wav', rng)
+    soft = Sampler('Keys/Upright Nr1/*_pp_*.wav', rng)
+    lead = 0.25
+    head = [(0, .5, 'F4'), (.5, .5, 'A4'), (1, .5, 'C5'), (1.5, .5, 'E5'), (2, .5, 'D5'), (2.5, .5, 'C5'),
+            (3, 1.5, 'A4')]
+    pre = track(piano, [(lead + at(b), note(m), 84 - 4 * (i % 2), d * beat) for i, (b, d, m) in enumerate(head)], 0.4)
+    end = s1 + 0.45                                  # the tag starts here
+    cycle = ['Fmaj7', 'Dm7', 'Gm7', 'C7']
+    comp, walk, kit = [], [], np.zeros(n)
+    nb = int((end + 6 * beat) / beat)
+    for b in range(nb):
+        t = b * beat
+        sym = cycle[(b // 2) % 4] if t < end else 'Fmaj7'
+        nxt = cycle[(b // 2 + 1) % 4]
+        if t >= end + 4 * beat:
+            break
+        root = bass_note(sym, low=41)
+        m = root if b % 2 == 0 else bass_note(nxt, low=41) + (1 if b % 4 == 1 else -1)
+        if t < end:
+            walk.append((lead + t, m, 74, 0.45))
+        if s0 - 0.3 <= t < end and b % 2 == 0:       # comping under the voice: on 1, and the and of 2 now and then
+            off = 0.0 if b % 4 == 0 else 0.5
+            comp += [(lead + at(b + off), v, 46, 0.6 * beat) for v in voicing(sym, 53)]
+        if t < end + 2 * beat:
+            sw = brush_swish(b % 4)
+            k0 = int((lead + t) * SR)
+            k = min(n - k0, len(sw))
+            if k > 0:
+                kit[k0:k0 + k] += sw[:k] * 0.7
+            if b % 2 == 1:
+                tp = brush_tap(b % 4)
+                k = min(n - k0, len(tp))
+                if k > 0:
+                    kit[k0:k0 + k] += tp[:k] * 0.8
+    tag = [(0, .5, 'Bb4'), (.5, .5, 'A4'), (1, .5, 'G4'), (1.5, .5, 'E4'), (2, 2, 'F4')]
+    post = track(piano, [(end + at(b), note(m), 80 - 3 * i, d * beat) for i, (b, d, m) in enumerate(tag)], 0.5)
+    last = end + 2 * beat
+    post += track(soft, [(last, m, 52, 2.2) for m in voicing('Fmaj9', 53)], 0.8)
+    walk.append((last, note('F2'), 76, 2.0))
+    trio = track(soft, comp, 0.25)
+    bass = track(Sampler('Strings/Solo Contrabass/Pizz/*.wav', rng, tune=-12), walk, 0.15)
+    brushes = np.vstack([kit, kit]) * np.clip(np.arange(n) / SR / 0.3, 0, 1)
+    pre_s = slice(int(lead * SR), int(min(s0, lead + 2.2) * SR))
+    post_s = slice(int(end * SR), int(min(T, last + 1.5) * SR))
+    return [(trio, -42.0, slice(int(s0 * SR), int(s1 * SR))), (bass, -41.5, None), (brushes, -46.0, None),
+            (pre, -33.0, pre_s), (post, -33.0, post_s)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
         'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
-        'nightmare': _bed_nightmare}
+        'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie}
 
 
 def _rms(x):

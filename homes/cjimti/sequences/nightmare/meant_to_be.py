@@ -1,12 +1,12 @@
-"""Meant to Be: on top of the spiral hill under the full moon, the Pumpkin King and the rag doll find each other.
+"""Meant to Be: on top of the spiral hill under the full moon, the Pumpkin King and Sally find each other.
 
 A deep blue night: a big full moon glowing over Porch Front, the spiral hill curling slowly on the porch sides,
-stars twinkling along the wings. The rag doll waits on the porch beside the moon, her blue on the left wing, to
+stars twinkling along the wings. Sally waits on the porch beside the moon, her blue on the left wing, to
 her own theme on flute and harp. The Pumpkin King walks in from the free end of Right along the wing to his
 theme in A minor, his moonlight following him round the porch corner. Then the two themes intertwine: his on horn
 and cello, hers on violins and oboe, each note sending a wave of his white or her blue out across the house, the
 waves crossing over the porch as the two draw closer. They come together under the moon: the theme turns to A
-major on the whole band, the moon blooms, blue and white meet in the middle. The ghost dog flies in from the free
+major on the whole band, the moon blooms, blue and white meet in the middle. Zero flies in from the free
 end of Right to the porch and up into the sky, his nose becoming a glowing star over the porch that twinkles on
 his little glockenspiel tune with a woof. On the last chord the whole house blazes with every colour of the
 story (orange, violet, green, blue, red, gold, white) rippling out from the moon, then settles into moonlight.
@@ -21,10 +21,10 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, THEMES, ORANGE, PUMP
 CODE = 'NM20'
 TITLE = 'Meant to Be'
 KIND = 'show'
-DESCRIPTION = ('Under a full moon over the porch the rag doll waits, and the Pumpkin King walks in along the right '
-               'wing. Their themes and colours intertwine until they meet, the ghost dog becomes a star over the '
-               'porch, and the whole house blazes with every colour of the story.')
-VOICEOVER = ('High on the spiral hill, under a full moon, someone was waiting for him.')
+DESCRIPTION = ('Under a full moon over the porch Sally waits, and Jack walks in along the right wing. Their themes and '
+    'colours intertwine until they meet, Zero becomes a star over the porch, and the whole house blazes with '
+    'every colour of the story.')
+VOICEOVER = 'High on Spiral Hill, under a full moon, Sally was waiting for Jack.'
 
 HILL = hexc('#2c50b0')
 STAR = hexc('#b8ccff')
@@ -35,7 +35,7 @@ def compose():
     C = Chart()
     C.rest(3.0)                                                                       # the moonlit hill
     C.mark('waits')
-    C.play('sally', style='arp', bars=(0, 4), bpm=80, tag='waits')                    # the rag doll waits
+    C.play('sally', style='arp', bars=(0, 4), bpm=80, tag='waits')                    # Sally waits
     C.mark('comes')
     C.play('king', style='waltz', bars=(12, 16), bpm=88, tag='comes')                 # he comes to her
     C.mark('duet')
@@ -92,13 +92,13 @@ def render(G, seed=20):
             fr += light(HILL, 0.55 * up * S.blob(h, 160) * curl ** 2)
         tw = 0.5 + 0.5 * np.sin(2 * np.pi * st_rate * t + st_ph)
         fr[stars] += light(STAR, 0.55 * up * tw ** 3)
-        # the rag doll waiting, her blue on the left; she sways on each note of her theme
+        # Sally waiting, her blue on the left; she sways on each note of her theme
         p_s = keys(t, [(t_du, mid - 55), (t_to, mid - 32), (t_to + 2, mid - 14)])
         sway = 0.85 + 0.15 * pulse(t, waits_n, 0.4)
         blue = up * (0.35 + 0.15 * pulse(t, waits_n, 0.5))
         fr += light(SALLY, blue * (S.run['Left'] | S.run['Porch Left']) * (1 - 0.4 * tog))
         fr += light(SALLY, 0.4 * up * S.blob(p_s, 60))
-        # the king walking in from the free end of Right, his moonlight round him
+        # Jack walking in from the free end of Right, his moonlight round him
         if t >= t_co - 0.5:
             p_j = keys(t, [(t_co - 0.5, S.L + 15), (t_du, mid + 55), (t_to, mid + 32), (t_to + 2, mid + 14)])
             lit = smoothstep(t_co - 0.5, t_co + 1.0, t)
@@ -122,7 +122,7 @@ def render(G, seed=20):
         fr = S.sally(fr, p_s, up * sway, facing=1)
         if t >= t_co - 0.5:
             fr = S.jack(fr, p_j, lit, facing=-1, glow=0.35)
-        # the ghost dog flies in from the free end of Right and up into the sky; his nose becomes a star
+        # Zero flies in from the free end of Right and up into the sky; his nose becomes a star
         if t_d0 <= t < t_d2 + 0.4:
             pz = keys(t, [(t_d0, S.L + 20), (t_d1, mid + 10)])
             lz = 1.0 - smoothstep(t_d1 + 0.3, t_d2 + 0.4, t)
@@ -188,7 +188,7 @@ def score(M_, G):
     for t, k, g in C.beats:
         if g == 'together' and k == 0:
             B.hit('timpani', t, 100, pitch=-5, gain=0.35)
-    # the ghost dog's star: his little tune on glockenspiel, in A, and a woof as he goes up
+    # Zero's star: his little tune on glockenspiel, in A, and a woof as he goes up
     for b, l, n in THEMES['zero']['melody']:
         B.play('glock', note(n) + 5 - 12, t_d2 + b * 60 / 92, l * 60 / 92, 100, gain=0.45, pan=0.0)
     # the last chord: A major on everything

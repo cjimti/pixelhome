@@ -1,7 +1,7 @@
-"""Three Little Troublemakers: the Pumpkin King sends for the three troublemakers, and in their walking bathtub
+"""Three Little Troublemakers: the Pumpkin King sends for Lock, Shock and Barrel, and in their walking bathtub
 they scheme, each trying to outdo the others, how to bring him the man in red.
 
-Halloween Town glows violet. On Porch Front the king summons them to his sly theme in A minor on muted horn and
+Halloween Town glows violet. On Porch Front Jack summons them to his sly theme in A minor on muted horn and
 bassoon, and over the porch flashes the one he wants: Santa, red and white, a red glow on the whole porch. The
 three pop up one by one, each in a flood of its colour on its run, cackling: the devil (red) on Porch Left, the
 witch (violet and green) on Porch Front, the skeleton (white and green) on Porch Right. Their walking bathtub
@@ -9,7 +9,7 @@ clatters up to collect them and stomps off down Porch Right to their treehouse o
 feet clacking. There they scheme to their gleeful patter in C minor, a verse each, each idea bigger than the last
 and the key going up a step each time. The devil's: a cage; red bars slam down one per bar over Porch Front around
 Santa, the left wing flashing red. The witch's: a trap; two violet jaws with green teeth ratchet in from both ends
-of the house and SNAP shut over the porch. The skeleton's: take him to the boogeyman; the boogeyman's glowing
+of the house and SNAP shut over the porch. The skeleton's: take him to Oogie Boogie; Oogie Boogie's glowing
 sack rises over the porch, green bugs crawling over the whole house, and Santa is dragged into him. Then they
 squabble: the three bash about over the tub, sparks flying, the house flashing red, violet and white in turn.
 They agree, and to the patter on the whole band, red, violet and white bands race along the roof to the free
@@ -23,12 +23,11 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, PUMPKIN, FLA
                                  BONE, WHITE, GOLD, RED, BUG, BURLAP, WARM)
 
 CODE = 'NM09'
-TITLE = 'Three Little Troublemakers'
+TITLE = 'Lock, Shock and Barrel'
 KIND = 'show'
-DESCRIPTION = ('The king sends for the devil, the witch and the skeleton. In their walking bathtub they each '
-               'scheme bigger: red cage bars slam down, giant jaws snap shut, the boogeyman rises over the porch.')
-VOICEOVER = ('The Pumpkin King needed someone sneaky for a very special job. '
-             'He sent for the three worst troublemakers in town.')
+DESCRIPTION = ('Jack sends for Lock, Shock and Barrel. In their walking bathtub they each scheme bigger: red cage bars '
+    'slam down, giant jaws snap shut, Oogie Boogie rises over the porch.')
+VOICEOVER = 'Jack needed someone sneaky for a very special job. He sent for Lock, Shock and Barrel.'
 
 DEVIL, WITCH, SKEL = RED, VIOLET, BONE
 MASKS = [[(1, RED, 1.0), (0, RED, 0.85), (-1, FLAME, 0.6)],
@@ -42,7 +41,7 @@ def compose():
     C = Chart()
     C.rest(2.0)
     C.mark('summon')
-    C.play('king', style='waltz', bars=(0, 4), bpm=120, tag='summon')           # the king sends for them
+    C.play('king', style='waltz', bars=(0, 4), bpm=120, tag='summon')           # Jack sends for them
     C.mark('pop')
     C.play('trio', style='gallop', bars=(0, 4), bpm=360, tag='pop')             # one, two, three
     C.mark('tub')
@@ -120,7 +119,7 @@ def render(G, seed=9):
         fr = S.town(t, lv=up, mist=0.8) + light(DUSK, 0.25 * up * np.ones(G.N))
         pt = tub_pos(S, P, t)
 
-        # the summons: the king on Porch Front, and over the porch, the man in red
+        # the summons: Jack on Porch Front, and over the porch, the man in red
         if t < M['tub'] + 1.0:
             kl = up * smoothstep(M['tub'] + 1.0, M['tub'], t)
             fr = S.jack(fr, P['king'], kl, facing=-1, glow=0.4)
@@ -177,7 +176,7 @@ def render(G, seed=9):
                 a = t - T_SNAP
                 fr += light(WHITE, 0.9 * np.exp(-a / 0.12) * np.ones(G.N))
                 fr += light(SLIME, 0.7 * np.exp(-a / 0.4) * S.porch)
-        # 3. the skeleton's idea: take him to the boogeyman; the sack rises, bugs everywhere, Santa dragged in
+        # 3. the skeleton's idea: take him to Oogie Boogie; the sack rises, bugs everywhere, Santa dragged in
         if M['skeleton'] <= t < M['squabble'] + 0.6:
             db = DB['skeleton']
             a = t - M['skeleton']
@@ -317,7 +316,7 @@ def score(M_, G):
     B.hit('crash', T_SNAP, 124, gain=0.6)
     B.hit('bass drum', T_SNAP, 124, gain=0.6)
     _cackle(B, T_SNAP + 0.4, pitches[1], S.pan(P['tree']), n=6, seed=32)
-    # 3. the boogeyman: a low rumble rising, bugs crawling, his laugh on the buzzing trombone
+    # 3. Oogie Boogie: a low rumble rising, bugs crawling, his laugh on the buzzing trombone
     db = DB['skeleton']
     B.hit('timpani roll', M['skeleton'], 100, pitch=-5, gain=0.5)
     B.swarm(db[2], M['squabble'], level=0.6, pan=0.0)

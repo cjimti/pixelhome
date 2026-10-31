@@ -1,7 +1,7 @@
-"""The Rag Doll: she drugs the mad doctor's soup, drops out of his tower, sews herself back together and slips off
+"""The Rag Doll: she drugs Dr. Finkelstein's soup, drops out of his tower, sews herself back together and slips off
 through town with a basket for the Pumpkin King.
 
-Halloween Town glows violet with orange windows on every run. On Porch Front, the mad doctor's kitchen: a pot
+Halloween Town glows violet with orange windows on every run. On Porch Front, Dr. Finkelstein's kitchen: a pot
 bubbling orange over the porch, the doctor (a bright domed head, dark goggles, grey behind) on its right, the rag
 doll (blue face, red hair, a patchwork dress) on its left, to her own theme in D minor on clarinet and pizzicato.
 She tips a vial: three green drops fall into the pot, each a green flash, and the soup turns green. The doctor
@@ -12,7 +12,7 @@ porch's right corner and lowers herself down Porch Right on a rope, hand over ha
 oboe. The rope snaps: she drops to the corner with a slide whistle, lands with a thud and a puff of dust, and
 flies apart along Right in six pieces (face, hair, four patches). A needle glints back and forth, a stitch on each
 note of her theme on pizzicato, and each stitch pulls a piece home until she's whole again in a flash of blue.
-With a basket on her arm she slips through town back across the porch, past the sleeping doctor, to the king's
+With a basket on her arm she slips through town back across the porch, past the sleeping doctor, to Jack's
 door on Left (an orange door), on her theme in full strings, pausing on every bar. She sets the basket down,
 knocks three times (the door flares at each), and runs off along Side as the door opens and floods Left with
 warm light.
@@ -25,13 +25,13 @@ from pixelhome.nightmare import (Chart, Band, Stage, pulse, ORANGE, PUMPKIN, SLI
                                  WHITE, GOLD, ICE, WARM, RED, GREEN, BLUE, GREY, SALLY, HAIR)
 
 CODE = 'NM08'
-TITLE = 'The Rag Doll'
+TITLE = 'Sally'
 KIND = 'show'
-DESCRIPTION = ('The rag doll drops a sleeping draught in the mad doctor\'s soup and he snores the house blue. She '
-               'climbs down from his tower, falls to pieces along the right wing, stitches herself whole and slips off '
-               'with a basket for the king.')
-VOICEOVER = ('The mad doctor kept his rag doll locked in his tower. '
-             'Tonight, she had other plans, and a little something for his soup.')
+DESCRIPTION = ("Sally drops a sleeping draught in Dr. Finkelstein's soup and he snores the house blue. She climbs down "
+    'from his tower, falls to pieces along the right wing, stitches herself whole and slips off with a basket '
+    'for Jack.')
+VOICEOVER = ('Dr. Finkelstein kept Sally locked in his tower. Tonight, she had other plans, and a little something for '
+    'his soup.')
 
 DRAUGHT = hexc('#40ff60')
 SOUP = hexc('#ff6a10')
@@ -78,7 +78,7 @@ def places(S):
 
 
 def doctor(S, fr, p, lvl, nod=0.0):
-    """The mad doctor: a big bright domed head with dark goggles, his grey chair behind; nod sinks and dims him."""
+    """Dr. Finkelstein: a big bright domed head with dark goggles, his grey chair behind; nod sinks and dims him."""
     h = 1.0 - 0.55 * nod
     px = [(2, BONE, h), (1, BONE, h), (0, None, 0), (-1, ICE, 0.5 * h), (-2, BONE, 0.8 * h), (-3, None, 0),
           (-4, GREY, 0.55), (-5, GREY, 0.55), (-6, None, 0), (-7, GREY, 0.45), (-8, GREY, 0.45)]
@@ -100,7 +100,7 @@ def scatter(S, P):
 
 
 def walk_pos(P, t):
-    """Her path along the town from where she landed to the king's door: a sneak, a bar at a time."""
+    """Her path along the town from where she landed to Jack's door: a sneak, a bar at a time."""
     downs = C.downbeats('walk')
     k = np.searchsorted(downs, t, side='right') - 1
     if k < 0:
@@ -171,7 +171,7 @@ def render(G, seed=8):
         sleepy = up * (1 - 0.4 * smoothstep(M['walk'] + 10, D, t))
         fr = doctor(S, fr, P['doc'] - lean, sleepy, nod)
 
-        # the rag doll
+        # Sally
         if t < M['climb']:
             fr = S.sally(fr, P['doll'], up, facing=1)
             fr += light(SALLY, 0.5 * up * S.blob(P['doll'] - 20, 60))
@@ -229,7 +229,7 @@ def render(G, seed=8):
             if done > 0:
                 fr += light(SALLY, 1.0 * np.exp(-(t - home_t[-1]) / 0.5) * np.ones(G.N))
         elif t < T_RUN:
-            # through town with the basket, to the king's door
+            # through town with the basket, to Jack's door
             p = walk_pos(P, t)
             fr = S.sally(fr, p, 1.0, facing=-1)
             fr = S.sprite(fr, p - 4 * 4.5, [(1, WARM, 0.9), (0, RED, 0.9), (-1, WARM, 0.9)], 1.0, -1, cut=False)
@@ -242,7 +242,7 @@ def render(G, seed=8):
             p = P['door'] - 30 - (P['door'] - 30 + 60) * u
             fr = S.sally(fr, p, 1.0 - 0.3 * u, facing=-1)
 
-        # the king's door on Left: it flares at each knock and opens at the end
+        # Jack's door on Left: it flares at each knock and opens at the end
         if t >= M['walk']:
             dl = smoothstep(M['walk'], M['walk'] + 2, t)
             fr += light(PUMPKIN, 0.7 * dl * S.blob(P['door'], 18))

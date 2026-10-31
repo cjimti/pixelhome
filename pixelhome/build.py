@@ -3,7 +3,7 @@ import glob, hashlib, json, os, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, intro, share
+from . import catalog, fseq, intro, schedule, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import OCCASIONS, KINDS, PLAYLIST, playlists
 
@@ -35,7 +35,7 @@ def _engine_hash():
     h = hashlib.sha256()
     pkg = os.path.join(catalog.ROOT, 'pixelhome')
     for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', 'intro.py', 'share.py', '__main__.py'):
+        if os.path.basename(p) not in ('audio.py', 'intro.py', 'schedule.py', 'share.py', '__main__.py'):
             h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
     return h.hexdigest()
 
@@ -150,14 +150,25 @@ def build(out, want):
     used = {m['playlist'] for h in homes for m in h['sequences']}
     occasions = []
     for o in OCCASIONS:                 # each occasion with the playlists under it that have sequences
-        pls = [dict(id=p, label=PLAYLIST[p]['label'], accent=PLAYLIST[p]['accent']) for p in playlists(o['id'])
-               if p in used]
+        pls = [dict(id=p, label=PLAYLIST[p]['label'], accent=PLAYLIST[p]['accent'], desc=PLAYLIST[p].get('desc', ''))
+               for p in playlists(o['id']) if p in used]
         if pls:
-            occasions.append(dict({k: v for k, v in o.items() if k != 'prefix'}, playlists=pls))
+            occasions.append(dict({k: v for k, v in o.items() if k not in ('prefix', 'desc', 'set')}, playlists=pls))
     cat = dict(occasions=occasions, kinds=KINDS, homes=homes,
                built=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))
+    for h in homes:                     # show times for the Live page, from the home's schedule.py
+        try:
+            nights = schedule.nights(h['id'], h['sequences'])
+        except SystemExit as e:
+            if not want:
+                raise
+            print(f"{h['id']}: no show times in a partial build ({e})")
+            continue
+        if nights:
+            with open(os.path.join(out, 'data', h['id'], 'schedule.json'), 'w') as f:
+                json.dump(nights, f, separators=(',', ':'))
     share.write(out, homes)
     print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
           f'{quiet} left out until they have music')

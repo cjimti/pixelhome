@@ -3,7 +3,7 @@ homes/<home>/sequences/nightmare/.
 
 It is a faithful, affectionate interpretation, not a copy: the story beats are the familiar ones, the music is
 our own. THEMES are original tunes written for these scenes in the style the story calls for (minor-key marches,
-waltzes, celesta and sleigh bells, a swing number for the boogeyman), and each comes back wherever its character
+waltzes, celesta and sleigh bells, a swing number for Oogie Boogie), and each comes back wherever its character
 does, the way a film score reprises its themes.
 
     C = Chart()                                     a scene's music, laid end to end
@@ -40,10 +40,10 @@ ICE = hexc('#90c8ff')
 WARM = hexc('#ffa040')
 BLUE = hexc('#1040ff')
 PINK = hexc('#ff4090')
-NOSE = hexc('#ff3000')              # the ghost dog's glowing nose
-SALLY = hexc('#4a7cff')             # the rag doll's blue
+NOSE = hexc('#ff3000')              # Zero's glowing nose
+SALLY = hexc('#4a7cff')             # Sally's blue
 HAIR = hexc('#e00818')
-BURLAP = hexc('#b0a020')            # the boogeyman's sack under blacklight
+BURLAP = hexc('#b0a020')            # Oogie Boogie's sack under blacklight
 BUG = hexc('#60ff00')
 
 # ---------------------------------------------------------------------------------------------------- themes
@@ -88,7 +88,7 @@ THEMES = {
                 (42, 6, 'G4')],
         chords=[(0, 6, 'G'), (6, 6, 'D7'), (12, 6, 'C'), (18, 6, 'D'), (24, 6, 'C'), (30, 6, 'G'), (36, 3, 'C'),
                 (39, 3, 'D7'), (42, 6, 'G')]),
-    'sally': dict(meter=3, bpm=84, name="The rag doll's song, D minor",
+    'sally': dict(meter=3, bpm=84, name="Sally's song, D minor",
         melody=[(0, 2, 'A4'), (2, 1, 'G4'), (3, 1.5, 'F4'), (4.5, .5, 'E4'), (5, 1, 'D4'),
                 (6, 2, 'E4'), (8, 1, 'C#4'), (9, 3, 'D4'),
                 (12, 1, 'F4'), (13, 1, 'G4'), (14, 1, 'A4'), (15, 2, 'Bb4'), (17, 1, 'A4'),
@@ -100,7 +100,7 @@ THEMES = {
         chords=[(0, 3, 'Dm'), (3, 3, 'Bb'), (6, 3, 'A7'), (9, 3, 'Dm'), (12, 3, 'F'), (15, 3, 'Gm'), (18, 3, 'A7'),
                 (21, 3, 'Dm'), (24, 3, 'Bb'), (27, 3, 'Gm'), (30, 3, 'A7'), (33, 3, 'Dm'), (36, 3, 'Gm'),
                 (39, 3, 'A7'), (42, 3, 'A7'), (45, 3, 'Dm')]),
-    'trio': dict(meter=6, bpm=360, name="The three troublemakers' patter, C minor in 6/8 (beats are eighths)",
+    'trio': dict(meter=6, bpm=360, name="Lock, Shock and Barrel' patter, C minor in 6/8 (beats are eighths)",
         melody=[(0, 1, 'C4'), (1, 1, 'Eb4'), (2, 1, 'G4'), (3, 1, 'Ab4'), (4, 1, 'G4'), (5, 1, 'Eb4'),
                 (6, 1, 'F4'), (7, 1, 'D4'), (8, 1, 'B3'), (9, 3, 'G3'),
                 (12, 1, 'C4'), (13, 1, 'Eb4'), (14, 1, 'G4'), (15, 1, 'C5'), (16, 1, 'B4'), (17, 1, 'Ab4'),
@@ -111,7 +111,7 @@ THEMES = {
                 (42, 3, 'C4'), (45, 1, 'G3'), (46, 2, 'C4')],
         chords=[(0, 6, 'Cm'), (6, 6, 'G7'), (12, 3, 'Cm'), (15, 3, 'Ab'), (18, 6, 'G'), (24, 3, 'Fm'), (27, 3, 'Cm'),
                 (30, 6, 'G7'), (36, 3, 'Cm'), (39, 3, 'D7'), (42, 6, 'Cm')]),
-    'boogey': dict(meter=4, bpm=132, swing=True, name="The boogeyman's shuffle, G minor blues (swung)",
+    'boogey': dict(meter=4, bpm=132, swing=True, name="Oogie Boogie's shuffle, G minor blues (swung)",
         melody=[(0, .5, 'G3'), (.5, .5, 'Bb3'), (1, .5, 'C4'), (1.5, .5, 'Db4'), (2, 1, 'D4'), (3, 1, 'Bb3'),
                 (4, .5, 'F4'), (4.5, .5, 'D4'), (5, .5, 'F4'), (5.5, 2.5, 'G4'),
                 (8, .5, 'C4'), (8.5, .5, 'Eb4'), (9, .5, 'F4'), (9.5, .5, 'Gb4'), (10, 1, 'G4'), (11, 1, 'Eb4'),
@@ -140,7 +140,7 @@ THEMES = {
         chords=[(0, 2, 'Am'), (2, 2, 'E'), (4, 2, 'Am'), (6, 2, 'E'), (8, 2, 'F'), (10, 2, 'Am'), (12, 2, 'E'),
                 (14, 2, 'Am'), (16, 2, 'Am'), (18, 2, 'E'), (20, 2, 'Am'), (22, 2, 'E'), (24, 2, 'F'), (26, 2, 'Am'),
                 (28, 4, 'E')]),
-    'zero': dict(meter=4, bpm=120, name='The ghost dog, E major (a glockenspiel tune with a woof at the end)',
+    'zero': dict(meter=4, bpm=120, name='Zero, E major (a glockenspiel tune with a woof at the end)',
         melody=[(0, .5, 'B4'), (.5, .5, 'E5'), (1, .5, 'G#5'), (1.5, .5, 'B5'), (2, .75, 'A5'), (2.75, .25, 'G#5'),
                 (3, 1, 'F#5'),
                 (4, .5, 'E5'), (4.5, .5, 'F#5'), (5, .5, 'G#5'), (5.5, .5, 'A5'), (6, 1, 'B5'), (7, 1, 'E5')],
@@ -392,7 +392,7 @@ class Band(ring.Orchestra):
     # ---- the stage effects this story needs beyond the Ring's
 
     def woof(self, t, pan=0.0, big=1.0):
-        """The ghost dog's bark: a muted-horn yap with a breath of noise."""
+        """Zero's bark: a muted-horn yap with a breath of noise."""
         from .audio import SR
         self.play('muted horn', note('A3'), t, 0.12, int(96 + 20 * big), pan, 0.9 * big)
         self.play('muted horn', note('E4'), t + 0.02, 0.1, int(90 + 20 * big), pan, 0.6 * big)
@@ -479,7 +479,7 @@ def drift(seed, x, scale, octaves=2):
 class Stage:
     """The house as the story's stage. d is each node's distance along the roofline (G.pd), L its length; runs by
     name; at(run, u) a point u of the way along a run; pan(p) where a point sounds from the street. The porch is the
-    centre of every scene (Halloween Town's square, the hill's moon, the boogeyman's lair); the wings are its
+    centre of every scene (Halloween Town's square, the hill's moon, Oogie Boogie's lair); the wings are its
     surroundings and are never left dark while the porch has the action; nothing enters on Side, it only exits."""
 
     RUNS = ('Side', 'Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right')
@@ -566,7 +566,7 @@ class Stage:
         return fr
 
     def sally(self, fr, p, lvl=1.0, facing=1):
-        """The rag doll: long red hair, a pale blue face, and her patchwork dress behind in blue, yellow, red and
+        """Sally: long red hair, a pale blue face, and her patchwork dress behind in blue, yellow, red and
         green with dark stitches between the patches."""
         px = [(2, SALLY, 0.9), (1, SALLY, 0.95), (0, HAIR, 0.85), (-1, HAIR, 0.85), (-2, HAIR, 0.7),
               (-3, None, 0), (-4, BLUE, 0.55), (-5, GOLD, 0.5), (-6, None, 0), (-7, RED, 0.5), (-8, GREEN, 0.5),
@@ -574,7 +574,7 @@ class Stage:
         return self.sprite(fr, p, px, lvl, facing)
 
     def zero(self, fr, p, lvl=1.0, facing=1, t=0.0, nose=1.0):
-        """The ghost dog: a glowing orange-red nose in front, a little white sheet of a body trailing behind,
+        """Zero: a glowing orange-red nose in front, a little white sheet of a body trailing behind,
         its wispy tail wagging."""
         wag = 0.5 + 0.5 * np.sin(2 * np.pi * 3 * t)
         px = [(1, NOSE, 1.0 * nose), (0, BONE, 0.55), (-1, BONE, 0.7), (-2, BONE, 0.6), (-3, BONE, 0.45),
@@ -584,7 +584,7 @@ class Stage:
         return fr
 
     def oogie(self, fr, p, lvl=1.0, t=0.0, size=1.0):
-        """The boogeyman: a huge lumpy burlap sack glowing under blacklight, two dark eyes and a dark grin, its
+        """Oogie Boogie: a huge lumpy burlap sack glowing under blacklight, two dark eyes and a dark grin, its
         edges seething with green."""
         half = int(13 * size)
         px = [(o, None, 0) if o in (-3, 3) else (o, BURLAP, 0.85 * (0.8 + 0.2 * np.sin(1.7 * o + 2.0 * t)))
@@ -601,7 +601,7 @@ class Stage:
         return self.sprite(fr, p, px, lvl, facing)
 
     def trio(self, fr, p, lvl=1.0, facing=1, gap=5, t=0.0, bounce=0.0):
-        """The three troublemakers in a row, small masks: the devil (red), the witch (purple and green) and the
+        """Lock, Shock and Barrel in a row, small masks: the devil (red), the witch (purple and green) and the
         skeleton (white and green)."""
         masks = [[(1, RED, 1.0), (0, RED, 0.85), (-1, FLAME, 0.6)],
                  [(1, VIOLET, 1.0), (0, SLIME, 0.7), (-1, VIOLET, 0.6)],
@@ -619,7 +619,7 @@ class Stage:
         return self.sprite(fr, p, px, lvl, 1)
 
     def sleigh(self, fr, p, lvl=1.0, facing=1, t=0.0, nose=1.0, gap=4, driver=True):
-        """The coffin sleigh: the ghost dog's nose leading, four skeleton reindeer, the dark coffin sleigh, and the
+        """The coffin sleigh: Zero's nose leading, four skeleton reindeer, the dark coffin sleigh, and the
         Pumpkin King driving."""
         fr = self.zero(fr, p, lvl, facing, t, nose)
         x = p - facing * 9 * 4.5
@@ -691,7 +691,7 @@ class Stage:
         return fr
 
     def lair(self, t, lv=1.0):
-        """The boogeyman's lair under the town: blacklight violet, green glow pulsing."""
+        """Oogie Boogie's lair under the town: blacklight violet, green glow pulsing."""
         fr = light(UV, 0.5 * lv * np.ones(self.N))
         g = 0.5 + 0.5 * np.sin(2 * np.pi * (self.d / 300.0 - 0.4 * t))
         fr += light(SLIME, 0.35 * lv * g ** 3)

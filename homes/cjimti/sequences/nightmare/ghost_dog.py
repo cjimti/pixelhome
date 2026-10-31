@@ -1,4 +1,4 @@
-"""Ghost Dog: an all-night loop. Pale blue wisps drift both ways along the roof, and a little ghost dog
+"""Ghost Dog: an all-night loop. Pale blue wisps drift both ways along the roof, and Zero
 plays among them: a warm orange nose that wanders, darts, doubles back and sniffs about, trailing a
 faint white tail. The nose's path is a sum of sines that repeat a whole number of times per loop, so
 the loop has no seam."""
@@ -6,10 +6,10 @@ import numpy as np
 from pixelhome.fx import DT, hexc, perc, nframes, looped
 
 CODE = 'NM22'
-TITLE = 'Ghost Dog'
+TITLE = 'Zero'
 KIND = 'ambient'
-DESCRIPTION = ('Pale wisps drift along the roof while a little ghost dog plays among them: a glowing orange '
-               'nose that wanders, darts and doubles back, with a faint white tail behind it.')
+DESCRIPTION = ('Pale wisps drift along the roof while Zero plays among them: a glowing orange nose that wanders, darts '
+    'and doubles back, with a faint white tail behind it.')
 
 GHOST = hexc('#a8c4ff')
 TAIL = hexc('#eef2ff')
