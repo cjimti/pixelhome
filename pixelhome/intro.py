@@ -319,8 +319,51 @@ def _bed_gotterdammerung(n, rng, s0, s1):
     return [(low, -42.0, None), (norns, -35.0, pre), (hagen + 0.6 * timp, -33.0, post)]
 
 
+def _bed_nightmare(n, rng, s0, s1):
+    """E minor under the voice, from the playlist's own themes (pixelhome/nightmare.py): before the first word,
+    pizzicato strings pick out the start of the citizens' march over a low E; the choir holds Em, C and B7 while it
+    speaks; after the last word the music box answers with the opening of the king's lament, in E minor."""
+    import pedalboard as pb
+    from .audio import SR, Sampler, Synth, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def track(s, notes, release=0.3):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    beat = 0.42
+    march = [(0, 1, 'E4'), (1, .5, 'E4'), (1.5, .5, 'F#4'), (2, 1, 'G4'), (3, 1, 'B4')]
+    pizz = track(Sampler('Strings/Violin Section/Pizz/*.wav', rng, tune=-12),
+                 [(0.3 + b * beat, note(m), 92, d * beat) for b, d, m in march])
+    bass = track(Sampler('Strings/Solo Contrabass/Pizz/*.wav', rng, tune=-12),
+                 [(0.3 + b * beat, note('E2' if b % 2 == 0 else 'B1'), 96, 0.4) for b in range(4)])
+    chords = [(0.0, ['E3', 'G3', 'B3'])]
+    walk = [['E3', 'G3', 'C4'], ['D#3', 'F#3', 'B3'], ['E3', 'G3', 'B3']]
+    for i, c0 in enumerate(np.arange(s0, s1 - 2.0, 3.5)):
+        chords.append((float(c0), walk[i % len(walk)]))
+    chords.append((s1 + 0.4, ['E3', 'G3', 'B3']))
+    ends = [c[0] for c in chords[1:]] + [T]
+    choir = [(c0, note(m), 42, c1 - c0 + 0.15) for (c0, triad), c1 in zip(chords, ends) for m in triad]
+    voices = Synth('Pads/Ooh').render(choir, T + 2)[:, :n] * np.clip(t / 1.0, 0, 1)
+    lament = [(0, 1, 'E4'), (1, 1, 'G4'), (2, 1, 'B4'), (3, 2, 'C5'), (5, 1, 'B4')]
+    box = Synth('Plucks/Magic Music Box').render([(s1 + 0.5 + 0.4 * b, note(m), 58, 0.4 * d) for b, d, m in lament],
+                                                 T + 3)[:, :n]
+    box = pb.Pedalboard([pb.LowpassFilter(3500), pb.Reverb(room_size=0.6, damping=0.5, wet_level=0.35,
+                                                           dry_level=0.8)])(box.astype(np.float32), SR)
+    pre, post = slice(0, int(min(s0, 2.4) * SR)), slice(int((s1 + 0.5) * SR), int(min(T, s1 + 2.9) * SR))
+    return [(voices, -38.0, None), (pizz, -33.0, pre), (bass, -38.0, pre), (box, -34.0, post)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
-        'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung}
+        'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
+        'nightmare': _bed_nightmare}
 
 
 def _rms(x):

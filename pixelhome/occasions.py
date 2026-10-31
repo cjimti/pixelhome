@@ -29,8 +29,8 @@ OCCASIONS = [
 
 # Playlists besides each occasion's own, in the order they list under it.
 PLAYLISTS = [
-    dict(id='nightmare-before-christmas', occasion='halloween', label='The Nightmare Before Christmas',
-         accent='#7fd13b', prefix='NB'),
+    dict(id='nightmare', occasion='halloween', label='Nightmare',
+         accent='#7fd13b', prefix='NM'),
     dict(id='das-rheingold', occasion='ring-cycle', label='Das Rheingold', accent='#e8b923', prefix='RG'),
     dict(id='die-walkure', occasion='ring-cycle', label='Die Walküre', accent='#e2502c', prefix='WK'),
     dict(id='siegfried', occasion='ring-cycle', label='Siegfried', accent='#20e050', prefix='SF'),
