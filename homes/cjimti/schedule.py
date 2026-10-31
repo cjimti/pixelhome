@@ -16,6 +16,8 @@ TIMEZONE = 'America/Los_Angeles'
 DAY = ('07:00', '16:30')
 
 NIGHTS = [
+    # the night before Halloween: loops only (the schedule started partway through it)
+    dict(dates=('2026-10-30', '2026-10-30'), shows='18:00', day='daytime', late='halloween', program=[]),
     # Halloween night: the two Halloween sets take turns until midnight
     dict(dates=('2026-10-31', '2026-10-31'), shows='18:00', day='daytime', late='halloween',
          program=[dict(rotation=['halloween', 'nightmare'], until='24:00')]),
