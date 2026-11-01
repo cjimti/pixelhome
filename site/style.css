@@ -180,10 +180,6 @@ input[type="search"]::placeholder { color: var(--muted); }
 @media (min-width: 760px) and (max-width: 1100px) {
   :root { --side: 290px; }
   .hint { display: none; }
-  .transport { grid-template-columns: auto 1fr auto auto; gap: 8px 12px; }
-  .exposure { grid-column: 1 / 3; grid-row: 2; }
-  .exposure input { width: 100%; }
-  .dls { grid-column: 3 / 5; grid-row: 2; }
 }
 
 /* ---------- narrow: sticky player, list scrolls under it ---------- */
@@ -438,10 +434,25 @@ a.item { color: inherit; text-decoration: none; }
   .doc .stage { max-height: none; }
   .nav a { padding: 6px 8px; font-size: 13.5px; }
 }
-/* a page's player shares the row with its scene list: the transport takes two lines */
+/* two-line transport (a page's player, which shares its row with the scene list, and the library on mid-width
+   screens): play, position and time on top; the toggles, exposure in the middle, and the downloads below */
+@media (min-width: 760px) and (max-width: 1100px) {
+  .app .transport { grid-template-columns: auto auto minmax(0, 1fr) auto auto; gap: 8px 12px; }
+  .app .play { grid-column: 1; grid-row: 1; }
+  .app #scrub { grid-column: 2 / 5; grid-row: 1; }
+  .app .time { grid-column: 5; grid-row: 1; }
+  .app .toggles { grid-column: 1 / 3; grid-row: 2; }
+  .app .exposure { grid-column: 3; grid-row: 2; justify-self: center; width: min(100%, 360px); }
+  .app .exposure input { width: 100%; }
+  .app .dls { grid-column: 4 / 6; grid-row: 2; }
+}
 @media (min-width: 760px) {
-  .doc .transport { grid-template-columns: auto 1fr auto auto; gap: 8px 12px; }
-  .doc .exposure { grid-column: 1 / 3; grid-row: 2; }
+  .doc .transport { grid-template-columns: auto auto minmax(0, 1fr) auto auto; gap: 8px 12px; }
+  .doc .play { grid-column: 1; grid-row: 1; }
+  .doc #scrub { grid-column: 2 / 5; grid-row: 1; }
+  .doc .time { grid-column: 5; grid-row: 1; }
+  .doc .toggles { grid-column: 1 / 3; grid-row: 2; }
+  .doc .exposure { grid-column: 3; grid-row: 2; justify-self: center; width: min(100%, 360px); }
   .doc .exposure input { width: 100%; }
-  .doc .dls { grid-column: 3 / 5; grid-row: 2; }
+  .doc .dls { grid-column: 4 / 6; grid-row: 2; }
 }

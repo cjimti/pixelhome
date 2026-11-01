@@ -552,7 +552,14 @@
   const scrub = $('scrub');
   scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
   scrub.addEventListener('change', () => { scrubbing = false; });
-  exposure.addEventListener('input', () => { $('expOut').textContent = (+exposure.value).toFixed(1) + '×'; });
+  // Exposure -2..8: 1 shows the lights as they are; above 1 multiplies them (up to 8×), below 1 halves them per
+  // step (0 is 0.5×, -2 is 0.125×), for when a bright show glares on screen.
+  const gain = () => { const v = +exposure.value; return v >= 1 ? v : 2 ** (v - 1); };
+  exposure.addEventListener('input', () => {
+    const g = gain();
+    $('expOut').textContent = (g >= 1 ? g.toFixed(1) : g.toFixed(2)) + '×';
+    buildLUT();
+  });
 
   // downloads for FPP: the show's .fseq and .mp3, and its intro's
   const dlFile = (a) => a.getAttribute('download');
@@ -562,11 +569,11 @@
   $('introAudio').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'mp3' }));
 
   // ---------- frame loop ----------
-  const gammaLUT = new Float32Array(256 * 81);   // exposure 1.0..8.0 in 0.0875 steps x byte value
+  const gammaLUT = new Float32Array(256);    // byte value -> display level at the current exposure
   let brightness = 0.8;
   function buildLUT() {
-    for (let e = 0; e < 81; e++) for (let v = 0; v < 256; v++)
-      gammaLUT[e * 256 + v] = Math.min(1, (v / 255) * brightness * (1 + e * 0.0875)) ** (1 / 2.2);
+    const g = brightness * gain();
+    for (let v = 0; v < 256; v++) gammaLUT[v] = Math.min(1, (v / 255) * g) ** (1 / 2.2);
   }
 
   let lastTime = '';
@@ -575,9 +582,8 @@
     const { N, colors, runs, pixelGeo } = H;
     const f = Math.min(seq.frames - 1, Math.floor(t * seq.fps));
     const base = f * seq.channels;
-    const lut = Math.round((+exposure.value - 1) / 0.0875) * 256;
     const d = seq.data;
-    for (let i = 0; i < N * 3; i++) colors[i] = gammaLUT[lut + d[base + i]];
+    for (let i = 0; i < N * 3; i++) colors[i] = gammaLUT[d[base + i]];
     pixelGeo.attributes.color.needsUpdate = true;
     for (const r of runs) {
       let R = 0, G = 0, B = 0;
