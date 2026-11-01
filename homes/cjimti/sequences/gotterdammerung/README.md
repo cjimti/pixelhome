@@ -13,6 +13,24 @@ Big events on the beat (whole runs changing colour at once, sweeps end to end in
 chases), saturated colour against dark, contrast between characters you can read from the far kerb. A scene that
 holds still for more than a few seconds is a scene that has stopped.
 
+## About the work
+
+*Götterdämmerung* (Twilight of the Gods) is the last of the four music dramas of Richard Wagner's *Der Ring des
+Nibelungen*, told here in 30 scenes of about 80 seconds: the Prologue in six, then eight, seven and nine for the
+three acts.
+
+Wagner composed it between 1869 and 1874. It was first performed at the first Bayreuth Festival, in the
+Festspielhaus, on 17 August 1876, the last night of the first complete Ring.
+
+The Norns' rope of fate snaps. Siegfried leaves Brünnhilde the ring and travels down the Rhine to the hall of the
+Gibichungs, where Hagen, Alberich's son, gives him a potion that makes him forget her. Betrayed, Brünnhilde helps
+Hagen plot his death, and Hagen kills Siegfried on a hunt. Brünnhilde rides into his funeral pyre, the Rhine
+overflows and the Rhinemaidens take back the ring, and Valhalla burns with the gods inside.
+
+Each scene plays Wagner's own notes: an excerpt of the score from the Wagner Ring Dataset (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz and Müller; a piano reduction of the full score, CC BY 3.0), timed to the bar positions of a recorded performance, most often Georg Solti's with the Vienna Philharmonic, and played on sampled orchestral instruments. Nothing is sung: each character has a colour and an instrument, and the lights follow the notes, with the thunder, hoofbeats, clashes and fire a staged production would add. The scenes pick the most dramatic passages of each act; it is an entertaining staging, not a complete performance.
+
+In November 2026 the four operas play on the house on the Ring nights, one opera a night in turn, at an early and a late show; the times are on [Live](/live/).
+
 ## The stage
 
 From the street the porch is the back of the scene.

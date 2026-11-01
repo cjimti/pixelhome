@@ -3,7 +3,7 @@ import glob, hashlib, json, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, intro, schedule, share
+from . import catalog, fseq, intro, pages, schedule, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import OCCASIONS, KINDS, PLAYLIST, playlists
 
@@ -35,7 +35,7 @@ def _engine_hash():
     h = hashlib.sha256()
     pkg = os.path.join(catalog.ROOT, 'pixelhome')
     for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', 'intro.py', 'schedule.py', 'share.py', '__main__.py'):
+        if os.path.basename(p) not in ('audio.py', 'intro.py', 'pages.py', 'schedule.py', 'share.py', '__main__.py'):
             h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
     return h.hexdigest()
 
@@ -107,12 +107,14 @@ def _build_one(args):
 
 
 def _stamp(out):
-    """Point each page at its own scripts and styles with ?v=<content hash>, so a browser never runs an old copy."""
+    """Point each page at its own scripts and styles with ?v=<content hash>, so a browser never runs an old copy.
+    Paths are relative to the page's folder, or to the site's root when they start with /."""
     for page in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
         base = os.path.dirname(page)
 
         def tag(m):
-            f = os.path.join(base, m.group(2))
+            p = m.group(2)
+            f = os.path.join(out, p.lstrip('/')) if p.startswith('/') else os.path.join(base, p)
             if not os.path.isfile(f):
                 return m.group(0)
             return f'{m.group(1)}="{m.group(2)}?v={hashlib.sha256(open(f, "rb").read()).hexdigest()[:10]}"'
@@ -163,9 +165,7 @@ def build(out, want):
     if os.path.exists(out):
         shutil.rmtree(out)
     shutil.copytree(site, out)
-    _stamp(out)
     ver, ver_link = version()
-    _stamp_version(out, ver, ver_link)
     homes, jobs, quiet = [], [], 0
     engine = _engine_hash()
     for h in catalog.homes():
@@ -220,8 +220,11 @@ def build(out, want):
         if nights:
             with open(os.path.join(out, 'data', h['id'], 'schedule.json'), 'w') as f:
                 json.dump(nights, f, separators=(',', ':'))
-    share.write(out, homes)
-    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
+    n = pages.write(out, cat)
+    share.write(out, homes)       # after the pages: its sitemap lists them
+    _stamp(out)
+    _stamp_version(out, ver, ver_link)
+    print(f'{out}: {n} pages, {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
           f'{quiet} left out until they have music')
 
 

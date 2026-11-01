@@ -6,6 +6,24 @@ Wagner's opera in 30 shows of 80 seconds, `WK01`..`WK30`, ten to an act, played 
 their notes. The Commons examples for Hunding and the Death/Fate motif are empty, so Hunding's motif is
 composed (a low, heavy, rhythmic tuba figure), and the Annunciation uses `fate` (Donington 84, the power of fate).
 
+## About the work
+
+*Die Walküre* (The Valkyrie) is the second of the four music dramas of Richard Wagner's *Der Ring des
+Nibelungen*, told here in 30 scenes of about 80 seconds, ten to an act.
+
+Wagner composed it between 1854 and 1856. It was first performed in Munich on 26 June 1870, at the Königliches Hof-
+und Nationaltheater, and with the whole cycle at the first Bayreuth Festival in August 1876.
+
+The twins Siegmund and Sieglinde, children of Wotan, find each other in Hunding's hut, and Siegmund draws the sword
+Nothung from the ash tree. Wotan's wife Fricka demands that Siegmund die, and Wotan orders his daughter, the
+Valkyrie Brünnhilde, to let him fall. She disobeys, and Wotan's punishment is to put her to sleep on a rock
+surrounded by magic fire, to be woken only by a hero who does not know fear. The third act opens with the Ride of
+the Valkyries.
+
+Each scene plays Wagner's own notes: an excerpt of the score from the Wagner Ring Dataset (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz and Müller; a piano reduction of the full score, CC BY 3.0), timed to the bar positions of a recorded performance, most often Georg Solti's with the Vienna Philharmonic, and played on sampled orchestral instruments. Nothing is sung: each character has a colour and an instrument, and the lights follow the notes, with the thunder, hoofbeats, clashes and fire a staged production would add. The scenes pick the most dramatic passages of each act; it is an entertaining staging, not a complete performance.
+
+In November 2026 the four operas play on the house on the Ring nights, one opera a night in turn, at an early and a late show; the times are on [Live](/live/).
+
 ## The stage
 
 From the street the porch is the back of the scene.

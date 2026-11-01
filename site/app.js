@@ -5,10 +5,15 @@
   const CACHE_SIZE = 4;           // decoded sequences kept in memory (night loops are ~9 MB each)
   // Google Analytics events; a blocked or missing gtag never breaks the page
   const track = (name, params = {}) => { try { if (window.gtag) gtag('event', name, params); } catch (e) { /* analytics blocked */ } };
+  // Every page is static HTML from the build. The library page (#groups) lists every sequence here, with filters;
+  // a set, occasion or sequence page has its rows in the HTML (.list .item[data-id]) and the player plays them.
+  const R = (p) => '/' + p;      // catalog paths are relative to the site's root; pages sit at any depth
+  const page = document.querySelector('[data-home]');
+  const isLibrary = !!$('groups');
 
   let CAT;
   try {
-    CAT = await (await fetch('data/catalog.json')).json();
+    CAT = await (await fetch(R('data/catalog.json'))).json();
   } catch (e) {
     status.textContent = 'Could not load the sequence catalog. Reload the page to try again.';
     return;
@@ -24,7 +29,6 @@
     const key = (o) => !o.date ? '2' : (o.date >= today ? '0' : '1') + o.date;
     CAT.occasions.sort((a, b) => key(a).localeCompare(key(b)));
   }
-  $('built').textContent = 'Built ' + new Date(CAT.built).toLocaleDateString(undefined, { dateStyle: 'medium' });
 
   // ---------- scene ----------
   const canvas = $('view');
@@ -168,6 +172,7 @@
   stage.addEventListener('pointerup', release);
   stage.addEventListener('pointercancel', release);
   stage.addEventListener('wheel', (e) => {
+    if (!isLibrary && !e.ctrlKey && !e.metaKey) return;     // on a page that scrolls, the wheel scrolls; pinch still zooms
     e.preventDefault();
     goal = null;
     cam.dist = Math.min(3.7, Math.max(0.4, cam.dist * Math.exp(e.deltaY * 0.0012)));
@@ -210,7 +215,7 @@
   async function cached(url) {
     let data = cache.get(url);
     if (data) cache.delete(url);
-    else data = await loadPng(url);
+    else data = await loadPng(R(url));
     cache.set(url, data);
     while (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value);
     return data;
@@ -299,6 +304,7 @@
   }
 
   function applyFilters() {
+    if (!isLibrary) return;
     const q = filters.q.trim().toLowerCase();
     let shown = 0;
     $('occasions').value = filters.occasion;
@@ -331,13 +337,13 @@
     applyFilters();
     track('filter', { filter_type: 'kind', filter_value: b.dataset.kind || 'all' });
   }));
-  $('occasions').addEventListener('change', (e) => {
+  if (isLibrary) $('occasions').addEventListener('change', (e) => {
     filters.occasion = e.target.value;
     applyFilters();
     track('filter', { filter_type: 'occasion', filter_value: e.target.value || 'all' });
   });
   let searchTimer;
-  $('search').addEventListener('input', (e) => {
+  if (isLibrary) $('search').addEventListener('input', (e) => {
     filters.q = e.target.value;
     applyFilters();
     clearTimeout(searchTimer);
@@ -364,33 +370,41 @@
     $('nowName').textContent = meta.title;
     $('nowDesc').textContent = meta.description || '';
     const row = cards.get(meta.id);
-    if (row && wide.matches) row.scrollIntoView({ block: 'nearest' });
+    if (row && isLibrary && wide.matches) row.scrollIntoView({ block: 'nearest' });
+    else if (row && row.parentElement.scrollHeight > row.parentElement.clientHeight) {      // a page's scene list scrolls on its own
+      const l = row.parentElement;
+      l.scrollTop = Math.max(0, Math.min(l.scrollTop, row.offsetTop), row.offsetTop + row.offsetHeight - l.clientHeight);     // .list is the rows' offsetParent
+    }
+    const link = $('nowLink');
+    if (link) {
+      link.href = `/${meta.id}/`;
+      link.hidden = location.pathname === link.getAttribute('href');
+    }
     const dl = $('download');
     dl.hidden = !meta.fseq;
     if (meta.fseq) {
-      dl.href = meta.fseq;
+      dl.href = R(meta.fseq);
       dl.download = meta.fseqName;
       dl.innerHTML = `<span class="dlword">Download </span>.fseq · ${(meta.fseqBytes / 1e6).toFixed(1)} MB`;
     }
     const da = $('downloadAudio');
     da.hidden = !meta.audio;
-    if (meta.audio) { da.href = meta.audio; da.download = meta.audioName; }
+    if (meta.audio) { da.href = R(meta.audio); da.download = meta.audioName; }
     $('sound').hidden = !meta.audio;
     $('intro').hidden = !meta.intro;
     $('intros').hidden = !H.home.sequences.some((x) => x.introData);
     if (meta.intro) {
-      Object.assign($('introFseq'), { href: meta.intro, download: `${meta.introName}.fseq` });
-      Object.assign($('introAudio'), { href: meta.introAudio, download: `${meta.introName}.mp3` });
+      Object.assign($('introFseq'), { href: R(meta.intro), download: `${meta.introName}.fseq` });
+      Object.assign($('introAudio'), { href: R(meta.introAudio), download: `${meta.introName}.mp3` });
     }
     setAccent(meta);
-    document.title = `${meta.title} · Pixelhome`;
+    if (isLibrary) document.title = `${meta.title} · Pixelhome`;
   }
 
   let loadToken = 0;
   // the spoken intro plays as a short sequence of its own, then hands over to the show
   async function playIntro(meta) {
     mark(meta);
-    history.replaceState(null, '', `#${H.home.id}/${meta.id}`);
     const token = ++loadToken;
     status.hidden = false;
     status.textContent = 'Loading intro…';
@@ -404,7 +418,7 @@
       exposure.dispatchEvent(new Event('input'));
       t = 0;
       music.pause();
-      music.src = meta.introAudio;
+      music.src = R(meta.introAudio);
       status.hidden = true;
       setPlaying(true);
       trackSeq('intro_played', meta);
@@ -416,7 +430,6 @@
   async function choose(meta, startAt = 0, autoplay = true, intro = true) {
     if (intro && introsOn && meta.introData && startAt === 0 && autoplay && !reduceMotion) return playIntro(meta);
     mark(meta);
-    history.replaceState(null, '', `#${H.home.id}/${meta.id}`);
     const token = ++loadToken;
     status.hidden = false;
     status.textContent = 'Loading sequence…';
@@ -428,7 +441,7 @@
       exposure.dispatchEvent(new Event('input'));
       t = startAt;
       if (meta.audio) {
-        if (music.getAttribute('src') !== meta.audio) music.src = meta.audio;
+        if (music.getAttribute('src') !== R(meta.audio)) music.src = R(meta.audio);
       } else {
         music.pause();
         music.removeAttribute('src');
@@ -505,7 +518,7 @@
   });
   showIntros();
   document.addEventListener('keydown', (e) => {
-    if (e.target.closest('input, select, a') || (e.target.closest('button') && !e.target.closest('.item'))) return;
+    if (e.target.closest('input, select, a:not(.item)') || (e.target.closest('button') && !e.target.closest('.item'))) return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     if (e.code === 'KeyM' && seq && seq.meta.audio) $('sound').click();
     if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
@@ -520,7 +533,7 @@
 
   // the sequence above or below the current one in the list as filtered, wrapping round
   function step(dir, source) {
-    const rows = [...cards.values()].filter((c) => !c.hidden && !c.closest('.group').hidden);
+    const rows = [...cards.values()].filter((c) => !c.hidden && !(c.closest('.group') || {}).hidden);
     if (!rows.length) return false;
     const i = rows.findIndex((c) => seq && c._seq.id === seq.meta.id);
     const next = rows[i < 0 ? 0 : (i + dir + rows.length) % rows.length]._seq;
@@ -607,7 +620,7 @@
     status.textContent = 'Loading the house…';
     let layout;
     try {
-      layout = await (await fetch(home.layout)).json();
+      layout = await (await fetch(R(home.layout))).json();
     } catch (e) {
       status.textContent = 'Could not load this home. Reload the page to try again.';
       return;
@@ -619,37 +632,49 @@
     const c = home.controller;
     $('homeSpec').textContent = `${home.name} · ${home.pixels} pixels · ${home.segments} runs` +
       (c ? ` · ${c.hardware || 'controller'} at ${Math.round(brightness * 100)}%` : '');
-    if (c) $('ctrlNote').textContent = `${Math.round(brightness * 100)}% brightness and gamma ${c.gamma ?? 1}`;
-    $('homeSelect').value = home.id;
-    renderLibrary();
-    const list = home.sequences;
+    if (c && $('ctrlNote')) $('ctrlNote').textContent = `${Math.round(brightness * 100)}% brightness and gamma ${c.gamma ?? 1}`;
+    if (isLibrary) {
+      $('homeSelect').value = home.id;
+      renderLibrary();
+    } else {
+      pageRows(home);
+    }
+    const list = isLibrary ? home.sequences : [...cards.values()].map((c) => c._seq);
     if (!list.length) { status.textContent = 'This home has no sequences yet.'; return; }
     const pick = list.find((s) => s.id === seqId);
-    if (pick) { choose(pick); trackSeq('select_sequence', pick, { source: 'deep_link' }); }
+    if (pick) choose(pick);
     else {
       const first = CAT.occasions.map((o) => list.find((s) => s.occasion === o.id)).find(Boolean) || list[0];
       choose(first, first.seconds * 0.3);
     }
   }
 
-  const sel = $('homeSelect');
-  CAT.homes.forEach((h) => sel.append(new Option(h.name, h.id)));
-  sel.hidden = CAT.homes.length < 2;
-  sel.addEventListener('change', () => { openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
-
-  function fromHash() {
-    const [hid, ...rest] = decodeURIComponent(location.hash.slice(1)).split('/');   // #home/playlist/name
-    return { home: CAT.homes.find((h) => h.id === hid), seqId: rest.join('/') };
+  // a page's rows are links to each sequence's page; a plain click plays it here instead
+  function pageRows(home) {
+    cards.clear();
+    document.querySelectorAll('.list .item[data-id]').forEach((a) => {
+      const s = home.sequences.find((x) => x.id === a.dataset.id);
+      if (!s) return;
+      a._seq = s;
+      cards.set(s.id, a);
+      a.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+        e.preventDefault();
+        choose(s);
+        trackSeq('select_sequence', s, { source: 'card' });
+      });
+    });
   }
-  window.addEventListener('hashchange', () => {
-    const { home, seqId } = fromHash();
-    if (!home) return;
-    if (!H || home.id !== H.home.id) openHome(home, seqId);
-    else { const s = home.sequences.find((x) => x.id === seqId); if (s && (!seq || seq.meta.id !== s.id)) { choose(s); trackSeq('select_sequence', s, { source: 'deep_link' }); } }
-  });
+
+  const sel = $('homeSelect');
+  if (sel) {
+    CAT.homes.forEach((h) => sel.append(new Option(h.name, h.id)));
+    sel.hidden = CAT.homes.length < 2;
+    sel.addEventListener('change', () => { openHome(CAT.homes.find((h) => h.id === sel.value)); track('select_home', { home: sel.value }); });
+  }
 
   if (!CAT.homes.length) { status.textContent = 'No homes yet.'; return; }
-  const initial = fromHash();
-  await openHome(initial.home || CAT.homes[0], initial.seqId);
+  const home = CAT.homes.find((h) => page && h.id === page.dataset.home) || CAT.homes[0];
+  await openHome(home, page && page.dataset.seq);
   requestAnimationFrame(tick);
 })();

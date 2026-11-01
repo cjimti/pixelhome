@@ -6,6 +6,29 @@ a number, and stages them the way the Ring scenes do: every character has a colo
 lights follow the notes. It is its own occasion (`elijah` in `pixelhome/occasions.py`) and is meant to run on the
 Ring nights, between Wagner's operas.
 
+## About the work
+
+*Elijah* (Op. 70) is Felix Mendelssohn's oratorio on the prophet Elijah, staged on the house scene by scene.
+
+Mendelssohn wrote it for the Birmingham Festival, where he conducted its first performance, in English, at
+Birmingham Town Hall on 26 August 1846; he revised it for London the next year. The text, by Julius Schubring in
+German and translated into English by William Bartholomew, follows the books of Kings.
+
+Elijah foretells a drought on Israel. He raises a widow's son, then challenges the priests of Baal on Mount Carmel:
+their god does not answer, and fire falls from heaven on Elijah's altar. The rain returns. Hunted by Queen Jezebel,
+Elijah flees into the wilderness, where an angel feeds him, and on Mount Horeb God passes by, not in the wind, the
+earthquake or the fire, but in a still, small voice. At the end he is carried up to heaven in a chariot of fire.
+
+Each scene plays Mendelssohn's own notes, transcribed by hand from a public-domain vocal score (Novello, Ewer and
+Co., London, 1881) and timed by its tempo markings. There is no choir in the sample library, so the sung lines are
+played on orchestral instruments; every character has a colour and an instrument, and the lights follow the notes.
+God never appears as a figure, only in what light does: fire that falls, rain that comes, a single faint point at
+Horeb.
+
+So far one scene is built: No. 13, the priests of Baal calling on their god (*Baal, hear and answer*), the whole
+chorus, with Mendelssohn's silences frozen on the house. It is the start of an oratorio season on the house, with
+Handel's *Judas Maccabaeus* and *Messiah* to follow.
+
 ## Where the music comes from
 
 There is no dataset like the Ring's for *Elijah*, so each number is transcribed by hand from a public-domain score,

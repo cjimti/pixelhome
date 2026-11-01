@@ -364,3 +364,84 @@ body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px,
 .oss li a { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent); text-underline-offset: 3px; }
 .oss li a:hover { color: var(--accent); }
 .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- generated pages: sets, occasions, sequences ---------- */
+.top { flex-wrap: wrap; }
+.app .top .nav { flex-wrap: wrap; margin-left: -10px; }
+.nav { flex-wrap: wrap; }
+.doc.wide { max-width: 1240px; gap: 32px; }
+.doc > section { min-width: 0; }
+.doc .intro { padding-top: 4px; }
+.doc .intro .lede { margin-bottom: 8px; }
+.kicker a { color: inherit; }
+.crumbs { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: -16px; }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }
+.crumbs [aria-current] { color: var(--ink); }
+.watch { display: grid; gap: 16px; align-items: start; }
+.watchplayer { display: grid; gap: 12px; min-width: 0; }
+.watchplayer .about { margin: 0; }
+.watchlist { min-width: 0; }
+.watchlist h2 { font-size: 20px; margin-bottom: 8px; }
+.watchlist h2 a { color: inherit; text-decoration: none; }
+.watchlist .list { max-height: min(70vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; position: relative; }
+a.item { color: inherit; text-decoration: none; }
+.nowlink { white-space: nowrap; }
+.about .nowlink::after { content: " →"; }
+@media (min-width: 960px) {
+  .watch { grid-template-columns: minmax(0, 1fr) 360px; }
+  .watchlist .list { max-height: calc(min(100dvh - 120px, (1240px - 360px - 48px) * 9 / 16) + 60px); }
+}
+.prose { max-width: 80ch; }
+.prose h2 { margin-bottom: 12px; }
+.prose h3 { font-size: 18px; margin: 20px 0 8px; }
+.prose p, .prose ul, .prose ol { margin: 0 0 12px; }
+.prose ul, .prose ol { padding-left: 20px; display: grid; gap: 6px; }
+.prose pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.prose code { font-family: var(--mono); font-size: 0.86em; color: var(--accent); }
+.prose pre code { color: var(--ink); }
+.tablewrap { overflow-x: auto; margin: 0 0 12px; }
+.prose table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+.prose th, .prose td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.prose th { font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.prose code.hex { color: var(--muted); white-space: nowrap; }
+.prose code.hex i { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 50%; margin-right: 4px; vertical-align: -0.1em; box-shadow: 0 0 6px currentColor; }
+.setcards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.setcard {
+  display: grid; gap: 4px; align-content: start; color: var(--ink); text-decoration: none; padding: 14px 16px;
+  background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 10px;
+}
+.setcard:hover { border-color: var(--c); }
+.setcard .sk { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c); }
+.setcard b { font-family: var(--display); font-weight: 700; font-size: 24px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; }
+.setcard span { font-size: 14px; color: var(--muted); }
+.setcard .rt { font-family: var(--mono); font-size: 11.5px; margin-top: 4px; }
+.occlist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.occlist li { display: grid; grid-template-columns: minmax(0, 12em) 1fr auto; gap: 4px 16px; align-items: baseline; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+.occlist a { font-weight: 600; color: var(--ink); text-decoration: none; }
+.occlist a::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); margin-right: 10px; vertical-align: 1px; }
+.occlist a:hover { color: var(--accent); }
+.occlist span { font-size: 14px; color: var(--muted); }
+.occlist .n { font-family: var(--mono); font-size: 12px; }
+@media (max-width: 640px) { .occlist li { grid-template-columns: 1fr auto; } .occlist li span:not(.n) { grid-column: 1 / -1; grid-row: 2; } }
+.files p { max-width: 75ch; margin: 0 0 12px; color: var(--muted); }
+.files .dls { justify-content: flex-start; }
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pager a { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); text-decoration: none; font-weight: 600; }
+.pager a:hover { border-color: var(--accent); }
+.pager a span { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.pager .next { grid-column: 2; text-align: right; }
+.browse a { color: var(--muted); }
+.browse a:hover { color: var(--accent); }
+@media (max-width: 759.98px) {
+  .doc .player { position: static; padding: 0; background: none; box-shadow: none; border: 0; order: 0; }
+  .doc .stage { max-height: none; }
+  .nav a { padding: 6px 8px; font-size: 13.5px; }
+}
+/* a page's player shares the row with its scene list: the transport takes two lines */
+@media (min-width: 760px) {
+  .doc .transport { grid-template-columns: auto 1fr auto auto; gap: 8px 12px; }
+  .doc .exposure { grid-column: 1 / 3; grid-row: 2; }
+  .doc .exposure input { width: 100%; }
+  .doc .dls { grid-column: 3 / 5; grid-row: 2; }
+}

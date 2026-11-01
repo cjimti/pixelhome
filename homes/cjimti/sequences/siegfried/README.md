@@ -11,6 +11,22 @@ instruments and the lights follow their notes. The Commons examples for Siegfrie
 moves (whole-run colour changes, fast sweeps end to end, hard hits on the beat, sparks and bursts), saturated
 colour on dark, and one clear subject at a time. Nothing that only reads up close.
 
+## About the work
+
+*Siegfried* is the third of the four music dramas of Richard Wagner's *Der Ring des Nibelungen*, told here in
+30 scenes of about 80 seconds, ten to an act.
+
+Wagner composed it in two stretches, 1856 to 1857 and 1869 to 1871, setting the cycle aside in between. It was first
+performed at the first Bayreuth Festival, in the Festspielhaus, on 16 August 1876.
+
+Siegfried, son of Siegmund and Sieglinde, is raised in the forest by the dwarf Mime. He forges the broken sword
+Nothung anew, kills the giant Fafner, who guards the gold in the shape of a dragon, and takes the ring. A woodbird
+leads him to the rock where Brünnhilde sleeps; he breaks the Wanderer's spear, walks through the fire and wakes her.
+
+Each scene plays Wagner's own notes: an excerpt of the score from the Wagner Ring Dataset (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz and Müller; a piano reduction of the full score, CC BY 3.0), timed to the bar positions of a recorded performance, most often Georg Solti's with the Vienna Philharmonic, and played on sampled orchestral instruments. Nothing is sung: each character has a colour and an instrument, and the lights follow the notes, with the thunder, hoofbeats, clashes and fire a staged production would add. The scenes pick the most dramatic passages of each act; it is an entertaining staging, not a complete performance.
+
+In November 2026 the four operas play on the house on the Ring nights, one opera a night in turn, at an early and a late show; the times are on [Live](/live/).
+
 ## The stage
 
 From the street the porch is the back of the scene.

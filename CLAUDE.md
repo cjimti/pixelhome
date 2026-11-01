@@ -95,6 +95,15 @@ out-from-centre waveform FSEQ on Left, Porch Front and Right. Takes are cached b
 only changes when its line does; `VOICEOVER_TAKE = n` asks for a different reading of the same line.
 (`INTRO` is taken: Is Anyone There?'s score uses it for a tune.)
 
+## Site pages
+
+`pixelhome/pages.py` writes every page as static HTML at build time: `/` and `/library/` (the library, until the
+schedule takes `/`), `/sets/`, `/<playlist>/` for each set and occasion, `/<playlist>/<name>/` for each sequence,
+and `404.html`. Paths in pages are root-absolute (`/style.css`, `/data/...`). `site/app.js` is the player on top:
+it plays a page's `.list .item[data-id]` rows, and on the library builds the list and filters itself. A set page's
+text is its README's `## About the work`, `## The stage` and `## Who is who` sections (`README_SECTIONS`), written
+for visitors; the rest of a README is for the repo. `SETS` in `occasions.py` lists the sets featured on `/sets/`.
+
 ## Live mode
 
 `live/` is the Cloudflare Worker and Pi service behind the site's Live button (see `live/README.md`). It must
