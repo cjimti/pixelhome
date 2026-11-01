@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v1.4.0 on main to publish a GitHub release whose notes list the PRs merged since the last tag.
-# The Pages workflow builds and deploys the same tag, so the site's footer shows that version.
+# The Pages workflow builds and deploys the same tag: tags are the only thing that goes live.
 
 on:
   push:
