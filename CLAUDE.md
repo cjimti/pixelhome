@@ -102,12 +102,13 @@ stay within the Workers Free plan: no paid-only features, nothing that sends vie
 
 ## Branches, PRs and releases
 
-Work goes on a branch and lands on `main` through a PR; CI (`.github/workflows/pages.yml`) builds every PR, and
-merging deploys. A release is a tag on `main`, `vMAJOR.MINOR.PATCH` (a new set or occasion is a minor, fixes are a
-patch): `git tag v1.2.0 && git push origin v1.2.0`. `release.yml` publishes a GitHub release with notes generated
-from the PRs merged since the last tag (sections in `.github/release.yml`, by label), and Pages redeploys the tag.
-The site's footers show the version the build came from (`version()` in `pixelhome/build.py`, from `git describe`):
-the tag itself, or `v1.2.0-3-gabc1234` for commits after it.
+Work goes on a branch and lands on `main` through a PR; CI (`.github/workflows/pages.yml`) builds every PR and every
+push to `main`, but only a tag deploys: merged work goes live when it is released. A release is a tag on `main`,
+`vMAJOR.MINOR.PATCH` (a new set or occasion is a minor, fixes are a patch): `git tag v1.2.0 origin/main && git push
+origin v1.2.0`. `release.yml` publishes a GitHub release with notes generated from the PRs merged since the last
+tag (sections in `.github/release.yml`, by label), and Pages deploys the tag. Tag a commit that hasn't been
+released before: Pages ignores a second deploy of the same commit. The site's footers show the version the build
+came from (`version()` in `pixelhome/build.py`, from `git describe`).
 
 ## Checking work
 
