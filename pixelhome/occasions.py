@@ -30,6 +30,8 @@ OCCASIONS = [
          desc='Fireworks, bells and Old Glory for the Fourth.'),
     dict(id='ring-cycle', date='08-13', label='Ring Cycle', accent='#e8b923',
          desc="Wagner's Ring told across the roofline, opera by opera."),   # Bayreuth, 13 August 1876
+    dict(id='elijah', date='08-26', label='Elijah', accent='#ffb040', prefix='EL',
+         desc="Mendelssohn's Elijah: the contest on Mount Carmel, fire, rain and the still small voice."),  # Birmingham, 26 August 1846
     dict(id='labor-day', date='09-07', label='Labor Day', accent='#f59e3b', prefix='LB',
          desc='Mills, freight trains and the people who build things.'),
     dict(id='halloween', date='10-31', label='Halloween', accent='#ff6a1f', prefix='HW',

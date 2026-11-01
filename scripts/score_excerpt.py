@@ -7,7 +7,9 @@ Messiah). The notes come from a MusicXML transcription of a public-domain score;
                 12.5 for a beat inside bar 12 are fine, and the row after the excerpt's last bar is needed), the same
                 kind of data as the Ring dataset's performance annotations. Name the recording with --perf.
   --tempo       or the score's own tempo markings (<sound tempo>, <metronome>), with a fermata holding its note or
-                rest --fermata times as long (default 2) and --hold M=SECONDS adding time at measure position M.
+                rest --fermata times as long (default 2) and --hold M=SECONDS adding a pause at measure position M (put it
+                where nothing starts, such as the start of a silent bar: a note starting exactly at M would start
+                before the pause).
 
 Written silences (rests, fermata rests, general pauses) are kept as time with no notes in it, so they come out as real
 gaps in the JSON.
@@ -219,14 +221,17 @@ def tempo_timing(score, fermata=2.0, holds=(), bpm=None, scale=1.0):
         cuts = sorted(set(cuts) | {q})
         hold[q] = hold.get(q, 0.0) + extra
     for a, b in zip(cuts[:-1], cuts[1:]):
-        s += hold.get(a, 0.0)
         pos.append(position(score, a))
         sec.append(s)
+        if hold.get(a):                     # a pause at a: whatever ends there ends before it, what follows waits
+            s += hold[a]
+            pos.append(position(score, a) + 1e-6)
+            sec.append(s)
         t = [x for x in tempos if x[0] <= a + 1e-9][-1][1] * scale
         stretch = fermata if any(f0 <= a + 1e-9 and b <= f1 + 1e-9 for f0, f1 in score['fermatas']) else 1.0
         s += (b - a) * 60.0 / t * stretch
     pos.append(score['numbers'][-1] + 1.0)
-    sec.append(s + hold.get(cuts[-1], 0.0))
+    sec.append(s)
     return np.array(pos), np.array(sec)
 
 
