@@ -100,6 +100,15 @@ only changes when its line does; `VOICEOVER_TAKE = n` asks for a different readi
 `live/` is the Cloudflare Worker and Pi service behind the site's Live button (see `live/README.md`). It must
 stay within the Workers Free plan: no paid-only features, nothing that sends viewers' messages inbound.
 
+## Branches, PRs and releases
+
+Work goes on a branch and lands on `main` through a PR; CI (`.github/workflows/pages.yml`) builds every PR, and
+merging deploys. A release is a tag on `main`, `vMAJOR.MINOR.PATCH` (a new set or occasion is a minor, fixes are a
+patch): `git tag v1.2.0 && git push origin v1.2.0`. `release.yml` publishes a GitHub release with notes generated
+from the PRs merged since the last tag (sections in `.github/release.yml`, by label), and Pages redeploys the tag.
+The site's footers show the version the build came from (`version()` in `pixelhome/build.py`, from `git describe`):
+the tag itself, or `v1.2.0-3-gabc1234` for commits after it.
+
 ## Checking work
 
 ```sh
