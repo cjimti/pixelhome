@@ -236,7 +236,8 @@ PLAYER = """<div class="player">
         </button>
         <input type="range" id="scrub" min="0" max="1" step="0.0001" value="0" aria-label="Position in sequence">
         <div class="time" id="time"><b>0:00.0</b> / 0:00</div>
-        <label class="exposure" for="exposure">Exposure <input type="range" id="exposure" min="-2" max="8" step="0.1" value="1"><output id="expOut">1.0×</output></label>
+        <span class="levels"><label class="exposure" for="exposure"><span>Exposure</span> <input type="range" id="exposure" min="-2" max="8" step="0.1" value="1"><output id="expOut">1.0×</output></label>
+          <label class="exposure" for="houseLight"><span>House</span> <input type="range" id="houseLight" min="0" max="4" step="0.05" value="1"><output id="houseOut">1.0×</output></label></span>
         <span class="toggles"><button class="sound" id="sound" aria-pressed="false" hidden>Sound off</button><button id="intros" aria-pressed="false" hidden>Intros off</button></span>
         <span class="dls"><a class="dl" id="download" href="#" download hidden>Download .fseq</a><a class="dl" id="downloadAudio" href="#" download hidden>.mp3</a></span>
       </div>

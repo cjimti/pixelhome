@@ -37,7 +37,8 @@
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x060504);
   const camera = new THREE.PerspectiveCamera(38, 16 / 9, 10, 40000);
-  scene.add(new THREE.AmbientLight(0x2c3038, 0.55));
+  const ambient = new THREE.AmbientLight(0x2c3038, 0.55);
+  scene.add(ambient);
   const moon = new THREE.DirectionalLight(0x7f90b8, 0.32);
   moon.position.set(-0.6, 1.4, 0.8);
   scene.add(moon);
@@ -569,6 +570,23 @@
   $('introAudio').addEventListener('click', () => trackSeq('download_intro', seq && seq.meta, { format: 'mp3' }));
 
   // ---------- frame loop ----------
+  // House brightness 0..4: the moonlight on the house and the ground, not the pixels (0 is a black house). Kept
+  // for the next visit.
+  const houseLight = $('houseLight');
+  function setHouse() {
+    const v = +houseLight.value;
+    ambient.intensity = 0.55 * v;
+    moon.intensity = 0.32 * v;
+    $('houseOut').textContent = v.toFixed(1) + '×';
+  }
+  try { const v = localStorage.getItem('pixelhome.house'); if (v !== null) houseLight.value = v; } catch (e) { /* storage blocked */ }
+  houseLight.addEventListener('input', () => {
+    setHouse();
+    try { localStorage.setItem('pixelhome.house', houseLight.value); } catch (e) { /* storage blocked */ }
+  });
+  houseLight.addEventListener('change', () => track('house_light', { value: +houseLight.value }));
+  setHouse();
+
   const gammaLUT = new Float32Array(256);    // byte value -> display level at the current exposure
   let brightness = 0.8;
   function buildLUT() {
