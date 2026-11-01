@@ -21,7 +21,9 @@ CREDIT = 'Wagner Ring Dataset (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Klei
 
 def excerpt(module_file):
     """The excerpt beside a sequence module: dict(seconds, bars=[[measure, t]], singing=[[t0, t1, who, text]],
-    notes=[[t, seconds, midi, velocity, hand]]) with hand 0 the right hand (upper staff) and 1 the left."""
+    notes=[[t, seconds, midi, velocity, hand]]) with hand 0 the right hand (upper staff) and 1 the left. Excerpts
+    cut from MusicXML by scripts/score_excerpt.py add a sixth field to each note, its part (S, A, T, B, a soloist,
+    an orchestral line)."""
     path = os.path.splitext(module_file)[0] + '.score.json'
     with open(path, encoding='utf-8') as f:
         return json.load(f)
@@ -30,41 +32,44 @@ def excerpt(module_file):
 def tidy(notes, run=0.035, gap=0.2, least=3):
     """The piano reduction made playable: a cluster of grace notes written at one instant becomes a quick run, lowest
     first (run seconds apart), and least or more short notes repeated on one pitch in one hand (a tremolo, gap seconds
-    or less apart) merge into one held note. Returns [t, d, midi, vel, hand, trem] with trem True for a tremolo."""
-    raw = sorted({(n[0], n[2], n[4]): list(n[:5]) for n in notes}.values())     # duplicates written twice go
+    or less apart) merge into one held note. Returns [t, d, midi, vel, hand, trem] with trem True for a tremolo; notes
+    that carry a part (a sixth field) keep it after trem, and each part is tidied on its own."""
+    lab = lambda n: n[5] if len(n) > 5 else None
+    raw = sorted({(n[0], n[2], n[4], lab(n)): list(n[:5]) + [lab(n)] for n in notes}.values(),
+                 key=lambda n: (n[:5], str(n[5])))       # duplicates written twice go
     out, i = [], 0
     while i < len(raw):
         j = i
-        while j < len(raw) and raw[j][0] == raw[i][0] and raw[j][1] <= 0.031 and raw[j][4] == raw[i][4]:
+        while j < len(raw) and raw[j][0] == raw[i][0] and raw[j][1] <= 0.031 and raw[j][4:6] == raw[i][4:6]:
             j += 1
         if j - i > 1:
-            grp = sorted({(n[2], n[4]): n for n in raw[i:j]}.values(), key=lambda n: n[2])
-            out += [[n[0] + run * q, 0.06, n[2], n[3], n[4]] for q, n in enumerate(grp)]
+            grp = sorted({n[2]: n for n in raw[i:j]}.values(), key=lambda n: n[2])
+            out += [[n[0] + run * q, 0.06, n[2], n[3], n[4], n[5]] for q, n in enumerate(grp)]
             i = j
         else:
-            out.append(list(raw[i][:5]))
+            out.append(list(raw[i]))
             i += 1
     res, open_ = [], {}
     def close(k):
         t0, t1, v, c, parts = open_.pop(k)
-        res.extend([[t0, t1 - t0, k[0], v, k[1], True]] if c >= least else [p + [False] for p in parts])
-    for t, d, m, v, h in sorted(out):
-        k = (m, h)
+        res.extend([[t0, t1 - t0, k[0], v, k[1], True, k[2]]] if c >= least else [p[:5] + [False, p[5]] for p in parts])
+    for t, d, m, v, h, part in sorted(out, key=lambda n: (n[:5], str(n[5]))):
+        k = (m, h, part)
         if k in open_ and d < 0.25 and t - open_[k][1] <= gap:
             o = open_[k]
             o[1], o[2], o[3] = t + d, max(o[2], v), o[3] + 1
-            o[4].append([t, d, m, v, h])
+            o[4].append([t, d, m, v, h, part])
             continue
         if k in open_:
             close(k)
         if d < 0.25:
-            open_[k] = [t, t + d, v, 1, [[t, d, m, v, h]]]
+            open_[k] = [t, t + d, v, 1, [[t, d, m, v, h, part]]]
         else:
-            res.append([t, d, m, v, h, False])
+            res.append([t, d, m, v, h, False, part])
     for k in list(open_):
         close(k)
-    return sorted(res)
-
+    labelled = any(lab(n) is not None for n in notes)
+    return sorted((r if labelled else r[:6] for r in res), key=lambda r: (r[:6], str(r[6:])))
 
 
 def accents(notes, t0=0.0, t1=1e9, vmin=0, n=3, space=0.3):
@@ -291,14 +296,14 @@ class Orchestra:
         self._sfx(w, t0, 0.6, pan)
 
     def tutti(self, notes, size=lambda t: 1.0, role=None, pan=None):
-        """Orchestrate excerpt notes [t, d, midi, vel, hand]. size(t) 0..1 is how full the orchestra is; role(t, d, m,
+        """Orchestrate excerpt notes [t, d, midi, vel, hand, ...]. size(t) 0..1 is how full the orchestra is; role(t, d, m,
         v, hand) may return a list of (section, transpose, velocity change, gain) to play instead (an empty list is
         silence) or None for the default; pan(t, m) moves the notes across the house."""
         F3, E2, F5, B5 = 54, 40, 77, 83
         for n in notes:
             t, d, m, v, hand = n[:5]
             parts = role(t, d, m, v, hand) if role else None
-            if parts is None and len(n) > 5 and n[5]:     # a tremolo from tidy()
+            if parts is None and len(n) > 5 and n[5] is True:     # a tremolo from tidy() (not a part label)
                 s = size(t)
                 parts = [('violins trem' if m >= 55 else 'violas trem' if m >= 48 else 'cellos trem', 0, -4, 0.6)]
                 if hand == 1 and m < 48 and s >= 0.5:
