@@ -1,0 +1,9 @@
+# Sections for the release notes GitHub writes from merged PRs (gh release create --generate-notes).
+changelog:
+  categories:
+    - title: New and changed
+      labels: [enhancement]
+    - title: Fixes
+      labels: [bug]
+    - title: Everything else
+      labels: ["*"]

@@ -122,6 +122,38 @@ def _stamp(out):
             fh.write(re.sub(r'(src|href)="([^":?#]+\.(?:js|css))"', tag, html))
 
 
+def _git(*args):
+    try:
+        return subprocess.run(['git', *args], cwd=catalog.ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ''
+
+
+def version():
+    """The release this build is, from git: a tag (v1.2.0), the last tag and commits since (v1.2.0-3-gabc1234), or dev.
+
+    Returns (label, link): a tag links to its GitHub release, anything else to its commit."""
+    repo = 'https://github.com/cjimti/pixelhome'
+    tag = _git('describe', '--tags', '--exact-match', '--match', 'v*', 'HEAD')
+    if tag:
+        return tag, f'{repo}/releases/tag/{tag}'
+    sha = _git('rev-parse', 'HEAD')
+    if not sha:
+        return 'dev', repo
+    return _git('describe', '--tags', '--match', 'v*', 'HEAD') or sha[:7], f'{repo}/commit/{sha}'
+
+
+def _stamp_version(out, label, link):
+    """Fill each page's <span class="version"></span> with a quiet link to the release it was built from."""
+    for page in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
+        with open(page) as fh:
+            html = fh.read()
+        if '<span class="version"></span>' in html:
+            with open(page, 'w') as fh:
+                fh.write(html.replace('<span class="version"></span>',
+                                      f'<a class="version" href="{link}" title="The release this site was built from">{label}</a>'))
+
+
 def _has_music(s):
     return os.path.exists(os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3'))
 
@@ -132,6 +164,8 @@ def build(out, want):
         shutil.rmtree(out)
     shutil.copytree(site, out)
     _stamp(out)
+    ver, ver_link = version()
+    _stamp_version(out, ver, ver_link)
     homes, jobs, quiet = [], [], 0
     engine = _engine_hash()
     for h in catalog.homes():
@@ -171,7 +205,7 @@ def build(out, want):
                for p in playlists(o['id']) if p in used]
         if pls:
             occasions.append(dict({k: v for k, v in o.items() if k not in ('prefix', 'desc', 'set')}, playlists=pls))
-    cat = dict(occasions=occasions, kinds=KINDS, homes=homes,
+    cat = dict(occasions=occasions, kinds=KINDS, homes=homes, version=ver,
                built=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
     with open(os.path.join(out, 'data', 'catalog.json'), 'w') as f:
         json.dump(cat, f, separators=(',', ':'))
