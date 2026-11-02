@@ -25,10 +25,13 @@ played on orchestral instruments; every character has a colour and an instrument
 God never appears as a figure, only in what light does: fire that falls, rain that comes, a single faint point at
 Horeb.
 
-So far four scenes are built: No. 13, the priests of Baal calling on their god (*Baal, hear and answer*), with
-Mendelssohn's silences frozen on the house; No. 16, Elijah calling down the fire and the people falling on their
-faces (*The fire descends*); No. 34, the wind, the earthquake and the fire on Horeb, and the still small voice after
-them (*Behold! God the Lord passed by*); and No. 38, the chariot of fire (*Then did Elijah*). It is the start of an
+So far seven scenes are built: the Introduction and the Overture, Elijah's curse and the drought spreading over the
+house; Nos. 1 and 2, the people crying out in the drought (*Help, Lord!*); Nos. 3 to 5, Obadiah's promise and the
+chorus that cries God does not see (*If with all your hearts*, *Yet doth the Lord see it not*); No. 13, the priests
+of Baal calling on their god (*Baal, hear and answer*), with Mendelssohn's silences frozen on the house; No. 16,
+Elijah calling down the fire and the people falling on their faces (*The fire descends*); No. 34, the wind, the
+earthquake and the fire on Horeb, and the still small voice after them (*Behold! God the Lord passed by*); and No.
+38, the chariot of fire (*Then did Elijah*). It is the start of an
 oratorio season on the house, with Handel's *Judas Maccabaeus* and *Messiah* to follow.
 
 ## Where the music comes from
@@ -58,6 +61,32 @@ stay empty in its MusicXML, so the measure numbers still match the score (the nu
 bar, the recitative included). The scene's cut, in the commands below, splices the transcribed passages together.
 
 ```sh
+# EL01 The Curse: the Introduction (bars 1-12) and the Overture's upbeat and first nine bars (13-22), cut on the
+# downbeat of bar 22; from the 1870 printing, whose first pages the 1881 copy lacks
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_curse.musicxml 1-22.25 --tempo \
+    --part El.=Elijah --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1870), transcribed; public domain" \
+    --act "Elijah, Op. 70: Introduction (As God the Lord of Israel liveth) and Overture" \
+    --perf "Grave, crotchet = 60; Overture, crotchet = 92, as marked; fermatas doubled" \
+    --out homes/cjimti/sequences/elijah/the_curse.score.json
+
+# EL02 Help, Lord!: No. 1 bars 1-14 and No. 2 bars 0-4 (15-19), the unison "Lord, bow thine ear"
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/help_lord.musicxml 1-20 --tempo \
+    --part S.=S --part A.=A --part T.=T --part B.=B --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1881), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 1: Help, Lord!; No. 2: Lord, bow thine ear" \
+    --perf "Andante lento, crotchet = 76; Sostenuto ma non troppo, quaver = 100, as marked" \
+    --out homes/cjimti/sequences/elijah/help_lord.score.json
+
+# EL03 Rend Your Hearts: No. 3 to "rend your hearts" (bars 1-2), No. 4 bars 1-19 (3-21) and No. 5 bars 1-18
+# (22-39), cut before the basses' "His"; from the 1870 printing, whose pp. 17-18 the 1881 copy lacks
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/rend_your_hearts.musicxml 1-2.6875 3-39.75 \
+    --tempo --part Ob.=Obadiah --part S.=S --part A.=A --part T.=T --part B.=B --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1870), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 3: Ye people, rend your hearts; No. 4: If with all your hearts; No. 5: Yet doth the Lord see it not" \
+    --perf "Recitative at crotchet = 72; Andante con moto, crotchet = 72; Allegro vivace, minim = 96, as marked" \
+    --out homes/cjimti/sequences/elijah/rend_your_hearts.score.json
+
 # EL11 The Fire Descends: No. 16, the recitative (bars 1-6), the chorus's first six bars (7-12) and "Before Him" to
 # the end of the chorale (32-60)
 uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fire_descends.musicxml 1.6-13 32-61 --tempo \
@@ -87,9 +116,11 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fiery_c
     --out homes/cjimti/sequences/elijah/the_fiery_chariot.score.json
 ```
 
-The voices are read note for note. Where the piano reduction's inner voices were hard to read in the scan (EL09's
-section E, parts of EL20's and EL22's accompaniment), the harmony, rhythm and register are kept and the voicing is
-approximate; in EL11's chorale the accompaniment doubles the voices, as the reduction does. The Internet Archive
+When a scene's numbers come one after another, they share one MusicXML, numbered straight through (each file's
+first lines say which bars are which number). The voices are read note for note. Where the piano reduction's inner
+voices were hard to read in the scan (EL09's section E, parts of EL20's and EL22's accompaniment, the rushing chords
+of EL02's first bars, the bass under EL01's fugal answer, parts of EL03's accompaniment), the harmony, rhythm and
+register are kept and the voicing is approximate; in EL11's chorale the accompaniment doubles the voices, as the reduction does. The Internet Archive
 also has the 1870 printing of the same plates (`elijahoratorioin00mend`), which is clean where the 1881 copy's
 pages are covered (No. 16's first pages).
 
@@ -134,6 +165,9 @@ Horeb a single faint point).
 
 | code | title | numbers | status |
 |------|-------|---------|--------|
+| EL01 | The Curse | Introduction, Overture | built: the curse on Right, every chord burning the amber further; the fugue draining the house to dust |
+| EL02 | Help, Lord! | 1, 2 | built: the people's cries flaring up the porch, the harvest falling in gold, the prayer climbing to a dark sky |
+| EL03 | Rend Your Hearts | 3, 4, 5 | built: Obadiah's teal walking among the people; red pulses from heaven that never reach them |
 | EL09 | Hear and Answer | 13 | built: the whole chorus, 77 bars, with Mendelssohn's silences frozen on the house |
 | EL11 | The Fire Descends | 16 | built: the recitative, the fire falling down Porch Right onto the altar, the people bowing, and the chorale |
 | EL20 | The Lord Passed By | 34 | built: wind, earthquake and fire, then the still small voice as one silver point on Porch Front |
