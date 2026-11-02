@@ -103,6 +103,8 @@ and `404.html`. Paths in pages are root-absolute (`/style.css`, `/data/...`). `s
 it plays a page's `.list .item[data-id]` rows, and on the library builds the list and filters itself. A set page's
 text is its README's `## About the work`, `## The stage` and `## Who is who` sections (`README_SECTIONS`), written
 for visitors; the rest of a README is for the repo. `SETS` in `occasions.py` lists the sets featured on `/sets/`.
+Every page has the same header (`top()` in `pages.py`, styled by `site/header.css`); the static About and Live pages
+carry `<!--sitehead-->` where the build puts it.
 
 ## Live mode
 

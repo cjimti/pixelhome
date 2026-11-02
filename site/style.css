@@ -23,14 +23,6 @@ body { font-family: var(--body); font-size: 15px; line-height: 1.5; -webkit-text
 a { color: var(--accent); }
 
 /* ---------- shared pieces ---------- */
-.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; }
-.brand svg { width: 30px; height: 30px; }
-.brand span { font-family: var(--display); font-weight: 900; font-size: 30px; line-height: 1; text-transform: uppercase; letter-spacing: 0.01em; }
-.brand b { color: var(--accent); font-weight: 900; transition: color 0.4s; }
-.brandbox { display: grid; justify-items: start; }
-.by { margin: 3px 0 0 40px; font: 500 11px var(--mono); letter-spacing: 0.04em; color: var(--muted); text-decoration: none; }
-.by:hover { color: var(--accent); }
-.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .spec { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.02em; margin: 0; }
 select {
   font: 500 13px var(--body); color: var(--ink); background: var(--raised);
@@ -83,9 +75,6 @@ input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
 .dls { display: flex; gap: 6px; justify-content: flex-end; }
 .toggles { display: flex; gap: 6px; }
 .toggles button { white-space: nowrap; }
-.nav .live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: #ff4d4d; vertical-align: 1px; animation: livepulse 1.6s ease-in-out infinite; }
-@keyframes livepulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .nav .live::before { animation: none; } }
 .spec.intro a { color: var(--muted); }
 .spec.intro a:hover { color: var(--accent); }
 .sound { white-space: nowrap; }
@@ -165,10 +154,10 @@ input[type="search"]::placeholder { color: var(--muted); }
   body { height: 100vh; height: 100dvh; overflow: hidden; }
   .app {
     height: 100%; display: grid; grid-template-columns: var(--side) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: "top main" "lib main";
+    grid-template-areas: "top top" "lib main";
   }
-  .top { grid-area: top; padding: 16px 16px 12px max(16px, env(safe-area-inset-left)); border-right: 1px solid var(--line); }
-  .library { grid-area: lib; border-right: 1px solid var(--line); padding: 0 8px 0 max(16px, env(safe-area-inset-left)); }
+  .app .sitehead { grid-area: top; }
+  .library { grid-area: lib; border-right: 1px solid var(--line); padding: 14px 8px 0 max(16px, env(safe-area-inset-left)); }
   .filters { padding-right: 8px; }
   .list { overflow-y: auto; min-height: 0; flex: 1; padding: 0 6px 20px 0; overscroll-behavior: contain; }
   .main {
@@ -177,7 +166,7 @@ input[type="search"]::placeholder { color: var(--muted); }
   }
   .main > * { width: 100%; max-width: 1240px; margin: 0 auto; }
   /* keep the stage plus transport inside the window on short screens */
-  .stage { max-height: calc(100dvh - 130px); }
+  .stage { max-height: calc(100dvh - 200px); }
 }
 @media (min-width: 760px) and (max-width: 1100px) {
   :root { --side: 290px; }
@@ -188,10 +177,7 @@ input[type="search"]::placeholder { color: var(--muted); }
 @media (max-width: 759.98px) {
   .app { display: flex; flex-direction: column; }
   .main { display: contents; }
-  .top { order: 0; padding: max(12px, env(safe-area-inset-top)) 16px 10px; }
-  .brand span { font-size: 26px; }
-  .brand svg { width: 26px; height: 26px; }
-  .by { margin-left: 36px; }
+  .app .sitehead { order: 0; }
   .player {
     order: 1; position: sticky; top: 0; z-index: 5; gap: 8px;
     padding: max(8px, env(safe-area-inset-top)) 12px 10px; background: var(--night);
@@ -220,13 +206,8 @@ input[type="search"]::placeholder { color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
 /* ---------- about page ---------- */
-.nav { display: flex; gap: 4px; }
-.nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 14px; padding: 6px 10px; border-radius: 7px; }
-.nav a:hover { color: var(--ink); background: var(--raised); }
-.nav a[aria-current="page"] { color: var(--accent); }
 body.page { height: auto; overflow: visible; }
-body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px, env(safe-area-inset-top)) 16px 10px; }
-.doc { max-width: 960px; margin: 0 auto; padding: 8px 16px max(40px, env(safe-area-inset-bottom)); display: grid; gap: 44px; }
+.doc { max-width: 960px; margin: 0 auto; padding: 24px 16px max(40px, env(safe-area-inset-bottom)); display: grid; gap: 44px; }
 .doc > * { min-width: 0; }
 .doc section > p { max-width: 70ch; margin: 0 0 14px; }
 .doc section > h3 { font-size: 20px; margin: 26px 0 10px; }
@@ -364,9 +345,6 @@ body.page .top { max-width: 960px; margin: 0 auto; border: 0; padding: max(14px,
 .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- generated pages: sets, occasions, sequences ---------- */
-.top { flex-wrap: wrap; }
-.app .top .nav { flex-wrap: wrap; margin-left: -10px; }
-.nav { flex-wrap: wrap; }
 .doc.wide { max-width: 1240px; gap: 32px; }
 .doc > section { min-width: 0; }
 .doc .intro { padding-top: 4px; }
@@ -434,7 +412,6 @@ a.item { color: inherit; text-decoration: none; }
 @media (max-width: 759.98px) {
   .doc .player { position: static; padding: 0; background: none; box-shadow: none; border: 0; order: 0; }
   .doc .stage { max-height: none; }
-  .nav a { padding: 6px 8px; font-size: 13.5px; }
 }
 /* two-line transport (a page's player, which shares its row with the scene list, and the library on mid-width
    screens): play, position and time on top; the toggles, exposure and house brightness in the middle, and the downloads below */

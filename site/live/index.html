@@ -26,9 +26,12 @@ gtag('config', 'G-KQYBQLRBMP');
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../header.css">
 <style>
-/* One screen, nothing to learn: the house, what's on, and one button for the music. */
+/* On a phone, one screen with nothing to learn: the house, what's on, and one button for the music. On a wider
+   screen the house takes the left and what's on, the button and the show times sit beside it. The header is the
+   site's own (header.css). */
 :root {
   --night: #0b0a09;
   --ink: #f2ebe2;
@@ -47,20 +50,19 @@ html, body { margin: 0; background: var(--night); color: var(--ink); }
 html { touch-action: manipulation; }
 button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 body { font-family: var(--body); font-size: 16px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+.shell { min-height: 100svh; display: flex; flex-direction: column; }
 .page {
-  min-height: 100svh; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px;
-  padding: max(14px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+  flex: 1; width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px;
+  padding: 16px 16px max(18px, env(safe-area-inset-bottom));
 }
-.top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-.top .brand { justify-self: end; }
-.onair { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 900; font-size: 22px;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
+.watch, .side { display: contents; }
+.onair { position: absolute; left: 12px; top: 10px; display: inline-flex; align-items: center; gap: 8px; font-family: var(--display);
+  font-weight: 900; font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); pointer-events: none; }
 .onair i { width: 11px; height: 11px; border-radius: 50%; background: var(--red); animation: pulse 1.6s ease-in-out infinite; }
 .onair.off { color: var(--muted); }
 .onair.off i { background: var(--muted); animation: none; }
 @keyframes pulse { 50% { opacity: 0.3; } }
-.brand { font-family: var(--display); font-weight: 900; font-size: 22px; text-transform: uppercase; color: var(--ink); text-decoration: none; }
-.brand b { color: var(--accent); font-weight: 900; transition: color 0.4s; }
 .stage { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #060504; }
 .stage canvas { display: block; width: 100%; height: 100%; }
 .msg { position: absolute; inset: auto 0 0; padding: 10px 14px; font-size: 14px; color: var(--muted);
@@ -84,8 +86,8 @@ h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: clamp(
 .views button { font: 500 13px var(--body); color: var(--ink); background: rgba(21, 18, 16, 0.78); border: 1px solid var(--line);
   border-radius: 8px; min-height: 36px; padding: 0 12px; cursor: pointer; }
 .views button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-.aboutbtn { font-family: var(--display); font-weight: 900; font-size: 22px; text-transform: uppercase; color: var(--ink);
-  background: none; border: 0; padding: 8px 6px; cursor: pointer; }
+.aboutbtn { align-self: center; margin-top: -10px; font: 500 14px var(--body); color: var(--accent); background: none; border: 0;
+  padding: 6px 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100svh - 48px); padding: 0; border: 1px solid var(--line);
   border-radius: 16px; background: #15120f; color: var(--ink); }
 dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
@@ -112,17 +114,29 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 .sets li.now time { color: var(--ink); }
 .tnote { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .onair i { animation: none; } }
+@media (min-width: 900px) {
+  .page {
+    max-width: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start;
+    padding: 28px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left));
+  }
+  .watch { display: grid; gap: 10px; position: sticky; top: 20px; }
+  .bar { margin-top: 0; }
+  .side { display: flex; flex-direction: column; gap: 18px; }
+  .sound { margin-top: 6px; }
+  h1 { font-size: 56px; }
+  .onair { left: 16px; top: 14px; font-size: 24px; }
+}
 </style>
 </head>
 <body>
+<div class="shell">
+<!--sitehead-->
 <main class="page">
-  <header class="top">
-    <span class="onair off" id="onair"><i></i>Live</span>
-    <button class="aboutbtn" id="aboutOpen">About</button>
-    <a class="brand" href="../">Pixel<b>home</b></a>
-  </header>
-  <div class="stage"><canvas id="view" aria-label="The house and its lights, as they are right now"></canvas><div class="views" role="group" aria-label="Camera"><button data-view="street" aria-pressed="true">Street</button><button data-view="corner" aria-pressed="false">Corner</button><button data-view="above" aria-pressed="false">Above</button></div><div class="msg" id="msg">Connecting to the house…</div></div>
+  <div class="watch">
+  <div class="stage"><span class="onair off" id="onair"><i></i>Live</span><canvas id="view" aria-label="The house and its lights, as they are right now"></canvas><div class="views" role="group" aria-label="Camera"><button data-view="street" aria-pressed="true">Street</button><button data-view="corner" aria-pressed="false">Corner</button><button data-view="above" aria-pressed="false">Above</button></div><div class="msg" id="msg">Connecting to the house…</div></div>
   <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+  </div>
+  <div class="side">
   <section class="now" aria-live="polite">
     <p class="kicker" id="kicker">Live</p>
     <h1 id="title">Just a moment</h1>
@@ -131,12 +145,15 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
   </section>
   <button class="sound" id="sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" id="soundIcon"></svg><span id="soundText">Tap to hear the music</span></button>
   <p class="note" id="note">The music plays from your phone, in time with the lights.</p>
+  <button class="aboutbtn" id="aboutOpen">What is this?</button>
   <section class="times" id="times" hidden aria-labelledby="timesTitle">
     <h2 id="timesTitle">Show times</h2>
     <div class="week" id="timesWeek"></div>
     <p class="tnote" id="timesNote"></p>
   </section>
+  </div>
 </main>
+</div>
 <dialog id="about" aria-labelledby="aboutTitle">
   <div class="card">
     <h2 id="aboutTitle">What is this?</h2>

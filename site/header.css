@@ -1,0 +1,43 @@
+/* The header every page shares (pixelhome/pages.py writes it, and puts it into About and Live): the brand on the
+   left, the site's sections on the right, across the full width of the window. Loaded on its own so the Live page,
+   which doesn't use style.css, gets exactly the same header. Colours fall back for pages without the tokens. */
+.sitehead {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px;
+  padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--line, #2e2721); background: var(--night, #0b0a09);
+  font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5;
+}
+.sitehead .brandbox { display: grid; justify-items: start; }
+.sitehead .brand { display: flex; align-items: center; gap: 10px; color: var(--ink, #f2ebe2); text-decoration: none; }
+.sitehead .brand svg { width: 28px; height: 28px; }
+.sitehead .brand span {
+  font-family: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif; font-weight: 900; font-size: 28px;
+  line-height: 1; text-transform: uppercase; letter-spacing: 0.01em;
+}
+.sitehead .brand b { color: var(--accent, #ff6a1f); font-weight: 900; transition: color 0.4s; }
+.sitehead .by {
+  margin: 3px 0 0 38px; font: 500 11px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.04em;
+  color: var(--muted, #a3968a); text-decoration: none;
+}
+.sitehead .by:hover { color: var(--accent, #ff6a1f); }
+.sitehead .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-right: -10px; }
+.sitehead .nav a {
+  color: var(--muted, #a3968a); text-decoration: none; font-weight: 500; font-size: 15px; padding: 6px 10px; border-radius: 7px;
+}
+.sitehead .nav a:hover { color: var(--ink, #f2ebe2); background: var(--raised, #1e1a16); }
+.sitehead .nav a[aria-current="page"] { color: var(--accent, #ff6a1f); }
+.sitehead .nav .live::before {
+  content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: #ff4d4d;
+  vertical-align: 1px; animation: livepulse 1.6s ease-in-out infinite;
+}
+.sitehead .nav select { margin-right: 6px; }
+@keyframes livepulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .sitehead .nav .live::before { animation: none; } }
+@media (max-width: 520px) {
+  .sitehead { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); gap: 6px 10px; }
+  .sitehead .brand svg { width: 24px; height: 24px; }
+  .sitehead .brand span { font-size: 24px; }
+  .sitehead .by { margin-left: 34px; }
+  .sitehead .nav a { font-size: 14px; padding: 6px 7px; }
+  .sitehead .nav { margin-right: -7px; }
+}

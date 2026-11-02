@@ -183,6 +183,7 @@ def head(title, desc, path, ld=(), index=True):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
+<link rel="stylesheet" href="/header.css">
 <link rel="stylesheet" href="/style.css">"""
 
 
@@ -193,7 +194,7 @@ def nav(current, extra=''):
 
 
 def top(current, extra=''):
-    return f"""<header class="top">
+    return f"""<header class="sitehead">
   <div class="brandbox">
     <a class="brand" href="/" aria-label="Pixelhome home">
       <svg viewBox="0 0 32 32" aria-hidden="true"><use href="/favicon.svg#mark"/></svg>
@@ -506,15 +507,16 @@ def _not_found(out, built):
 """)
 
 
-def _shared_nav(out):
-    """Static pages from site/ (About) get the same navigation as the generated ones."""
-    for page, current in (('about/index.html', '/about/'),):
+def _shared_header(out):
+    """Static pages from site/ (About, Live) get the same header as the generated ones, in place of <!--sitehead-->."""
+    for page, current in (('about/index.html', '/about/'), ('live/index.html', '/live/')):
         f = os.path.join(out, page)
-        if os.path.exists(f):
-            with open(f) as fh:
-                text = fh.read()
-            with open(f, 'w') as fh:
-                fh.write(re.sub(r'<nav class="nav">.*?</nav>', nav(current), text, count=1, flags=re.S))
+        with open(f) as fh:
+            text = fh.read()
+        if '<!--sitehead-->' not in text:
+            raise SystemExit(f'site/{page}: no <!--sitehead--> for the shared header')
+        with open(f, 'w') as fh:
+            fh.write(text.replace('<!--sitehead-->', top(current)))
 
 
 def write(out, cat):
@@ -540,5 +542,5 @@ def write(out, cat):
         for m in seqs:
             _sequence(out, m, home_of[pl], seqs, built)
     _not_found(out, built)
-    _shared_nav(out)
+    _shared_header(out)
     return sum(len(v) for v in by_pl.values()) + len(pages) + 4
