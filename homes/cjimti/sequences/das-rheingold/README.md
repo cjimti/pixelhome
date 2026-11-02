@@ -5,6 +5,23 @@ taken note for note from `pixelhome/leitmotifs.py` (Donington's numbering, trans
 Commons MIDI examples), and composes the rest around them. The words aren't sung: each character has an
 instrument, and the lights follow its notes.
 
+## About the work
+
+*Das Rheingold* (The Rhinegold) is the first of the four music dramas of Richard Wagner's *Der Ring des
+Nibelungen*, told here in 24 scenes of about 80 seconds.
+
+Wagner wrote the words and the music, composing it in 1853 and 1854 as the prologue to the cycle. It was first
+performed in Munich on 22 September 1869, at the Königliches Hof- und Nationaltheater, and with the whole cycle at
+the first Bayreuth Festival in August 1876.
+
+The dwarf Alberich steals the gold from the Rhinemaidens and forges a ring that gives power over the world. Wotan,
+chief of the gods, takes it from him to pay the giants who built his fortress, Valhalla, and Alberich puts a curse
+on the ring that runs through the rest of the cycle. The gods cross a rainbow bridge into their new home.
+
+Each scene plays Wagner's own notes: an excerpt of the score from the Wagner Ring Dataset (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz and Müller; a piano reduction of the full score, CC BY 3.0), timed to the bar positions of a recorded performance, most often Georg Solti's with the Vienna Philharmonic, and played on sampled orchestral instruments. Nothing is sung: each character has a colour and an instrument, and the lights follow the notes, with the thunder, hoofbeats, clashes and fire a staged production would add. The scenes pick the most dramatic passages of each act; it is an entertaining staging, not a complete performance.
+
+In November 2026 the four operas play on the house on the Ring nights, one opera a night in turn, at an early and a late show; the times are on [Live](/live/).
+
 ## The stage
 
 From the street the porch is the back of the scene, so **the rock with the gold is the middle of Porch
@@ -22,13 +39,13 @@ pop up on a front run, or rise out of the porch), and a dim themed bed keeps eve
 | Alberich | red `#ff1000` in a muddy halo `#5a1200` | bassoon, trombone, low strings |
 | the Rhinegold | gold `#ffaa00`, hot `#fff0a0` | horn, then trumpet |
 | the Ring | gold beads toward the street, red `#ff1800` turned away | woodwinds |
-| Wotan *(to come)* | deep blue | trombones, tubas |
-| Fricka / Freia *(to come)* | rose silver / apple-blossom pink | violas / violins |
-| Loge *(to come)* | flickering fire | piccolo, violins |
-| Donner / Froh *(to come)* | white lightning / rainbow | horns |
-| Fasolt and Fafner *(to come)* | stone grey and ochre | tubas, timpani |
-| Erda *(to come)* | moss | low winds |
-| Mime and the Nibelungs *(to come)* | sickly yellow-green; anvils | xylophone, anvils |
+| Wotan | deep blue | trombones, tubas |
+| Fricka / Freia | rose silver / apple-blossom pink | violas / violins |
+| Loge | flickering fire | piccolo, violins |
+| Donner / Froh | white lightning / rainbow | horns |
+| Fasolt and Fafner | stone grey and ochre | tubas, timpani |
+| Erda | moss | low winds |
+| Mime and the Nibelungs | sickly yellow-green; anvils | xylophone, anvils |
 
 ## The 24 scenes
 

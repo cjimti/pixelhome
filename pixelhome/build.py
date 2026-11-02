@@ -3,7 +3,7 @@ import glob, hashlib, json, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, intro, schedule, share
+from . import catalog, fseq, intro, pages, schedule, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import OCCASIONS, KINDS, PLAYLIST, playlists
 
@@ -11,6 +11,7 @@ WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half fra
 MAX_SECONDS = 15 * 60
 # Rendered output is cached by a hash of everything it depends on, so a build only renders what changed.
 CACHE = os.environ.get('PIXELHOME_RENDER_CACHE', os.path.join(catalog.ROOT, 'build', 'render-cache'))
+THUMB_VERSION = hashlib.sha256(open(os.path.join(os.path.dirname(__file__), 'share.py'), 'rb').read()).hexdigest()[:10]
 
 
 def _matches(s, want):
@@ -35,7 +36,7 @@ def _engine_hash():
     h = hashlib.sha256()
     pkg = os.path.join(catalog.ROOT, 'pixelhome')
     for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', 'intro.py', 'schedule.py', 'share.py', '__main__.py'):
+        if os.path.basename(p) not in ('audio.py', 'intro.py', 'pages.py', 'schedule.py', 'share.py', '__main__.py'):
             h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
     return h.hexdigest()
 
@@ -84,6 +85,19 @@ def _build_one(args):
     with open(os.path.join(cached, 'meta.json')) as f:
         meta = json.load(f)
     meta['cached'] = hit
+    # its thumbnail, cached beside the render and redrawn when share.py changes
+    th = os.path.join(cached, f'thumb-{THUMB_VERSION}.webp')
+    score = os.path.join(cached, f'thumb-{THUMB_VERSION}.json')
+    if not os.path.exists(score):
+        for old in glob.glob(os.path.join(cached, 'thumb-*')):
+            os.remove(old)
+        sc = share.thumb(catalog.load_home(s.home), os.path.join(cached, 'seq.png'), th)
+        with open(score, 'w') as f:
+            json.dump(sc, f)
+    os.makedirs(os.path.join(out, 'thumbs', s.home, s.playlist), exist_ok=True)
+    shutil.copyfile(th, os.path.join(out, 'thumbs', s.home, s.id + '.webp'))
+    with open(score) as f:
+        meta.update(thumb=f'thumbs/{s.home}/{s.id}.webp', thumbScore=round(json.load(f), 5))
     meta.update(occasion=s.occasion, playlist=s.playlist)     # set here: cached renders predate playlists
     mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
     if os.path.exists(mp3):
@@ -107,12 +121,14 @@ def _build_one(args):
 
 
 def _stamp(out):
-    """Point each page at its own scripts and styles with ?v=<content hash>, so a browser never runs an old copy."""
+    """Point each page at its own scripts and styles with ?v=<content hash>, so a browser never runs an old copy.
+    Paths are relative to the page's folder, or to the site's root when they start with /."""
     for page in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
         base = os.path.dirname(page)
 
         def tag(m):
-            f = os.path.join(base, m.group(2))
+            p = m.group(2)
+            f = os.path.join(out, p.lstrip('/')) if p.startswith('/') else os.path.join(base, p)
             if not os.path.isfile(f):
                 return m.group(0)
             return f'{m.group(1)}="{m.group(2)}?v={hashlib.sha256(open(f, "rb").read()).hexdigest()[:10]}"'
@@ -163,9 +179,7 @@ def build(out, want):
     if os.path.exists(out):
         shutil.rmtree(out)
     shutil.copytree(site, out)
-    _stamp(out)
     ver, ver_link = version()
-    _stamp_version(out, ver, ver_link)
     homes, jobs, quiet = [], [], 0
     engine = _engine_hash()
     for h in catalog.homes():
@@ -220,8 +234,11 @@ def build(out, want):
         if nights:
             with open(os.path.join(out, 'data', h['id'], 'schedule.json'), 'w') as f:
                 json.dump(nights, f, separators=(',', ':'))
-    share.write(out, homes)
-    print(f'{out}: {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
+    n = pages.write(out, cat)
+    share.write(out, homes)       # after the pages: its sitemap lists them
+    _stamp(out)
+    _stamp_version(out, ver, ver_link)
+    print(f'{out}: {n} pages, {len(jobs)} sequences across {len(homes)} home(s), {len(jobs) - hits} rendered, {hits} from cache, '
           f'{quiet} left out until they have music')
 
 
