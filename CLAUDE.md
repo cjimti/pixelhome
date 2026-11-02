@@ -97,12 +97,16 @@ only changes when its line does; `VOICEOVER_TAKE = n` asks for a different readi
 
 ## Site pages
 
-`pixelhome/pages.py` writes every page as static HTML at build time: `/` and `/library/` (the library, until the
-schedule takes `/`), `/sets/`, `/<playlist>/` for each set and occasion, `/<playlist>/<name>/` for each sequence,
+`pixelhome/pages.py` writes every page as static HTML at build time: `/` (the schedule: tonight's program and the
+coming nights, from `data/<home>/schedule.json`), `/library/`, `/sets/`, `/<playlist>/` for each set and occasion, `/<playlist>/<name>/` for each sequence,
 and `404.html`. Paths in pages are root-absolute (`/style.css`, `/data/...`). `site/app.js` is the player on top:
 it plays a page's `.list .item[data-id]` rows, and on the library builds the list and filters itself. A set page's
 text is its README's `## About the work`, `## The stage` and `## Who is who` sections (`README_SECTIONS`), written
 for visitors; the rest of a README is for the repo. `SETS` in `occasions.py` lists the sets featured on `/sets/`.
+Show times are in the HTML (the home page, and a set page's "When it plays"); `site/schedule.js` works out "now" in
+the browser (hides what is over, says Tonight, points to Live while a show is on), since the build only runs on a
+release. Every set and sequence page has its own 1200x630 share card (`cards/`, `share.label()`), set in the site's
+fonts from `pixelhome/fonts/` (OFL).
 Every page has the same header (`top()` in `pages.py`, styled by `site/header.css`); the static About and Live pages
 carry `<!--sitehead-->` where the build puts it.
 

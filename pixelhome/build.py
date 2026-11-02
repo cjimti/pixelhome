@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from . import catalog, fseq, intro, pages, schedule, share
 from .fx import DT, to_bytes, to_bytes_dithered
-from .occasions import OCCASIONS, KINDS, PLAYLIST, playlists
+from .occasions import BY_ID, OCCASIONS, KINDS, PLAYLIST, playlists
 
 WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half frame rate
 MAX_SECONDS = 15 * 60
@@ -85,19 +85,26 @@ def _build_one(args):
     with open(os.path.join(cached, 'meta.json')) as f:
         meta = json.load(f)
     meta['cached'] = hit
-    # its thumbnail, cached beside the render and redrawn when share.py changes
+    # its thumbnail and share card's picture, cached beside the render and redrawn when share.py changes
     th = os.path.join(cached, f'thumb-{THUMB_VERSION}.webp')
+    base = os.path.join(cached, f'card-{THUMB_VERSION}.png')
     score = os.path.join(cached, f'thumb-{THUMB_VERSION}.json')
-    if not os.path.exists(score):
-        for old in glob.glob(os.path.join(cached, 'thumb-*')):
+    if not (os.path.exists(score) and os.path.exists(base)):
+        for old in glob.glob(os.path.join(cached, 'thumb-*')) + glob.glob(os.path.join(cached, 'card-*')):
             os.remove(old)
-        sc = share.thumb(catalog.load_home(s.home), os.path.join(cached, 'seq.png'), th)
+        sc = share.thumb(catalog.load_home(s.home), os.path.join(cached, 'seq.png'), th, base)
         with open(score, 'w') as f:
             json.dump(sc, f)
-    os.makedirs(os.path.join(out, 'thumbs', s.home, s.playlist), exist_ok=True)
+    for sub in ('thumbs', 'cards'):
+        os.makedirs(os.path.join(out, sub, s.home, s.playlist), exist_ok=True)
     shutil.copyfile(th, os.path.join(out, 'thumbs', s.home, s.id + '.webp'))
+    set_label = BY_ID[s.playlist]['label'] if s.playlist in BY_ID else PLAYLIST[s.playlist]['label']
+    kind = {'ambient': 'All-night loop', 'intermission': 'Intermission'}.get(s.kind)
+    share.label(base, os.path.join(out, 'cards', s.home, s.id + '.jpg'), s.title,
+                ' · '.join(x for x in (set_label, kind) if x), PLAYLIST[s.playlist]['accent'])
     with open(score) as f:
-        meta.update(thumb=f'thumbs/{s.home}/{s.id}.webp', thumbScore=round(json.load(f), 5))
+        meta.update(thumb=f'thumbs/{s.home}/{s.id}.webp', thumbScore=round(json.load(f), 5),
+                    card=f'cards/{s.home}/{s.id}.jpg', _base=base)
     meta.update(occasion=s.occasion, playlist=s.playlist)     # set here: cached renders predate playlists
     mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
     if os.path.exists(mp3):
@@ -199,10 +206,11 @@ def build(out, want):
         jobs += [(s, out, _key(s, engine)) for s in seqs]
     by_home = {h['id']: h for h in homes}
     os.makedirs(CACHE, exist_ok=True)
-    hits = 0
+    hits, bases = 0, {}
     with ProcessPoolExecutor() as pool:
         for (s, _, _), meta in zip(jobs, pool.map(_build_one, jobs)):
             hit = meta.pop('cached')
+            bases[(s.home, s.id)] = meta.pop('_base')         # for the set pages' share cards
             hits += hit
             by_home[s.home]['sequences'].append(meta)
             print(f"{s.home}/{s.id}: {meta['seconds']:.0f}s, {meta['fseqBytes'] / 1e6:.1f} MB fseq, "
@@ -234,7 +242,7 @@ def build(out, want):
         if nights:
             with open(os.path.join(out, 'data', h['id'], 'schedule.json'), 'w') as f:
                 json.dump(nights, f, separators=(',', ':'))
-    n = pages.write(out, cat)
+    n = pages.write(out, cat, bases)
     share.write(out, homes)       # after the pages: its sitemap lists them
     _stamp(out)
     _stamp_version(out, ver, ver_link)

@@ -5,6 +5,7 @@ verify:
 	uv sync --locked
 	uv run python -m compileall -q pixelhome homes
 	node --check site/app.js
+	node --check site/schedule.js
 	uv run python -m pixelhome build --out dist
 	scripts/verify-sentinel.sh
 
