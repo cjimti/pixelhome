@@ -298,6 +298,10 @@ pages are covered (No. 16's first pages) and has the pages the 1881 copy lacks (
 
 There is no choir in the sample library, so sung lines are played on instruments, as in the Ring.
 
+Every scene has a spoken intro (`VOICEOVER`, read by `pixelhome intro` in the owner's voice, `halloween-accent` as
+for the Ring) over the Elijah bed in `pixelhome/intro.py`: a low D drone of double basses and bassoons with a little
+dry wind, the curse's first chord on trombones before the first word and the rest of its chords after the last.
+
 ## The stage
 
 From the street the porch is the back of the scene.
