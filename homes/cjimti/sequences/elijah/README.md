@@ -25,9 +25,11 @@ played on orchestral instruments; every character has a colour and an instrument
 God never appears as a figure, only in what light does: fire that falls, rain that comes, a single faint point at
 Horeb.
 
-So far one scene is built: No. 13, the priests of Baal calling on their god (*Baal, hear and answer*), the whole
-chorus, with Mendelssohn's silences frozen on the house. It is the start of an oratorio season on the house, with
-Handel's *Judas Maccabaeus* and *Messiah* to follow.
+So far four scenes are built: No. 13, the priests of Baal calling on their god (*Baal, hear and answer*), with
+Mendelssohn's silences frozen on the house; No. 16, Elijah calling down the fire and the people falling on their
+faces (*The fire descends*); No. 34, the wind, the earthquake and the fire on Horeb, and the still small voice after
+them (*Behold! God the Lord passed by*); and No. 38, the chariot of fire (*Then did Elijah*). It is the start of an
+oratorio season on the house, with Handel's *Judas Maccabaeus* and *Messiah* to follow.
 
 ## Where the music comes from
 
@@ -50,6 +52,46 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/hear_and_an
     --perf "Presto, dotted crotchet = 126, as marked; fermatas doubled, the silences held" \
     --out homes/cjimti/sequences/elijah/hear_and_answer.score.json
 ```
+
+EL09 transcribes the whole number. The other scenes transcribe only the bars they play: the bars a scene leaves out
+stay empty in its MusicXML, so the measure numbers still match the score (the numbers count from the number's first
+bar, the recitative included). The scene's cut, in the commands below, splices the transcribed passages together.
+
+```sh
+# EL11 The Fire Descends: No. 16, the recitative (bars 1-6), the chorus's first six bars (7-12) and "Before Him" to
+# the end of the chorale (32-60)
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fire_descends.musicxml 1.6-13 32-61 --tempo \
+    --part S.=S --part A.=A --part T.=T --part B.=B --part El.=Elijah --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1881), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 16: O Thou, who makest Thine angels spirits; The fire descends from heav'n" \
+    --perf "Recitative at crotchet = 69; Allegro con fuoco, crotchet = 152, as marked; fermatas doubled" \
+    --out homes/cjimti/sequences/elijah/the_fire_descends.score.json
+
+# EL20 The Lord Passed By: No. 34, every turn of the text (wind, earthquake, fire, the still small voice), the long
+# repetitions left out
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_lord_passed_by.musicxml \
+    1-16 30-36 45-48 64-72 74-78 110-135 --tempo \
+    --part S.=S --part A.=A --part T.=T --part B.=B --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1881), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 34: Behold! God the Lord passed by" \
+    --perf "Allegro molto, minim = 100, as marked; fermatas doubled" \
+    --out homes/cjimti/sequences/elijah/the_lord_passed_by.score.json
+
+# EL22 The Fiery Chariot: No. 38, the opening to "fire;", "And when the Lord would take him away" and the second
+# "there came a fiery chariot" to the end
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fiery_chariot.musicxml 1-5.5 32-35 39.75-59 \
+    --tempo --part S.=S --part A.=A --part T.=T --part B.=B --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1881), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 38: Then did Elijah" \
+    --perf "Moderato maestoso, crotchet = 76, as marked; the closing ritard taken and the fermata doubled" \
+    --out homes/cjimti/sequences/elijah/the_fiery_chariot.score.json
+```
+
+The voices are read note for note. Where the piano reduction's inner voices were hard to read in the scan (EL09's
+section E, parts of EL20's and EL22's accompaniment), the harmony, rhythm and register are kept and the voicing is
+approximate; in EL11's chorale the accompaniment doubles the voices, as the reduction does. The Internet Archive
+also has the 1870 printing of the same plates (`elijahoratorioin00mend`), which is clean where the 1881 copy's
+pages are covered (No. 16's first pages).
 
 There is no choir in the sample library, so sung lines are played on instruments, as in the Ring.
 
@@ -93,5 +135,8 @@ Horeb a single faint point).
 | code | title | numbers | status |
 |------|-------|---------|--------|
 | EL09 | Hear and Answer | 13 | built: the whole chorus, 77 bars, with Mendelssohn's silences frozen on the house |
+| EL11 | The Fire Descends | 16 | built: the recitative, the fire falling down Porch Right onto the altar, the people bowing, and the chorale |
+| EL20 | The Lord Passed By | 34 | built: wind, earthquake and fire, then the still small voice as one silver point on Porch Front |
+| EL22 | The Fiery Chariot | 38 | built: the chariot of fire racing the roofline from Right and leaving at the free end of Side |
 
 The full plan of 23 scenes is in #41.
