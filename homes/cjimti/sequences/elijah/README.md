@@ -25,13 +25,16 @@ played on orchestral instruments; every character has a colour and an instrument
 God never appears as a figure, only in what light does: fire that falls, rain that comes, a single faint point at
 Horeb.
 
-So far seven scenes are built: the Introduction and the Overture, Elijah's curse and the drought spreading over the
+So far ten scenes are built: the Introduction and the Overture, Elijah's curse and the drought spreading over the
 house; Nos. 1 and 2, the people crying out in the drought (*Help, Lord!*); Nos. 3 to 5, Obadiah's promise and the
-chorus that cries God does not see (*If with all your hearts*, *Yet doth the Lord see it not*); No. 13, the priests
-of Baal calling on their god (*Baal, hear and answer*), with Mendelssohn's silences frozen on the house; No. 16,
-Elijah calling down the fire and the people falling on their faces (*The fire descends*); No. 34, the wind, the
-earthquake and the fire on Horeb, and the still small voice after them (*Behold! God the Lord passed by*); and No.
-38, the chariot of fire (*Then did Elijah*). It is the start of an
+chorus that cries God does not see (*If with all your hearts*, *Yet doth the Lord see it not*); Nos. 6 and 7, the
+angel sending Elijah into hiding and the double quartet of angels going with him (*For He shall give His angels
+charge over thee*); No. 8, the widow's son, dead and raised at Elijah's third prayer (*What have I to do with
+thee*); No. 10, Elijah before Ahab and the challenge of the two altars (*As God the Lord of Sabaoth liveth*); No.
+13, the priests of Baal calling on their god (*Baal, hear and answer*), with Mendelssohn's silences frozen on the
+house; No. 16, Elijah calling down the fire and the people falling on their faces (*The fire descends*); No. 34,
+the wind, the earthquake and the fire on Horeb, and the still small voice after them (*Behold! God the Lord passed
+by*); and No. 38, the chariot of fire (*Then did Elijah*). It is the start of an
 oratorio season on the house, with Handel's *Judas Maccabaeus* and *Messiah* to follow.
 
 ## Where the music comes from
@@ -87,6 +90,35 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/rend_your_h
     --perf "Recitative at crotchet = 72; Andante con moto, crotchet = 72; Allegro vivace, minim = 96, as marked" \
     --out homes/cjimti/sequences/elijah/rend_your_hearts.score.json
 
+# EL04 The Angels' Charge: No. 6 (bars 1-9) and the first 27 bars of No. 7 (10-36), cut halfway through bar 36,
+# before the first quartet's "That their hands"; from the 1870 printing, whose pp. 29-32 the 1881 copy lacks
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_angels_charge.musicxml 1-36.5 --tempo \
+    --part An.=Angel --part "S. 1=S1" --part "S. 2=S2" --part "A. 1=A1" --part "A. 2=A2" --part "T. 1=T1" \
+    --part "T. 2=T2" --part "B. 1=B1" --part "B. 2=B2" --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1870), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 6: Elijah, get thee hence; No. 7: For He shall give His angels charge over thee" \
+    --perf "Recitative at crotchet = 72, Andante at 66; Allegro non troppo, crotchet = 126, as marked" \
+    --out homes/cjimti/sequences/elijah/the_angels_charge.score.json
+
+# EL05 The Widow's Son: No. 8, the widow's plea (bars 13-25), Elijah's three prayers (67-71, 86-92, 111-114) and the
+# son reviving (115-121); from the 1870 printing
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_widows_son.musicxml 13-26 67-72 86-93 111-122 \
+    --tempo --part W.=Widow --part El.=Elijah --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1870), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 8: What have I to do with thee" \
+    --perf "Andante agitato, dotted crotchet = 66; Andante sostenuto, crotchet = 58; Andante con moto, dotted crotchet = 63; recitatives at crotchet = 66 and 72, as marked; the fermata doubled" \
+    --out homes/cjimti/sequences/elijah/the_widows_son.score.json
+
+# EL06 Before Ahab: No. 10, Elijah's oath (bars 2-5), the Allegro vivace and Ahab (14-26), the people's "Thou art
+# Elijah" (27-31), Elijah's answer to "thy father's house" (32-35), and the challenge from "Rise then" to "put no
+# fire" (63-65) spliced to "and the God who by fire shall answer" and the chorus (71-84); from the 1870 printing
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/before_ahab.musicxml 2-6 14-35.5 63-66 71-85 --tempo \
+    --part El.=Elijah --part Ah.=Ahab --part S.=S --part A.=A --part T.=T --part B.=B --part Pno.=Orch \
+    --source "Novello, Ewer and Co. octavo vocal score (London, 1870), transcribed; public domain" \
+    --act "Elijah, Op. 70, No. 10: As God the Lord of Sabaoth liveth" \
+    --perf "Grave, crotchet = 60; Allegro vivace, crotchet = 144; recitatives at crotchet = 84, Maestoso at 80; a tempo, minim = 92, as marked" \
+    --out homes/cjimti/sequences/elijah/before_ahab.score.json
+
 # EL11 The Fire Descends: No. 16, the recitative (bars 1-6), the chorus's first six bars (7-12) and "Before Him" to
 # the end of the chorale (32-60)
 uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fire_descends.musicxml 1.6-13 32-61 --tempo \
@@ -119,10 +151,11 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/elijah/the_fiery_c
 When a scene's numbers come one after another, they share one MusicXML, numbered straight through (each file's
 first lines say which bars are which number). The voices are read note for note. Where the piano reduction's inner
 voices were hard to read in the scan (EL09's section E, parts of EL20's and EL22's accompaniment, the rushing chords
-of EL02's first bars, the bass under EL01's fugal answer, parts of EL03's accompaniment), the harmony, rhythm and
+of EL02's first bars, the bass under EL01's fugal answer, parts of EL03's accompaniment, and the accompaniments of
+EL04, EL05 and EL06, whose tremolos and repeated figures are written as chords), the harmony, rhythm and
 register are kept and the voicing is approximate; in EL11's chorale the accompaniment doubles the voices, as the reduction does. The Internet Archive
 also has the 1870 printing of the same plates (`elijahoratorioin00mend`), which is clean where the 1881 copy's
-pages are covered (No. 16's first pages).
+pages are covered (No. 16's first pages) and has the pages the 1881 copy lacks (Nos. 6 to 10 are read from it).
 
 There is no choir in the sample library, so sung lines are played on instruments, as in the Ring.
 
@@ -168,6 +201,9 @@ Horeb a single faint point).
 | EL01 | The Curse | Introduction, Overture | built: the curse on Right, every chord burning the amber further; the fugue draining the house to dust |
 | EL02 | Help, Lord! | 1, 2 | built: the people's cries flaring up the porch, the harvest falling in gold, the prayer climbing to a dark sky |
 | EL03 | Rend Your Hearts | 3, 4, 5 | built: Obadiah's teal walking among the people; red pulses from heaven that never reach them |
+| EL04 | The Angels' Charge | 6, 7 | built: the Angel on Porch Front; eight silver points, the double quartet, walking with Elijah from Right to the front corner |
+| EL05 | The Widow's Son | 8 | built: the widow's rose and her son's warm point on Left; Elijah's amber reaching farther at each prayer, and the point lit again |
+| EL06 | Before Ahab | 10 | built: Ahab's iron grey against Elijah's amber; the people turned grey and back; Baal's bronze altar on Left and the unlit wood on Right |
 | EL09 | Hear and Answer | 13 | built: the whole chorus, 77 bars, with Mendelssohn's silences frozen on the house |
 | EL11 | The Fire Descends | 16 | built: the recitative, the fire falling down Porch Right onto the altar, the people bowing, and the chorale |
 | EL20 | The Lord Passed By | 34 | built: wind, earthquake and fire, then the still small voice as one silver point on Porch Front |
