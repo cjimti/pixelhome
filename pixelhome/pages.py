@@ -310,9 +310,29 @@ def _trail(pl):
     return t
 
 
+def _thumb(m, cls='', lazy=True):
+    """A sequence's thumbnail: the house lit by its most colourful frame."""
+    return (f'<img class="{cls}" src="/{m["thumb"]}" width="640" height="360" alt="The house lit by {esc(m["title"])}"'
+            f'{" loading=lazy" if lazy else ""} decoding="async">') if m.get('thumb') else ''
+
+
+def _best(seqs):
+    """The scene a set's card shows: its most colourful show."""
+    shows = [m for m in seqs if m['kind'] == 'show'] or seqs
+    return max(shows, key=lambda m: m.get('thumbScore', 0))
+
+
+def _stills(seqs, n=5):
+    """Scenes spread across a set, for the pictures beside its text: n shows evenly from first to last."""
+    shows = [m for m in seqs if m['kind'] == 'show' and m.get('thumb')]
+    if len(shows) <= n:
+        return shows
+    return [shows[round(i * (len(shows) - 1) / (n - 1))] for i in range(n)]
+
+
 def _card(pl, seqs):
     p = PLAYLIST[pl]
-    return (f'<a class="setcard" href="/{pl}/" style="--c:{p["accent"]}"><span class="sk">{esc(BY_ID[p["occasion"]]["label"])}'
+    return (f'<a class="setcard" href="/{pl}/" style="--c:{p["accent"]}">{_thumb(_best(seqs), "cardimg")}<span class="sk">{esc(BY_ID[p["occasion"]]["label"])}'
             f'</span><b>{esc(p["label"])}</b><span>{esc(p.get("desc", ""))}</span><span class="rt">{runtime(seqs) or f"{len(seqs)} sequences"}'
             f'</span></a>')
 
@@ -434,7 +454,11 @@ def _playlist(out, pl, home, by_pl, built):
     if others:
         parts.append(f'<section><h2>Also for {esc(label)}</h2><div class="setcards">'
                      + ''.join(_card(x, by_pl[x]) for x in others) + '</div></section>')
-    parts.append(text)
+    if text:
+        figs = ''.join(f'<a class="still" href="/{m["id"]}/">{_thumb(m)}<span><b>{esc(m["code"])}</b> {esc(m["title"])}</span></a>'
+                       for m in _stills(seqs))
+        parts.append(f'<div class="story"><div class="storytext">{text}</div>'
+                     + (f'<aside class="stills" aria-label="Scenes">{figs}</aside>' if figs else '') + '</div>')
     shows = len([s for s in seqs if s['kind'] == 'show'])
     title = f'{label}: a light show in {shows} scene{"" if shows == 1 else "s"} · Pixelhome' if text and shows \
         else f'{label} light sequences · Pixelhome'

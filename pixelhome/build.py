@@ -11,6 +11,7 @@ WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half fra
 MAX_SECONDS = 15 * 60
 # Rendered output is cached by a hash of everything it depends on, so a build only renders what changed.
 CACHE = os.environ.get('PIXELHOME_RENDER_CACHE', os.path.join(catalog.ROOT, 'build', 'render-cache'))
+THUMB_VERSION = hashlib.sha256(open(os.path.join(os.path.dirname(__file__), 'share.py'), 'rb').read()).hexdigest()[:10]
 
 
 def _matches(s, want):
@@ -84,6 +85,19 @@ def _build_one(args):
     with open(os.path.join(cached, 'meta.json')) as f:
         meta = json.load(f)
     meta['cached'] = hit
+    # its thumbnail, cached beside the render and redrawn when share.py changes
+    th = os.path.join(cached, f'thumb-{THUMB_VERSION}.webp')
+    score = os.path.join(cached, f'thumb-{THUMB_VERSION}.json')
+    if not os.path.exists(score):
+        for old in glob.glob(os.path.join(cached, 'thumb-*')):
+            os.remove(old)
+        sc = share.thumb(catalog.load_home(s.home), os.path.join(cached, 'seq.png'), th)
+        with open(score, 'w') as f:
+            json.dump(sc, f)
+    os.makedirs(os.path.join(out, 'thumbs', s.home, s.playlist), exist_ok=True)
+    shutil.copyfile(th, os.path.join(out, 'thumbs', s.home, s.id + '.webp'))
+    with open(score) as f:
+        meta.update(thumb=f'thumbs/{s.home}/{s.id}.webp', thumbScore=round(json.load(f), 5))
     meta.update(occasion=s.occasion, playlist=s.playlist)     # set here: cached renders predate playlists
     mp3 = os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')     # rendered locally by `pixelhome music`
     if os.path.exists(mp3):

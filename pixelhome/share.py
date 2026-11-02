@@ -1,4 +1,5 @@
-"""Share images for the site: the og:image card (the house lit by a real frame) and the touch icon."""
+"""Images of the house for the site: the og:image card and a thumbnail per sequence (the house lit by a real frame),
+and the touch icon."""
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -12,8 +13,8 @@ MOON = np.array([-0.6, 1.4, 0.8]) / np.linalg.norm([-0.6, 1.4, 0.8])
 GLOWS = [(150, 0.22, 0.16), (40, 0.55, 0.14), (8, 1.0, 0.35)]   # world size, opacity, gaussian sigma / size
 
 
-def _camera(pos, az=-0.62, el=0.34, dist=1.35, fov=38):
-    """The site's Corner view (app.js VIEWS.corner), as a projector from layout units to card pixels."""
+def _camera(pos, W=W, H=H, az=-0.62, el=0.34, dist=1.35, fov=38):
+    """The site's Corner view (app.js VIEWS.corner), as a projector from layout units to W x H pixels."""
     x0, x1 = pos[:, 0].min(), pos[:, 0].max()
     z0, z1 = pos[:, 2].min(), pos[:, 2].max()
     span = max(x1 - x0, z1 - z0, 1)
@@ -34,16 +35,19 @@ def _camera(pos, az=-0.62, el=0.34, dist=1.35, fov=38):
 
 
 def _frame(home, png):
-    """The most colourful, most fully lit frame of a rendered sequence, as (N,3) PWM in node order."""
+    """The most colourful, most fully lit frame of a rendered sequence, as (N,3) PWM in node order, and its score
+    (how lit and how colourful it is)."""
     data = np.asarray(Image.open(png), float).reshape(-1, home.N, 3) / 255
     p = data ** (1 / 2.2)
     score = (p.max(axis=2) > 0.15).mean(axis=1) * ((p.max(axis=2) - p.min(axis=2)) ** 2).mean(axis=1)
-    return data[int(np.argmax(score))]
+    k = int(np.argmax(score))
+    return data[k], float(score[k])
 
 
-def card(home, png, path):
-    """1200x630 og:image: the house from the Corner view with its roofline lit by one frame."""
-    project = _camera(home.pos)
+def house(home, rgb, W=W, H=H, dist=1.35):
+    """The house from the Corner view with its roofline lit by one frame (N,3 PWM), as a W x H PIL image. `dist`
+    is the camera's distance in house spans (the site's Corner view is 1.35)."""
+    project = _camera(home.pos, W, H, dist=dist)
     img = np.empty((H, W, 3))
     img[:] = BG
     # the house: painter's algorithm over the mesh, flat shaded by the moon like the 3D view
@@ -65,7 +69,6 @@ def card(home, png, path):
         a = np.asarray(mask, float)[..., None] / 255
         img = img * (1 - a) + np.asarray(canvas, float) / 255 * a
     # the lights: additive glows sized like the site's three point sprites
-    rgb = _frame(home, png)
     xy, z, f = project(home.pos)
     glow = np.zeros((H, W, 3))
     for k in np.argsort(-z):
@@ -83,7 +86,20 @@ def card(home, png, path):
             w = np.exp(-((gx - xy[k, 0]) ** 2 + (gy - xy[k, 1]) ** 2) / (2 * s * s)) * opacity
             glow[ys, xs] += w[..., None] * c
     img = 1 - (1 - img) * np.exp(-glow * 1.6)          # soft additive, so dense runs don't clip to flat white
-    out = Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8))
+    return Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8))
+
+
+def thumb(home, png, path, W=640, H=360):
+    """A sequence's thumbnail for the site's cards and set pages (WebP), from its most colourful frame. Returns the
+    frame's score, so a set can show its most colourful scene."""
+    rgb, score = _frame(home, png)
+    house(home, rgb, W, H, dist=1.12).save(path, 'WEBP', quality=82, method=6)     # closer: the house fills it
+    return score
+
+
+def card(home, png, path):
+    """1200x630 og:image: the house lit by one frame, with the site's name."""
+    out = house(home, _frame(home, png)[0])
     d = ImageDraw.Draw(out)
     d.text((64, 56), 'Pixelhome', font=ImageFont.load_default(72), fill=(242, 234, 224))
     d.text((66, 140), 'Light sequences for a house roofline, previewed in 3D',

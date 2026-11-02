@@ -442,3 +442,26 @@ a.item { color: inherit; text-decoration: none; }
   .doc .exposure input { width: 100%; }
   .doc .dls { grid-column: 4 / 6; grid-row: 2; }
 }
+
+/* thumbnails: the house lit by a scene's most colourful frame (share.thumb) */
+.setcard { overflow: hidden; }
+.setcard .cardimg {
+  display: block; width: calc(100% + 32px); max-width: none; height: auto; aspect-ratio: 16 / 9; margin: -14px -16px 8px;
+  background: #060504; border-bottom: 1px solid var(--line);
+}
+/* a set's text with pictures of its scenes beside it, from first to last */
+.story { display: grid; gap: 28px; align-items: start; }
+.storytext { display: grid; gap: 32px; min-width: 0; }
+.stills { display: grid; gap: 14px; min-width: 0; }
+.still { display: grid; gap: 6px; color: var(--muted); text-decoration: none; font-size: 13px; line-height: 1.35; }
+.still img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 8px; border: 1px solid var(--line); background: #060504; }
+.still b { font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.06em; color: var(--accent); margin-right: 4px; }
+.still:hover span { color: var(--ink); }
+.still:hover img { border-color: var(--accent); }
+@media (min-width: 960px) {
+  .story { grid-template-columns: minmax(0, 80ch) minmax(240px, 380px); gap: 48px; }
+}
+@media (max-width: 959.98px) {
+  .stills { order: -1; grid-auto-flow: column; grid-auto-columns: min(72%, 300px); overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+  .still { scroll-snap-align: start; }
+}
