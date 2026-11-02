@@ -192,6 +192,7 @@
   const cache = new Map();         // url -> Uint8Array, least recently used first
   let seq = null;                  // { meta, data, channels, fps, frames }
   let t = 0, playing = false, scrubbing = false;
+  let still = false;     // the paused still a page opens on: Play starts it from the top (and its intro)
   const exposure = $('exposure');
 
   // Each sequence ships as a lossless PNG: one row per frame, one image pixel per LED, channel order.
@@ -429,6 +430,7 @@
   }
 
   async function choose(meta, startAt = 0, autoplay = true, intro = true) {
+    if (autoplay) still = false;
     if (intro && introsOn && meta.introData && startAt === 0 && autoplay && !reduceMotion) return playIntro(meta);
     mark(meta);
     const token = ++loadToken;
@@ -462,6 +464,12 @@
   }
   // play/pause from the button or the space bar
   function togglePlay() {
+    if (still && !playing && seq) {
+      still = false;
+      choose(seq.meta.introOf || seq.meta);
+      trackSeq('play', seq.meta, { position_s: 0 });
+      return;
+    }
     setPlaying(!playing);
     trackSeq(playing ? 'play' : 'pause', seq && seq.meta, { position_s: Math.round(t) });
   }
@@ -497,7 +505,7 @@
     soundOn = !soundOn;
     try { localStorage.setItem('pixelhome.sound', soundOn ? '1' : '0'); } catch (e) { /* storage blocked */ }
     showSound();
-    if (soundOn && !playing) setPlaying(true); else syncMusic();
+    if (soundOn && !playing) togglePlay(); else syncMusic();
     trackSeq('toggle_sound', seq && seq.meta, { enabled: soundOn });
   });
   showSound();
@@ -551,7 +559,7 @@
   }
 
   const scrub = $('scrub');
-  scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; });
+  scrub.addEventListener('input', () => { if (seq) seek(scrub.value * seq.frames / seq.fps); scrubbing = true; still = false; });
   scrub.addEventListener('change', () => { scrubbing = false; });
   // Exposure -2..8: 1 shows the lights as they are; above 1 multiplies them (up to 8×), below 1 halves them per
   // step (0 is 0.5×, -2 is 0.125×), for when a bright show glares on screen.
@@ -665,11 +673,13 @@
     }
     const list = isLibrary ? home.sequences : [...cards.values()].map((c) => c._seq);
     if (!list.length) { status.textContent = 'This home has no sequences yet.'; return; }
+    // nothing plays until the visitor asks: the page opens on a still of its sequence, paused
     const pick = list.find((s) => s.id === seqId);
-    if (pick) choose(pick);
+    still = true;
+    if (pick) choose(pick, pick.seconds * 0.3, false);
     else {
       const first = CAT.occasions.map((o) => list.find((s) => s.occasion === o.id)).find(Boolean) || list[0];
-      choose(first, first.seconds * 0.3);
+      choose(first, first.seconds * 0.3, false);
     }
   }
 
