@@ -22,7 +22,7 @@ FLOOR = 0.04                            # perceptual: the three runs never go fu
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
           'gotterdammerung': 'halloween-accent', 'thanksgiving': 'halloween-accent',
-          'chef-charlie': 'halloween-accent'}
+          'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -481,9 +481,68 @@ def _bed_chef_charlie(n, rng, s0, s1):
             (pre, -33.0, pre_s), (post, -33.0, post_s)]
 
 
+def _bed_elijah(n, rng, s0, s1):
+    """D minor, the key of the curse that opens Elijah: a low held drone of double basses on D with the bassoons' A
+    a moment later and a little dry wind, as the drought. Before the first word the trombones sound the curse's first
+    chord; violas hold D minor while it speaks; after the last word the trombones give the rest of the curse's chords
+    (the Introduction's opening, as EL01 plays it), coming home to D minor."""
+    import pedalboard as pb
+    from .audio import SR, Sampler, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def track(s, notes, release=0.5):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    def drone(s, notes, t0, vel, step=2.5):
+        """Sustained notes from t0 to the end: overlapping windows of the sample past its attack."""
+        out = np.zeros((2, n))
+        w = int(2 * step * SR)
+        win = np.hanning(w)
+        for m in notes:
+            for t1 in np.arange(t0 - step, T, step):
+                a = s.play(note(m), vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
+                a = a * win[:a.shape[1]]
+                k0 = int(t1 * SR)
+                if k0 < 0:
+                    a, k0 = a[:, -k0:], 0
+                k = min(n - k0, a.shape[1])
+                out[:, k0:k0 + k] += a[:, :k]
+        return out * np.clip((t - t0) / 1.2, 0, 1)
+
+    low = drone(Sampler('Strings/Solo Contrabass/SusNV/*.wav', rng, tune=-12), ['D1', 'D2'], 0.0, 88)
+    fifth = drone(Sampler('Woodwinds/Bassoon/sus/*.wav', rng, tune=-12), ['A1'], 0.9, 76)
+    violas = drone(Sampler('Strings/Viola Section/susvib/*.wav', rng, tune=-12), ['D3', 'F3', 'A3'], s0, 58)
+    # the curse's chords (the Introduction, bars 1-2): D minor, then the diminished chord twice, home to D minor
+    curse = [(0.0, 2.0, ['D2', 'D3', 'F3', 'A3', 'D4']), (2.0, 1.0, ['D2', 'D3', 'E3', 'G3', 'Bb3', 'D4']),
+             (3.0, 1.0, ['D2', 'D3', 'E3', 'G3', 'Bb3', 'D4']), (4.0, 2.4, ['D2', 'D3', 'F3', 'A3', 'D4'])]
+    bones = Sampler('Brass/Tenor Trombone/sus/*.wav', rng, tune=-12)
+    first = track(bones, [(0.25, note(m), 84, min(s0, 2.4) - 0.25) for m in curse[0][2]], 0.8)
+    beat = 0.5
+    home = s1 + 0.45
+    rest = track(bones, [(home + (c0 - 2.0) * beat, note(m), 96, d * beat if c0 < 4 else 2.0)
+                         for c0, d, ms in curse[1:] for m in ms], 0.8)
+    air = rng.normal(0, 1, (2, n)).astype(np.float32)
+    air = pb.Pedalboard([pb.HighpassFilter(300), pb.LowpassFilter(1800),
+                         pb.LadderFilter(pb.LadderFilter.Mode.BPF12, cutoff_hz=900, resonance=0.3)])(air, SR)
+    gust = 0.4 + 0.6 * np.clip(np.sin(2 * np.pi * t / 7.0 + rng.uniform(0, 6.3)), 0, 1) ** 2
+    wind = air / np.abs(air).max() * gust
+    pre, post = slice(int(0.25 * SR), int(min(s0, 2.4) * SR)), slice(int(home * SR), int(min(T, home + 2.6) * SR))
+    return [(low, -38.0, None), (fifth, -45.0, None), (violas, -46.0, slice(int(s0 * SR), int(s1 * SR))),
+            (first, -35.0, pre), (rest, -34.0, post), (wind, -50.0, None)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
         'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
-        'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie}
+        'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie,
+        'elijah': _bed_elijah}
 
 
 def _rms(x):

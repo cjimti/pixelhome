@@ -19,3 +19,6 @@ audio = [
     "mido>=1.3.3",
     "pedalboard>=0.9.26",
 ]
+score = [
+    "scipy>=1.14",
+]

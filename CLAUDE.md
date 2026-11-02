@@ -72,6 +72,11 @@ orchestrates it (`Orchestra`). Pick the most dynamic passages that tell each sce
 interpretation, not a purist one. Augment the score as a staged production would: every event the lights show gets
 a sound (thunder with lightning, hoofbeats, clashes, fire; `Orchestra.thunder`, `gallop`, `clash`, `fire`...), and
 sung melodies that matter can come from a public-domain vocal score, played on an instrument.
+The oratorios (Elijah, then Judas Maccabaeus and Messiah) have no dataset: their notes are transcribed by hand from
+public-domain vocal scores with `scripts/noteheads.py` and `scripts/staff_lines.py` (pitches off 500 dpi scans; `uv
+run --group score`), `scripts/shorthand.py` (a notes file to MusicXML, every bar checked) and `scripts/clash.py`
+(misreads), then cut with `scripts/score_excerpt.py --tempo`; `homes/cjimti/sequences/elijah/README.md` has the
+method and every scene's cut.
 `homes/cjimti/sequences/halloween/bone_yard.py` is the reference. One-time setup: `scripts/audio-setup.sh`.
 For now the build leaves a sequence off the site until its MP3 exists (the module stays; `preview`, `list` and
 `music` still see it).
@@ -114,6 +119,22 @@ carry `<!--sitehead-->` where the build puts it.
 
 `live/` is the Cloudflare Worker and Pi service behind the site's Live button (see `live/README.md`). It must
 stay within the Workers Free plan: no paid-only features, nothing that sends viewers' messages inbound.
+
+## Tickets and PRs
+
+Every session starts from this process, not only from the last handoff.
+
+- Tickets exist before work starts. A branch gathers every open, unblocked ticket that fits one reviewable PR (about
+  one set of scenes, roughly 20 minutes of new audio, per review). Work that has no ticket gets one first, under its
+  epic. A handoff's numbered list is the order of work, not the PR's scope.
+- Every PR closes all of its tickets, one `Closes #n` line each. A ticket too big for one PR becomes an epic with
+  sub-issues.
+- Branch from a freshly fetched `origin/main` with `--no-track` (`git fetch && git switch -c <name> --no-track
+  origin/main`); a branch that tracks `main` breaks the owner's push.
+- Committing, pushing and opening the PR each wait for the owner's word, and the owner pushes. Approval for one
+  step is not approval for the next.
+- At the end of a session, post a handoff comment on the epic: the state, and what comes next. Its steps are for the
+  next session; don't start them, not even the branch, unless the owner asks.
 
 ## Branches, PRs and releases
 

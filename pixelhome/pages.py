@@ -13,7 +13,17 @@ browser: it hides what is over, says Tonight and Tomorrow, and points to Live wh
 Every set and sequence page has a share card of its own (cards/), the house lit by its most colourful frame.
 
 A set page's text comes from the set's README.md in its sequence folder: the sections named in README_SECTIONS,
-written for visitors, turned into HTML here so the repo and the site never disagree."""
+written for visitors, turned into HTML here so the repo and the site never disagree. A sequence page adds the module's
+docstring, the longer note on what happens and how it was made, under its description.
+
+Structured data (JSON-LD): every page has the site (WebSite) and its author (Person, linking the profiles the About
+page links); set and sequence pages a BreadcrumbList; a set a CreativeWorkSeries and a sequence a CreativeWork, both
+based on the real work when they recreate one (WORKS); and each showing on the schedule an Event, free, located at
+the Live page, where it can be watched as it plays.
+
+The 3D player loads after the page: three.js and app.js are fetched once the page has loaded, so text and images
+paint first, and the web fonts load without blocking the text."""
+import ast
 import datetime as dt
 import html
 import json
@@ -25,7 +35,7 @@ from . import catalog, share
 from .occasions import BY_ID, KINDS, OCCASIONS, PLAYLIST, SETS, playlists
 
 ORIGIN = 'https://pixelhome.app'
-README_SECTIONS = ('About the work', 'The stage', 'Who is who')
+README_SECTIONS = ('About the work', 'Where the music comes from', 'The stage', 'Who is who')
 NAV = [('/', 'Schedule'), ('/sets/', 'Sets'), ('/library/', 'Library'), ('/live/', 'Live'), ('/about/', 'About')]
 KIND_LABEL = {'show': 'Show', 'ambient': 'All-night loop', 'intermission': 'Intermission'}
 GA = """<script async src="https://www.googletagmanager.com/gtag/js?id=G-KQYBQLRBMP"></script>
@@ -41,6 +51,18 @@ WEBSITE = {'@context': 'https://schema.org', '@type': 'WebSite', 'name': 'Pixelh
            'description': "Pixel light sequences for a house roofline: Halloween, Christmas, Wagner's Ring and more, "
                           'previewed in 3D and downloadable as FSEQ for Falcon Player (FPP).',
            'license': 'https://creativecommons.org/licenses/by-sa/4.0/'}
+LICENSE = 'https://creativecommons.org/licenses/by-sa/4.0/'
+AUTHOR = {'@type': 'Person', 'name': 'Craig Johnston', 'url': f'{ORIGIN}/about/',
+          'sameAs': ['https://github.com/cjimti/', 'https://imti.co', 'https://deasil.works', 'https://plexara.io',
+                     'https://diffusionlab.io/', 'https://fewbottles.com', 'https://www.linkedin.com/in/cjimti/',
+                     'https://x.com/cjimti']}
+PERSON = {'@context': 'https://schema.org', **AUTHOR}
+# the real works the sets recreate: (name, composer, year of the premiere)
+WORKS = {'das-rheingold': ('Das Rheingold', 'Richard Wagner', '1869'),
+         'die-walkure': ('Die Walküre', 'Richard Wagner', '1870'),
+         'siegfried': ('Siegfried', 'Richard Wagner', '1876'),
+         'gotterdammerung': ('Götterdämmerung', 'Richard Wagner', '1876'),
+         'elijah': ('Elijah, Op. 70', 'Felix Mendelssohn', '1846')}
 
 
 def esc(s):
@@ -145,6 +167,69 @@ def readme(home, playlist):
     return '\n'.join(f'<section class="prose">{markdown("## " + s)}</section>' for s in keep), lede
 
 
+def note(home, m):
+    """A sequence's longer note as HTML: its module docstring ('' when it has none), the title it starts with left
+    off (the page's heading says it) and the paragraphs about its code (render(), score()) left out."""
+    path = os.path.join(catalog.HOMES, home, 'sequences', m['playlist'], m['id'].split('/', 1)[1].replace('-', '_') + '.py')
+    if not os.path.exists(path):
+        return ''
+    with open(path, encoding='utf-8') as f:
+        doc = ast.get_docstring(ast.parse(f.read())) or ''
+    paras = [re.sub(r'\s+', ' ', x).strip() for x in doc.split('\n\n')]
+    if paras and paras[0].startswith(m['title'] + ':'):
+        paras[0] = paras[0][len(m['title']) + 1:].strip()
+        paras[0] = paras[0][:1].upper() + paras[0][1:]
+    paras = [x for x in paras if x and 'render()' not in x and 'score()' not in x]
+    return ''.join(f'<p>{esc(x)}</p>' for x in paras)
+
+
+def iso_duration(seconds):
+    m, sec = divmod(int(round(seconds)), 60)
+    return f'PT{m}M{sec}S'
+
+
+def based_on(pl):
+    """The real work a set recreates, as schema.org data (None for the pieces written for the house)."""
+    if pl not in WORKS:
+        return None
+    name, composer, year = WORKS[pl]
+    return {'@type': 'MusicComposition', 'name': name, 'composer': {'@type': 'Person', 'name': composer},
+            'dateCreated': year}
+
+
+def event(b, label, desc, image):
+    """A showing on the schedule as a schema.org Event: free, and watched on the Live page as it plays."""
+    live = f'{ORIGIN}/live/'
+    e = {'@context': 'https://schema.org', '@type': 'Event',
+         'name': f'{label} on the Pixelhome roofline' + (f' ({b["note"]})' if b.get('note') and b['note'] != label else ''),
+         'description': desc, 'startDate': b['start'], 'endDate': b['end'],
+         'eventStatus': 'https://schema.org/EventScheduled',
+         'eventAttendanceMode': 'https://schema.org/OnlineEventAttendanceMode',
+         'location': {'@type': 'VirtualLocation', 'url': live}, 'isAccessibleForFree': True,
+         'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD', 'availability': 'https://schema.org/InStock',
+                    'url': live, 'validFrom': b['start'][:10]},
+         'organizer': AUTHOR, 'performer': AUTHOR, 'url': f'{ORIGIN}/{b["playlist"]}/'}
+    if image:
+        e['image'] = [f'{ORIGIN}/{image}']
+    return e
+
+
+def events(out, sched, pls, nights=None):
+    """Events for the showings still to come of the playlists in pls (every set when pls is None), over the next
+    `nights` nights of shows when given, each with its set's share card when it has one."""
+    now = time.time()
+    found = []
+    upcoming = [n for n in _shows(sched) if _ends(n['blocks'][-1]['end']) > now]
+    for n in upcoming[:nights] if nights else upcoming:
+        for b in n['blocks']:
+            if b['kind'] != 'set' or (pls is not None and b['playlist'] not in pls) or _ends(b['end']) <= now:
+                continue
+            pl = b['playlist']
+            card = f'cards/{pl}.jpg' if os.path.exists(os.path.join(out, 'cards', f'{pl}.jpg')) else None
+            found.append(event(b, b['label'], PLAYLIST[pl].get('desc', '') if pl in PLAYLIST else '', card))
+    return found
+
+
 # ---------------------------------------------------------------------------- pieces every page shares
 def fmt(seconds):
     m, s = divmod(int(round(seconds)), 60)
@@ -181,7 +266,8 @@ def head(title, desc, path, ld=(), index=True, image=None):
                  f'<meta name="twitter:image" content="{img}">', f'<meta name="twitter:image:alt" content="{esc(alt)}">']
     else:
         meta.append('<meta name="robots" content="noindex">')
-    lds = ''.join(f'\n<script type="application/ld+json">{json.dumps(x, ensure_ascii=False)}</script>' for x in [WEBSITE, *ld])
+    lds = ''.join(f'\n<script type="application/ld+json">{json.dumps(x, ensure_ascii=False)}</script>'
+                  for x in [WEBSITE, PERSON, *ld])
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -194,7 +280,8 @@ def head(title, desc, path, ld=(), index=True, image=None):
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">{lds}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="{FONTS}">
+<link rel="preload" as="style" href="{FONTS}" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="{FONTS}"></noscript>
 <link rel="stylesheet" href="/header.css">
 <link rel="stylesheet" href="/style.css">"""
 
@@ -265,8 +352,12 @@ REDIRECT = """<script>(function () {       // old links: #live, and #<home>/<pla
   if (h === 'live') location.replace('/live/');
   else if (p.length === 3 && p[1] && p[2]) location.replace('/' + p[1] + '/' + p[2] + '/');
 })();</script>"""
-SCRIPTS = """<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
-<script src="/app.js" defer></script>"""
+SCRIPTS = """<script>addEventListener('load', function () {     // the 3D player after the page has painted
+  var three = document.createElement('script');
+  three.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  three.onload = function () { var app = document.createElement('script'); app.src = '/app.js'; document.body.appendChild(app); };
+  document.body.appendChild(three);
+});</script>"""
 
 
 def row(m, current=False):
@@ -589,12 +680,20 @@ def _playlist(out, pl, home, by_pl, built, sched, bases):
                                      f'{n} scene{"" if n == 1 else "s"} in pixel lights' if n else '') if x)
         share.label(bases[(home, best['id'])], os.path.join(out, 'cards', f'{pl}.jpg'), label, sub, p['accent'])
         image = (f'cards/{pl}.jpg', f'The house lit by {best["title"]}, a scene from {label}')
-    doc_page(out, f'/{pl}/', title, desc, p['accent'], '\n'.join(parts), built, ld=[ld], home=home,
+    series = {'@context': 'https://schema.org', '@type': 'CreativeWorkSeries', 'name': label, 'description': desc,
+              'url': f'{ORIGIN}/{pl}/', 'author': AUTHOR, 'license': LICENSE, 'inLanguage': 'en'}
+    if image:
+        series['image'] = f'{ORIGIN}/{image[0]}'
+    if based_on(pl):
+        series['isBasedOn'] = based_on(pl)
+    doc_page(out, f'/{pl}/', title, desc, p['accent'], '\n'.join(parts), built,
+             ld=[ld, series] + (events(out, sched, [pl] + others) if when else []), home=home,
              player=bool(seqs), image=image, tz=sched['timezone'] if when else None)
 
 
 def _sequence(out, m, home, siblings, built):
     pl = PLAYLIST[m['playlist']]
+    about = note(home, m)
     trail = _trail(m['playlist']) + [(m['title'], f'/{m["id"]}/')]
     nav_html, ld = crumbs(trail)
     i = next(k for k, s in enumerate(siblings) if s['id'] == m['id'])
@@ -624,6 +723,7 @@ def _sequence(out, m, home, siblings, built):
   </div>
   <div class="watchlist"><h2><a href="/{m['playlist']}/">{esc(pl['label'])}</a></h2>{rows(siblings, pl['accent'], m['id'], pl['label'])}</div>
 </section>
+{f'<section class="prose about"><h2>About this {"scene" if m["playlist"] in SETS else "piece"}</h2>{about}</section>' if about else ''}
 <section class="files">
   <h2>For your own show</h2>
   <p>{esc(KINDS[m['kind']])} The FSEQ (v2, zstd, 40 fps) plays in <a href="https://github.com/FalconChristmas/fpp">Falcon Player</a>
@@ -633,8 +733,19 @@ def _sequence(out, m, home, siblings, built):
 </section>
 <nav class="pager" aria-label="Scenes">{pager}</nav>"""
     image = (m['card'], f'The house lit by {m["title"]}') if m.get('card') else None
+    work = {'@context': 'https://schema.org', '@type': 'CreativeWork', 'name': m['title'], 'description': m['description'],
+            'url': f'{ORIGIN}/{m["id"]}/', 'author': AUTHOR, 'license': LICENSE, 'inLanguage': 'en',
+            'duration': iso_duration(m['seconds']), 'genre': 'Light show',
+            'isPartOf': {'@type': 'CreativeWorkSeries', 'name': set_label, 'url': f'{ORIGIN}/{m["playlist"]}/'}}
+    if m.get('card'):
+        work['image'] = f'{ORIGIN}/{m["card"]}'
+    if m.get('audio'):
+        work['audio'] = {'@type': 'AudioObject', 'contentUrl': f'{ORIGIN}/{m["audio"]}', 'encodingFormat': 'audio/mpeg',
+                         'duration': iso_duration(m['seconds'])}
+    if based_on(m['playlist']):
+        work['isBasedOn'] = based_on(m['playlist'])
     doc_page(out, f'/{m["id"]}/', f'{m["title"]}, {set_label} · Pixelhome', m['description'], pl['accent'], body,
-             built, ld=[ld], home=home, seq=m['id'], player=True, image=image)
+             built, ld=[ld, work], home=home, seq=m['id'], player=True, image=image)
 
 
 def _home(out, built, by_pl, sched):
@@ -694,7 +805,7 @@ def _home(out, built, by_pl, sched):
     doc_page(out, '/', "Pixelhome: tonight's light shows on a house roofline",
              "Show times for Wagner's Ring, Mendelssohn's Elijah and the holiday sets, played scene by scene in pixel "
              'lights on a house roofline, with music. Watch live, or preview any set in 3D.', '#ff6a1f', body, built,
-             current='/', tz=tz or 'UTC', extra_head='\n' + REDIRECT)
+             current='/', tz=tz or 'UTC', extra_head='\n' + REDIRECT, ld=events(out, sched, None, nights=14))
 
 
 def _mmdd(mmdd):
@@ -750,7 +861,6 @@ def write(out, cat, bases=None):
                 by_pl.setdefault(m['playlist'], []).append((h['id'], m))
     by_pl = {pl: [m for _, m in v] for pl, v in by_pl.items()}
     first = cat['homes'][0]['id'] if cat['homes'] else ''
-    _home(out, built, by_pl, scheds.get(first))
     _library(out, '/library/', cat, built, by_pl)
     _sets_index(out, built, by_pl)
     pages = {pl for pl in by_pl} | {PLAYLIST[pl]['occasion'] for pl in by_pl}
@@ -761,6 +871,7 @@ def write(out, cat, bases=None):
     for pl, seqs in by_pl.items():
         for m in seqs:
             _sequence(out, m, home_of[pl], seqs, built)
+    _home(out, built, by_pl, scheds.get(first))                 # after the set pages: its events show their cards
     _not_found(out, built)
     _shared_header(out)
     return sum(len(v) for v in by_pl.values()) + len(pages) + 4

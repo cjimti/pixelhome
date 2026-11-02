@@ -2,7 +2,7 @@
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
 <work><work-title>Elijah, No. 10: As God the Lord of Sabaoth liveth (excerpt)</work-title></work>
-<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1881), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
+<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1870), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
 <part-list>
 <score-part id="P1"><part-name>Elijah</part-name><part-abbreviation>El.</part-abbreviation></score-part>
 <score-part id="P2"><part-name>Ahab</part-name><part-abbreviation>Ah.</part-abbreviation></score-part>
