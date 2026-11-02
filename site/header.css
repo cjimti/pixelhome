@@ -1,9 +1,13 @@
 /* The header every page shares (pixelhome/pages.py writes it, and puts it into About and Live): the brand on the
    left, the site's sections on the right, across the full width of the window. Loaded on its own so the Live page,
    which doesn't use style.css, gets exactly the same header. Colours fall back for pages without the tokens. */
+/* Every page shares one gutter, the header's: content starts where the logo does, at any window width. Content is
+   left-aligned and capped on the right (--content), never centred, so the left edge never moves between pages. */
+:root { --gutter: 20px; --content: 1320px; }
+@media (max-width: 520px) { :root { --gutter: 14px; } }
 .sitehead {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px;
-  padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
+  padding: max(12px, env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) 12px max(var(--gutter), env(safe-area-inset-left));
   border-bottom: 1px solid var(--line, #2e2721); background: var(--night, #0b0a09);
   font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5;
 }
@@ -34,7 +38,7 @@
 @keyframes livepulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .sitehead .nav .live::before { animation: none; } }
 @media (max-width: 520px) {
-  .sitehead { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); gap: 6px 10px; }
+  .sitehead { gap: 6px 10px; }
   .sitehead .brand svg { width: 24px; height: 24px; }
   .sitehead .brand span { font-size: 24px; }
   .sitehead .by { margin-left: 34px; }

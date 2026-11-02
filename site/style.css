@@ -157,14 +157,14 @@ input[type="search"]::placeholder { color: var(--muted); }
     grid-template-areas: "top top" "lib main";
   }
   .app .sitehead { grid-area: top; }
-  .library { grid-area: lib; border-right: 1px solid var(--line); padding: 14px 8px 0 max(16px, env(safe-area-inset-left)); }
+  .library { grid-area: lib; border-right: 1px solid var(--line); padding: 14px 8px 0 max(var(--gutter), env(safe-area-inset-left)); }
   .filters { padding-right: 8px; }
   .list { overflow-y: auto; min-height: 0; flex: 1; padding: 0 6px 20px 0; overscroll-behavior: contain; }
   .main {
     grid-area: main; overflow-y: auto; display: grid; gap: 16px; align-content: start;
-    padding: 16px max(20px, env(safe-area-inset-right)) 32px 20px;
+    padding: 14px max(var(--gutter), env(safe-area-inset-right)) 32px var(--gutter);
   }
-  .main > * { width: 100%; max-width: 1240px; margin: 0 auto; }
+  .main > * { width: 100%; max-width: var(--content); }
   /* keep the stage plus transport inside the window on short screens */
   .stage { max-height: calc(100dvh - 200px); }
 }
@@ -180,11 +180,11 @@ input[type="search"]::placeholder { color: var(--muted); }
   .app .sitehead { order: 0; }
   .player {
     order: 1; position: sticky; top: 0; z-index: 5; gap: 8px;
-    padding: max(8px, env(safe-area-inset-top)) 12px 10px; background: var(--night);
+    padding: max(8px, env(safe-area-inset-top)) var(--gutter) 10px; background: var(--night);
     box-shadow: 0 10px 18px -8px rgba(0, 0, 0, 0.9); border-bottom: 1px solid var(--line);
   }
-  .library { order: 2; padding: 14px 16px 8px; }
-  .extras { order: 3; padding: 8px 16px max(32px, env(safe-area-inset-bottom)); }
+  .library { order: 2; padding: 14px var(--gutter) 8px; }
+  .extras { order: 3; padding: 8px var(--gutter) max(32px, env(safe-area-inset-bottom)); }
   .about { display: none; }
   .stage { border-radius: 8px; max-height: 42vh; }
   .now { left: 12px; top: 10px; }
@@ -207,7 +207,11 @@ input[type="search"]::placeholder { color: var(--muted); }
 
 /* ---------- about page ---------- */
 body.page { height: auto; overflow: visible; }
-.doc { max-width: 960px; margin: 0 auto; padding: 24px 16px max(40px, env(safe-area-inset-bottom)); display: grid; gap: 44px; }
+.doc {
+  padding: 24px max(var(--gutter), env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  display: grid; gap: 44px;
+}
+.doc > * { max-width: 960px; }        /* About and the 404 read at 960; set and sequence pages use the full --content */
 .doc > * { min-width: 0; }
 .doc section > p { max-width: 70ch; margin: 0 0 14px; }
 .doc section > h3 { font-size: 20px; margin: 26px 0 10px; }
@@ -345,7 +349,8 @@ body.page { height: auto; overflow: visible; }
 .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- generated pages: sets, occasions, sequences ---------- */
-.doc.wide { max-width: 1240px; gap: 32px; }
+.doc.wide { gap: 32px; }
+.doc.wide > * { max-width: var(--content); }
 .doc > section { min-width: 0; }
 .doc .intro { padding-top: 4px; }
 .doc .intro .lede { margin-bottom: 8px; }
@@ -368,7 +373,7 @@ a.item { color: inherit; text-decoration: none; }
   .watch { grid-template-columns: 360px minmax(0, 1fr); }      /* the list on the left, as in the library */
   .watchlist { grid-column: 1; grid-row: 1; }
   .watchplayer { grid-column: 2; grid-row: 1; }
-  .watchlist .list { max-height: calc(min(100dvh - 120px, (1240px - 360px - 48px) * 9 / 16) + 60px); }
+  .watchlist .list { max-height: calc(min(100dvh - 120px, (var(--content) - 360px - 48px) * 9 / 16) + 60px); }
 }
 .prose { max-width: 80ch; }
 .prose h2 { margin-bottom: 12px; }
