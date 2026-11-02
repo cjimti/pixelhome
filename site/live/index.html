@@ -30,7 +30,7 @@ gtag('config', 'G-KQYBQLRBMP');
 <link rel="stylesheet" href="../header.css">
 <style>
 /* On a phone, one screen with nothing to learn: the house, what's on, and one button for the music. On a wider
-   screen the house takes the left and what's on, the button and the show times sit beside it. The header is the
+   screen what's on, the button and the show times take the left, and the house sits beside them. The header is the
    site's own (header.css). */
 :root {
   --night: #0b0a09;
@@ -116,12 +116,12 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 @media (prefers-reduced-motion: reduce) { .onair i { animation: none; } }
 @media (min-width: 900px) {
   .page {
-    max-width: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start;
+    max-width: 1320px; display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 32px; align-items: start;
     padding: 28px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left));
   }
-  .watch { display: grid; gap: 10px; position: sticky; top: 20px; }
+  .watch { grid-column: 2; grid-row: 1; display: grid; gap: 10px; position: sticky; top: 20px; }
   .bar { margin-top: 0; }
-  .side { display: flex; flex-direction: column; gap: 18px; }
+  .side { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 18px; }
   .sound { margin-top: 6px; }
   h1 { font-size: 56px; }
   .onair { left: 16px; top: 14px; font-size: 24px; }
