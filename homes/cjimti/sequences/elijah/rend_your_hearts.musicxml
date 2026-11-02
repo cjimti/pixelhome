@@ -2,7 +2,7 @@
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
 <work><work-title>Elijah, No. 3: Ye people, rend your hearts; No. 4: If with all your hearts; No. 5: Yet doth the Lord (excerpt)</work-title></work>
-<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1881), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
+<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1870), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
 <part-list>
 <score-part id="P1"><part-name>Obadiah</part-name><part-abbreviation>Ob.</part-abbreviation></score-part>
 <score-part id="P2"><part-name>Soprano</part-name><part-abbreviation>S.</part-abbreviation></score-part>

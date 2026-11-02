@@ -2,7 +2,7 @@
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
 <work><work-title>Elijah, No. 6: Elijah, get thee hence; No. 7: For He shall give His angels charge (excerpt)</work-title></work>
-<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1881), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
+<identification><creator type="composer">Felix Mendelssohn Bartholdy</creator><creator type="lyricist">William Bartholomew (English version)</creator><rights>Transcribed from the Novello, Ewer and Co. octavo vocal score (London, 1870), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
 <part-list>
 <score-part id="P1"><part-name>Angel</part-name><part-abbreviation>An.</part-abbreviation></score-part>
 <score-part id="P2"><part-name>Soprano 1</part-name><part-abbreviation>S. 1</part-abbreviation></score-part>
