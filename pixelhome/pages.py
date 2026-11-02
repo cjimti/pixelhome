@@ -1,25 +1,32 @@
 """The site's pages, written as static HTML by the build so search engines and people without JavaScript get the
 text, headings and links. site/app.js adds the 3D player and the library's filters on top.
 
-URLs: / and /library/ the library (until the schedule takes /), /sets/ every set and occasion, /<playlist>/ a set
-or occasion page (an occasion's id is also its own playlist's), /<playlist>/<name>/ a sequence (its id), plus a
-404.html that GitHub Pages serves for any missing path. Old library links (/#<home>/<playlist>/<name>) are sent to
-the sequence's page by a line of script on the library page.
+URLs: / the schedule (tonight's program and the coming nights), /library/ every sequence, /sets/ every set and
+occasion, /<playlist>/ a set or occasion page (an occasion's id is also its own playlist's), /<playlist>/<name>/ a
+sequence (its id), plus a 404.html that GitHub Pages serves for any missing path. Old library links
+(/#<home>/<playlist>/<name>) are sent to the sequence's page by a line of script on / and the library.
+
+Show times come from data/<home>/schedule.json, which the build writes just before the pages, so every showing is in
+the HTML in the home's time zone. The build only runs on a release, so site/schedule.js works out "now" in the
+browser: it hides what is over, says Tonight and Tomorrow, and points to Live while a show is on.
+
+Every set and sequence page has a share card of its own (cards/), the house lit by its most colourful frame.
 
 A set page's text comes from the set's README.md in its sequence folder: the sections named in README_SECTIONS,
 written for visitors, turned into HTML here so the repo and the site never disagree."""
+import datetime as dt
 import html
 import json
 import os
 import re
 import time
 
-from . import catalog
+from . import catalog, share
 from .occasions import BY_ID, KINDS, OCCASIONS, PLAYLIST, SETS, playlists
 
 ORIGIN = 'https://pixelhome.app'
 README_SECTIONS = ('About the work', 'The stage', 'Who is who')
-NAV = [('/sets/', 'Sets'), ('/library/', 'Library'), ('/live/', 'Live'), ('/about/', 'About')]
+NAV = [('/', 'Schedule'), ('/sets/', 'Sets'), ('/library/', 'Library'), ('/live/', 'Live'), ('/about/', 'About')]
 KIND_LABEL = {'show': 'Show', 'ambient': 'All-night loop', 'intermission': 'Intermission'}
 GA = """<script async src="https://www.googletagmanager.com/gtag/js?id=G-KQYBQLRBMP"></script>
 <script>
@@ -154,19 +161,24 @@ def runtime(seqs):
     return f'{n} · {mins(bare)}' + (f' · {mins(full)} with intros' if full - bare >= 30 else '') if shows else ''
 
 
-def head(title, desc, path, ld=(), index=True):
+OG_ALT = 'A single-story house at night, its roofline lit by pixel lights'
+
+
+def head(title, desc, path, ld=(), index=True, image=None):
+    """image: (site path, alt) of the page's 1200x630 share card; the site's og.png when None."""
     url = ORIGIN + path
+    img, alt = (f'{ORIGIN}/{image[0]}', image[1]) if image else (f'{ORIGIN}/og.png', OG_ALT)
     meta = [f'<title>{esc(title)}</title>', f'<meta name="description" content="{esc(desc)}">']
     if index:
         meta += [f'<link rel="canonical" href="{url}">',
                  '<meta property="og:type" content="website">', '<meta property="og:site_name" content="Pixelhome">',
                  f'<meta property="og:title" content="{esc(title)}">', f'<meta property="og:description" content="{esc(desc)}">',
-                 f'<meta property="og:url" content="{url}">', f'<meta property="og:image" content="{ORIGIN}/og.png">',
+                 f'<meta property="og:url" content="{url}">', f'<meta property="og:image" content="{img}">',
                  '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
-                 '<meta property="og:image:alt" content="A single-story house at night, its roofline lit by pixel lights">',
+                 f'<meta property="og:image:alt" content="{esc(alt)}">',
                  '<meta name="twitter:card" content="summary_large_image">',
                  f'<meta name="twitter:title" content="{esc(title)}">', f'<meta name="twitter:description" content="{esc(desc)}">',
-                 f'<meta name="twitter:image" content="{ORIGIN}/og.png">']
+                 f'<meta name="twitter:image" content="{img}">', f'<meta name="twitter:image:alt" content="{esc(alt)}">']
     else:
         meta.append('<meta name="robots" content="noindex">')
     lds = ''.join(f'\n<script type="application/ld+json">{json.dumps(x, ensure_ascii=False)}</script>' for x in [WEBSITE, *ld])
@@ -247,6 +259,12 @@ NOW = """<p class="about"><span id="nowDesc"></span> <a class="nowlink" id="nowL
       <p class="spec" id="homeSpec"></p>
       <p class="spec intro" id="intro" hidden>Spoken intro, to schedule before it in FPP: <a id="introFseq" href="#" download>.fseq</a> ·
         <a id="introAudio" href="#" download>.mp3</a></p>"""
+SCHEDULE_JS = '<script src="/schedule.js" defer></script>'
+REDIRECT = """<script>(function () {       // old links: #live, and #<home>/<playlist>/<name> to the sequence's page
+  var h = decodeURIComponent(location.hash.slice(1)), p = h.split('/');
+  if (h === 'live') location.replace('/live/');
+  else if (p.length === 3 && p[1] && p[2]) location.replace('/' + p[1] + '/' + p[2] + '/');
+})();</script>"""
 SCRIPTS = """<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="/app.js" defer></script>"""
 
@@ -283,9 +301,13 @@ def write_page(out, path, text):
         f.write(text)
 
 
-def doc_page(out, path, title, desc, accent, body, built, current='', ld=(), home=None, seq=None, player=False):
+def doc_page(out, path, title, desc, accent, body, built, current='', ld=(), home=None, seq=None, player=False,
+             image=None, tz=None, extra_head=''):
+    """tz: the home's time zone when the page lists show times (site/schedule.js reads it)."""
     data = f' data-home="{home}"' + (f' data-seq="{seq}"' if seq else '') if player else ''
-    write_page(out, path, f"""{head(title, desc, path, ld)}
+    data += f' data-tz="{esc(tz)}"' if tz else ''
+    scripts = '\n'.join(x for x in (SCHEDULE_JS if tz else '', SCRIPTS if player else '') if x)
+    write_page(out, path, f"""{head(title, desc, path, ld, image=image)}{extra_head}
 </head>
 <body class="page" style="--accent:{accent}">
 {top(current)}
@@ -293,10 +315,104 @@ def doc_page(out, path, title, desc, accent, body, built, current='', ld=(), hom
 {body}
 {footer(built)}
 </main>
-{SCRIPTS if player else ''}
+{scripts}
 </body>
 </html>
 """)
+
+
+# ---------------------------------------------------------------------------- show times
+TZ_LABEL = {'America/Los_Angeles': 'Pacific time', 'America/Denver': 'Mountain time', 'America/Chicago': 'Central time',
+            'America/New_York': 'Eastern time'}
+
+
+def tz_label(tz):
+    return TZ_LABEL.get(tz, tz.split('/')[-1].replace('_', ' ') + ' time')
+
+
+def clock(iso):
+    """'5:30 pm', in the time zone the time was written in (the home's)."""
+    t = dt.datetime.fromisoformat(iso)
+    return f'{t.hour % 12 or 12}:{t.minute:02d} {"am" if t.hour < 12 else "pm"}'
+
+
+def longdate(date):
+    d = dt.date.fromisoformat(date)
+    return f'{d:%A}, {d:%B} {d.day}'
+
+
+def _ends(iso):
+    return dt.datetime.fromisoformat(iso).timestamp()
+
+
+def schedules(out, cat):
+    """home id -> its schedule.json as the build just wrote it (homes without one are left out)."""
+    found = {}
+    for h in cat['homes']:
+        f = os.path.join(out, 'data', h['id'], 'schedule.json')
+        if os.path.exists(f):
+            with open(f) as fh:
+                found[h['id']] = json.load(fh)
+    return found
+
+
+def _shows(sched):
+    """The nights that have shows."""
+    return [n for n in sched['nights'] if n['blocks']] if sched else []
+
+
+def _lead(n):
+    """A night's headline set: the first with a note (the opera of an early show), else its first."""
+    sets = [b for b in n['blocks'] if b['kind'] == 'set']
+    return next((b for b in sets if b.get('note')), sets[0])
+
+
+LIVE = '<a class="golive" href="/live/">On now · watch live</a>'
+
+
+def _night(n, by_pl):
+    """One night of the schedule: every set and intermission in order. On the home page the first night still to
+    come is shown in full beside its headline set; the others show only their sets."""
+    items = []
+    for b in n['blocks']:
+        span = f'data-start="{b["start"]}" data-end="{b["end"]}"'
+        t = f'<time datetime="{b["start"]}">{clock(b["start"])}</time>'
+        if b['kind'] == 'intermission':
+            items.append(f'<li class="im" {span}>{t}<span class="what">Intermission</span>{LIVE}</li>')
+            continue
+        note = f' <em>{esc(b["note"])}</em>' if b.get('note') else ''
+        desc = PLAYLIST[b['playlist']].get('desc', '')
+        items.append(f'<li class="set" {span} style="--c:{b["accent"]}">{t}<span class="what"><a href="/{b["playlist"]}/">'
+                     f'{esc(b["label"])}</a>{note}</span>{LIVE}<span class="d">{esc(desc)}</span></li>')
+    lead = _lead(n)['playlist']
+    card = f'<div class="lead">{_card(lead, by_pl[lead])}</div>' if lead in by_pl else ''
+    return (f'<article class="night" data-date="{n["date"]}" data-end="{n["blocks"][-1]["end"]}">'
+            f'<h3><span class="when" data-date="{n["date"]}">{longdate(n["date"])}</span></h3>'
+            f'<ol class="blocks">{"".join(items)}</ol>{card}</article>')
+
+
+def _showings(sched, pls):
+    """Every night the playlists in `pls` play, with their times, for a set or occasion page ('' when none)."""
+    rows = []
+    for n in _shows(sched):
+        mine = [b for b in n['blocks'] if b['kind'] == 'set' and b['playlist'] in pls]
+        if not mine:
+            continue
+        times = ' · '.join(
+            f'<span class="t" data-start="{b["start"]}" data-end="{b["end"]}"><time datetime="{b["start"]}">{clock(b["start"])}</time>'
+            + (f' {esc(b["label"])}' if len(pls) > 1 else '') + (f' <em>{esc(b["note"].lower())}</em>' if b.get('note') else '')
+            + f'{LIVE}</span>' for b in mine)
+        rows.append(f'<li class="showing" data-end="{mine[-1]["end"]}"><span class="when" data-date="{n["date"]}">'
+                    f'{longdate(n["date"])}</span><span class="times">{times}</span></li>')
+    if not rows:
+        return ''
+    return f"""<section class="when" id="when" aria-labelledby="whenHead">
+  <h2 id="whenHead">When it plays</h2>
+  <p class="spec">On the house, {tz_label(sched['timezone'])}. Follow along on <a href="/live/">Live</a> while it plays.</p>
+  <ol class="showings" data-fold="6">{''.join(rows)}</ol>
+  <button class="more" type="button" hidden>Every night</button>
+  <p class="none" hidden>No more showings are scheduled this season. See <a href="/">the schedule</a> for what plays next.</p>
+</section>"""
 
 
 # ---------------------------------------------------------------------------- the pages
@@ -344,15 +460,11 @@ def _library(out, path, cat, built, by_pl):
     browse = ' · '.join(f'<a href="/{pl}/">{esc(PLAYLIST[pl]["label"] if pl not in BY_ID else BY_ID[pl]["label"])}</a>'
                         for o in OCCASIONS for pl in playlists(o['id']) if pl in by_pl or (pl == o['id'] and any(
                             x in by_pl for x in playlists(o['id']))))
-    title = 'Pixelhome: light sequences for a house roofline'
-    desc = ("Pixel light sequences for a house roofline: Wagner's Ring, Halloween, Christmas, New Year's and more. "
+    title = 'Library: every light sequence · Pixelhome'
+    desc = ("Every pixel light sequence for a house roofline: Wagner's Ring, Halloween, Christmas, New Year's and more. "
             'Preview each one in 3D, download the FSEQ for FPP.')
     write_page(out, path, f"""{head(title, desc, path)}
-<script>(function () {{       // old links: #live, and #<home>/<playlist>/<name> to the sequence's page
-  var h = decodeURIComponent(location.hash.slice(1)), p = h.split('/');
-  if (h === 'live') location.replace('/live/');
-  else if (p.length === 3 && p[1] && p[2]) location.replace('/' + p[1] + '/' + p[2] + '/');
-}})();</script>
+{REDIRECT}
 </head>
 <body>
 <div class="app">
@@ -426,12 +538,14 @@ def _sets_index(out, built, by_pl):
              'roofline, scene by scene, with music.', '#ff6a1f', body, built, current='/sets/')
 
 
-def _playlist(out, pl, home, by_pl, built):
-    """A set or occasion page: what it is (from its README), its sequences in the player, and its other sets."""
+def _playlist(out, pl, home, by_pl, built, sched, bases):
+    """A set or occasion page: what it is (from its README), when it plays, its sequences in the player, and its
+    other sets."""
     p = PLAYLIST[pl]
     seqs = by_pl.get(pl, [])
     is_occ = pl in BY_ID
     others = [x for x in playlists(pl)[1:] if x in by_pl] if is_occ else []
+    when = _showings(sched, [pl] + others)
     label = BY_ID[pl]['label'] if is_occ else p['label']
     text, lede = readme(home, pl)
     nav_html, ld = crumbs(_trail(pl))
@@ -442,6 +556,7 @@ def _playlist(out, pl, home, by_pl, built):
   <h1>{esc(label)}</h1>
   <p class="lede">{esc(p.get('desc', ''))}</p>
   {f'<p class="spec">{rt}</p>' if rt else ''}
+  {'<p class="next" hidden></p>' if when else ''}
 </section>"""]
     if seqs:
         heading = esc(p['label']) if others else 'The scenes' if text else 'Sequences'
@@ -451,6 +566,8 @@ def _playlist(out, pl, home, by_pl, built):
   </div>
   <div class="watchlist"><h2>{heading}</h2>{rows(seqs, p['accent'], label=p['label'])}</div>
 </section>""")
+    if when:
+        parts.append(when)
     if others:
         parts.append(f'<section><h2>Also for {esc(label)}</h2><div class="setcards">'
                      + ''.join(_card(x, by_pl[x]) for x in others) + '</div></section>')
@@ -463,8 +580,17 @@ def _playlist(out, pl, home, by_pl, built):
     title = f'{label}: a light show in {shows} scene{"" if shows == 1 else "s"} · Pixelhome' if text and shows \
         else f'{label} light sequences · Pixelhome'
     desc = lede or p.get('desc', '')
+    image = None
+    pool = seqs or [m for x in others for m in by_pl[x]]
+    if pool and (home, _best(pool)['id']) in bases:
+        best = _best(pool)
+        n = len([m for m in pool if m['kind'] == 'show'])
+        sub = ' · '.join(x for x in (BY_ID[p['occasion']]['label'] if not is_occ else '',
+                                     f'{n} scene{"" if n == 1 else "s"} in pixel lights' if n else '') if x)
+        share.label(bases[(home, best['id'])], os.path.join(out, 'cards', f'{pl}.jpg'), label, sub, p['accent'])
+        image = (f'cards/{pl}.jpg', f'The house lit by {best["title"]}, a scene from {label}')
     doc_page(out, f'/{pl}/', title, desc, p['accent'], '\n'.join(parts), built, ld=[ld], home=home,
-             player=bool(seqs))
+             player=bool(seqs), image=image, tz=sched['timezone'] if when else None)
 
 
 def _sequence(out, m, home, siblings, built):
@@ -506,15 +632,81 @@ def _sequence(out, m, home, siblings, built):
   {intro}
 </section>
 <nav class="pager" aria-label="Scenes">{pager}</nav>"""
+    image = (m['card'], f'The house lit by {m["title"]}') if m.get('card') else None
     doc_page(out, f'/{m["id"]}/', f'{m["title"]}, {set_label} · Pixelhome', m['description'], pl['accent'], body,
-             built, ld=[ld], home=home, seq=m['id'], player=True)
+             built, ld=[ld], home=home, seq=m['id'], player=True, image=image)
+
+
+def _home(out, built, by_pl, sched):
+    """/: tonight's program and the coming nights from the schedule, the big sets, and the way to the library.
+    Between seasons it leads with the sets that played last and the occasions coming up. The build picks what is
+    current as it runs; site/schedule.js picks again in the browser."""
+    nights = _shows(sched)
+    now = time.time()
+    upcoming = [n for n in nights if _ends(n['blocks'][-1]['end']) > now]
+    first = upcoming[0] if upcoming else None
+    rest = ''.join(_night(n, by_pl) for n in nights if n is not first)
+    today = time.strftime('%m-%d')
+    dated = sorted((o for o in OCCASIONS if o.get('date') and any(x in by_pl for x in playlists(o['id']))),
+                   key=lambda o: (o['date'] < today, o['date']))
+    coming = ''.join(f'<a class="setcard occ" data-mmdd="{o["date"]}" href="/{o["id"]}/" style="--c:{o["accent"]}"'
+                     f'{" hidden" if i >= 3 else ""}>{_thumb(_best([m for x in playlists(o["id"]) for m in by_pl.get(x, [])]), "cardimg")}'
+                     f'<span class="sk">{esc(_mmdd(o["date"]))}</span><b>{esc(o["label"])}</b><span>{esc(o["desc"])}</span></a>'
+                     for i, o in enumerate(dated))
+    last = []
+    for n in reversed(nights):
+        for b in n['blocks']:
+            if b['kind'] == 'set' and b['playlist'] not in last and b['playlist'] in by_pl:
+                last.append(b['playlist'])
+        if last:
+            break
+    recent = ''.join(_card(pl, by_pl[pl]) for pl in last)
+    featured = ''.join(_card(pl, by_pl[pl]) for pl in SETS if pl in by_pl)
+    tz = sched['timezone'] if sched else None
+    body = f"""<section class="intro">
+  <p class="kicker">Schedule{f' · {tz_label(tz)}' if tz else ''}</p>
+  <h1 id="schedHead">{'Tonight on the house' if first else 'Between seasons'}</h1>
+  <p class="lede">Operas, oratorios and holiday stories told scene by scene in pixel lights on one house's roofline,
+    with music, every night of the season. Follow a show on <a href="/live/">Live</a> while it plays, or preview any
+    set in 3D.</p>
+  <p class="onnow" id="onNow" hidden><a href="/live/"><span class="dot"></span><span class="txt"></span> <b>Watch live</b></a></p>
+</section>
+<section class="tonight" id="tonight" aria-label="The next night of shows"{'' if first else ' hidden'}>
+  {_night(first, by_pl) if first else ''}
+</section>
+<section class="coming" id="coming"{'' if len(upcoming) > 1 else ' hidden'}>
+  <h2>The coming nights</h2>
+  <p class="spec">Five-minute intermissions between sets. The house stays lit day and night; these are the shows.</p>
+  <div class="nights" data-fold="7">{rest}</div>
+  <button class="more" type="button" hidden>Every night of the season</button>
+</section>
+<section class="offseason" id="offseason"{' hidden' if first else ''}>
+  <p class="lede">No shows are on the schedule right now. The house stays lit every night, and every set can be
+    previewed here in 3D with its music.</p>
+  {f'<h2>Last on the house</h2><div class="setcards">{recent}</div>' if recent else ''}
+  {f'<h2>Coming up</h2><div class="setcards" id="comingUp">{coming}</div>' if coming else ''}
+</section>
+<section>
+  <h2>The big sets</h2>
+  <div class="setcards">{featured}</div>
+  <p class="more-link"><a href="/sets/">Every set and occasion</a> · <a href="/library/">The library of every sequence</a></p>
+</section>"""
+    doc_page(out, '/', "Pixelhome: tonight's light shows on a house roofline",
+             "Show times for Wagner's Ring, Mendelssohn's Elijah and the holiday sets, played scene by scene in pixel "
+             'lights on a house roofline, with music. Watch live, or preview any set in 3D.', '#ff6a1f', body, built,
+             current='/', tz=tz or 'UTC', extra_head='\n' + REDIRECT)
+
+
+def _mmdd(mmdd):
+    d = dt.date(2000, *map(int, mmdd.split('-')))
+    return f'{d:%B} {d.day}'
 
 
 def _not_found(out, built):
     body = """<section class="intro">
   <p class="kicker">404</p>
   <h1>Nothing here</h1>
-  <p class="lede">That page isn't on the house. Try the <a href="/sets/">sets</a>, the <a href="/library/">library</a>
+  <p class="lede">That page isn't on the house. Try <a href="/">the schedule</a>, the <a href="/sets/">sets</a>, the <a href="/library/">library</a>
     of every sequence, or what's <a href="/live/">playing live</a>.</p>
 </section>"""
     with open(os.path.join(out, '404.html'), 'w') as f:
@@ -543,9 +735,11 @@ def _shared_header(out):
             fh.write(text.replace('<!--sitehead-->', top(current)))
 
 
-def write(out, cat):
-    """Every page of the site into out/, from the catalog the build just wrote. A sequence id belongs to the first
-    home that has it."""
+def write(out, cat, bases=None):
+    """Every page of the site into out/, from the catalog and schedules the build just wrote. A sequence id belongs
+    to the first home that has it. bases: (home, sequence id) -> the picture for its share card (share.thumb)."""
+    bases = bases or {}
+    scheds = schedules(out, cat)
     built = cat['built']
     seen, home_of, by_pl = set(), {}, {}
     for h in cat['homes']:
@@ -556,12 +750,14 @@ def write(out, cat):
                 by_pl.setdefault(m['playlist'], []).append((h['id'], m))
     by_pl = {pl: [m for _, m in v] for pl, v in by_pl.items()}
     first = cat['homes'][0]['id'] if cat['homes'] else ''
-    for path in ('/', '/library/'):
-        _library(out, path, cat, built, by_pl)
+    _home(out, built, by_pl, scheds.get(first))
+    _library(out, '/library/', cat, built, by_pl)
     _sets_index(out, built, by_pl)
     pages = {pl for pl in by_pl} | {PLAYLIST[pl]['occasion'] for pl in by_pl}
+    os.makedirs(os.path.join(out, 'cards'), exist_ok=True)
     for pl in sorted(pages):
-        _playlist(out, pl, home_of.get(pl, first), by_pl, built)
+        h = home_of.get(pl, first)
+        _playlist(out, pl, h, by_pl, built, scheds.get(h), bases)
     for pl, seqs in by_pl.items():
         for m in seqs:
             _sequence(out, m, home_of[pl], seqs, built)

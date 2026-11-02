@@ -1,5 +1,5 @@
-"""Images of the house for the site: the og:image card and a thumbnail per sequence (the house lit by a real frame),
-and the touch icon."""
+"""Images of the house for the site: the og:image card, a thumbnail and a share card per sequence and per set (the
+house lit by a real frame), and the touch icon."""
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -89,12 +89,62 @@ def house(home, rgb, W=W, H=H, dist=1.35):
     return Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8))
 
 
-def thumb(home, png, path, W=640, H=360):
-    """A sequence's thumbnail for the site's cards and set pages (WebP), from its most colourful frame. Returns the
-    frame's score, so a set can show its most colourful scene."""
+def thumb(home, png, path, base=None, W=640, H=360):
+    """A sequence's thumbnail for the site's cards and set pages (WebP), from its most colourful frame, and with
+    `base` the same frame as a 1200x630 share card without its words (PNG, for label()). Returns the frame's score,
+    so a set can show its most colourful scene."""
     rgb, score = _frame(home, png)
     house(home, rgb, W, H, dist=1.12).save(path, 'WEBP', quality=82, method=6)     # closer: the house fills it
+    if base:
+        house(home, rgb).save(base, optimize=True)
     return score
+
+
+FONTS = os.path.join(os.path.dirname(__file__), 'fonts')     # the site's own faces (SIL Open Font License)
+
+
+def _font(name, size, weight):
+    f = ImageFont.truetype(os.path.join(FONTS, name), size)
+    f.set_variation_by_name(weight)
+    return f
+
+
+def _fit(draw, text, size, width, lines=2):
+    """The site's display face at the largest size from `size` down at which text wraps into `lines` lines of
+    `width` pixels: (font, rows, size)."""
+    for sz in range(size, 39, -6):
+        font = _font('BigShouldersDisplay.ttf', sz, 'Black')
+        rows = ['']
+        for w in text.split():
+            t = f'{rows[-1]} {w}'.strip()
+            if draw.textlength(t, font=font) <= width or not rows[-1]:
+                rows[-1] = t
+            else:
+                rows.append(w)
+        if len(rows) <= lines and all(draw.textlength(r, font=font) <= width for r in rows):
+            break
+    return font, rows[:lines], sz
+
+
+def label(base, path, title, sub, accent='#ff6a1f'):
+    """A page's 1200x630 share card (JPEG): a base from thumb() with the page's title, a line under it and the
+    site's name, over a shade so the words read on any frame."""
+    img = Image.open(base).convert('RGB')
+    a = np.asarray(img, float)
+    a[:320] *= 1 - np.linspace(0.8, 0, 320)[:, None, None]     # darker toward the top, behind the words
+    img = Image.fromarray(a.astype(np.uint8))
+    d = ImageDraw.Draw(img)
+    c = tuple(int(accent[i:i + 2], 16) for i in (1, 3, 5))
+    d.text((64, 44), 'PIXELHOME', font=_font('BigShouldersDisplay.ttf', 34, 'Black'), fill=c)
+    font, rows, sz = _fit(d, title.upper(), 108, W - 128)
+    y = 84
+    for r in rows:
+        d.text((62, y), r, font=font, fill=(242, 234, 224))
+        y += int(sz * 0.98)
+    if sub:
+        d.text((65, y + 14), sub, font=_font('InstrumentSans.ttf', 30, 'Medium'), fill=(190, 178, 166))
+    d.text((W - 64, H - 48), 'pixelhome.app', font=_font('InstrumentSans.ttf', 26, 'SemiBold'), fill=c, anchor='rs')
+    img.save(path, quality=86, optimize=True, progressive=True)
 
 
 def card(home, png, path):
