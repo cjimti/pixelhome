@@ -14,6 +14,7 @@ TITLE = 'The Sixth Night'
 KIND = 'show'
 DESCRIPTION = ('The shamash kindles on the porch and lights six lights for the sixth night of Hanukkah, '
                'one on each phrase of Ma\'oz Tzur, and a warm glow spreads over the house.')
+VOICEOVER = 'The sixth night of Hanukkah. Six lights, and the one that lights them.'
 
 NIGHT = Night(6, __file__)
 

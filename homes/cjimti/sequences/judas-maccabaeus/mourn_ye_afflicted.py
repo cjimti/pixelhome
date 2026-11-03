@@ -27,6 +27,7 @@ TITLE = 'Mourn, Ye Afflicted Children'
 KIND = 'show'
 DESCRIPTION = ("Mattathias has died. The people's blue and white lights on the porch dim in long falling phrases, a "
                "slow lament flowing toward the Temple, and his light on Left goes out.")
+VOICEOVER = 'Mattathias, the old priest who began the revolt, is dead, and his people mourn him.'
 
 EX = excerpt(__file__)              # m1 upbeat, m2-m9 bars 1-8, m10-m15 bars 17-22, m16-m21 bars 40-45
 BAR = {int(m): t for m, t in EX['bars']}

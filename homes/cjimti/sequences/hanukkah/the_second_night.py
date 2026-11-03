@@ -14,6 +14,7 @@ TITLE = 'The Second Night'
 KIND = 'show'
 DESCRIPTION = ('The shamash kindles on the porch and lights two lights for the second night of Hanukkah, '
                'one on each phrase of Ma\'oz Tzur, and a warm glow spreads over the house.')
+VOICEOVER = 'The second night of Hanukkah. Two lights, and the one that lights them.'
 
 NIGHT = Night(2, __file__)
 

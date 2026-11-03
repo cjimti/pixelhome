@@ -27,6 +27,8 @@ TITLE = 'We Never Will Bow Down'
 KIND = 'show'
 DESCRIPTION = ("Grey idols stand in the Temple on the porch. The people, blue and white across the house, refuse to bow, "
                "and on every 'stock' and 'stone' an idol cracks and falls, until the Temple is empty and clean.")
+VOICEOVER = ('The Temple is full of idols. We never will bow down, the people sing, to the rude stock or '
+             'sculptured stone.')
 
 EX = excerpt(__file__)                      # No. 52: Andante bars 1-8 and 9-16 (pp. 133, 136), giusto 17-23, 24-29
 BAR = {int(m): t for m, t in EX['bars']}

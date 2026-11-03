@@ -74,4 +74,8 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/hanukkah/maoz_tzur
     --out homes/cjimti/sequences/hanukkah/maoz_tzur.score.json
 ```
 
-Still to come: the spoken intros, one line a night (#75), and a schedule that opens night *n* with show *n* (#43).
+Each night has a spoken intro, one line (`VOICEOVER`), for example "The third night of Hanukkah. Three lights, and the
+one that lights them.", over the Hanukkah bed in `pixelhome/intro.py`: Ma'oz Tzur's first notes on an oboe before the
+words, F major strings under them, and a harp spread and the end of the hymn's first phrase after.
+
+Still to come: a schedule that opens night *n* with show *n* (#43).

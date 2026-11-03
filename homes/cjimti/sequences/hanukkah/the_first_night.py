@@ -14,6 +14,7 @@ TITLE = 'The First Night'
 KIND = 'show'
 DESCRIPTION = ('The shamash kindles on the porch and lights one light for the first night of Hanukkah, '
                'one on each phrase of Ma\'oz Tzur, and a warm glow spreads over the house.')
+VOICEOVER = 'The first night of Hanukkah, the Festival of Lights. One light, and the one that lights it.'
 
 NIGHT = Night(1, __file__)
 

@@ -31,6 +31,7 @@ TITLE = 'O Father, Whose Almighty Power'
 KIND = 'show'
 DESCRIPTION = ("The people pray for a leader. The blue lights gather on Left and steady; Simon's deep blue names "
                "Judas, and a single brass-gold light appears among them.")
+VOICEOVER = 'Who will lead them now? The people pray, and Simon names his brother: Judas, called the Maccabee.'
 
 EX = excerpt(__file__)              # No. 8 bars 1-12 (compact), its Allegro 13-16, No. 9's end 17-25
 BAR = {int(m): t for m, t in EX['bars']}

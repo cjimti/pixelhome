@@ -27,6 +27,8 @@ TITLE = "Father of Heav'n"
 KIND = 'show'
 DESCRIPTION = ("The Feast of Dedication: the Temple on the porch is clean, and to the priest's prayer its olive-oil light "
                "comes back, slowly, from the middle outward, until it fills Porch Front.")
+VOICEOVER = ('The Temple is clean again, and its light is kindled once more. Eight days of dedication: the first '
+             'Hanukkah.')
 
 EX = excerpt(__file__)                      # No. 53 bars 5-18 of the air, numbered 1-14
 BAR = {int(m): t for m, t in EX['bars']}
