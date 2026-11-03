@@ -70,7 +70,8 @@ PLAYLISTS = [
 
 # The big sets, in the order the Sets page features them. Each has a page of its own (as every playlist does), with
 # its README's visitor sections when it has a README.
-SETS = ['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung', 'elijah', 'nightmare', 'chef-charlie']
+SETS = ['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung', 'elijah', 'judas-maccabaeus', 'nightmare',
+        'chef-charlie']
 
 BY_ID = {o['id']: o for o in OCCASIONS}
 # playlist id -> its occasion, label, accent, desc

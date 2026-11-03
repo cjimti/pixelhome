@@ -6,12 +6,12 @@ positions and each staff's top line y near the left edge from the image, then:
 
     uv run --group score python scripts/noteheads.py page.png 310,820,1400,2010 S:612:G A:870:G T:1130:T B:1390:F
 
-Each staff is NAME:TOP:CLEF[:SPACING] (clef G treble, T treble an octave down (the tenor), F bass; spacing between
-staff lines in pixels, about 18.85 at 500 dpi for the Novello octavo). It prints one row per staff, the bars split
-by '|', each head as X KIND:PITCH, KIND F filled, H hollow (a half or whole note found as a hole in the ink), f a
-filled head found only by the looser second pass. A '?' marks a head between a line and a space: check it with
-scripts/staff_lines.py. Accidentals are not read (the key and the page say what they are), and rhythms are read by
-eye.
+Each staff is NAME:TOP:CLEF[:SPACING] (clef G treble, T treble an octave down (the tenor), F bass, C the tenor C
+clef on the fourth line; spacing between staff lines in pixels, about 18.85 at 500 dpi for the Novello octavo). It
+prints one row per staff, the bars split by '|', each head as X KIND:PITCH, KIND F filled, H hollow (a half or whole
+note found as a hole in the ink), f a filled head found only by the looser second pass. A '?' marks a head between a
+line and a space: check it with scripts/staff_lines.py. Accidentals are not read (the key and the page say what they
+are), and rhythms are read by eye.
 
 Staves slope by about 10 px across a page, so each staff is tracked across the bar in windows; a fixed search window
 locks onto the wrong line.
@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-TOP = {'G': ('F', 5), 'T': ('F', 4), 'F': ('A', 3)}      # the pitch on each clef's top line
+TOP = {'G': ('F', 5), 'T': ('F', 4), 'F': ('A', 3), 'C': ('E', 4)}      # the pitch on each clef's top line
 ST = 'CDEFGAB'
 
 
