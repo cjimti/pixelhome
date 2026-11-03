@@ -105,6 +105,54 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/o
     --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 8-9" \
     --out homes/cjimti/sequences/judas-maccabaeus/o_father.score.json
 
+# JM04 Arm, Arm, Ye Brave!: No. 10, the ritornello's bars 1-4 and Simon's bars 14-27 to "your zeal demands." (compact
+# 1-18, cut after its third beat), at crotchet 108, and No. 11, the chorus's bars 1-21 to the first "thy sceptre to
+# obey." (19-39) and its last nine bars, 41-49 (40-48), at crotchet 132
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/arm_arm_ye_brave.musicxml 1-18.75 19-49 \
+    --tempo --part P1=S --part P2=A --part P3=T --part P4=B --part P5=Simon --part P6=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 10-11" \
+    --out homes/cjimti/sequences/judas-maccabaeus/arm_arm_ye_brave.score.json
+
+# JM05 Call Forth Thy Powers: No. 13, the A section and the B section ("Great is the glory") to "restor'd." (bars 1-30,
+# cut after its first beat), run into the closing ritornello, bars 43-45 from their second beat (compact 31-33), as
+# the da capo would; Allegro at crotchet 96
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/call_forth_thy_powers.musicxml \
+    1-30.25 31.25-34 --tempo --part P1=Judas --part P2=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, No. 13" \
+    --out homes/cjimti/sequences/judas-maccabaeus/call_forth_thy_powers.score.json
+
+# JM06 Disdainful of Danger: No. 22, "generally sung as a Trio, and repeated in Chorus": the ritornello (bars 1-13),
+# the trio from the sign to "foe," (p. 52, 14-22) and its "That thy pow'r" (p. 53, 23-31), pp. 55-56 as the chorus
+# repeats it (32-55) and the closing ritornello's last eight bars (56-64); Allegro, quaver 144
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/disdainful_of_danger.musicxml 1.6667-65 \
+    --tempo --part P1=A --part P2=T --part P3=B --part P4=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, No. 22" \
+    --out homes/cjimti/sequences/judas-maccabaeus/disdainful_of_danger.score.json
+
+# JM07 Fall'n Is the Foe: No. 27, the ritornello's first four bars (1-4), the chorus from its entry to the tutti
+# "O Lord!" on C (pp. 69-70, 5-21), and p. 75: the hammered "Fall'n" (22-26) and "Where warlike Judas" to the end
+# (27-30, the system's first beat left out); Allegro moderato, crotchet 92
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/fallen_is_the_foe.musicxml 1-27 27.5-31 \
+    --tempo --part P1=S --part P2=A --part P3=T --part P4=B --part P5=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, No. 27" \
+    --out homes/cjimti/sequences/judas-maccabaeus/fallen_is_the_foe.score.json
+
+# JM08 Sion Now Her Head Shall Raise: No. 31, the duet's bars 16-28 (compact 1-13), the end of the ritornello and the
+# first voice's (the Woman's) whole first statement, at crotchet 80; No. 32, the chorus's bars 1-18 (14-31) and its
+# last seven sung bars, p. 89's second system (32-38), at 88
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/sion_now_her_head.musicxml 1-39 --tempo \
+    --part P1=Woman --part P2=S1 --part P3=S2 --part P4=A --part P5=T --part P6=B --part P7=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 31-32" \
+    --out homes/cjimti/sequences/judas-maccabaeus/sion_now_her_head.score.json
+
+# JM09 Sound an Alarm!: No. 45, the full-orchestra Allegro on p. 118, its first three systems (compact 1-18), from
+# "Sound an alarm!" to Judas's last "Sound an alarm!" (fermata); No. 46, bars 2-16 of p. 119 (19-33) and bars 3-16 of
+# p. 121 (34-47), cut after the last chord; dotted crotchet 72
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/sound_an_alarm.musicxml 1-47.5 --tempo \
+    --part P1=Judas --part P2=S --part P3=A --part P4=T --part P5=B --part P6=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 45-46" \
+    --out homes/cjimti/sequences/judas-maccabaeus/sound_an_alarm.score.json
+
 # JM10 We Never Will Bow Down: No. 52, the Andante's first eight bars (p. 133) and last eight (p. 136), the A tempo
 # giusto's first seven (p. 137) and the last system's bars 3-8 (p. 140) (compact 1-29); Andante 63, giusto 92
 uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/we_never_will_bow_down.musicxml \
@@ -126,12 +174,46 @@ uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/s
     --tempo --part P1=S1 --part P2=S2 --part P3=A --part P4=T --part P5=B --part P6=Orch \
     --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, No. 58" \
     --out homes/cjimti/sequences/judas-maccabaeus/see_the_conquering_hero.score.json
+
+# JM13 March, and Sing unto God: No. 59, the March's first strain (bars 1-12, p. 156), played twice (piano, then forte,
+# as the copy's pencilled note asks), at crotchet 112; No. 60 at crotchet 100: p. 161 system 2 bars 2-4, "To crown this
+# conquest... with unmeasur'd praise." (13-15); system 3, "Sing unto God... high affections raise" (16-19); p. 162
+# system 2 bar 2's last beat, "To" (20); bar 3, "crown" (21); and system 3, the last five bars (22-26)
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/march_and_sing.musicxml \
+    1-13 1-13 13.25-19.75 20.75-27 --tempo \
+    --part P1=S --part P2=A --part P3=T --part P4=B --part P5=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 59-60" \
+    --out homes/cjimti/sequences/judas-maccabaeus/march_and_sing.score.json
+
+# JM14 O Lovely Peace: No. 66, the upbeat and the ritornello's first two bars (here 1-3), the first voice's verse and
+# the second's from the ritornello's cadence (p. 173 system 2 bar 5 to the end of system 4, here 6-22), the two
+# together (p. 174 system 1 bars 1-6, here 23-28), and the Adagio close from "And" to "corn." (p. 175 system 3 bars 2-7,
+# here 29-34); Allegro at dotted crotchet 52, Adagio at 30; the singers are unnamed in print
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/o_lovely_peace.musicxml \
+    1.8333-4 6-29 29.8333-35 --tempo --part P1=Woman --part P2=Man --part P3=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, No. 66" \
+    --out homes/cjimti/sequences/judas-maccabaeus/o_lovely_peace.score.json
+
+# JM15 Rejoice, O Judah: No. 67, Simon's first phrase from the upbeat "Re-" to "harmonious join." (its bars 14-18, here
+# 1-5, cut 1.75-5.75), Andante allegro at crotchet 88; No. 68, the basses' opening "Hallelujah, Amen" (bars 1-2, here
+# 6-7) and "O Judah, rejoice" to the end (bars 14-37, here 8-31), Allegro 100, the Adagio from bar 34's second beat at 54
+uv run python scripts/score_excerpt.py homes/cjimti/sequences/judas-maccabaeus/rejoice_o_judah.musicxml 1.75-5.75 6-32 \
+    --tempo --part P1=Simon --part P2=S --part P3=A --part P4=T --part P5=B --part P6=Orch \
+    --source "Novello vocal score (Vincent Novello, c. 1870), transcribed" --act "Judas Maccabaeus, Nos. 67-68" \
+    --out homes/cjimti/sequences/judas-maccabaeus/rejoice_o_judah.score.json
 ```
 
 Notes for later scenes: this copy is a folio print, so `scripts/noteheads.py` reads it at about 285 dpi (staff
 spacing about 33 px at 500 dpi), and the tenor is in the C clef on the fourth line (clef `C` in `noteheads.py` and
-`staff_lines.py`). The singer of No. 53 isn't named in this printing (Handel's Priest, an alto); JM11 gives the voice
-the Israelitish Man's sky blue and flute. JM12 opens on JM11's last frame (its `CARRY`).
+`staff_lines.py`). Several singers aren't named in this printing: No. 53 (Handel's Priest, an alto), which JM11 gives
+the Israelitish Man's sky blue and flute; No. 67's "Bass Voice", which JM15 gives Simon; and the two voices of No. 66,
+which JM14 gives the Israelitish Woman and Man. No. 32 (JM08) is a five-part chorus with a soprano solo, given to the
+Woman.
+
+Every scene opens on the last frame of the one before it. Where the two are built differently, the later scene
+rebuilds the earlier one's last frame in its own code and crossfades out of it over its first seconds (`CARRY`, and a
+function named for the earlier scene's end, such as `jm05_end()` in JM06): change both scenes together. JM09 settles
+onto JM10's first frame the same way, and the intermission (JM16) hands over to the Overture's first frame.
 
 ## The scenes
 
@@ -140,8 +222,20 @@ the Israelitish Man's sky blue and flute. JM12 opens on JM11's last frame (its `
 | JM01 | Overture | The house in Seleucid purple, the Temple on Porch Front grey with idols. A few blue lights hidden on Left, in the hills. |
 | JM02 | Mourn, Ye Afflicted Children | Mattathias has died. The people's blue and white lights on the porch runs dim in long falling phrases, a slow lament toward the Temple. |
 | JM03 | O Father, Whose Almighty Power | The prayer. The blue lights gather on Left and steady. Simon's deep blue names Judas, and a single brass-gold light appears among them. |
+| JM04 | Arm, Arm, Ye Brave! | Simon's deep blue calls, and on each bar a blue or white light steps into a rank along Left; the chorus answers "We come, in bright array" and the rank marches in place on the beat. On each "Judah" Judas's gold flares and the purple on Right shrinks back. |
+| JM05 | Call Forth Thy Powers | Judas's gold follows his voice up and down the rank on Left; every light it passes flares and stays brighter, each "sword" is a white stroke, and the closing runs send a spark down the rank. |
+| JM06 | Disdainful of Danger | The Maccabees go out to fight: three voices step out ahead of the ranks on Left, then the chorus takes it up and the whole column marches round the corner and down Porch Left, Judas leading. |
+| JM07 | Fall'n Is the Foe | The first victory: the blue and white sweep onto the field on Right, every "Fall'n" breaks a block of Seleucid purple that scatters back to the road from Antioch, and Judas's gold swings like a sword at the end. |
+| JM08 | Sion Now Her Head Shall Raise | The Woman's white-silver climbs Porch Left as she sings and warm gold rises from the porch runs toward the Temple; harp glints climb the porch on every "Tune your harps", and the chorus lifts the whole house. |
+| JM09 | Sound an Alarm! | Judas's gold calls on Left as purple pours in from the free end of Right; on "We hear" the blue and white ranks charge across the house behind him and meet it on Porch Right, steel clashing on every stroke, until the purple is driven off the end. |
 | JM10 | We Never Will Bow Down | The grey idols stand on Porch Front. On "we never will bow down" every blue and white light holds steady, refusing, and the grey cracks and falls away, leaving the Temple dark, empty and clean. |
 | JM11 | Father of Heav'n | The Feast of Dedication: olive-oil gold returns to the Temple, slowly, from the middle outward. |
 | JM12 | See, the Conqu'ring Hero Comes | Judas returns: one gold light coming up Porch Left toward the Temple, then lights joining him, then the whole house lining the road. |
+| JM13 | March, and Sing unto God | The people's blue and white march toward the Temple along every run, a pace on each beat, gold joining them the second time; every chord of "To crown this conquest" lifts the whole house, and gold pours from the Temple for "Sing unto God". |
+| JM14 | O Lovely Peace | The purple is long gone: slow, wide waves of corn gold and pasture green; the Woman's white-silver on Left, the Man's sky blue answering on Right, coming in along the porch runs together, settling to a steady gold. |
+| JM15 | Rejoice, O Judah | Simon's deep blue calls Judah to rejoice and the basses answer; then the whole house bursts into blue and white with gold in the Temple, a wave of gold on every Hallelujah, white and gold on every Amen, and on the last Amen it all settles back to the glow on the porch. |
+| JM16 | Intermission | Five minutes: the house waits in blue, and white fills it from both wings toward the porch, the lights' glow steady on the Temple, to the quiet numbers of the set; the Overture's Grave on horns and trumpets calls the street back. |
 
-The rest (JM04-JM09, JM13-JM16) are #72, #73 and #74.
+Every scene, and every candle-lighting show, has a spoken intro (`VOICEOVER`), over the Hanukkah bed in
+`pixelhome/intro.py` (Ma'oz Tzur's first notes on an oboe). None of them says the Hebrew blessings: those are said
+over kindling a real hanukkiah.

@@ -22,7 +22,7 @@ FLOOR = 0.04                            # perceptual: the three runs never go fu
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
           'gotterdammerung': 'halloween-accent', 'thanksgiving': 'halloween-accent',
-          'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent'}
+          'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent', 'hanukkah': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -539,10 +539,64 @@ def _bed_elijah(n, rng, s0, s1):
             (first, -35.0, pre), (rest, -34.0, post), (wind, -50.0, None)]
 
 
+def _bed_hanukkah(n, rng, s0, s1):
+    """F major, from the candle-lighting shows' hymn, Ma'oz Tzur (for Hanukkah and Judas Maccabaeus alike): before
+    the first word an oboe plays the hymn's first notes (F, C, F, B flat) over a low F; while it speaks the strings
+    hold F major softly with the cellos on the root; after the last word a harp spreads F major, as when the shamash
+    is lit, and the oboe answers with the end of the hymn's first phrase (A, G, F)."""
+    from .audio import SR, Sampler, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def track(s, notes, release=0.4):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    def held(s, notes, t0, t1, vel, step=2.5):
+        """Notes sustained from t0 to t1: overlapping windows of the sample past its attack."""
+        out = np.zeros((2, n))
+        w = int(2 * step * SR)
+        win = np.hanning(w)
+        for m in notes:
+            for ta in np.arange(t0 - step, t1, step):
+                a = s.play(note(m), vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
+                a = a * win[:a.shape[1]]
+                k0 = int(ta * SR)
+                if k0 < 0:
+                    a, k0 = a[:, -k0:], 0
+                k = min(n - k0, a.shape[1])
+                out[:, k0:k0 + k] += a[:, :k]
+        return out * np.clip((t - t0) / 1.0, 0, 1) * np.clip((t1 + 1.5 - t) / 1.5, 0, 1)
+
+    beat = 0.42
+    oboe = Sampler('Woodwinds/Oboe/Vib/*.wav', rng, tune=-12)
+    head = [(0, 1, 'F4'), (1, 1, 'C4'), (2, 1, 'F4'), (3, 2.2, 'Bb4')]
+    first = track(oboe, [(0.3 + b * beat, note(m), 80 + 6 * (i == 3), d * beat * 0.95)
+                         for i, (b, d, m) in enumerate(head)])
+    low = held(Sampler('Strings/Cello Section/susvib/*.wav', rng, tune=-12), ['F2'], 0.0, T, 60)
+    strings = held(Sampler('Strings/Viola Section/susvib/*.wav', rng, tune=-12), ['F3', 'A3', 'C4'], s0 - 0.4, T, 52)
+    home = s1 + 0.4
+    harp = Sampler('Strings/Harp/*.wav', rng)
+    spread = track(harp, [(home + 0.09 * i, note(m), 72, 1.5) for i, m in enumerate(['F3', 'A3', 'C4', 'F4', 'A4', 'C5'])],
+                   1.0)
+    answer = [(0, 1, 'A4'), (1, 1, 'G4'), (2, 2.2, 'F4')]
+    tail = track(oboe, [(home + 0.5 + b * beat, note(m), 78 - 3 * i, d * beat * 0.95) for i, (b, d, m) in enumerate(answer)])
+    pre = slice(int(0.3 * SR), int(min(s0, 2.4) * SR))
+    post = slice(int(home * SR), int(min(T, home + 2.4) * SR))
+    return [(low, -42.0, None), (strings, -45.0, slice(int(s0 * SR), int(s1 * SR))), (first, -35.0, pre),
+            (spread, -38.0, post), (tail, -36.0, post)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
         'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
         'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie,
-        'elijah': _bed_elijah}
+        'elijah': _bed_elijah, 'hanukkah': _bed_hanukkah}
 
 
 def _rms(x):

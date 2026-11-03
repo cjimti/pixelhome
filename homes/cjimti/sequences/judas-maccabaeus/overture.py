@@ -32,6 +32,8 @@ TITLE = 'Overture'
 KIND = 'show'
 DESCRIPTION = ("The house in Seleucid purple, the Temple grey with idols; the armies march in from the road from "
                "Antioch, and in the hills the fugue wakes the Maccabees' blue lights one voice at a time.")
+VOICEOVER = ('Long ago a foreign king ruled Judea, and set up idols in the Temple in Jerusalem. In the hills, one '
+             'family of priests would not bow.')
 
 EX = excerpt(__file__)              # Grave bars 1-4, 18, 19, 21 (here 1-7); Allegro bars 1-29.5 (here 8-36.5)
 BAR = {int(m): t for m, t in EX['bars']}

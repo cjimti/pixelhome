@@ -14,6 +14,7 @@ TITLE = 'The Fifth Night'
 KIND = 'show'
 DESCRIPTION = ('The shamash kindles on the porch and lights five lights for the fifth night of Hanukkah, '
                'one on each phrase of Ma\'oz Tzur, and a warm glow spreads over the house.')
+VOICEOVER = 'The fifth night of Hanukkah. Five lights, and the one that lights them.'
 
 NIGHT = Night(5, __file__)
 

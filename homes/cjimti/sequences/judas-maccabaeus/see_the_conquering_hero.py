@@ -33,6 +33,7 @@ TITLE = "See, the Conqu'ring Hero Comes"
 KIND = 'show'
 DESCRIPTION = ("Judas's gold walks up the road to the Temple with three voices beside him; then the people line the "
                "road, the whole chorus greets him, and the trumpets and drums light the whole house.")
+VOICEOVER = 'Judas comes home to Jerusalem, and the people line the road. See, the conquering hero comes.'
 
 EX = excerpt(__file__)              # No. 58: the trio (bars 1-8), the Full Chorus (9-32)
 BAR = {int(m): t for m, t in EX['bars']}
