@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+<work><work-title>Ma'oz Tzur (Rock of Ages), the traditional melody</work-title></work>
+<identification><creator type="composer">Traditional</creator><creator type="lyricist">Mordecai, 13th century; English by Gustav Gottheil</creator><rights>Transcribed from the Union Hymnal, No. 107, "Rock of Ages (Chanuccah)" (Central Conference of American Rabbis, 1897), public domain</rights><encoding><software>pixelhome</software></encoding></identification>
+<part-list>
+<score-part id="P1"><part-name>Melody</part-name><part-abbreviation>Mel.</part-abbreviation></score-part>
+</part-list>
+<part id="P1">
+<measure number="1">
+<attributes><divisions>24</divisions><key><fifths>-1</fifths></key><time><beats>2</beats><beat-type>2</beat-type></time><clef number="1"><sign>G</sign><line>2</line></clef></attributes>
+<direction placement="above"><direction-type><words font-weight="bold">Maestoso</words></direction-type><sound tempo="138"/></direction>
+<direction placement="below"><direction-type><dynamics><f/></dynamics></direction-type></direction>
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Rock</text></lyric></note>
+<note><pitch><step>C</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>of</text></lyric></note>
+</measure>
+<measure number="2">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>A</text></lyric></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>ges,</text></lyric></note>
+</measure>
+<measure number="3">
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>let</text></lyric></note>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>our</text></lyric></note>
+</measure>
+<measure number="4">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>song</text></lyric></note>
+</measure>
+<measure number="5">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Praise</text></lyric></note>
+<note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Thy</text></lyric></note>
+</measure>
+<measure number="6">
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>sav</text></lyric></note>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>ing</text></lyric></note>
+</measure>
+<measure number="7">
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>pow</text></lyric></note>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type></note>
+</measure>
+<measure number="8">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>end</syllabic><text>er;</text></lyric></note>
+</measure>
+<measure number="9">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Thou,</text></lyric></note>
+<note><pitch><step>C</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>a</text></lyric></note>
+</measure>
+<measure number="10">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>midst</text></lyric></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>the</text></lyric></note>
+</measure>
+<measure number="11">
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>rag</text></lyric></note>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>ing</text></lyric></note>
+</measure>
+<measure number="12">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>foes,</text></lyric></note>
+</measure>
+<measure number="13">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Wast</text></lyric></note>
+<note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>our</text></lyric></note>
+</measure>
+<measure number="14">
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>shelt'</text></lyric></note>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>ring</text></lyric></note>
+</measure>
+<measure number="15">
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>tow</text></lyric></note>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type></note>
+</measure>
+<measure number="16">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>end</syllabic><text>er.</text></lyric></note>
+</measure>
+<measure number="17">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>Fu</text></lyric></note>
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>end</syllabic><text>rious</text></lyric></note>
+</measure>
+<measure number="18">
+<note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>they</text></lyric></note>
+<note><pitch><step>E</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>as</text></lyric></note>
+</measure>
+<measure number="19">
+<note><pitch><step>F</step><octave>5</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>end</syllabic><text>sailed</text></lyric></note>
+</measure>
+<measure number="20">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>us,</text></lyric></note>
+</measure>
+<measure number="21">
+<note><pitch><step>F</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>But</text></lyric></note>
+<note><pitch><step>E</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>Thine</text></lyric></note>
+</measure>
+<measure number="22">
+<note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>arm</text></lyric></note>
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>begin</syllabic><text>a</text></lyric></note>
+</measure>
+<measure number="23">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>24</duration><voice>1</voice><type>quarter</type><lyric number="1"><syllabic>end</syllabic><text>vailed</text></lyric></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>quarter</type></note>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>36</duration><voice>1</voice><type>quarter</type><dot/></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>eighth</type></note>
+</measure>
+<measure number="24">
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>us,</text></lyric></note>
+</measure>
+<measure number="25">
+<direction placement="below"><direction-type><dynamics><p/></dynamics></direction-type></direction>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>72</duration><voice>1</voice><type>half</type><dot/><lyric number="1"><syllabic>single</syllabic><text>And</text></lyric></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>Thy</text></lyric></note>
+</measure>
+<measure number="26">
+<note><pitch><step>C</step><octave>5</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>word</text></lyric></note>
+</measure>
+<measure number="27">
+<direction placement="below"><direction-type><dynamics><mf/></dynamics></direction-type></direction>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>72</duration><voice>1</voice><type>half</type><dot/><lyric number="1"><syllabic>single</syllabic><text>Broke</text></lyric></note>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>their</text></lyric></note>
+</measure>
+<measure number="28">
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>sword,</text></lyric></note>
+</measure>
+<measure number="29">
+<direction placement="below"><direction-type><dynamics><f/></dynamics></direction-type></direction>
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>When</text></lyric></note>
+<note><pitch><step>E</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>our</text></lyric></note>
+</measure>
+<measure number="30">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>own</text></lyric></note>
+<note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>strength</text></lyric></note>
+</measure>
+<measure number="31">
+<note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><lyric number="1"><syllabic>single</syllabic><text>failed</text></lyric></note>
+<note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>half</type></note>
+</measure>
+<measure number="32">
+<note><pitch><step>F</step><octave>4</octave></pitch><duration>96</duration><voice>1</voice><type>whole</type><lyric number="1"><syllabic>single</syllabic><text>us.</text></lyric></note>
+</measure>
+</part>
+</score-partwise>
