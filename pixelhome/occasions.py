@@ -43,7 +43,7 @@ OCCASIONS = [
     dict(id='hanukkah', date='12-05', label='Hanukkah', accent='#ffb33a', prefix='HN',
          desc='Eight nights of lights: the hanukkiah kindled on the porch, one more flame each night.'),
     dict(id='christmas', date='12-25', label='Christmas', accent='#e5484d', prefix='XM',
-         desc='Classic bulbs, snow and a few Christmas capers.'),
+         desc='Classic bulbs, snow and a few Christmas capers.', set='Christmas Variety'),
     dict(id='other', label='Other', accent='#2ee6c8', prefix='OT',
          desc='Everything else: colour, nature and light for any night.'),
 ]
@@ -73,7 +73,7 @@ PLAYLISTS = [
 # The big sets, in the order the Sets page features them. Each has a page of its own (as every playlist does), with
 # its README's visitor sections when it has a README.
 SETS = ['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung', 'elijah', 'judas-maccabaeus', 'messiah',
-        'nightmare', 'chef-charlie']
+        'nightmare', 'chef-charlie', 'christmas']
 
 BY_ID = {o['id']: o for o in OCCASIONS}
 # playlist id -> its occasion, label, accent, desc

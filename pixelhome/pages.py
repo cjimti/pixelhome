@@ -727,7 +727,7 @@ def _sequence(out, m, home, siblings, built):
   </div>
   <div class="watchlist"><h2><a href="/{m['playlist']}/">{esc(pl['label'])}</a></h2>{rows(siblings, pl['accent'], m['id'], pl['label'])}</div>
 </section>
-{f'<section class="prose about"><h2>About this {"scene" if m["playlist"] in SETS else "piece"}</h2>{about}</section>' if about else ''}
+{f'<section class="prose about"><h2>About this {"scene" if m["playlist"] in SETS and m["playlist"] not in BY_ID else "piece"}</h2>{about}</section>' if about else ''}
 <section class="files">
   <h2>For your own show</h2>
   <p>{esc(KINDS[m['kind']])} The FSEQ (v2, zstd, 40 fps) plays in <a href="https://github.com/FalconChristmas/fpp">Falcon Player</a>

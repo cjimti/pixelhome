@@ -12,6 +12,7 @@ TITLE = 'Toy Train'
 KIND = 'show'
 DESCRIPTION = ('A toy train runs the whole roofline, slowing for every corner so the cars bunch up and '
                'stretch out, chuffing smoke. It leaves at the right end and comes round again from the back.')
+VOICEOVER = 'All aboard! The little train is going all the way around the house.'
 
 RAIL = hexc('#8090b0')
 HEAD = hexc('#fff0c8')
