@@ -1,7 +1,8 @@
 """Show nights: a home's schedule.py worked out against the catalog into exact times (data/schedule.json).
 
 Every set is its playlist's shows, each after its spoken intro, in catalog order; an intermission is the playlist's
-`intermission` sequence. FPP takes a moment between items (measured at about 0.17 s on the cjimti player), which
+`intermission` sequence. A set may have an opener: one show (a sequence id) played after the set's intermission and
+straight before it, as Hanukkah's candle-lighting show opens a night's Judas Maccabaeus. FPP takes a moment between items (measured at about 0.17 s on the cjimti player), which
 adds up over a night, so it is counted in.
 """
 import datetime as dt, importlib.util, os
@@ -51,6 +52,7 @@ def nights(home, metas):
         return None
     tz = ZoneInfo(mod.TIMEZONE)
     plen = lengths(metas)
+    by_id = {m['id']: m for m in metas}
     out = []
 
     def info(pl):
@@ -67,19 +69,32 @@ def nights(home, metas):
             t = _at(day, spec['shows'], tz)
             blocks = []
 
-            def add(pl, note, until=None):
-                """Time the next set (after its intermission if it isn't the first); False if it would end late."""
+            def add(pl, note, until=None, opener=None):
+                """Time the next set (after its intermission if it isn't the first, then its opener if it has one);
+                False if it would end late."""
                 nonlocal t
                 if pl not in plen or not plen[pl]['set']:
                     raise SystemExit(f'{home}/schedule.py: no shows with music in playlist {pl!r}')
+                op = None
+                if opener:
+                    op = by_id.get(opener)
+                    if op is None or op['kind'] != 'show':
+                        raise SystemExit(f'{home}/schedule.py: no show with music {opener!r} to open {pl!r}')
                 im = plen[pl]['intermission'] if blocks else None
                 run = plen[pl]['set'] + GAP * (plen[pl]['items'] + 1)
-                if until is not None and t + dt.timedelta(seconds=(im['seconds'] + GAP if im else 0) + run) > until:
+                op_run = (op['seconds'] + (op['introFrames'] / op['fps'] if op.get('intro') else 0)
+                          + GAP * (2 + bool(op.get('intro')))) if op else 0
+                if until is not None and t + dt.timedelta(seconds=(im['seconds'] + GAP if im else 0) + op_run + run) > until:
                     return False
                 if im:
                     end = t + dt.timedelta(seconds=im['seconds'] + GAP)
                     blocks.append(dict(info(pl), kind='intermission', start=_iso(t), end=_iso(end),
                                        fseqName=im['fseqName']))
+                    t = end
+                if op:
+                    end = t + dt.timedelta(seconds=op_run)
+                    blocks.append(dict(info(op['playlist']), kind='show', id=op['id'], label=op['title'],
+                                       start=_iso(t), end=_iso(end), fseqName=op['fseqName']))
                     t = end
                 end = t + dt.timedelta(seconds=run)
                 blocks.append(dict(info(pl), kind='set', start=_iso(t), end=_iso(end)))
@@ -89,10 +104,10 @@ def nights(home, metas):
                 return True
 
             for step in spec['program']:
-                name = lambda pl: each if pl == '{each}' else pl
+                name = lambda pl: pl and (pl.replace('{each}', each) if each else pl)
                 if 'sets' in step:
                     for pl in step['sets']:
-                        add(name(pl), step.get('note'))
+                        add(name(pl), step.get('note'), opener=name(step.get('opener')))
                 else:
                     until = _at(day, step['until'], tz)
                     i = 0

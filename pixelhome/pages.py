@@ -471,6 +471,10 @@ def _night(n, by_pl):
         if b['kind'] == 'intermission':
             items.append(f'<li class="im" {span}>{t}<span class="what">Intermission</span>{LIVE}</li>')
             continue
+        if b['kind'] == 'show':             # a set's opener: one show, such as a night's candle-lighting
+            items.append(f'<li class="set opener" {span} style="--c:{b["accent"]}">{t}<span class="what"><a href="/{b["id"]}/">'
+                         f'{esc(b["label"])}</a> <em>{esc(PLAYLIST[b["playlist"]]["label"])}</em></span>{LIVE}</li>')
+            continue
         note = f' <em>{esc(b["note"])}</em>' if b.get('note') else ''
         desc = PLAYLIST[b['playlist']].get('desc', '')
         items.append(f'<li class="set" {span} style="--c:{b["accent"]}">{t}<span class="what"><a href="/{b["playlist"]}/">'
@@ -486,7 +490,7 @@ def _showings(sched, pls):
     """Every night the playlists in `pls` play, with their times, for a set or occasion page ('' when none)."""
     rows = []
     for n in _shows(sched):
-        mine = [b for b in n['blocks'] if b['kind'] == 'set' and b['playlist'] in pls]
+        mine = [b for b in n['blocks'] if b['kind'] in ('set', 'show') and b['playlist'] in pls]
         if not mine:
             continue
         times = ' · '.join(

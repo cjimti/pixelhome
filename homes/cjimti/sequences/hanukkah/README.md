@@ -78,4 +78,16 @@ Each night has a spoken intro, one line (`VOICEOVER`), for example "The third ni
 one that lights them.", over the Hanukkah bed in `pixelhome/intro.py`: Ma'oz Tzur's first notes on an oboe before the
 words, F major strings under them, and a harp spread and the end of the hymn's first phrase after.
 
-Still to come: a schedule that opens night *n* with show *n* (#43).
+## The late hours
+
+`HN09` *Festival of Lights* is the all-night loop for Hanukkah nights, before the shows and after them until morning.
+The house rests in deep blue with the Temple glow on Porch Front; four times a loop the lights' warmth spreads from
+the porch out along the wings and ebbs back, and gold sparks drift out along the roofline. It plays on all eight
+nights, so it shows only the glow, never a night's count of lights. Its music is Ma'oz Tzur far off and slow: soft
+strings in long F major chords, and a harp playing one of the hymn's phrases three times a loop.
+
+## When they play
+
+`homes/cjimti/schedule.py` opens each night's Judas Maccabaeus with that night's show (a set's `opener`, #79): night
+*n* (December 4 to 11, 2026) plays `HN0n` straight before the early Judas Maccabaeus, and again after the intermission
+before the late one, with Elijah between.
