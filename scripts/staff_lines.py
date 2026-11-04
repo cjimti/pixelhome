@@ -14,7 +14,7 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-TOP = {'G': ('F', 5), 'T': ('F', 4), 'F': ('A', 3), 'C': ('E', 4)}
+TOP = {'G': ('F', 5), 'T': ('F', 4), 'F': ('A', 3), 'C': ('E', 4), 'A': ('G', 4)}
 ST = 'CDEFGAB'
 
 
