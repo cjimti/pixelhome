@@ -7,7 +7,7 @@ from the door. Once in a while a candle gutters out and is relit with the flare 
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, smoothstep, lerp, Flicker, nframes, looped
 
-CODE = 'XM10'
+CODE = 'CH10'
 TITLE = 'Candles in the Windows'
 KIND = 'ambient'
 DESCRIPTION = ('A candle in every front window throws a warm pool onto the roof above it. Now and then '

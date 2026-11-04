@@ -6,7 +6,7 @@ hold a frosty glow. Dim, slow and seamless for all night."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, smoothstep, lerp, Flicker, nframes, looped
 
-CODE = 'XM08'
+CODE = 'CH08'
 TITLE = 'Icicles'
 KIND = 'ambient'
 DESCRIPTION = ('Icicles along the wing and porch fronts grow in the cold, then drip as a slow thaw drifts '

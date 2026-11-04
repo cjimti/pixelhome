@@ -6,11 +6,12 @@ answers each note in harmony, and the last chord rings the whole house."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM06'
+CODE = 'CH06'
 TITLE = 'Jingle Bells'
 KIND = 'show'
 DESCRIPTION = ('The roof runs are glockenspiel bars and the house plays Jingle Bells: every note rings its '
                'run in a standing wave, more nodes for higher notes, sleigh bells on the off-beats.')
+VOICEOVER = 'Every run on the roof is a bell, and tonight the house plays Jingle Bells.'
 
 # pitch -> (run, mode number, colour); E and F, the commonest notes, sit on the two wing fronts
 NOTES = {'C': ('Side', 1, '#ff2a18'), 'D': ('Porch Left', 2, '#18c048'), 'E': ('Left', 3, '#ffb028'),

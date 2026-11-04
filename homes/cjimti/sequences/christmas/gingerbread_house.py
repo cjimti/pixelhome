@@ -7,11 +7,12 @@ takes two bites out of the free right end, crumbs and all."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, smooth_noise, nframes
 
-CODE = 'XM05'
+CODE = 'CH05'
 TITLE = 'Gingerbread House'
 KIND = 'show'
 DESCRIPTION = ('A piping bag ices the whole roofline, swirling rosettes into the corners. Gumdrops plop on, '
                'sprinkles rain across, and then somebody takes a bite out of the end.')
+VOICEOVER = 'Get out the icing and the gumdrops: tonight the whole house is gingerbread.'
 
 GINGER = hexc('#b04408')
 GINGER_DARK = hexc('#601800')

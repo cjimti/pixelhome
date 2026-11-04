@@ -7,11 +7,12 @@ roofline to the porch; when they arrive the spikes fold down and the porch fills
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, colormap, nframes
 
-CODE = 'XM04'
+CODE = 'CH04'
 TITLE = 'Star over the Porch'
 KIND = 'show'
 DESCRIPTION = ('A star rises behind the porch and hangs over the house, its eight diffraction spikes sweeping '
                'the roof as it turns. Three lanterns follow it from the far ends to the porch.')
+VOICEOVER = 'Follow the star: three lanterns are on their way to the porch.'
 
 NIGHT = hexc('#060c30')
 CORE = hexc('#fff4e0')

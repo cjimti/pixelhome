@@ -12,7 +12,7 @@ they need local tools CI doesn't have.
   under Halloween, each Ring opera under the Ring Cycle). The id on the site is
   `<playlist>/<name>` with `_` changed to `-`; moving a playlist to another occasion changes no ids or paths.
 - Module constants: `CODE` (unique per home: the playlist's `prefix` from `occasions.py` plus two
-  digits, e.g. `XM01`..`XM10`; Halloween's originals are `SC1`.. and `NT1`..), `TITLE`,
+  digits, e.g. `CH01`..`CH10`; Halloween's originals are `SC1`.. and `NT1`..), `TITLE`,
   `KIND` (`'show'`, `'ambient'` or `'intermission'`), `DESCRIPTION` (one or two sentences for the card).
 - `render(G, seed=N) -> ndarray (F, G.N, 3)`, float PWM 0..1, node (channel) order.
 - Length: shows 40-90 s, ambient loops 120-180 s (`looped()`), intermissions 300 s. Every frame ships to the site and

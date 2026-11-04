@@ -6,11 +6,12 @@ and climbs away into the night."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, lerp, nframes
 
-CODE = 'XM01'
+CODE = 'CH01'
 TITLE = 'Sleigh Ride'
 KIND = 'show'
 DESCRIPTION = ('A red lamp leads Santa\'s team on a flight around and over the house, lands on the porch roof '
                'with a clatter of hooves, leaves presents on both wings and takes off over the street.')
+VOICEOVER = "Bundle up and watch the sky: Santa's sleigh is coming in to land on our roof."
 
 NIGHT = hexc('#0a1440')
 STAR = hexc('#c8d8ff')

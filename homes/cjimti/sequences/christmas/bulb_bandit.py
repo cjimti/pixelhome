@@ -7,11 +7,12 @@ in him and every bulb flies home."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM03'
+CODE = 'CH03'
 TITLE = 'The Bulb Bandit'
 KIND = 'show'
 DESCRIPTION = ('A green sneak with yellow eyes tiptoes along the roof reeling every bulb into his sack, '
                'corner by corner. The dark house sings anyway, something warm swells in him, and the lights fly home.')
+VOICEOVER = "Somebody is creeping along the roof tonight, and he's after every last light."
 
 BULBS = [hexc(c) for c in ('#ff2010', '#10b838', '#ffa018', '#2850ff', '#ff5a20', '#ff3060')]
 GREEN = hexc('#38c008')

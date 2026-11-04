@@ -23,7 +23,7 @@ VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
           'gotterdammerung': 'halloween-accent', 'thanksgiving': 'halloween-accent',
           'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent', 'hanukkah': 'halloween-accent',
-          'messiah': 'halloween-accent'}
+          'messiah': 'halloween-accent', 'christmas': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -643,10 +643,60 @@ def _bed_messiah(n, rng, s0, s1):
             (spread, -36.0, post)]
 
 
+def _bed_christmas(n, rng, s0, s1):
+    """D major, a lullaby in 6/8, from the Christmas intermission's tune: before the first word a music box plays
+    its opening (A, D, F#, E, down to a held D) with a shake of sleigh bells; while it speaks a soft warm pad holds
+    D, G, Em and A with the cellos on the root; after the last word the pad comes home to D and a celesta answers,
+    down to D, with the sleigh bells once more."""
+    from .audio import SR, Hits, Synth, Sampler, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def at(sig, t0):
+        out = np.zeros((2, n))
+        sig = sig if sig.ndim == 2 else np.vstack([sig, sig])
+        k0 = int(t0 * SR)
+        k = min(n - k0, sig.shape[1])
+        if k > 0:
+            out[:, k0:k0 + k] += sig[:, :k]
+        return out
+
+    e = 60 / 64 / 3                                             # an eighth, as in the intermission
+    head = [(0, 2, 'A4'), (2, 1, 'D5'), (3, 2, 'F#5'), (5, 1, 'E5'), (6, 4, 'D5')]
+    box = at(Synth('Plucks/Magic Music Box').render(
+        [(b * e, note(m), 82 + 6 * (i == 4), d * e * 0.95) for i, (b, d, m) in enumerate(head)], 5.0), 0.3)
+    shake = Hits('Miscellania Raw/Misc 2/sleighbell*_shake1.wav', rng)
+    bells = at(shake.play(70), 0.2)
+    walk = [('D4', 'F#4', 'A4', 'D2'), ('D4', 'G4', 'B4', 'G1'), ('E4', 'G4', 'B4', 'E2'), ('C#4', 'E4', 'A4', 'A1')]
+    chords = [(0.0, *walk[0])]
+    for i, c0 in enumerate(np.arange(s0, s1 - 2.5, 3.5)):       # a chord every 3.5 s while it speaks
+        chords.append((float(c0), *walk[i % len(walk)]))
+    home = s1 + 0.4
+    chords += [(max(s1 - 0.8, chords[-1][0] + 0.8), 'C#4', 'G4', 'A4', 'A1'), (home, *walk[0])]
+    ends = [c[0] for c in chords[1:]] + [T]
+    pad = Synth('Pads/MKS-70 Warm Pad').render(
+        [(c[0], note(m), 50, c1 - c[0] + 0.1) for c, c1 in zip(chords, ends) for m in c[1:4]], T + 2)[:, :n]
+    pad = pad * np.clip(t / 1.0, 0, 1)
+    cello = Sampler('Strings/Cello Section/susvib/*.wav', rng, tune=-12)
+    low = np.zeros((2, n))
+    for c, c1 in zip(chords, ends):
+        a = cello.play(note(c[4]) + 12, 60, dur=c1 - c[0] + 0.3, release=0.6)
+        k0 = int(c[0] * SR)
+        k = min(n - k0, a.shape[1])
+        low[:, k0:k0 + k] += a[:, :k] * np.clip(np.arange(k) / (0.4 * SR), 0, 1)
+    answer = [(0, 2, 'F#5'), (2, 1, 'E5'), (3, 2, 'C#5'), (5, 1, 'E5'), (6, 4, 'D5')]
+    cel = at(Synth('Plucks/Fantasy Bell').render(
+        [(b * e, note(m), 84 - 3 * i, d * e * 0.95) for i, (b, d, m) in enumerate(answer)], 5.0), home + 0.1)
+    cel += 0.6 * at(shake.play(76), home + 0.1 + 6 * e)
+    pre = slice(int(0.2 * SR), int(min(s0, 2.4) * SR))
+    post = slice(int((home + 0.1) * SR), int(min(T, home + 2.4) * SR))
+    return [(pad, -40.0, None), (low, -42.0, None), (box + 0.5 * bells, -33.0, pre), (cel, -33.0, post)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
         'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
         'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie,
-        'elijah': _bed_elijah, 'hanukkah': _bed_hanukkah, 'messiah': _bed_messiah}
+        'elijah': _bed_elijah, 'hanukkah': _bed_hanukkah, 'messiah': _bed_messiah, 'christmas': _bed_christmas}
 
 
 def _rms(x):
