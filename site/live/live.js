@@ -184,7 +184,7 @@
   // the night whose shows aren't all over yet
   const thisNight = (now = Date.now()) => nights.find((n) => Date.parse(n.blocks[n.blocks.length - 1].end) > now);
   function nextSet(now = Date.now()) {
-    for (const n of nights) for (const b of n.blocks) if (b.kind === 'set' && Date.parse(b.start) > now) return { n, b };
+    for (const n of nights) for (const b of n.blocks) if (b.kind !== 'intermission' && Date.parse(b.start) > now) return { n, b };
     return null;
   }
   function whenNight(n, now = Date.now()) {
@@ -213,7 +213,7 @@
       const list = document.createElement('ol');
       list.className = 'sets';
       for (const b of n.blocks) {
-        if (b.kind !== 'set') continue;
+        if (b.kind === 'intermission') continue;           // sets, and a set's opener (a single show)
         const li = document.createElement('li');
         const s = Date.parse(b.start), e = Date.parse(b.end);
         li.className = e <= now ? 'past' : s <= now ? 'now' : '';
@@ -226,7 +226,7 @@
         const extra = [b.note, li.className === 'now' ? 'on now' : ''].filter(Boolean).join(' \u00b7 ');
         if (extra) l.append(Object.assign(document.createElement('em'), { textContent: extra }));
         li.append(t, l);
-        const desc = (sets[b.playlist] || {}).desc;
+        const desc = b.kind === 'set' && (sets[b.playlist] || {}).desc;
         if (desc) li.append(Object.assign(document.createElement('p'), { className: 'sdesc', textContent: desc }));
         list.append(li);
       }

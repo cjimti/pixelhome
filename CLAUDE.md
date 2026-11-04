@@ -54,7 +54,8 @@ A playlist's `intermission.py` (`KIND = 'intermission'`) plays for five minutes 
 rotation. It is built on `pixelhome/intermission.py`'s `countdown()`: the house stays lit while a fill closes in on
 the porch, so the street can see how long is left; its score marks each minute and calls the street back at the
 finale (`MARKS`), at about -19 dBFS.
-`homes/<home>/schedule.py` says which sets play which nights at clock times (and which loops keep the house lit
+`homes/<home>/schedule.py` says which sets play which nights at clock times (a set can have an `opener`, one show
+straight before it: Hanukkah's candle-lighting for the night) (and which loops keep the house lit
 by day and late at night: it is never dark). The build works it out against the
 catalog into `data/<home>/schedule.json` (the Live page's show times), and `scripts/fpp_sync.py --apply` writes
 the same nights into FPP (a playlist per kind of night and the whole schedule), uploads what changed and removes

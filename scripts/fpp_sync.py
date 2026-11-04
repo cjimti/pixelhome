@@ -13,7 +13,8 @@ For each playlist on the site (an occasion's own, or one under it: Nightmare, ea
     "<Label> Loops"             its ambient loops (all night, or all day for Daytime), if it has any
 
 and from the home's show times (dist/data/<home>/schedule.json, from homes/<home>/schedule.py) a playlist for each
-kind of night ("Halloween + Nightmare Night (10 sets)": each set's wIntros playlist, the intermissions between) and
+kind of night ("Halloween + Nightmare Night (10 sets)": each set's wIntros playlist, the intermissions between, and a
+set's opener show after its intro, which names the night: "... Night (3 sets) with HN01") and
 FPP's whole schedule: every day and night still to come, the daytime loops, the evening loops until the first show,
 the night's playlist at its published time, and the loops again until the next morning.
 
@@ -121,10 +122,21 @@ def nights(sched, by_name, now, names):
         b1 = b1.replace(second=0) + dt.timedelta(minutes=1)
         sets = [b for b in n['blocks'] if b['kind'] == 'set']
         labels = list(dict.fromkeys(b['label'] for b in sets))
-        name = f"{' + '.join(labels)} Night ({len(sets)} sets)"
+        openers = list(dict.fromkeys(by_name[b['fseqName']]['code'] for b in n['blocks'] if b['kind'] == 'show'))
+        name = f"{' + '.join(labels)} Night ({len(sets)} sets)" + (f" with {' '.join(openers)}" if openers else '')
         items = []
         for b in n['blocks']:
-            if b['kind'] == 'set':
+            if b['kind'] == 'show':                 # a set's opener: the one show, after its spoken intro
+                m = by_name[b['fseqName']]
+                if m.get('intro'):
+                    items.append(dict(type='both', enabled=1, playOnce=0, sequenceName=m['introName'] + '.fseq',
+                                      mediaName=m['introName'] + '.mp3', videoOut='--Default--', timecode='Default',
+                                      duration=int(round(m['introFrames'] / m['fps']))))
+                items.append(dict(type='both' if m.get('audioName') else 'sequence', enabled=1, playOnce=0,
+                                  sequenceName=m['fseqName'], **({'mediaName': m['audioName'], 'videoOut': '--Default--'}
+                                                               if m.get('audioName') else {}),
+                                  timecode='Default', duration=int(round(m['seconds']))))
+            elif b['kind'] == 'set':
                 with_intros = f"{b['label']} Music wIntros"
                 items.append(dict(type='playlist', enabled=1, playOnce=0,
                                   name=with_intros if with_intros in names else f"{b['label']} Music"))
