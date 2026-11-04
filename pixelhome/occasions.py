@@ -56,6 +56,8 @@ PLAYLISTS = [
          desc="Charlie Brown, chef Snoopy and a backyard feast of toast and popcorn, retold scene by scene."),
     dict(id='judas-maccabaeus', occasion='hanukkah', label='Judas Maccabaeus', accent='#1e5bd8', prefix='JM',
          desc="Handel's Judas Maccabaeus: the revolt of the Maccabees and the Temple rededicated."),
+    dict(id='messiah', occasion='christmas', label='Messiah', accent='#ffd040', prefix='MS',
+         desc="Handel's Messiah: Part One, the prophecy and the nativity, closing with the Hallelujah."),
     dict(id='daytime', occasion='other', label='Daytime', accent='#8fd3ff', prefix='DY',
          desc='Something mellow for the daylight hours, until the shows start tonight.'),
     dict(id='das-rheingold', occasion='ring-cycle', label='Das Rheingold', accent='#e8b923', prefix='RG',
@@ -70,8 +72,8 @@ PLAYLISTS = [
 
 # The big sets, in the order the Sets page features them. Each has a page of its own (as every playlist does), with
 # its README's visitor sections when it has a README.
-SETS = ['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung', 'elijah', 'judas-maccabaeus', 'nightmare',
-        'chef-charlie']
+SETS = ['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung', 'elijah', 'judas-maccabaeus', 'messiah',
+        'nightmare', 'chef-charlie']
 
 BY_ID = {o['id']: o for o in OCCASIONS}
 # playlist id -> its occasion, label, accent, desc

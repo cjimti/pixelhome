@@ -22,7 +22,8 @@ FLOOR = 0.04                            # perceptual: the three runs never go fu
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
           'gotterdammerung': 'halloween-accent', 'thanksgiving': 'halloween-accent',
-          'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent', 'hanukkah': 'halloween-accent'}
+          'chef-charlie': 'halloween-accent', 'elijah': 'halloween-accent', 'hanukkah': 'halloween-accent',
+          'messiah': 'halloween-accent'}
 GAP, BREATH = 0.7, 0.35                 # pause after the mood line, and between the description's parts
 
 
@@ -593,10 +594,59 @@ def _bed_hanukkah(n, rng, s0, s1):
             (spread, -38.0, post), (tail, -36.0, post)]
 
 
+def _bed_messiah(n, rng, s0, s1):
+    """D major, the key of Messiah's glory, its trumpets and its Hallelujah: a low held drone of cellos and basses on
+    D. Before the first word a trumpet, far off, sounds D, A and D, as the trumpets sound from a distance in "Glory to
+    God"; while it speaks violas and violins hold D major softly; after the last word a harp spreads D major."""
+    from .audio import SR, Sampler, note
+    t = np.arange(n) / SR
+    T = n / SR
+
+    def track(s, notes, release=0.4):
+        out = np.zeros((2, n))
+        for t0, m, v, d in notes:
+            a = s.play(m, v, dur=d, release=release)
+            k0 = int(t0 * SR)
+            k = min(n - k0, a.shape[1])
+            if k > 0:
+                out[:, k0:k0 + k] += a[:, :k]
+        return out
+
+    def drone(s, notes, t0, vel, step=2.5):
+        """Sustained notes from t0 to the end: overlapping windows of the sample past its attack."""
+        out = np.zeros((2, n))
+        w = int(2 * step * SR)
+        win = np.hanning(w)
+        for m in notes:
+            for t1 in np.arange(t0 - step, T, step):
+                a = s.play(note(m), vel)[:, int(0.25 * SR):int(0.25 * SR) + w]
+                a = a * win[:a.shape[1]]
+                k0 = int(t1 * SR)
+                if k0 < 0:
+                    a, k0 = a[:, -k0:], 0
+                k = min(n - k0, a.shape[1])
+                out[:, k0:k0 + k] += a[:, :k]
+        return out * np.clip((t - t0) / 1.2, 0, 1)
+
+    low = drone(Sampler('Strings/Cello Section/susvib/*.wav', rng, tune=-12), ['D2', 'A2'], 0.0, 70)
+    low += 0.6 * drone(Sampler('Strings/Solo Contrabass/SusNV/*.wav', rng, tune=-12), ['D2'], 0.0, 76)
+    upper = drone(Sampler('Strings/Viola Section/susvib/*.wav', rng, tune=-12), ['D3', 'F#3', 'A3'], s0, 56)
+    upper += 0.7 * drone(Sampler('Strings/Violin Section/susVib/*.wav', rng, tune=-12), ['D4', 'F#4'], s0, 52)
+    tr = Sampler('Brass/Trumpet/sus/*.wav', rng, tune=-12)
+    call = track(tr, [(0.3, note('D4'), 70, 0.5), (0.85, note('A4'), 72, 0.5), (1.4, note('D5'), 76, 1.0)], 0.9)
+    home = s1 + 0.4
+    hp = Sampler('Strings/Harp/*.wav', rng)
+    chord = ['D3', 'A3', 'D4', 'F#4', 'A4', 'D5']
+    spread = track(hp, [(home + 0.11 * i, note(m), 80, 2.0) for i, m in enumerate(chord)])
+    pre, post = slice(int(0.25 * SR), int(min(s0, 2.6) * SR)), slice(int(home * SR), int(min(T, home + 2.4) * SR))
+    return [(low, -42.0, None), (upper, -46.0, slice(int(s0 * SR), int(s1 * SR))), (call, -36.0, pre),
+            (spread, -36.0, post)]
+
+
 BEDS = {'halloween': _bed_halloween, 'das-rheingold': _bed_das_rheingold, 'die-walkure': _bed_die_walkure,
         'siegfried': _bed_siegfried, 'gotterdammerung': _bed_gotterdammerung,
         'nightmare': _bed_nightmare, 'thanksgiving': _bed_thanksgiving, 'chef-charlie': _bed_chef_charlie,
-        'elijah': _bed_elijah, 'hanukkah': _bed_hanukkah}
+        'elijah': _bed_elijah, 'hanukkah': _bed_hanukkah, 'messiah': _bed_messiah}
 
 
 def _rms(x):
