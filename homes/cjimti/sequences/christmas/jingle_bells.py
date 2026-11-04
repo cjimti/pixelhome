@@ -27,11 +27,15 @@ BELL = hexc('#ffd890')
 NIGHT = hexc('#0c0a30')
 
 
-def render(G, seed=26):
-    rng = np.random.default_rng(seed)
-    BEAT = 0.5                                     # 120 bpm
-    T0 = 4.0
-    strikes = []                                   # (time, run, mode, colour, amplitude, where)
+BEAT = 0.5                                         # 120 bpm
+T0 = 4.0                                           # the first note of the chorus
+SEED = 26
+
+
+def strikes_of(G, rng):
+    """Every strike, in order: (time, run, mode, colour, amplitude, where along the run 0..1), and when the last
+    chord rings. Draws the mallet ends from rng, so render() and score() share them."""
+    strikes = []
     t = T0
     for rep in range(2):
         for tok in CHORUS.split():
@@ -45,6 +49,12 @@ def render(G, seed=26):
     t_end = t
     for run in G.seg:                              # the last chord: everything rings together
         strikes.append((t_end, run, 1, GOLD, 1.1, 0.5))
+    return strikes, t_end
+
+
+def render(G, seed=SEED):
+    rng = np.random.default_rng(seed)
+    strikes, t_end = strikes_of(G, rng)
     D = t_end + 7.0
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
@@ -91,3 +101,145 @@ def render(G, seed=26):
             pick = sparkle_cells[f] < 0.035
             fr[pick] += light(BELL, level * off * (0.6 + 0.4 * shake(t)[pick]))
     return out
+
+
+# ---- music: the chorus as the lights play it, in C at 120 bpm, two bars of sleigh bells in front ----
+D = T0 + 2 * sum(float(tok[1:]) for tok in CHORUS.split()) * BEAT + 7.0
+OCTAVE = {'C': 'C5', 'D': 'D5', 'E': 'E5', 'F': 'F5', 'G': 'G5'}      # the tune as the glockenspiel sounds it
+HARMONY = ['C', 'C', 'C', 'C', 'F', 'C', 'D7', 'G7', 'C', 'C', 'C', 'C', 'F', 'C', 'G7', 'C']   # a chord per bar
+TONES = {'C': ('C', 'E', 'G'), 'F': ('F', 'A', 'C'), 'D7': ('D', 'F#', 'A', 'C'), 'G7': ('G', 'B', 'D', 'F')}
+ROOTS = {'C': ('C2', 'G2'), 'F': ('F2', 'C2'), 'D7': ('D2', 'A2'), 'G7': ('G2', 'D2')}
+
+
+def score(M, G):
+    from pixelhome.audio import note
+    n = note
+    rng = np.random.default_rng(SEED)
+    strikes, t_end = strikes_of(G, rng)
+
+    glock = M.sampler('Percussion/Glock/*.wav', tune=-12)
+    glock2 = M.sampler('Percussion/Glock/*.wav', tune=-12)
+    flute = M.sampler('Woodwinds/Flute/stac/*.wav', tune=-12)
+    flute_s = M.sampler('Woodwinds/Flute/susvib/*.wav', tune=-12)
+    clar = M.sampler('Woodwinds/Clarinet/stac/*.wav', tune=-12)
+    clar_s = M.sampler('Woodwinds/Clarinet/susLong/*.wav', tune=-12)
+    tpt = M.sampler('Brass/Trumpet/stac/*.wav', tune=-12)
+    tpt_s = M.sampler('Brass/Trumpet/sus/*.wav', tune=-12)
+    horn = M.sampler('Brass/F Horn/stac/*.wav', tune=-12)
+    horn_s = M.sampler('Brass/F Horn/sus/*.wav', tune=-12)
+    bass = M.sampler('Strings/Solo Contrabass/Pizz/*.wav', tune=-12)
+    tuba = M.sampler('Brass/Tuba/stac/*.wav', tune=-12)
+    vla = M.sampler('Strings/Viola Section/pizz/*.wav', tune=-12)
+    harp = M.sampler('Strings/Harp/*.wav')
+    sleigh = M.hits('Percussion/Sleighbells_Hit*.wav')
+    sleigh_m = M.hits('Miscellania Raw/Misc 2/sleighbell1_hit_[0-9].wav')
+    sleigh_shake = M.hits('Miscellania Raw/Misc 2/sleighbell*_shake*.wav')
+    timp = M.hits('Percussion/Timpani/Timpani1_Hit*.wav')
+    cym = M.hits('Percussion/susCymb1-hit_f_*.wav')
+    chimes = M.hits('VSCO 1 Percussion/varMetal/various/windchimes_asc1.wav')
+    block = M.hits('VSCO 1 Percussion/varWood/claves_m*.wav')
+
+    for name, gain, rev in (('tune', 0.4, 0.18), ('harm', 0.3, 0.2), ('accomp', 0.34, 0.12), ('bass', 0.48, 0.06),
+                            ('bells', 0.3, 0.15), ('ring', 0.36, 0.3)):
+        M.bus(name, gain=0.76 * gain, reverb=rev)
+
+    def pan_run(run, u):                         # where a strike lands on the house, left/right from the street
+        idx = G.seg[run]
+        order = np.argsort(G.pi[idx])
+        x = G.pos[idx[order], 0]
+        xx = np.interp(u, np.linspace(0, 1, len(idx)), x)
+        lo, hi = G.pos[:, 0].min(), G.pos[:, 0].max()
+        return float(0.85 * (2 * (xx - lo) / (hi - lo) - 1))
+
+    def bar_of(t):
+        return int((t - T0 + 1e-6) // (4 * BEAT)) % 16
+
+    def below(m, chord):                         # the nearest chord tone at least a third under m
+        pcs = [n(p + '4') % 12 for p in TONES[chord]]
+        k = m - 3
+        while k % 12 not in pcs:
+            k -= 1
+        return k
+
+    # the melody and its answer, from the strikes themselves: each lead strike rings its note where it lands
+    lead = [s for s in strikes if s[4] == 1.0]
+    half = len(CHORUS.split())
+    durs = [float(tok[1:]) * BEAT for tok in CHORUS.split()] * 2
+    letters = [tok[0] for tok in CHORUS.split()] * 2
+    for i, ((t, run, _, _, _, hit), d, p) in enumerate(zip(lead, durs, letters)):
+        rep = i // half
+        m = n(OCTAVE[p])
+        pan = pan_run(run, hit)
+        M.add('tune', glock.play(m, 104), t, 1.0, pan)
+        if rep == 0:
+            pl = flute_s if d >= 1.0 else flute
+            M.add('tune', pl.play(m, 98, dur=d * 0.92), t, 0.75, 0.6 * pan)
+            M.add('tune', clar.play(m - 12, 90, dur=d * 0.9), t, 0.45, 0.6 * pan)
+        else:
+            pl = tpt_s if d >= 1.0 else tpt
+            M.add('tune', pl.play(m - 12, 104, dur=d * 0.92), t, 0.85, 0.5 * pan)
+            M.add('tune', flute.play(m, 92, dur=d * 0.9), t, 0.45, 0.5 * pan)
+    answers = [s for s in strikes if s[4] == 0.6]
+    for (t, run, _, _, _, hit), p, d in zip(answers, letters[half:], durs[half:]):
+        # the mirror run answers a hair later: the harmony
+        h = below(n(OCTAVE[p]), HARMONY[bar_of(t)])
+        pan = pan_run(run, hit)
+        M.add('harm', glock2.play(h, 88), t, 0.8, pan)
+        pl = horn_s if d >= 1.0 else horn
+        M.add('harm', pl.play(h - 12, 96, dur=d * 0.92), t, 0.8, 0.5 * pan)
+        M.add('harm', clar_s.play(h, 80, dur=d * 0.92), t, 0.35, 0.5 * pan)
+
+    # the band: bass on one and three, chords on two and four; tuba and horns join the second time
+    for k in range(-1, 32):
+        rep = 0 if k < 16 else 1
+        c = 'C' if k < 0 else HARMONY[k % 16]
+        t = T0 + 4 * k * BEAT
+        lo, fifth = ROOTS[c]
+        for b, m in ((0, lo), (2, fifth)):
+            if k == -1 and b == 2:
+                m = 'G2'
+            M.add('bass', bass.play(n(m), 100), t + b * BEAT, 0.9)
+            if rep:
+                M.add('bass', tuba.play(n(m), 96), t + b * BEAT, 0.7)
+        for b in (1, 3):
+            for p in TONES[c][:3] if c not in ('D7', 'G7') else TONES[c][1:]:
+                m = n(p + '4')
+                m = m - 12 if m > n('G4') else m
+                M.add('accomp', vla.play(m, 86), t + b * BEAT, 0.4, 0.2)
+                if rep:
+                    M.add('accomp', horn.play(m, 90, dur=0.2), t + b * BEAT, 0.35, -0.2)
+        if k >= 0 and k % 4 == 0:
+            M.add('bells', block.play(70), t, 0.25)
+
+    # sleigh bells: a shake that swells in over the first two bars (four a second, as the sparkles pulse), then
+    # a hit on every off-beat while the tune plays, scattered over the house as the sparkles are
+    t = T0 - 3 + 1 / 16
+    while t < T0:
+        lvl = (t - (T0 - 3)) / 3
+        M.add('bells', sleigh.play(int(60 + 50 * lvl)), t, 0.3 + 0.7 * lvl, float(M.rng.uniform(-0.6, 0.6)))
+        t += 0.25
+    M.add('bells', sleigh_shake.play(90), T0 - 1.0, 0.5, 0.0)
+    t = T0 + BEAT / 2
+    while t < t_end + 2:
+        lvl = 1.0 if t < t_end else max(0.0, 1 - (t - t_end) / 2)
+        M.add('bells', (sleigh if int((t - T0) / BEAT) % 2 else sleigh_m).play(100), t, 0.75 * lvl,
+              float(M.rng.uniform(-0.7, 0.7)))
+        t += BEAT
+    for i, m in enumerate(('C4', 'E4', 'G4', 'C5', 'E5', 'G5')):          # the pickup into the tune
+        M.add('accomp', harp.play(n(m), 84), T0 - 0.6 + 0.09 * i, 0.7, -0.5 + 0.2 * i)
+
+    # the last chord rings the whole house
+    for m in ('C5', 'E5', 'G5', 'C6'):
+        M.add('ring', glock.play(n(m), 110), t_end, 0.8)
+    for m in ('C4', 'E4', 'G4', 'C5'):
+        M.add('ring', tpt_s.play(n(m), 104, dur=4.5), t_end, 0.4, -0.3)
+        M.add('ring', horn_s.play(n(m) - 12, 100, dur=5.0), t_end, 0.5, 0.3)
+        M.add('ring', flute_s.play(n(m) + 12, 90, dur=4.5), t_end, 0.25)
+    M.add('bass', tuba.play(n('C2'), 110), t_end, 1.0)
+    M.add('bass', bass.play(n('C2'), 110), t_end, 1.0)
+    M.add('bass', timp.play(110), t_end, 0.7)
+    M.add('ring', cym.play(100), t_end, 0.45)
+    M.add('ring', chimes.play(100), t_end + 0.1, 0.5)
+    M.add('bells', sleigh_shake.play(110), t_end, 0.8)
+    for i, m in enumerate(('C3', 'E3', 'G3', 'C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'C6')):
+        M.add('accomp', harp.play(n(m), 90), t_end - 0.35 + 0.035 * i, 0.6, -0.6 + 0.13 * i)
