@@ -16,7 +16,7 @@ up a step to E for the last phrases, a hushed bar, and a big amen."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM16'
+CODE = 'CH16'
 TITLE = 'Carolers'
 KIND = 'show'
 DESCRIPTION = ('Lantern-carrying carolers walk in from the end of the house; every window they sing to lights up and '

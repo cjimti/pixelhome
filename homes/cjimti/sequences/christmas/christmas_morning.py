@@ -23,7 +23,7 @@ sparkle for the scraps he kicks; the dawn theme comes back for everyone at the e
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM18'
+CODE = 'CH18'
 TITLE = 'Christmas Morning'
 KIND = 'show'
 DESCRIPTION = ('Dawn breaks and feet race to the tree: a ribbon zips off, paper flies, and out come a spinning top, '

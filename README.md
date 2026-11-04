@@ -43,7 +43,7 @@ Add `homes/<home>/sequences/<occasion>/<name>.py`:
 import numpy as np
 from pixelhome.fx import DT, hexc, light, nframes
 
-CODE = 'XM1'                 # unique within the home, shown on the card
+CODE = 'CH01'               # unique within the home, shown on the card
 TITLE = 'Candy Cane'
 KIND = 'show'                # 'show' or 'ambient' (all-night loop: dim, slow, dithered)
 DESCRIPTION = 'Red and white stripes march around the roof.'

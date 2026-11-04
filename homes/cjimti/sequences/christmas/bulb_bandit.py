@@ -7,7 +7,7 @@ in him and every bulb flies home."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM03'
+CODE = 'CH03'
 TITLE = 'The Bulb Bandit'
 KIND = 'show'
 DESCRIPTION = ('A green sneak with yellow eyes tiptoes along the roof reeling every bulb into his sack, '

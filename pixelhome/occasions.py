@@ -6,7 +6,7 @@ another occasion changes no ids, links or file paths.
 
 Order here is calendar order; the site starts the list at the next upcoming occasion. `date` is MM-DD,
 approximate for holidays that move (it only drives that ordering). `prefix` is the CODE prefix new sequences in a
-playlist use (e.g. XM01..XM10). `desc` describes a playlist (for an occasion, its own playlist) on the site and
+playlist use (e.g. CH01..CH10). `desc` describes a playlist (for an occasion, its own playlist) on the site and
 the Live page; `set` names an occasion's own playlist when it isn't the occasion's name (Halloween Variety)."""
 
 OCCASIONS = [
@@ -42,7 +42,7 @@ OCCASIONS = [
          desc='Turkeys, pies, parades and the whole family round the table.', set='Thanksgiving Variety'),
     dict(id='hanukkah', date='12-05', label='Hanukkah', accent='#ffb33a', prefix='HN',
          desc='Eight nights of lights: the hanukkiah kindled on the porch, one more flame each night.'),
-    dict(id='christmas', date='12-25', label='Christmas', accent='#e5484d', prefix='XM',
+    dict(id='christmas', date='12-25', label='Christmas', accent='#e5484d', prefix='CH',
          desc='Classic bulbs, snow and a few Christmas capers.', set='Christmas Variety'),
     dict(id='other', label='Other', accent='#2ee6c8', prefix='OT',
          desc='Everything else: colour, nature and light for any night.'),

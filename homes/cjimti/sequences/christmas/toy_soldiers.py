@@ -22,7 +22,7 @@ scale, and the finale is the trio in E flat, full band and cymbals, to a cannon 
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, nframes
 
-CODE = 'XM17'
+CODE = 'CH17'
 TITLE = 'Toy Soldiers'
 KIND = 'show'
 DESCRIPTION = ('Tin soldiers march out of the toy box and round the roof in step, until a jack-in-the-box startles '

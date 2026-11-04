@@ -20,7 +20,7 @@ springs back, timpani under the leaps and the whole band for the finish."""
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM15'
+CODE = 'CH15'
 TITLE = 'Snowman'
 KIND = 'show'
 DESCRIPTION = ('Two kids roll snowballs along the wings and stack a snowman on the porch. A sparkle brings him to life, '

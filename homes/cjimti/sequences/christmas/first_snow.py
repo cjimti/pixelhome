@@ -5,7 +5,7 @@ gives way and slides off the end of the roof. Dim, slow and seamless for all nig
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, smoothstep, lerp, Flicker, nframes, looped
 
-CODE = 'XM07'
+CODE = 'CH07'
 TITLE = 'First Snow'
 KIND = 'ambient'
 DESCRIPTION = ('Snow falls through the air past the roofline and settles on it, drifting into the corners. '

@@ -22,7 +22,7 @@ chord."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM19'
+CODE = 'CH19'
 TITLE = 'Reindeer Flight School'
 KIND = 'show'
 DESCRIPTION = ('Three young reindeer practise take-offs on the runway: one tumbles into a snowbank, one loops and '

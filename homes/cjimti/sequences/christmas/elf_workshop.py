@@ -24,7 +24,7 @@ the last chord."""
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, Flicker, nframes
 
-CODE = 'XM13'
+CODE = 'CH13'
 TITLE = 'Elf Workshop'
 KIND = 'show'
 DESCRIPTION = ('The roof is a conveyor belt: elves at every corner hammer, paint and wrap toys until it runs too fast '

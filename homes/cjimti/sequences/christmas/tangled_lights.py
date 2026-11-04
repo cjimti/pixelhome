@@ -23,7 +23,7 @@ xylophone eighths that step with the colours and a harp glissando for every chas
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, nframes
 
-CODE = 'XM12'
+CODE = 'CH12'
 TITLE = 'Tangled Lights'
 KIND = 'show'
 DESCRIPTION = ('A string of big bulbs comes out of the box in knots and is untangled along the roof. It flickers on, '

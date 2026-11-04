@@ -26,7 +26,7 @@ in full on trumpets with sleigh bells, and the last snowball lands on the final 
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, light, keys, smoothstep, Flicker, nframes
 
-CODE = 'XM11'
+CODE = 'CH11'
 TITLE = 'Snowball Fight'
 KIND = 'show'
 DESCRIPTION = ('Two snow forts, red mittens against green, and the porch is the sky: volleys arc over it and splat '

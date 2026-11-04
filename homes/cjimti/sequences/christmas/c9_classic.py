@@ -6,7 +6,7 @@ warmer and dimmer with filament lag; the odd loose bulb wavers. Seamless for all
 import numpy as np
 from pixelhome.fx import DT, hexc, perc, smoothstep, lerp, Flicker, nframes, looped
 
-CODE = 'XM09'
+CODE = 'CH09'
 TITLE = 'C9 Classic'
 KIND = 'ambient'
 DESCRIPTION = ('A string of old-fashioned C9 bulbs: warm filaments behind red, green, blue, orange and '

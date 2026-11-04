@@ -17,7 +17,7 @@ import numpy as np
 from pixelhome.fx import DT, hexc, light, smoothstep
 from pixelhome.intermission import SECONDS, MARKS, FINALE, countdown, order, reach
 
-CODE = 'XM20'
+CODE = 'CH20'
 TITLE = 'Intermission'
 KIND = 'intermission'
 DESCRIPTION = ('The house glows pine green and wraps up in red ribbon toward the porch over five minutes, with gold '

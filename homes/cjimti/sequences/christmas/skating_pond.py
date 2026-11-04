@@ -20,7 +20,7 @@ downbeat), a slide whistle up for the fling and a thump in the snow, and a big c
 import numpy as np
 from pixelhome.fx import DT, hexc, light, keys, smoothstep, lerp, Flicker, nframes
 
-CODE = 'XM14'
+CODE = 'CH14'
 TITLE = 'Skating Pond'
 KIND = 'show'
 DESCRIPTION = ('Skaters in bright scarves carve figure-eights on a frozen pond, a pair spins in a whirl of colour, '
