@@ -35,9 +35,18 @@ NIGHTS = [
                   dict(sets=['{each}'], note='Late show')]),
     # From then on every night has the same shape: the family sets (Thanksgiving and Chef Charlie) lead, and come
     # round again between the night's early show, Elijah and its late show.
-    # The Ring through the eve of Hanukkah, the cycle carrying on from Götterdämmerung
-    dict(dates=('2026-11-04', '2026-12-03'), shows='17:30', day='daytime', late='thanksgiving',
-         each_night=['gotterdammerung', 'das-rheingold', 'die-walkure', 'siegfried'],
+    # The Ring carrying on from Götterdämmerung (the two nights as they played)
+    dict(dates=('2026-11-04', '2026-11-05'), shows='17:30', day='daytime', late='thanksgiving',
+         each_night=['gotterdammerung', 'das-rheingold'],
+         program=[dict(sets=FAMILY),
+                  dict(sets=['{each}'], note='Early show'),
+                  dict(sets=FAMILY),
+                  dict(sets=['elijah']),
+                  dict(sets=FAMILY),
+                  dict(sets=['{each}'], note='Late show')]),
+    # The Ring through the eve of Hanukkah, the cycle starting over from Das Rheingold
+    dict(dates=('2026-11-06', '2026-12-03'), shows='17:30', day='daytime', late='thanksgiving',
+         each_night=['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung'],
          program=[dict(sets=FAMILY),
                   dict(sets=['{each}'], note='Early show'),
                   dict(sets=FAMILY),
