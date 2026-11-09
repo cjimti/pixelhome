@@ -1,25 +1,36 @@
-"""Daylight: A mild sunny day on the roofline, from breakfast until the evening lights take over. The house
-sits under a pale blue sky; soft warm-white clouds, made from a few broad waves of light, drift across the
-yard from left to right and change shape as they go. A golden glint of sun wanders along the runs, out over
-the porch and back along the wings, dimming a little whenever a cloud passes over it. Every motion repeats
-exactly once per loop, so the end flows into the start. A seamless all-day loop."""
+"""Daylight: Sparkles in the sun. The house doesn't need lighting by day, so the roofline stays dark and bright
+points of light do the work: a flurry of gold and white follows a wandering glint of sun out over the porch and
+back along the wings, loose sparkles fall everywhere else, each chord of the music sends a thin wave of its colour
+out from the porch, and when the glint turns a corner of the roof the corner bursts as the glockenspiel chimes.
+Every sparkle wraps around the end of the loop, so the end flows into the start. A seamless all-day loop, at a
+quarter of the power of the lit roofline it replaced."""
 import numpy as np
-from pixelhome.fx import DT, hexc, light, lerp, smoothstep, nframes, looped
+from pixelhome.fx import DT, hexc, perc, nframes
 
 CODE = 'DY01'
 TITLE = 'Daylight'
 KIND = 'ambient'
-DESCRIPTION = ('A pale blue sky along the roofline with soft white clouds drifting across the yard and a golden '
-               'glint of sun wandering over the porch and the wings. Gentle light for the daytime.')
+DESCRIPTION = ('Bright sparkles in the sun: a flurry of gold and white follows a wandering glint over the porch '
+               'and the wings, with a wave of colour on every chord.')
 
-SKY = hexc('#3e9cff')
-SKY_PALE = hexc('#9ed2ff')
-CLOUD = hexc('#fff1dc')
+WHITE = hexc('#fff4e6')
 GOLD = hexc('#ffb83a')
 GOLD_CORE = hexc('#ffe39a')
+SKY = hexc('#3e9cff')
+SKY_PALE = hexc('#9ed2ff')
+ROSE = hexc('#ff8f7a')
+MINT = hexc('#8ff0c4')
 LOOP = 150.0
-WIND = 24.0                     # cloud drift across the yard, layout units per second
-FLOOR = 0.12
+FLURRY = 10.5                   # sparkles per second around the glint
+FLURRY_SPREAD = 130.0           # layout units either side of it
+SCATTER = 7.0                   # sparkles per second over the rest of the house
+SIDE_WEIGHT = 0.25              # Side is seen from an angle: fewer there
+WAVE_THIN = 3                   # every third pixel joins a chord's wave
+WAVE_SPEED = 420.0              # layout units per second
+BURST = 16                      # sparkles at a corner when the glint turns it
+TAUS = (0.3, 0.42, 0.56, 0.72)  # perceptual decay times, seconds
+PALETTES = ((GOLD, WHITE), (SKY, WHITE), (GOLD_CORE, ROSE), (SKY_PALE, GOLD), (MINT, WHITE),
+            (GOLD, SKY_PALE), (ROSE, WHITE), (GOLD_CORE, SKY))     # one per chord of the score
 
 
 def glint_path(t):
@@ -29,50 +40,51 @@ def glint_path(t):
     return 1300 + 720 * np.sin(w) + 190 * np.sin(3 * w + 0.8) + 60 * np.sin(5 * w + 2.1)
 
 
-def _cloud_waves(rng):
-    """Plane waves over the yard (x, z) that drift with the wind and repeat exactly once per loop."""
-    K = 7
-    m = rng.choice(np.arange(3, 11), K, replace=False)          # cycles per loop of each wave
-    kx = 2 * np.pi * m / (LOOP * WIND)                          # so kx * WIND * LOOP is a whole number of turns
-    kz = rng.normal(0, 1, K) * kx * 0.8
-    a = rng.uniform(0.6, 1.0, K)
-    ph = rng.uniform(0, 2 * np.pi, K)
-    m2 = rng.choice(np.arange(1, 4), K)                         # slow change of shape as they drift
-    ph2 = rng.uniform(0, 2 * np.pi, K)
-    return kx, kz, a, ph, m2, ph2
+def _template(tau):
+    """PWM envelope of one sparkle: a two-frame rise, then a decay that is exponential to the eye."""
+    n = int(round(4 * tau / DT))
+    env = np.concatenate([[0.55, 1.0], np.exp(-np.arange(1, n + 1) * DT / tau)])
+    return np.asarray(perc(env), np.float32)
 
 
 def render(G, seed=1):
     rng = np.random.default_rng(seed)
-    x, z = G.pos[:, 0], G.pos[:, 2]
-    pd = G.pd
-    kx, kz, a, ph, m2, ph2 = _cloud_waves(rng)
-    tint = np.clip(0.5 + 0.5 * np.sin(2 * np.pi * (x - x.min()) / 900 + rng.uniform(0, 6)), 0, 1)
-    tint = 0.35 + 0.4 * tint + 0.25 * smoothstep(-300, -600, z)      # the porch, set back, looks a paler blue
+    F = nframes(LOOP)
+    out = np.zeros((F, G.N, 3), np.float32)
+    pdp = G.pd[G.path]
+    templates = [_template(tau) for tau in TAUS]
 
-    def draw(D):
-        out = np.zeros((nframes(D), G.N, 3), np.float32)
-        for f in range(len(out)):
-            t = f * DT
-            w = 2 * np.pi * t / LOOP
-            amp = a * (0.75 + 0.25 * np.sin(m2 * w + ph2))
-            arg = kx[None, :] * (x[:, None] - WIND * t) + kz[None, :] * z[:, None] + ph[None, :]
-            n = (amp * np.cos(arg)).sum(1) / np.sqrt((amp ** 2).sum() * 2)
-            c = smoothstep(-0.05, 0.85, n)                                  # 0 clear sky .. 1 inside a cloud
-            sky = lerp(SKY, SKY_PALE, tint[:, None])
-            col = light(lerp(sky, CLOUD, c[:, None]), 0.17 + 0.17 * c)
-            s = glint_path(t)
-            d = pd - s
-            shade = 1 - 0.45 * np.interp(s, pd[G.path], c[G.path])         # a cloud over the sun dims it
-            core = np.exp(-(d / 34) ** 2)
-            halo = np.exp(-(d / 150) ** 2)
-            g = shade * (0.9 + 0.1 * np.sin(2 * np.pi * 0.35 * t + 0.01 * pd))   # a slow shimmer, not a flicker
-            glow = np.clip(g * (0.65 * halo + 0.35 * core), 0, 1)
-            col = col * (1 - 0.6 * glow[:, None])
-            col += light(lerp(GOLD, GOLD_CORE, core[:, None]), 0.42 * glow)
-            out[f] = col
-        return out
-    return looped(draw, LOOP, floor=(FLOOR, SKY))
+    def spark(t, node, palette):
+        env = templates[int(rng.integers(len(TAUS)))]
+        col = palette[int(rng.integers(len(palette)))] * perc(rng.uniform(0.72, 1.0))
+        f = (int(round(t / DT)) + np.arange(len(env))) % F
+        out[f, node] += env[:, None] * col
+
+    def palette(t):
+        return PALETTES[int((t % LOOP) // CHORD_LEN)]
+
+    for t in rng.uniform(0, LOOP, int(FLURRY * LOOP)):                 # the flurry round the glint
+        d = glint_path(t) + rng.normal(0, FLURRY_SPREAD)
+        spark(t, G.path[int(np.clip(np.searchsorted(pdp, d), 0, G.N - 1))], (GOLD, GOLD_CORE, WHITE))
+
+    weight = np.where(G.seg_of == 'Side', SIDE_WEIGHT, 1.0)
+    weight /= weight.sum()
+    for t, node in zip(rng.uniform(0, LOOP, int(SCATTER * LOOP)), rng.choice(G.N, int(SCATTER * LOOP), p=weight)):
+        spark(t, int(node), palette(t))                                # loose sparkles everywhere else
+
+    front = G.path[np.isin(G.seg_of[G.path], ('Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right'))]
+    mid = (G.pd[G.seg['Porch Front']].min() + G.pd[G.seg['Porch Front']].max()) / 2
+    for i in range(len(PALETTES)):                                     # a wave out from the porch on each chord
+        t0 = i * CHORD_LEN
+        for node in front[::WAVE_THIN]:
+            spark(t0 + abs(G.pd[node] - mid) / WAVE_SPEED + rng.uniform(0, 0.12), int(node), PALETTES[i])
+
+    corners = [G.pd[G.path[idx[0]]] for _, idx in G.path_segments()][1:]
+    for t, c in _corner_turns(G):                                      # the corner bursts as the glock chimes
+        for _ in range(BURST):
+            d = corners[c] + rng.normal(0, 24)
+            spark(t + rng.uniform(0, 0.4), G.path[int(np.clip(np.searchsorted(pdp, d), 0, G.N - 1))], (WHITE, GOLD_CORE))
+    return np.clip(out, 0, 1)
 
 
 # ---- music: an all-day loop, sunny and soft ----
