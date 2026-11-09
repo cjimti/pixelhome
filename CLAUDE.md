@@ -44,6 +44,9 @@ loops, `candle_bed`.
 - Determinism: all randomness from `np.random.default_rng(seed)`. The build must be reproducible.
 - `ambient` pieces play all night: peaks around 0.4 perceptual, never fully dark, nothing fast or
   strobing. They are dithered on output. Use `looped()` so the end flows into the start.
+- Power: `pixelhome/power.py` cuts every all-night loop to under half of what it renders (porch kept, wings and
+  Side thinned to sparse light and drifting pools), so compose them as usual. The daytime loop isn't touched by it:
+  Daylight is sparkles composed to a quarter of the draw of the lit roofline it replaced.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.

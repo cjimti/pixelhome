@@ -3,7 +3,7 @@ import glob, hashlib, json, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, intro, pages, schedule, share
+from . import catalog, fseq, intro, pages, power, schedule, share
 from .fx import DT, to_bytes, to_bytes_dithered
 from .occasions import BY_ID, OCCASIONS, KINDS, PLAYLIST, playlists
 
@@ -28,7 +28,7 @@ def render(s):
         raise ValueError(f'{s.path}: render returned NaN or inf')
     if not 1 <= len(frames) * DT <= MAX_SECONDS:
         raise ValueError(f'{s.path}: {len(frames) * DT:.1f}s is outside 1s..{MAX_SECONDS}s')
-    return frames
+    return power.night(home, frames, s.id) if power.is_night_loop(s) else frames
 
 
 def _engine_hash():

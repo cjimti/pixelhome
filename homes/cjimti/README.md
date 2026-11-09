@@ -57,3 +57,6 @@ camera is the street view.
   full-house white to moments.
 - Avoid sustained strobing (more than about 3 full-house flashes per second for more than a couple
   of seconds).
+- All-night loops render at under half their composed draw: the porch is the light that matters at night, so it
+  holds, and the wings and Side thin out (`pixelhome/power.py`). By day the house doesn't need lighting, so the
+  daytime loop is sparkles at under a quarter of the old draw.
