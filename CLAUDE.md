@@ -20,6 +20,9 @@ they need local tools CI doesn't have.
 - Module docstring: `"""Title: what happens, for someone reading the code."""`
 - Files starting with `_` are ignored by discovery. A sequence imports only from `pixelhome` and
   the standard library/numpy; keep each one self-contained.
+- The build caches each render by the files it depends on (`deps()` in `pixelhome/rendering.py`): its module,
+  the files beside it that share its name or that it names, and the `pixelhome` modules it imports at module level.
+  Imports inside a function aren't followed, so import what render() needs at the top.
 
 ## The Home (`G`, see `pixelhome/home.py`)
 
@@ -99,8 +102,9 @@ A sequence may set `VOICEOVER = "..."`: one or two spoken sentences (about 4-8 s
 to be heard, not the card's DESCRIPTION. `uv run --group audio python -m pixelhome intro <CODE>` reads it with
 Chatterbox in the owner's cloned voice (`~/.cache/pixelhome/voice/<occasion>.wav`, never committed), puts it
 over the occasion's bed (`BEDS` in `pixelhome/intro.py`) and writes `homes/<home>/intros/<occasion>/<name>.mp3`
-and `.json` (the voice's loudness at 40 fps). Both are committed; the build turns the JSON into a red
-out-from-centre waveform FSEQ on Left, Porch Front and Right. Takes are cached by text and voice, so a reading
+and `.json` (the voice's loudness at 40 fps). Both are committed; the build turns the JSON into the
+intro's FSEQ, in the occasion's accent (Halloween in red): the show's title as a Morse marquee on Left, each spoken word
+in 8-bit ASCII on Porch Front, and a waveform out from the centre of Right. Takes are cached by text and voice, so a reading
 only changes when its line does; `VOICEOVER_TAKE = n` asks for a different reading of the same line.
 (`INTRO` is taken: Is Anyone There?'s score uses it for a tune.)
 
@@ -156,6 +160,7 @@ came from (`version()` in `pixelhome/build.py`, from `git describe`).
 uv run python -m pixelhome preview --occasion <occasion> --out build/preview/<occasion> <CODE>
 uv run python -m pixelhome list
 make verify                                     # full build, required before committing
+make serve-only                                 # serve the last build without building
 ```
 
 `preview` validates the render and writes two images to look at with an image viewer:

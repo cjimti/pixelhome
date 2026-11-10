@@ -1,6 +1,6 @@
 """Spoken intros: a short clip to schedule before a sequence, a line read in a cloned voice over the playlist's (or
-its occasion's) bed, with the house showing the voice as a red waveform out from the centre of Left, Porch Front and
-Right.
+its occasion's) bed, with the house in the occasion's colour: Left a marquee of the title in Morse code, Porch Front each
+word in ASCII bits as it is spoken, Right the voice as a waveform out from its centre.
 
 A sequence opts in with `VOICEOVER = "the line"`: a line to set the mood, which is followed by the card's
 DESCRIPTION so the street knows what to look for (a string of pixels is abstract). Optionally `VOICEOVER_TAKE = n`
@@ -9,15 +9,20 @@ locally to homes/<home>/intros/<playlist>/<name>.mp3 plus <name>.json, the voice
 committed, and the build turns the JSON into the FSEQ. Voices are ~10 s reference recordings in
 ~/.cache/pixelhome/voice/<name>.wav, never committed; Chatterbox runs in its own venv (scripts/audio-setup.sh).
 """
-import hashlib, json, os, subprocess
+import hashlib, json, os, re, subprocess, unicodedata
 import numpy as np
-from . import catalog
-from .fx import DT, hexc, light
+from . import catalog, fseq
+from .fx import DT, hexc, light, smoothstep, to_bytes
+from .occasions import BY_ID
 
 PRE, POST = 2.2, 2.8                    # seconds of bed before the first word and after the last
 EXAGGERATION, CFG = 0.5, 0.5            # Chatterbox's defaults: the reading that sounded most like a person
-RED = hexc('#ff0800')
-WAVE = ('Left', 'Porch Front', 'Right')
+COLOUR = {'halloween': '#ff0800'}       # an occasion's intros are in its accent, unless it's named here
+MARQUEE, BITS, WAVE = 'Left', 'Porch Front', 'Right'
+MORSE_UNIT = 3                          # pixels wide a dot is
+MORSE_SPEED = 40                        # pixels a second: slow enough to see each mark, and most titles finish in an intro
+BYTE_TICK = 0.2                         # the dim pixel between two bytes: Porch Front's 71 is 8 bytes and 7 ticks
+VOICED = 0.12                           # loudness above which the voice counts as sounding
 FLOOR = 0.04                            # perceptual: the three runs never go fully dark while it plays
 VOICES = {'halloween': 'halloween-accent',  # the owner's voice, as re-read with the slight British accent
           'das-rheingold': 'halloween-accent', 'die-walkure': 'halloween-accent', 'siegfried': 'halloween-accent',
@@ -39,24 +44,121 @@ def paths(s):
 
 # ---------------------------------------------------------------------------- the lights
 
-def frames(home, env):
-    """(F, N, 3) PWM: each run in WAVE lights out from its middle as far as the voice is loud."""
+MORSE = dict(zip('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                 '.- -... -.-. -.. . ..-. --. .... .. .--- -.- .-.. -- -. --- .--. --.- .-. ... - ..- ...- .-- -..- '
+                 '-.-- --.. ----- .---- ..--- ...-- ....- ..... -.... --... ---.. ----.'.split()))
+
+
+def morse(text):
+    """Units of Morse for the letters and digits of text, 1 lit and 0 dark: a dot is 1 unit, a dash 3, with 1 between
+    a letter's marks, 3 between letters, 7 between words (and after the last, so it can repeat)."""
+    plain = unicodedata.normalize('NFKD', text).upper()
+    words = [[MORSE[c] for c in w if c in MORSE] for w in plain.split()]
+    bits = []
+    for w in filter(None, words):
+        for letter in w:
+            for mark in letter:
+                bits += [1] * (1 if mark == '.' else 3) + [0]
+            bits += [0, 0]
+        bits += [0] * 4
+    return np.array(bits, float)
+
+
+def _marquee(bits, n, F):
+    """(F, n) 0..1: bits entering at pixel 0 and travelling toward pixel n-1, first letter in front, each pixel
+    averaging the units it covers so the marks glide rather than jump."""
+    head = MORSE_SPEED * np.arange(F) * DT
+    bits = np.resize(bits, int(head[-1] / MORSE_UNIT) + n + 2)
+    area = np.concatenate(([0], np.cumsum(bits)))
+    at = lambda u: np.interp(u.ravel(), np.arange(len(area)), area).reshape(u.shape)
+    u = (head[:, None] - np.arange(n)[None, :]) / MORSE_UNIT
+    half = 0.5 / MORSE_UNIT
+    return (at(u + half) - at(u - half)) * MORSE_UNIT
+
+
+def _chunks(text, per):
+    """The words of text as ASCII, a word too long for the run cut into pieces of `per` letters."""
+    plain = unicodedata.normalize('NFKD', text.replace('\u2019', "'")).encode('ascii', 'ignore').decode()
+    return [w[i:i + per] for w in re.findall(r"[A-Za-z0-9']+", plain) for i in range(0, len(w), per)]
+
+
+def _word_row(word, n):
+    """(n,) 0..1: word in 8-bit ASCII, high bit first, each byte followed by a dim tick and the whole thing centred."""
+    row = np.zeros(n)
+    start = (n - (9 * len(word) - 1)) // 2
+    for b, ch in enumerate(word):
+        row[start + 9 * b:start + 9 * b + 8] = [int(x) for x in f'{ord(ch):08b}']
+        if b < len(word) - 1:
+            row[start + 9 * b + 8] = BYTE_TICK
+    return row
+
+
+def _words(n, e, text):
+    """(F, n) 0..1: each word as it is spoken, as bits. There are no word timings, so the words share out the time the
+    voice is sounding by their length, and the display waits through the pauses."""
+    words = _chunks(text, (n + 1) // 9)
+    rows = np.array([_word_row(w, n) for w in words])
+    clock = np.cumsum(e > VOICED)
+    size = np.array([len(w) + 1 for w in words], float)
+    edges = np.cumsum(size) / size.sum() * clock[-1]
+    k = np.minimum(np.searchsorted(edges, clock - 1, side='right'), len(words) - 1)
+    first = np.flatnonzero(np.diff(k, prepend=-1))
+    age = (np.arange(len(e)) - first[np.searchsorted(first, np.arange(len(e)), side='right') - 1]) * DT
+    gate = smoothstep(VOICED, 0.25, e)
+    return rows[k] * (gate * np.maximum(0.5 + 0.5 * e, np.exp(-age / 0.06)))[:, None]
+
+
+def _wave(u, e):
+    """0..1: lit out from the middle as far as the voice is loud (u is 0 middle .. 1 ends)."""
+    reach = np.clip((e - u[None, :]) / 0.08, 0, 1)                            # soft front edge
+    core = 0.55 + 0.45 * np.clip(1 - u[None, :] / np.maximum(e, 1e-3), 0, 1)  # brightest in the middle
+    return reach * core * (0.35 + 0.65 * e)
+
+
+def spoken_text(s):
+    """Everything the intro says, in order."""
+    mod = s.load()
+    return ' '.join([mod.VOICEOVER] + _parts(getattr(mod, 'DESCRIPTION', '')))
+
+
+def frames(home, env, colour, title, spoken):
+    """(F, N, 3) PWM: Left spells the title in Morse, Porch Front shows each spoken word in bits, Right the waveform."""
     env = np.asarray(env, float)
     F = len(env)
     out = np.zeros((F, home.N, 3))
     t = np.arange(F) * DT
-    floor = FLOOR * np.clip(t / 0.6, 0, 1) * np.clip((t[-1] - t) / 0.8, 0, 1)
-    for name in WAVE:
-        if name not in home.seg:
-            continue
-        idx = home.seg[name]
-        d = home.pd[idx]
-        u = np.abs(d - (d.min() + d.max()) / 2) / ((d.max() - d.min()) / 2)       # 0 middle .. 1 ends
-        e = env[:, None]
-        reach = np.clip((e - u[None, :]) / 0.08, 0, 1)                            # soft front edge
-        core = 0.55 + 0.45 * np.clip(1 - u[None, :] / np.maximum(e, 1e-3), 0, 1)  # brightest in the middle
-        out[:, idx] = light(RED, np.maximum(floor[:, None], reach * core * (0.35 + 0.65 * e)))
+    fade = np.clip(t / 0.6, 0, 1) * np.clip((t[-1] - t) / 0.8, 0, 1)
+    e = env[:, None]
+
+    def show(name, level):
+        out[:, home.seg[name]] = light(colour, np.maximum(FLOOR * fade[:, None], level))
+
+    if MARQUEE in home.seg:
+        idx = home.seg[MARQUEE]
+        marks = _marquee(morse(title), len(idx), F)[:, np.argsort(np.argsort(home.pi[idx]))]
+        show(MARQUEE, marks * fade[:, None] * (0.55 + 0.45 * e))
+    if BITS in home.seg:
+        idx = home.seg[BITS]
+        show(BITS, _words(len(idx), env, spoken)[:, np.argsort(np.argsort(home.pi[idx]))])
+    if WAVE in home.seg:
+        d = home.pd[home.seg[WAVE]]
+        show(WAVE, _wave(np.abs(d - (d.min() + d.max()) / 2) / ((d.max() - d.min()) / 2), e))
     return out
+
+
+def colour_of(occasion):
+    return hexc(COLOUR.get(occasion, BY_ID[occasion]['accent']))
+
+
+def write_lights(s, home, js, dest):
+    """The intro's lights for the build: dest/intro.fseq, and dest/intro.png for the web player. Returns its frames."""
+    from PIL import Image
+    with open(js) as f:
+        env = json.load(f)['env']
+    data = to_bytes(frames(home, env, colour_of(s.occasion), s.title, spoken_text(s)))
+    fseq.write(os.path.join(dest, 'intro.fseq'), data, int(round(DT * 1000)))
+    Image.fromarray(data.reshape(len(data), -1, 3), 'RGB').save(os.path.join(dest, 'intro.png'), optimize=True)
+    return len(data)
 
 
 # ---------------------------------------------------------------------------- the voice
