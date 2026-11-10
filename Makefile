@@ -1,4 +1,4 @@
-.PHONY: verify build serve
+.PHONY: verify build serve serve-only
 
 # Everything CI does, plus syntax checks. Writes .claude/.last-verify-passed on success.
 verify:
@@ -13,4 +13,8 @@ build:
 	uv run python -m pixelhome build --out dist
 
 serve: build
+	python3 -m http.server -d dist 8000
+
+# The last build as it is, without building.
+serve-only:
 	python3 -m http.server -d dist 8000

@@ -3,14 +3,14 @@ import glob, hashlib, json, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 from PIL import Image
-from . import catalog, fseq, intro, pages, power, schedule, share
-from .fx import DT, to_bytes, to_bytes_dithered
+from . import catalog, intro, pages, rendering, schedule, share
+from .fx import DT
 from .occasions import BY_ID, OCCASIONS, KINDS, PLAYLIST, playlists
 
-WEB_MAX_SECONDS = 120        # longer sequences go to the web player at half frame rate
-MAX_SECONDS = 15 * 60
-# Rendered output is cached by a hash of everything it depends on, so a build only renders what changed.
+# Rendered output is cached by the files it depends on (rendering.deps), so a build only renders what changed. A full
+# build drops entries it didn't use once they've gone KEEP_DAYS without use, so switching branches keeps both caches.
 CACHE = os.environ.get('PIXELHOME_RENDER_CACHE', os.path.join(catalog.ROOT, 'build', 'render-cache'))
+KEEP_DAYS = 14
 THUMB_VERSION = hashlib.sha256(open(os.path.join(os.path.dirname(__file__), 'share.py'), 'rb').read()).hexdigest()[:10]
 
 
@@ -20,64 +20,41 @@ def _matches(s, want):
 
 def render(s):
     """Render one sequence -> float frames (F, N, 3), checked."""
-    home = catalog.load_home(s.home)
-    frames = np.asarray(s.load().render(home))
-    if frames.ndim != 3 or frames.shape[1:] != (home.N, 3):
-        raise ValueError(f'{s.path}: render returned {frames.shape}, expected (frames, {home.N}, 3)')
-    if not np.isfinite(frames).all():
-        raise ValueError(f'{s.path}: render returned NaN or inf')
-    if not 1 <= len(frames) * DT <= MAX_SECONDS:
-        raise ValueError(f'{s.path}: {len(frames) * DT:.1f}s is outside 1s..{MAX_SECONDS}s')
-    return power.night(home, frames, s.id) if power.is_night_loop(s) else frames
+    return rendering.frames(s, catalog.load_home(s.home))
 
 
-def _engine_hash():
-    """The code and locked dependencies every render goes through (not music, intros, share images or command line)."""
-    h = hashlib.sha256()
-    pkg = os.path.join(catalog.ROOT, 'pixelhome')
-    for p in sorted(glob.glob(os.path.join(pkg, '*.py'))) + [os.path.join(catalog.ROOT, 'uv.lock')]:
-        if os.path.basename(p) not in ('audio.py', 'intro.py', 'pages.py', 'schedule.py', 'share.py', '__main__.py'):
-            h.update(os.path.relpath(p, catalog.ROOT).encode() + b'\0' + open(p, 'rb').read())
-    return h.hexdigest()
+def _home_json(s):
+    return os.path.join(catalog.HOMES, s.home, 'home.json')
 
 
-def _key(s, engine):
-    h = hashlib.sha256(f'{engine}\0{s.home}\0{s.id}\0'.encode())
-    h.update(open(os.path.join(catalog.HOMES, s.home, 'home.json'), 'rb').read())
-    h.update(open(s.path, 'rb').read())
-    return h.hexdigest()[:40]
+def _key(s):
+    return rendering.key('render', s.path, rendering.__file__, os.path.join(rendering.PKG, 'home.py'), _home_json(s))
 
 
-def _render_one(s, dest):
-    """Render a sequence into dest/ as seq.fseq, seq.png and meta.json."""
-    t0 = time.time()
-    frames = render(s)
-    data = to_bytes_dithered(frames) if s.kind == 'ambient' else to_bytes(frames)
-    step = int(round(DT * 1000))
-    fseq.write(os.path.join(dest, 'seq.fseq'), data, step)
-    every = 2 if len(data) * DT > WEB_MAX_SECONDS else 1
-    web = data[::every]
-    Image.fromarray(web.reshape(len(web), -1, 3), 'RGB').save(os.path.join(dest, 'seq.png'), optimize=True)
-    meta = dict(id=s.id, code=s.code, title=s.title, occasion=s.occasion, kind=s.kind, description=s.description,
-                seconds=round(len(data) * DT, 2), fps=round(1000 / (step * every)), frames=len(web),
-                fseq=f'fseq/{s.home}/{s.id}.fseq', fseqName=f'{s.code} {s.title}.fseq',
-                fseqBytes=os.path.getsize(os.path.join(dest, 'seq.fseq')),
-                data=f'data/{s.home}/{s.id}.png', renderSeconds=round(time.time() - t0, 2))
-    with open(os.path.join(dest, 'meta.json'), 'w') as f:
-        json.dump(meta, f)
+def _intro_key(s, js):
+    return rendering.key('intro', intro.__file__, s.path, js, _home_json(s))
 
 
-def _build_one(args):
-    s, out, key = args
+def _cached(key, make):
+    """The cache entry for key, made by make(dir) if it isn't there yet -> (its path, whether it was there)."""
     cached = os.path.join(CACHE, key)
     hit = os.path.exists(os.path.join(cached, 'meta.json'))
     if not hit:
         tmp = f'{cached}.tmp{os.getpid()}'
         shutil.rmtree(tmp, ignore_errors=True)
         os.makedirs(tmp)
-        _render_one(s, tmp)
+        with open(os.path.join(tmp, 'meta.json'), 'w') as f:
+            json.dump(make(tmp), f)
         shutil.rmtree(cached, ignore_errors=True)
         os.replace(tmp, cached)
+    os.utime(cached)                        # last used, for the pruning
+    return cached, hit
+
+
+def _build_one(args):
+    s, out, key = args
+    home = catalog.load_home(s.home)
+    cached, hit = _cached(key, lambda d: rendering.write(s, home, d))
     for sub in ('fseq', 'data'):
         os.makedirs(os.path.join(out, sub, s.home, s.playlist), exist_ok=True)
     shutil.copyfile(os.path.join(cached, 'seq.fseq'), os.path.join(out, 'fseq', s.home, s.id + '.fseq'))
@@ -92,16 +69,23 @@ def _build_one(args):
     if not (os.path.exists(score) and os.path.exists(base)):
         for old in glob.glob(os.path.join(cached, 'thumb-*')) + glob.glob(os.path.join(cached, 'card-*')):
             os.remove(old)
-        sc = share.thumb(catalog.load_home(s.home), os.path.join(cached, 'seq.png'), th, base)
+        sc = share.thumb(home, os.path.join(cached, 'seq.png'), th, base)
         with open(score, 'w') as f:
             json.dump(sc, f)
     for sub in ('thumbs', 'cards'):
         os.makedirs(os.path.join(out, sub, s.home, s.playlist), exist_ok=True)
     shutil.copyfile(th, os.path.join(out, 'thumbs', s.home, s.id + '.webp'))
+    # the share card: the picture with its title and set, cached by those words and colour
     set_label = BY_ID[s.playlist]['label'] if s.playlist in BY_ID else PLAYLIST[s.playlist]['label']
     kind = {'ambient': 'All-night loop', 'intermission': 'Intermission'}.get(s.kind)
-    share.label(base, os.path.join(out, 'cards', s.home, s.id + '.jpg'), s.title,
-                ' · '.join(x for x in (set_label, kind) if x), PLAYLIST[s.playlist]['accent'])
+    words = (s.title, ' · '.join(x for x in (set_label, kind) if x), PLAYLIST[s.playlist]['accent'])
+    card = os.path.join(cached, 'label-' + hashlib.sha256(json.dumps([THUMB_VERSION, *words]).encode()).hexdigest()[:16]
+                        + '.jpg')
+    if not os.path.exists(card):
+        for old in glob.glob(os.path.join(cached, 'label-*')):
+            os.remove(old)
+        share.label(base, card, *words)
+    shutil.copyfile(card, os.path.join(out, 'cards', s.home, s.id + '.jpg'))
     with open(score) as f:
         meta.update(thumb=f'thumbs/{s.home}/{s.id}.webp', thumbScore=round(json.load(f), 5),
                     card=f'cards/{s.home}/{s.id}.jpg', _base=base)
@@ -112,19 +96,31 @@ def _build_one(args):
         shutil.copyfile(mp3, os.path.join(out, 'audio', s.home, s.id + '.mp3'))
         meta.update(audio=f'audio/{s.home}/{s.id}.mp3', audioName=f'{s.code} {s.title}.mp3')
     mp3, js = intro.paths(s)                # spoken intro, rendered locally by `pixelhome intro`
+    meta['_keys'] = [key]
     if os.path.exists(js):
-        with open(js) as f:
-            env = json.load(f)['env']
-        d = os.path.join(out, 'intros', s.home, s.playlist)
-        os.makedirs(d, exist_ok=True)
-        data = to_bytes(intro.frames(catalog.load_home(s.home), env))
-        base = os.path.join(out, 'intros', s.home, s.id)
-        fseq.write(base + '.fseq', data, int(round(DT * 1000)))
-        Image.fromarray(data.reshape(len(data), -1, 3), 'RGB').save(base + '.png', optimize=True)   # for the web player
-        shutil.copyfile(mp3, base + '.mp3')
+        ikey = 'intro-' + _intro_key(s, js)
+        lit, _ = _cached(ikey, lambda d: dict(frames=intro.write_lights(s, home, js, d)))
+        meta['_keys'].append(ikey)
+        os.makedirs(os.path.join(out, 'intros', s.home, s.playlist), exist_ok=True)
+        dest = os.path.join(out, 'intros', s.home, s.id)
+        shutil.copyfile(os.path.join(lit, 'intro.fseq'), dest + '.fseq')
+        shutil.copyfile(os.path.join(lit, 'intro.png'), dest + '.png')   # for the web player
+        shutil.copyfile(mp3, dest + '.mp3')
+        with open(os.path.join(lit, 'meta.json')) as f:
+            frames = json.load(f)['frames']
         meta.update(intro=f'intros/{s.home}/{s.id}.fseq', introAudio=f'intros/{s.home}/{s.id}.mp3',
-                    introData=f'intros/{s.home}/{s.id}.png', introFrames=len(data), introName=f'{s.code} {s.title} intro')
+                    introData=f'intros/{s.home}/{s.id}.png', introFrames=frames, introName=f'{s.code} {s.title} intro')
     return meta
+
+
+def _prune(used):
+    """Drop cache entries this full build didn't use and nothing has used for KEEP_DAYS, and stale half-made ones."""
+    now = time.time()
+    for d in os.listdir(CACHE):
+        p = os.path.join(CACHE, d)
+        age = now - os.path.getmtime(p)
+        if ('.tmp' in d and age > 86400) or (d not in used and age > KEEP_DAYS * 86400):
+            shutil.rmtree(p, ignore_errors=True)
 
 
 def _stamp(out):
@@ -188,7 +184,6 @@ def build(out, want):
     shutil.copytree(site, out)
     ver, ver_link = version()
     homes, jobs, quiet = [], [], 0
-    engine = _engine_hash()
     for h in catalog.homes():
         home = catalog.load_home(h)
         seqs = [s for s in catalog.sequences(h) if _matches(s, want)]
@@ -203,23 +198,21 @@ def build(out, want):
         homes.append(dict(id=h, name=home.name, description=home.spec.get('description', ''), pixels=home.N,
                           channels=home.channels, segments=len(home.seg), controller=home.spec.get('controller'),
                           layout=f'data/{h}/layout.json', sequences=[]))
-        jobs += [(s, out, _key(s, engine)) for s in seqs]
+        jobs += [(s, out, _key(s)) for s in seqs]
     by_home = {h['id']: h for h in homes}
     os.makedirs(CACHE, exist_ok=True)
-    hits, bases = 0, {}
+    hits, bases, used = 0, {}, set()
     with ProcessPoolExecutor() as pool:
         for (s, _, _), meta in zip(jobs, pool.map(_build_one, jobs)):
             hit = meta.pop('cached')
+            used.update(meta.pop('_keys'))
             bases[(s.home, s.id)] = meta.pop('_base')         # for the set pages' share cards
             hits += hit
             by_home[s.home]['sequences'].append(meta)
             print(f"{s.home}/{s.id}: {meta['seconds']:.0f}s, {meta['fseqBytes'] / 1e6:.1f} MB fseq, "
                   + ('cached' if hit else f"rendered in {meta['renderSeconds']}s"))
-    if not want:                     # a full build drops cache entries nothing uses any more
-        keep = {k for _, _, k in jobs}
-        for d in os.listdir(CACHE):
-            if d not in keep:
-                shutil.rmtree(os.path.join(CACHE, d), ignore_errors=True)
+    if not want:                     # a full build drops cache entries nothing has used for a while
+        _prune(used)
     used = {m['playlist'] for h in homes for m in h['sequences']}
     occasions = []
     for o in OCCASIONS:                 # each occasion with the playlists under it that have sequences
