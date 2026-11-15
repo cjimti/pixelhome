@@ -1,11 +1,11 @@
 {
   "name": "Roofline House",
-  "description": "Single-story house with a front porch. 501 RGB pixels along the roofline in six runs, driven by FPP on a Falcon PiCap V2.",
+  "description": "Single-story house with a front porch. 501 RGB pixels along the roofline in six runs, driven by FPP on a Kulp K8-PB.",
   "units": "xLights layout units",
   "controller": {
-    "name": "fpp",
-    "hardware": "Falcon PiCap V2",
-    "host": "fpp.local",
+    "name": "fpp2",
+    "hardware": "Kulp K8-PB",
+    "host": "fpp2.local",
     "protocol": "DDP",
     "brightness": 0.8,
     "gamma": 1.0

@@ -329,6 +329,55 @@ body.page { height: auto; overflow: visible; }
 .lic h3 { font-size: 20px; margin: 10px 0 6px; }
 .lic p { margin: 0; font-size: 14px; color: var(--muted); max-width: 60ch; }
 .lic p a { color: var(--accent); }
+
+/* the controller box in 3D (site/about/box.js) */
+.boxfig { --tag-bg: color-mix(in srgb, var(--night) 82%, transparent); --red: #d2382c; --blk: #4a4542; }
+.bx { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.bx-stage { position: relative; min-width: 0; height: min(70vh, 460px); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--night); }
+.bx-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.bx-stage canvas.hot { cursor: pointer; }
+.bx-stage canvas:active { cursor: grabbing; }
+.bx-tags { position: absolute; inset: 0; pointer-events: none; }
+.bx-tag { position: absolute; transform: translate(-50%, -100%); font: 500 11px/1.2 var(--mono); letter-spacing: .02em; color: var(--ink);
+  background: var(--tag-bg); border: 1px solid var(--line); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.bx-tag.on { border-color: var(--accent); color: var(--accent); }
+.bx-tip { position: absolute; pointer-events: none; font: 500 12px/1.2 var(--body); background: var(--raised); border: 1px solid var(--accent);
+  color: var(--ink); padding: 4px 8px; border-radius: 4px; white-space: nowrap; transform: translate(12px, 12px); }
+.bx-hint { position: absolute; left: 12px; bottom: 10px; font: 400 11px var(--mono); color: var(--muted); pointer-events: none; }
+.bx-views { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.bx-toggles { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
+.bx-views button, .bx-toggles label { font: 500 12px var(--body); color: var(--ink); background: var(--tag-bg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.bx-views button:hover, .bx-toggles label:hover { border-color: var(--muted); }
+.bx-views button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.bx-toggles input { accent-color: var(--accent); margin: 0 5px 0 0; vertical-align: -2px; }
+.bx-toggles label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bx-panel { min-width: 0; display: flex; flex-direction: column; gap: 16px; font-size: 14px; }
+.bx-detail { background: var(--raised); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.bx-detail h2 { font: 700 22px/1.1 var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+.bx-detail p { margin: 0; }
+.bx-detail ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.bx-kicker { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.bx-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.bx-chip { font: 500 11px var(--mono); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; color: var(--ink); background: var(--panel); }
+.bx-group h4 { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 6px; }
+.bx-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.bx-part { width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left;
+  font: 500 14px var(--body); color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; cursor: pointer; }
+.bx-part:hover { background: var(--raised); border-color: transparent; }
+.bx-part[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.bx-part small { font: 400 11px var(--mono); color: var(--muted); }
+.bx-sw { height: 14px; border-radius: 3px; border: 1px solid var(--line); }
+.bx-wire { height: var(--g, 4px); border-radius: 99px; border: 0; align-self: center; }
+.bx-group ul.bx-pgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.bx-part.bx-pbtn { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 0; padding: 6px 4px; border-color: var(--line); text-align: center; }
+.bx-pbtn b { font: 700 22px/1 var(--display); }
+.bx-foot { color: var(--muted); font-size: 12px; margin: 0; }
+@media (min-width: 860px) {
+  .bx { grid-template-columns: minmax(0, 1fr) 290px; }
+  .bx-stage { height: 560px; }
+  .bx-panel { max-height: 560px; overflow-y: auto; padding-right: 4px; }
+}
 .licbadge { display: flex; gap: 4px; }
 .licbadge span {
   display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 999px;

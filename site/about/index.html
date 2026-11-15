@@ -280,7 +280,7 @@ gtag('config', 'G-KQYBQLRBMP');
     <ul class="oss">
       <li><b><a href="https://xlights.org/">xLights</a></b><span>Pixel layout and the home's channel map</span></li>
       <li><b><a href="https://www.blender.org/">Blender</a></b><span>The 3D model of the house</span></li>
-      <li><b><a href="https://github.com/FalconChristmas/fpp">Falcon Player (FPP)</a></b><span>Plays the sequences and music on the Raspberry Pi</span></li>
+      <li><b><a href="https://github.com/FalconChristmas/fpp">Falcon Player (FPP)</a></b><span>Plays the sequences and music on the controller</span></li>
       <li><b><a href="https://surge-synthesizer.github.io/">Surge XT</a></b><span>Synthesizer for pads, leads, bells and basses</span></li>
       <li><b><a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a></b><span>Orchestral and percussion samples</span></li>
       <li><b><a href="https://zenodo.org/records/7672157">Wagner Ring Dataset</a></b><span>Wagner's score for the Ring Cycle shows, timed bar by bar to Solti's 1958 recording (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz, Müller; <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>)</span></li>
@@ -299,7 +299,7 @@ gtag('config', 'G-KQYBQLRBMP');
   <section>
     <h2>The hardware</h2>
     <p>501 12V pixels (WS2811) in six straight runs along the roofline, driven by
-      <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Raspberry Pi 4 with a Falcon PiCap v2. Data leaves
+      <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Kulp K8-PB. Data leaves
       the controller at the back-left corner of the porch on two ports. One 12V supply powers the controller end, and
       power is injected again at the far end of each string so the last pixels stay as bright and as white as the
       first.</p>
@@ -333,8 +333,8 @@ gtag('config', 'G-KQYBQLRBMP');
           <text class="lbl" x="340" y="-225">Right 120</text>
           <!-- controller and supply inside the porch notch -->
           <rect class="ctrl" x="-150" y="-545" width="250" height="118" rx="12"/>
-          <text class="ctxt" x="-132" y="-503">Pi 4 + PiCap v2</text>
-          <text class="csub" x="-132" y="-466">FPP 9.4 · 2 ports</text>
+          <text class="ctxt" x="-132" y="-503">Kulp K8-PB</text>
+          <text class="csub" x="-132" y="-466">FPP 10.4 · 2 ports</text>
           <rect class="psu" x="-150" y="-390" width="250" height="80" rx="12"/>
           <text class="ctxt" x="-132" y="-341">12V supply</text>
           <path class="pwr" d="M-25,-390 V-427"/>
@@ -355,6 +355,44 @@ gtag('config', 'G-KQYBQLRBMP');
         <div><dt><i class="sw ch"></i>Channels</dt><dd>501 × RGB = 1,503, at 80% brightness, gamma 1.0</dd></div>
       </dl>
     </figure>
+
+    <h3>The controller box</h3>
+    <p>The controller, its power and every connection live in one IP66 box that sits on the ground at the back-left
+      corner of the porch, with all the cables coming in through glands in one wall. Inside are the Kulp K8-PB, a
+      Faststorm fuse block and two Mean Well LRS-350-12 supplies (12V, 29A each). The first supply powers the
+      controller and, through its own 5A fuse, the far-end injection of each port.</p>
+    <p>The second supply is for the expansion. I'm moving the roofline onto a new metal rail with a pixel every 2
+      inches instead of 3: about 752 pixels instead of 501, on the same two ports. Its AC is already wired and its
+      negative is tied to the first supply's, so when the new rail goes up it can take on more injection without
+      rewiring the box.</p>
+
+    <figure class="diagram boxfig" id="box3d" aria-labelledby="d5">
+      <figcaption id="d5">Inside the controller box · drag to turn it, click a part</figcaption>
+      <div class="bx">
+        <div class="bx-stage" id="bx-stage">
+          <canvas id="bx-c" aria-label="3D model of the controller box. Drag to orbit, scroll or pinch to zoom, click a part for details."></canvas>
+          <div class="bx-tags" id="bx-tags"></div>
+          <div class="bx-tip" id="bx-tip" hidden></div>
+          <div class="bx-views" role="group" aria-label="Camera">
+            <button type="button" id="bx-v-front" aria-pressed="true">Front</button>
+            <button type="button" id="bx-v-top">Top</button>
+            <button type="button" id="bx-v-side">Side</button>
+          </div>
+          <div class="bx-toggles">
+            <label><input type="checkbox" id="bx-t-shell" checked>Box</label>
+            <label><input type="checkbox" id="bx-t-tags" checked>Labels</label>
+          </div>
+          <div class="bx-hint">drag to orbit · scroll to zoom · click a part</div>
+        </div>
+        <div class="bx-panel">
+          <section class="bx-detail" id="bx-detail" aria-live="polite"><span class="bx-kicker">Loading</span><p>The 3D model loads as you scroll to it.</p></section>
+          <section class="bx-group"><h4>Components</h4><ul id="bx-list-comp"></ul></section>
+          <section class="bx-group"><h4>Port cables</h4><ul id="bx-list-port" class="bx-pgrid"></ul></section>
+          <section class="bx-group"><h4>Wiring</h4><ul id="bx-list-wire"></ul></section>
+          <p class="bx-foot">Built from a photo of the box and the makers' drawings. Sizes in mm; cable paths are approximate.</p>
+        </div>
+      </div>
+    </figure>
   </section>
 
   <footer>
@@ -363,5 +401,6 @@ gtag('config', 'G-KQYBQLRBMP');
       <span class="version"></span></p>
   </footer>
 </main>
+<script src="/about/box.js" defer></script>
 </body>
 </html>

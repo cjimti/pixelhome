@@ -175,7 +175,7 @@ def keep_order(items, old):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--fpp', default='fpp.local')
+    ap.add_argument('--fpp', default='fpp2.local')
     ap.add_argument('--home', default='cjimti')
     ap.add_argument('--dist', default=os.path.join(ROOT, 'dist'))
     ap.add_argument('--apply', action='store_true', help='make the changes (default: print the plan)')
