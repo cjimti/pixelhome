@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Install (or update) Pixelhome Live's Pi side on an FPP player, over FPP's own API (no SSH).
 
-    python3 live/install_pi.py [--fpp fpp.local] [--house cjimti] [--token-file ~/.config/pixelhome/live-token]
+    python3 live/install_pi.py [--fpp fpp2.local] [--house cjimti] [--token-file ~/.config/pixelhome/live-token]
 
 Uploads a one-shot install script to FPP's scripts folder and runs it with FPP's "Run Script" command (fppd
 runs it as root). It puts pixelhome-live.py in /opt/pixelhome-live, writes the relay URL and token to
@@ -69,7 +69,7 @@ def token(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--fpp', default='fpp.local')
+    ap.add_argument('--fpp', default='fpp2.local')
     ap.add_argument('--house', default='cjimti')
     ap.add_argument('--relay', default='https://live.pixelhome.app')
     ap.add_argument('--token-file', default='~/.config/pixelhome/live-token')

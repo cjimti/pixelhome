@@ -1,7 +1,7 @@
 # Roofline House (`cjimti`)
 
-501 RGB pixels along the roofline in six straight runs, FPP on a Falcon PiCap V2, DDP, rendered for
-80% brightness and gamma 1.0.
+501 RGB pixels along the roofline in six straight runs, FPP on a Kulp K8-PB (`fpp2.local`), rendered for
+80% brightness and gamma 1.0. The controller, power, wiring and measured current are in [HARDWARE.md](HARDWARE.md).
 
 ## Shape
 
