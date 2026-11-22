@@ -47,11 +47,11 @@ def render(G, seed=30):
     D = 84.0
     out = np.zeros((nframes(D), G.N, 3))
     pd = G.pd
-    da, db = pd[G.path[261]], pd[G.path[331]]
+    da, db = pd[G.path[G.first('Porch Front')]], pd[G.path[G.last('Porch Front')]]
     pf = (pd >= da - 2) & (pd <= db + 2)
     mid = (da + db) / 2
     xa, xb = mid - 147, mid + 147             # the mat: 21 steps of 14 units
-    plf, prf = pd[G.path[179]], pd[G.path[380]]
+    plf, prf = pd[G.path[G.first('Porch Left')]], pd[G.path[G.last('Porch Right')]]
     breathe = Flicker(rng, G.N, 0.04, 0.15)
 
     SD = 1.0

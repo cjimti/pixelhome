@@ -37,7 +37,7 @@ def render(G, seed=30):
     x = G.pd[G.path]
     L = G.length
     H0 = 30.0                                           # where the head starts (room for the tongue)
-    corners = np.array([(x[a] + x[a + 1]) / 2 for a in (80, 178, 260, 331, 380)]) - H0   # in body coords
+    corners = np.array([(x[a] + x[a + 1]) / 2 for a in G.corners]) - H0   # in body coords
     blen = L - H0 - 4
     # gap half-widths at each corner over time: open, then each closes (porch front piece sulks)
     close_t = [14.5, 16.8, 25.0, 25.0, 21.0]

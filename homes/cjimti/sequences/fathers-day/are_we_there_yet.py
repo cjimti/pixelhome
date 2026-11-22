@@ -36,7 +36,8 @@ def render(G, seed=27):
     out = np.zeros((nframes(D), n, 3))
     x = G.pd[G.path]
     L = G.length
-    dest = x[500] - 6
+    end = G.last('Right')
+    dest = x[end] - 6
 
     car = [(2.0, -25), (31.2, 1150), (33.8, 1150), (35.3, 1085), (36.4, 1085), (38.0, 1140), (67.5, dest - 30),
            (68.6, dest - 22)]
@@ -54,7 +55,7 @@ def render(G, seed=27):
     star_tw = Flicker(rng, n, 0.05, 0.25)
     dashes = (((x / 28.0) % 1) < 0.45).astype(float)
     windows = (rng.uniform(0, 1, n) > 0.55).astype(float) * rng.uniform(0.5, 1.0, n)
-    towns = [x[80], x[178], x[260], x[331], x[380]]
+    towns = [x[c] for c in G.corners]
     town_mask = sum(np.exp(-((x - c) / 55) ** 2) for c in towns) * windows
     town_lit = np.zeros(n)
     flick = Flicker(rng, n, 0.2, 0.7)
@@ -141,13 +142,13 @@ def render(G, seed=27):
 
         # the destination: a porch light at the end of the road, then YES
         pl = keys(t, [(50, 0), (62, 0.5), (71.6, 0.6)])
-        buf += light(TOWN, pl * np.exp(-((x - x[500]) / 12) ** 2))
+        buf += light(TOWN, pl * np.exp(-((x - x[end]) / 12) ** 2))
         if t >= yes:
             u = t - yes
-            wave = np.clip((520 * u - (x[500] - x)) / 200, 0, 1)
+            wave = np.clip((520 * u - (x[end] - x)) / 200, 0, 1)
             warm = 0.32 * wave * keys(t, [(yes, 1), (75, 1), (78, 0.4)])
             buf += light(TOWN, warm * (1 + 0.05 * flick(t)))
-            buf += light(hexc('#ffffff'), 0.6 * np.exp(-u / 0.25) * np.exp(-((x - x[500]) / 60) ** 2))
+            buf += light(hexc('#ffffff'), 0.6 * np.exp(-u / 0.25) * np.exp(-((x - x[end]) / 60) ** 2))
 
         out[f][G.path] = np.clip(buf * keys(t, [(D - 4, 1), (D - 0.5, 0)]), 0, 1)
     return out

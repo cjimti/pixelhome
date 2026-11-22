@@ -30,7 +30,7 @@ def render(G, seed=21):
     out = np.zeros((F, G.N, 3))
     pdp = G.pd[G.path]
     L = G.length
-    bridge = G.pd[G.path[179]]            # first pixel of Porch Left: the foot of the bridge
+    bridge = G.pd[G.path[G.first('Porch Left')]]   # first pixel of Porch Left: the foot of the bridge
     END = L - 6
 
     # roadside joiners: people waiting along the second half of the route

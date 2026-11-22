@@ -45,7 +45,7 @@ def render(G, seed=27):
     # markers: every third pixel around the porch U
     pidx = np.arange(G.N)
     marker = np.zeros(G.N)
-    for i in range(184, 377, 3):
+    for i in range(G.first('Porch Left') + 5, G.last('Porch Right') - 3, 3):
         marker[G.path[i]] = 1.0
     m_h = horizon + marker * rng.uniform(0.0, 0.05, G.N)    # each marker clears the ridge on its own
     ck = rng.uniform(0.003, 0.006, (3, 2)) * rng.choice([-1, 1], (3, 2))

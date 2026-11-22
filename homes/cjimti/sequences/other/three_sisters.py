@@ -36,7 +36,7 @@ def render(G, seed=21):
     out = np.zeros((nframes(D), G.N, 3))
     d = G.pd
     pp = G.pd[G.path]
-    mounds = np.array([(pp[k] + pp[k + 1]) / 2 for k in (80, 178, 260, 331, 380)])
+    mounds = np.array([(pp[k] + pp[k + 1]) / 2 for k in G.corners])
     # nearest mound, signed offset, and room to spread on that side
     j = np.argmin(np.abs(d[:, None] - mounds[None, :]), axis=1)
     s = d - mounds[j]

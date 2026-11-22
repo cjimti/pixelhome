@@ -27,17 +27,18 @@ def render(G, seed=23):
     F = nframes(D)
     out = np.zeros((F, G.N, 3))
     s = G.pd[G.path]
-    sL, sR = s[179], s[380]            # crown meets brim (front of Porch Left / Porch Right)
-    sTL, sTR = s[261], s[331]          # crown corners
+    sL, sR = s[G.first('Porch Left')], s[G.last('Porch Right')]      # crown meets brim (front of Porch Left / Porch Right)
+    sTL, sTR = s[G.first('Porch Front')], s[G.last('Porch Front')]   # crown corners
+    s_pl1, s_pr0 = s[G.last('Porch Left')], s[G.first('Porch Right')]
     s_pc = 0.5 * (sTL + sTR)
-    s_end = s[500]
+    s_end = s[G.N - 1]
     BRIM = 125.0
-    side_h = s[260] - sL               # height of the crown sides (Porch Left length)
+    side_h = s_pl1 - sL                # height of the crown sides (Porch Left length)
     # height up the hat for crown pixels; brim pixels get negative h (distance out along the brim)
     h = np.full(G.N, -1e4)
-    pl = (s >= sL) & (s <= s[260])
-    pr = (s >= s[332]) & (s <= sR)
-    top = (s > s[260]) & (s < s[332])
+    pl = (s >= sL) & (s <= s_pl1)
+    pr = (s >= s_pr0) & (s <= sR)
+    top = (s > s_pl1) & (s < s_pr0)
     h[pl] = s[pl] - sL
     h[pr] = sR - s[pr]
     h[top] = side_h + 30
@@ -66,7 +67,7 @@ def render(G, seed=23):
             v += 130 * DT
             p += v * DT
             ang += v / 30 * DT
-            if p >= s[332]:
+            if p >= s_pr0:
                 phase = 'fall'
         elif phase == 'fall':                               # drops down Porch Right, bounces on the brim
             v += g * DT

@@ -26,7 +26,7 @@ def render(G, seed=22):
     out = np.zeros((F, G.N, 3))
     x = G.pd[G.path]                           # path distance of each pixel, path order
     L = G.length
-    corners = np.array([(x[a] + x[a + 1]) / 2 for a in (80, 178, 260, 331, 380)])
+    corners = np.array([(x[a] + x[a + 1]) / 2 for a in G.corners])
 
     # the punk's walk: from the free back end, pausing at each corner to light it
     walk, t, here = [(0.0, -40.0), (1.5, -40.0)], 1.5, -40.0

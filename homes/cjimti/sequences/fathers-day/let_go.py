@@ -29,9 +29,11 @@ def render(G, seed=26):
     F = nframes(D)
     out = np.zeros((F, n, 3))
     x = G.pd[G.path]
-    corners = np.array([x[80], x[178], x[260], x[331], x[380]])
-    garage = x[500] - 14
-    let_go_at = x[296]
+    corners = x[G.corners]
+    garage = x[G.last('Right')] - 14
+    let_go_at = x[G.mid('Porch Front')]
+    pl0, pl1 = G.first('Porch Left'), G.last('Porch Left')
+    look_at = x[pl0 + round(21 / 81 * (pl1 - pl0))]          # a quarter way down Porch Left
 
     # ---- pass 1: the ride, simulated
     s = np.zeros(F); dadp = np.zeros(F); wob = np.zeros(F); hold = np.zeros(F, bool)
@@ -69,7 +71,7 @@ def render(G, seed=26):
         phase += 2 * np.pi * lerp(1.1, 1.6, min(1, v / 150)) * DT
         if not released and t > 22.5 and pos <= let_go_at:
             released, t_rel = True, t
-        if released and t_look is None and pos < x[200]:
+        if released and t_look is None and pos < look_at:
             t_look = t
         if gone_t is None and pos < -30:
             gone_t = t

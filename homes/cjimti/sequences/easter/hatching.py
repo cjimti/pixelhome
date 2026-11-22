@@ -71,7 +71,7 @@ def render(G, seed=23):
     down = smooth_noise(rng, grid, 14, 1)                                    # which pixels of a crack leak first
 
     # shell pieces after the break (Side stays: it is the half shell the chick sits in)
-    cuts = np.sort(rng.uniform(pdp[81], G.length, 16))
+    cuts = np.sort(rng.uniform(pdp[G.first('Left')], G.length, 16))
     piece = np.searchsorted(cuts, pdp)
     drop_at = BREAK + 0.15 + rng.uniform(0, 1.6, len(cuts) + 1)
     shards = [(c, rng.choice([-1, 1]), rng.uniform(120, 260), BREAK + rng.uniform(0, 0.8)) for c in cuts]
@@ -85,8 +85,9 @@ def render(G, seed=23):
     body = (seg_of == 'Porch Left') | (seg_of == 'Porch Right')
     # wing coordinate: 0 at the shoulder (porch corner), 1 at the wing tip
     wl = np.zeros(n)
-    wl[wingL] = (pdp[178] - pdp[wingL]) / (pdp[178] - pdp[81])
-    wl[wingR] = (pdp[wingR] - pdp[381]) / (pdp[500] - pdp[381])
+    l0, l1, r0, r1 = G.first('Left'), G.last('Left'), G.first('Right'), G.last('Right')
+    wl[wingL] = (pdp[l1] - pdp[wingL]) / (pdp[l1] - pdp[l0])
+    wl[wingR] = (pdp[wingR] - pdp[r0]) / (pdp[r1] - pdp[r0])
     peeps = [47.0, 47.35, 49.6, 52.0, 52.3, 52.6]
     blinks = [45.5, 50.6, 54.2]
     flaps = [(48.0, 1.0), (52.9, 1.3), (53.9, 1.3)]
@@ -169,7 +170,7 @@ def render(G, seed=23):
                 # half shell with a glowing broken rim at the front
                 hs = keys(t, [(55, 1), (58, 0)])
                 buf[side] = light(SHELL, 0.28 * hs * np.ones(side.sum())) + light(SPECK, 0.24 * hs * sp1[side])
-                rim = np.exp(-((pdp[side] - pdp[80]) / 25) ** 2)
+                rim = np.exp(-((pdp[side] - pdp[G.last('Side')]) / 25) ** 2)
                 buf[side] += light(GLOW, 0.4 * hs * rim * (1 + 0.15 * fl(t)[side]))
         out[f][G.path] = buf
     return out

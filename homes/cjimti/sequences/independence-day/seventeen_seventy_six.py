@@ -36,7 +36,7 @@ def render(G, seed=27):
     x = G.pd[G.path]
     P = G.pos[G.path]
     L = G.length
-    cidx = (80, 178, 260, 331, 380)
+    cidx = G.corners
     cpos = np.array([(P[a] + P[a + 1]) / 2 for a in cidx])
     cd = np.linalg.norm(P[:, None] - cpos[None], axis=2)
     flame = Flicker(rng, 5, 0.6, 3.5)

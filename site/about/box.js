@@ -21,7 +21,7 @@ function model() {
     psu1: { group: 'comp', name: 'PSU1 · LRS-350-12', chips: ['12 V', '29 A', '348 W'], sw: '#b9bcc0',
             text: 'Feeds the K8-PB and the fuse block over 10 AWG, so both far-end injection lines come from here. Gets its AC from PSU2 over a jumper.' },
     psu2: { group: 'comp', name: 'PSU2 · LRS-350-12', chips: ['12 V', '29 A', 'for the expansion'], sw: '#b9bcc0',
-            text: 'Here for the expansion: the roofline is going onto a new metal rail with a pixel every 2 inches instead of 3, about 752 pixels instead of 501. Its AC is already wired (the cord lands here and is jumped across to PSU1) and its V− is tied to PSU1’s, so when the new rail goes up its outputs can feed more injection with no new wiring in the box. Its DC outputs are unused until then.' },
+            text: 'Here for the expansion: the roofline is going onto a new metal rail with a pixel every 2 inches instead of 3, about 752 pixels instead of 501 when every run is done (Porch Front is: 107 where it had 71). Its AC is already wired (the cord lands here and is jumped across to PSU1) and its V− is tied to PSU1’s, so when the new rail goes up its outputs can feed more injection with no new wiring in the box. Its DC outputs are unused until then.' },
     fuse: { group: 'comp', name: 'Faststorm fuse block', chips: ['6-way', '2 × 5 A', '10 AWG feed'], sw: '#d2a15a',
             text: 'A 6-way blade block, 85 × 88. PSU1’s 10 AWG +V lands on the positive nut at the bottom and −V on the negative nut at the top, which feeds the two negative bus bars. Two 5 A fuses sit in the left slots of the first two rows, one per far-end injection line, each leaving from its row’s left screw; the injection negatives come off the left bus bar. The other four slots are empty. Used without its cover.' },
     box:  { group: 'comp', name: 'QILIPSU IP66 enclosure', chips: ['IP66', 'UL 94 V-0', 'PC/ABS'], sw: '#c9ccd0',
@@ -38,20 +38,20 @@ function model() {
             text: 'Mains in through the right-hand gland to PSU2’s L, N and ground terminals.' },
     ac_jump: { group: 'wire', name: 'AC jumper', chips: ['16 AWG', 'PSU2 → PSU1'], wire: ['#e8e6e0', '#2f8f3a'], g: 4,
             text: 'The same 3-conductor cord, carrying L, N and ground from PSU2 across to PSU1.' },
-    inj1: { group: 'wire', name: 'Injection, port 1', chips: ['16 AWG', '5 A fuse'], wire: ['var(--red)', 'var(--blk)'], g: 4,
+    inj1: { group: 'wire', name: 'Injection, port 1', chips: ['18 AWG', '5 A fuse'], wire: ['var(--red)', 'var(--blk)'], g: 4,
             text: 'From fuse 1 and the left negative bus bar out to the far end of port 1, the back end of Side. Disconnected until a fault in the line is fixed; port 1 runs from the controller end alone until then.' },
-    inj2: { group: 'wire', name: 'Injection, port 2', chips: ['16 AWG', '5 A fuse'], wire: ['var(--red)', 'var(--blk)'], g: 4,
+    inj2: { group: 'wire', name: 'Injection, port 2', chips: ['18 AWG', '5 A fuse'], wire: ['var(--red)', 'var(--blk)'], g: 4,
             text: 'From fuse 2 and the left negative bus bar out to the far end of port 2, the free end of Right.' },
   };
   const GLAND_POS = ['top row (nearer the lid), 1st from the left', 'top row, 2nd from the left', 'top row, 3rd from the left', 'top row, 4th from the left',
     'bottom row (nearer the ground), 1st from the left', 'bottom row, 2nd from the left', 'bottom row, 3rd from the left', 'bottom row, 4th from the left'];
   const PORTS = [
     { chips: ['house', '261 px', 'ch 1–783'], text: 'Porch Left, then Left, then Side, ending at the back corner. Its far-end injection from fuse 1 is disconnected until a fault in that line is fixed.' },
-    { chips: ['house', '240 px', 'ch 784–1503'], text: 'Porch Front, then Porch Right, then Right. Far-end injection from fuse 2 at the free end of Right.' },
+    { chips: ['house', '276 px', 'ch 784–1611'], text: 'Porch Front, then Porch Right, then Right. Far-end injection from fuse 2 at the free end of Right.' },
   ];
   for (let i = 0; i < 8; i++) {
     const p = PORTS[i] || { chips: ['spare'], text: 'Wired out to its gland, not connected to any pixels yet.' };
-    INFO['port' + (i + 1)] = { group: 'port', n: i + 1, name: 'Port ' + (i + 1), chips: [...p.chips, '16 AWG'],
+    INFO['port' + (i + 1)] = { group: 'port', n: i + 1, name: 'Port ' + (i + 1), chips: [...p.chips, '18 AWG'],
       text: `${p.text} A 3-conductor cable (V+, data, ground). On the board: column ${(i >> 1) + 1}, ${i & 1 ? 'bottom' : 'top'}. Gland: ${GLAND_POS[i]}.` };
   }
   const OVERVIEW = `<span class="bx-kicker">Power path</span>
@@ -338,7 +338,7 @@ function model() {
     tube('ac_jump', mat('ac_jump', COND[condIdx[k]], { roughness: 0.45 }), [[214, 19, 233], [p1(k) + 1, 18.5, 225], [p1(k) + 0.6, 18.5, 214]], R16);
   });
 
-  // ---------- injection (16 AWG pairs) ----------
+  // ---------- injection (18 AWG pairs) ----------
   function injection(id, row, busX, gl) {
     // fuse output: the left screw of its row; negative: a screw on the left bus bar (as in the photo)
     const z = [220.5, 233.5][row];
@@ -355,7 +355,7 @@ function model() {
     const id = 'port' + (i + 1), cx = portX(i), top = !(i & 1);
     const head = top ? [[cx - 3, 15, 109], [cx - 3, 25, 116], [cx - 3, 27, 126]] : [[cx + 3, 15, 120], [cx + 3, 21, 126]];
     tube(id, mat(id, 0x1d1b1a, { roughness: 0.55 }), [...head, [66 + i * 1.6, 30 + (i % 2) * 2.4, 140], [96 + i * 5, 44 + (i % 3), 186 + i * 2.5],
-      [gx, gy + 7, 250], [gx, gy, iz1 - 6], [gx, gy, iz1 + 10], [gx, gy, OUT]], 3.1);
+      [gx, gy + 7, 250], [gx, gy, iz1 - 6], [gx, gy, iz1 + 10], [gx, gy, OUT]], 2.7); // 18 AWG 3-conductor
   });
   const zt2 = new THREE.Mesh(new THREE.TorusGeometry(10.5, 1.2, 6, 28), mat('tie', 0xe9e6df, { roughness: 0.6 }));
   zt2.position.copy(W(71.5, 31, 140)); zt2.rotation.set(0, 0.25, 0); put('tie', zt2, false);

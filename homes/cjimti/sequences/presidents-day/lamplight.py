@@ -44,7 +44,7 @@ def render(G, seed=28):
             wmask = np.maximum(wmask, m)
     K = len(centers)
     centers = np.array(centers)
-    s_portico = 0.5 * (s[261] + s[331])
+    s_portico = 0.5 * (s[G.first('Porch Front')] + s[G.last('Porch Front')])
 
     def draw(D):
         out = np.zeros((nframes(D), G.N, 3), np.float32)

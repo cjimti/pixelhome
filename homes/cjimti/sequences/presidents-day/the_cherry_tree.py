@@ -28,7 +28,7 @@ def render(G, seed=22):
     D = 60.0
     out = np.zeros((nframes(D), G.N, 3))
     s = G.pd[G.path]                       # distance along the path, in path order
-    i_top, i_base, i_end = 332, 380, 500
+    i_top, i_base, i_end = G.first('Porch Right'), G.last('Porch Right'), G.N - 1
     s_base, s_end = s[i_base], s[i_end]
     L = s_base - s[i_top]                  # trunk length = Porch Right
     q_up = np.where(np.arange(G.N) <= i_base, s_base - s, -1.0)       # tree coords when upright
@@ -58,7 +58,7 @@ def render(G, seed=22):
     george_k = [(2.5, s_end + 25), (10.5, s_base + 28), (23.8, s_base + 28), (25.2, s_end + 30),
                 (31.0, s_end + 30), (31.8, s_end - 12), (32.6, s_end + 30), (34.0, s_end + 30),
                 (39.5, s_base + 42)]
-    father_k = [(34.5, s[262] - 20), (43.5, s_base - 14)]
+    father_k = [(34.5, s[G.first('Porch Front') + 1] - 20), (43.5, s_base - 14)]
 
     for f in range(len(out)):
         t = f * DT

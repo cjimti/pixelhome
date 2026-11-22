@@ -25,7 +25,7 @@ MARGIN = 160.0
 def render(G, seed=9):
     rng = np.random.default_rng(seed)
     pdp = G.pd[G.path]
-    corners = pdp[[80, 178, 260, 331, 380]]
+    corners = pdp[G.corners]
     # current speed along the river (relative), slow round each corner; travel time table
     s = np.linspace(-MARGIN, G.length + MARGIN, 4000)
     v = 1 - 0.62 * np.exp(-((s[:, None] - corners[None, :]) / 55.0) ** 2).sum(1)

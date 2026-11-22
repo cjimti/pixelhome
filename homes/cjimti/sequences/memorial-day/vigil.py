@@ -32,7 +32,7 @@ def render(G, seed=8):
         mid = Flicker(rng, K, 0.5, 1.4)
         sway = Flicker(rng, K, 0.05, 0.15, k=2)
         base = rng.uniform(0.27, 0.33, K)
-        mid_pd = pdp[296]
+        mid_pd = pdp[G.mid('Porch Front')]
         # relight events: (time, candle, neighbour that leans in)
         ev = []
         t = rng.uniform(8, 16)

@@ -29,7 +29,7 @@ def render(G, seed=24):
     n = G.N
     pdp = G.pd[G.path]
     L = G.length
-    b0 = pdp[381]                           # start of the Right wing: bottom of the bottle
+    b0 = pdp[G.first('Right')]              # start of the Right wing: bottom of the bottle
     in_bottle = pdp >= b0
     xb = np.clip((pdp - b0) / (L - b0), 0, 1)       # 0 at the base, 1 at the mouth
     neck = smoothstep(0.82, 0.9, xb)

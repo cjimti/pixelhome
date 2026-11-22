@@ -127,13 +127,14 @@ def render(G, seed=SEED):
     n = G.N
     d = G.pd[G.path]
     X = G.pos[G.path, 0]
-    side = np.arange(n) < 81
-    left = (np.arange(n) >= 81) & (np.arange(n) < 179)
-    right = np.arange(n) >= 381
-    porch = (np.arange(n) >= 179) & (np.arange(n) < 381)
+    l0, pl0, r0 = G.first('Left'), G.first('Porch Left'), G.first('Right')
+    side = np.arange(n) < l0
+    left = (np.arange(n) >= l0) & (np.arange(n) < pl0)
+    right = np.arange(n) >= r0
+    porch = (np.arange(n) >= pl0) & (np.arange(n) < r0)
     wings = left | right
     m = np.abs(X - 16.0)                                     # distance out from the facade's mirror line
-    m[side] = 612 + (d[80] - d[side])
+    m[side] = 612 + (d[G.last('Side')] - d[side])
     crowd = Flicker(rng, n, 0.2, 1.0)
     shimmer = Flicker(rng, n, 2.0, 7.0)
     pt, pw, pv, pc = popcorn(rng)

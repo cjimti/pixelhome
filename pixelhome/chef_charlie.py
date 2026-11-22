@@ -1016,7 +1016,7 @@ class Stage:
     Characters are drawn with sprite() (a list of (offset, colour, level) pixels, colour None for a dark pixel that
     cuts the backdrop) at path distance p, facing +1 (toward Right) or -1 (toward Side). Backdrops return (N,3) PWM.
     Big looks (zigzag, sweep, wave, burst, confetti, popcorn, toast_burst, chase, run_flash) fill whole runs; use them,
-    a lone sprite on 501 pixels reads as nothing from the street."""
+    a lone sprite on 500-odd pixels reads as nothing from the street."""
 
     RUNS = ('Side', 'Left', 'Porch Left', 'Porch Front', 'Porch Right', 'Right')
     FRONT = ('Left', 'Porch Front', 'Right')            # the three runs that face the street

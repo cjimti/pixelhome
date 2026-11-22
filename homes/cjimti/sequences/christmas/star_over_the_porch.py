@@ -179,7 +179,6 @@ TUNE = {
     36: [(0, 'G4', 3), (3, 'B4', 2), (5, 'D5', 1)], 37: [(0, 'E5', 3), (3, 'C#5', 3)], 38: [(0, 'D5', 14)],
 }
 TWINKLE = ('A5', 'F#5', 'D6', 'E6', 'C#6', 'A5')     # the celesta's figure over the pin-prick, one note an eighth
-CORNERS = (0, 80, 178, 260, 331, 380, 500)            # path indices of the free ends and the corners
 
 
 def at(bar, eighth=0.0):
@@ -189,7 +188,8 @@ def at(bar, eighth=0.0):
 def crossings(G):
     """When a spike sweeps over a corner or free end: [(time, path index, long spike?, strength)], frame by frame
     from the same star, angle and reach render() uses."""
-    pts = np.array([G.path[i] for i in CORNERS])
+    ends = [0] + G.corners + [G.N - 1]                # path indices of the free ends and the corners
+    pts = np.array([G.path[i] for i in ends])
     P = G.pos[pts]
     prev, ev = None, []
     for f in range(nframes(D)):
@@ -204,7 +204,7 @@ def crossings(G):
                 main = k % 2 == 0
                 amp = (1.0 if main else 0.55) * np.exp(-(rxz / max((900 if main else 420) * reach, 1)) ** 2) * br
                 hit = (np.sign(a[k]) != np.sign(prev[k])) & (np.abs(a[k] - prev[k]) < 1) & (amp > 0.3)
-                ev += [(t, CORNERS[i], main, float(amp[i])) for i in np.flatnonzero(hit)]
+                ev += [(t, ends[i], main, float(amp[i])) for i in np.flatnonzero(hit)]
         prev = a
     return ev
 

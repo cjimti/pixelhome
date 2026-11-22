@@ -39,9 +39,9 @@ def render(G, seed=27):
     P3 = G.pos[G.path]
     pi = np.arange(G.N)
 
-    # spans in the order they come back: (path index range, feed end path index)
-    spans = [((381, 500), 381), ((332, 380), 380), ((261, 331), 331), ((179, 260), 260), ((81, 178), 178),
-             ((0, 80), 80)]
+    # spans in the order they come back: (path index range, feed end path index); Right is fed from its porch end
+    spans = [((G.first('Right'), G.last('Right')), G.first('Right'))] + \
+            [((G.first(nm), G.last(nm)), G.last(nm)) for nm in ('Porch Right', 'Porch Front', 'Porch Left', 'Left', 'Side')]
     feeds = [s[fe] for _, fe in spans]
     masks = [(pi >= a) & (pi <= b) for (a, b), _ in spans]
     span_len = [abs(s[b] - s[a]) for (a, b), _ in spans]
@@ -57,8 +57,9 @@ def render(G, seed=27):
     switch_events = list(t_on) + [T_POP_ON]
 
     T_L1, T_L2 = 6.2, 9.4
-    strike = s[296]
-    d_strike = np.linalg.norm(P3 - P3[296], axis=1)
+    pm = G.mid('Porch Front')
+    strike = s[pm]
+    d_strike = np.linalg.norm(P3 - P3[pm], axis=1)
     t_die = T_L2 + 0.15 + d_strike / 900 + 0.35 * smooth_noise(rng, s, 90)
     die_fl = Flicker(rng, G.N, 6, 13)
     hum = Flicker(rng, G.N, 0.2, 0.8)
@@ -150,7 +151,7 @@ def render(G, seed=27):
             u = t - T_POP
             if sparks is None:
                 n = 36
-                sparks = (s[296] + rng.normal(0, 30, n), rng.normal(0, 260, n), rng.uniform(0.4, 1.2, n))
+                sparks = (s[pm] + rng.normal(0, 30, n), rng.normal(0, 260, n), rng.uniform(0.4, 1.2, n))
             x0, v0, tau = sparks
             if u < 3:
                 xs = x0 + v0 * 0.5 * (1 - np.exp(-u / 0.5))
@@ -158,7 +159,7 @@ def render(G, seed=27):
                 w = np.exp(-((s[None] - xs[:, None]) / 3.5) ** 2) * T[:, None]
                 buf += light(SPARK, np.clip(w.sum(0), 0, 1.2))
                 buf += light(LAMP, 0.9 * np.exp(-u / 0.08) * masks[2])
-                buf += light(SMOKE, 0.25 * np.exp(-u / 0.9) * np.exp(-((s - s[296]) / (40 + 60 * u)) ** 2))
+                buf += light(SMOKE, 0.25 * np.exp(-u / 0.9) * np.exp(-((s - s[pm]) / (40 + 60 * u)) ** 2))
         buf *= 1 - smoothstep(D - 3, D, t)
         out[f][G.path] = np.clip(buf, 0, 1)
     return out

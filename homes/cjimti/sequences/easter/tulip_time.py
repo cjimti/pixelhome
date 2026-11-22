@@ -37,16 +37,16 @@ def render(G, seed=25):
     sway_f = Flicker(rng, 1, 0.12, 0.35)
 
     # flowers: same distance from the porch corner on both wings, so the beds mirror each other
-    cL, cR = pdp[178], pdp[381]
+    cL, cR = pdp[G.last('Left')], pdp[G.first('Right')]
     flowers = []
     for k in range(9):
         d_in = 30 + 50 * k
         tb = 3.0 + 1.5 * k + rng.uniform(-0.3, 0.3)
         col = PETALS[k % len(PETALS)]
-        if d_in < cL - pdp[81] - 18:
+        if d_in < cL - pdp[G.first('Left')] - 18:
             flowers.append(dict(c=cL - d_in, side=-1, k=k, t0=tb + rng.uniform(0, 0.4), col=col, bob=[],
                                 wmax=11.0, heart=HEART))
-        if d_in < pdp[500] - cR - 18:
+        if d_in < pdp[G.last('Right')] - cR - 18:
             flowers.append(dict(c=cR + d_in, side=1, k=k, t0=tb + rng.uniform(0, 0.4), col=col, bob=[],
                                 wmax=11.0, heart=HEART))
     # second wave: small daffodils down the runs that go away from the street, front to back
@@ -119,7 +119,7 @@ def render(G, seed=25):
             a = t - fl_['t0']
             if a < 0:
                 continue
-            d_out = (fl_['c'] - pdp[81]) if fl_['side'] < 0 else (pdp[500] - fl_['c'])
+            d_out = (fl_['c'] - pdp[G.first('Left')]) if fl_['side'] < 0 else (pdp[G.last('Right')] - fl_['c'])
             hit = np.exp(-((d_out - gust_front) / 70) ** 2) if 45 < t < 50 else 0.0
             sway = 2.2 * sway_f(t + fl_['k'])[0] - fl_['side'] * 9 * hit
             bob = sum(np.exp(-((t - b0 - 0.25) / 0.25) ** 2) for b0 in fl_['bob'] if b0 is not None)

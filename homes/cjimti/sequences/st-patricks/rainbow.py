@@ -58,8 +58,9 @@ def render(G, seed=23):
 
     # rainbow geometry: angle of each pixel from the antisolar point, seen from the street
     eye = np.array([16.0, 0.0, 1000.0])
-    left_foot = G.pos[G.path[60]]                       # on Side, near the front-left corner
-    pot_i = 380
+    s0, s1 = G.first('Side'), G.last('Side')
+    left_foot = G.pos[G.path[s0 + round(60 / 80 * (s1 - s0))]]      # on Side, near the front-left corner
+    pot_i = G.last('Porch Right')
     pot = (x[pot_i] + x[pot_i + 1]) / 2
     right_foot = (G.pos[G.path[pot_i]] + G.pos[G.path[pot_i + 1]]) / 2
     dl = (left_foot - eye) / np.linalg.norm(left_foot - eye)

@@ -25,7 +25,7 @@ def render(G, seed=28):
     rng = np.random.default_rng(seed)
     pdp = G.pd[G.path]
     L = G.length
-    corners = [G.pd[G.path[i]] for i in (80, 178, 260, 331, 380)]
+    corners = [G.pd[G.path[i]] for i in G.corners]
 
     def draw(D):
         out = np.zeros((nframes(D), G.N, 3), np.float32)

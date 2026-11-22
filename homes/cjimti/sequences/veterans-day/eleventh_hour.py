@@ -43,7 +43,7 @@ def render(G, seed=21):
     last = strikes[-1]
     shimmer = Flicker(rng, G.N, 0.05, 0.25)
     # corners and free ends (the five turns and the two ends) for the remembrance
-    corner_pd = [pd[G.path[i]] for i in (0, 80, 178, 260, 331, 380, 500)]
+    corner_pd = [pd[G.path[i]] for i in (0, *G.corners, G.N - 1)]
     cdist = np.min([np.abs(pd - p) for p in corner_pd], axis=0)
     hit = set(int(round(s / DT)) for s in strikes)
 

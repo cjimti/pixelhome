@@ -38,6 +38,12 @@ def render(G, seed=31):
     L = G.length
     segs = {n: ix for n, ix in G.path_segments()}
     left, right = segs['Left'], segs['Right']
+
+    def at(ix, k, span):                           # k of span pixels along a run, kept in place when it is re-strung
+        return ix[round(k / span * (len(ix) - 1))]
+
+    side_front = segs['Side'][round(60 / 80 * (len(segs['Side']) - 1)):]   # the front quarter of Side
+
     red_yard = np.array([-400.0, 110.0, 320.0])
     blue_yard = np.array([400.0, 110.0, 300.0])
 
@@ -51,27 +57,27 @@ def render(G, seed=31):
             tgt = int(rng.choice(np.concatenate([right, segs['Porch Right'], right])))
             throws.append((t, 1.25, red_yard + rng.normal(0, [80, 5, 60]), tgt, RED, 'pop'))
         else:
-            tgt = int(rng.choice(np.concatenate([left, segs['Side'][60:], segs['Porch Left'], left])))
+            tgt = int(rng.choice(np.concatenate([left, side_front, segs['Porch Left'], left])))
             throws.append((t, 1.25, blue_yard + rng.normal(0, [80, 5, 60]), tgt, BLUE, 'pop'))
         k += 1
         t += keys(t, [(3, 2.2), (20, 1.0), (30, 0.45), (36, 0.4)]) * rng.uniform(0.7, 1.2)
     # the gags
     throws = [th for th in throws if not (15.5 < th[0] < 17.5 or 22.5 < th[0] < 25.0 or 29.0 < th[0] < 31.5)]
-    throws.append((15.6, 1.3, blue_yard, int(left[30]), BLUE, 'bounce'))
-    throws.append((22.6, 2.2, red_yard + np.array([-120, 0, 0]), int(left[40]), RED, 'own'))
-    pf = segs['Porch Front']
-    throws.append((29.2, 1.6, red_yard, int(pf[34]), RED, 'pop'))
-    throws.append((29.2, 1.6, blue_yard, int(pf[36]), BLUE, 'pop'))
+    throws.append((15.6, 1.3, blue_yard, int(at(left, 30, 97)), BLUE, 'bounce'))
+    throws.append((22.6, 2.2, red_yard + np.array([-120, 0, 0]), int(at(left, 40, 97)), RED, 'own'))
+    pm = G.mid('Porch Front')
+    throws.append((29.2, 1.6, red_yard, pm - 1, RED, 'pop'))
+    throws.append((29.2, 1.6, blue_yard, pm + 1, BLUE, 'pop'))
 
     splats = []                                    # (time, path distance, colour, size)
     for t0, T, a, ti, col, kind in throws:
         if kind == 'bounce':
             continue
         splats.append((t0 + T, x[ti], col, 1.25 if kind == 'own' else 1.0))
-    collide = (29.2 + 1.6, 0.5 * (x[pf[34]] + x[pf[36]]))
+    collide = (29.2 + 1.6, 0.5 * (x[pm - 1] + x[pm + 1]))
     # the bouncer: lands, bounces along the roof, then pops
     b_land = 15.6 + 1.3
-    b_x0 = x[left[30]]
+    b_x0 = x[at(left, 30, 97)]
     b_pop = b_land + 2.4
     b_end = b_x0 + 150 * (1 - np.exp(-(b_pop - b_land) / 0.9)) * 0.9
     splats.append((b_pop, b_end, BLUE, 1.1))

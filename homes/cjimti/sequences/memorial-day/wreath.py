@@ -32,7 +32,7 @@ def render(G, seed=6):
     x = P[:, 0]
     wings = np.concatenate([G.seg['Left'], G.seg['Right']])
     ring = np.concatenate([G.seg['Porch Left'], G.seg['Porch Front'], G.seg['Porch Right']])
-    a0, a1 = pdp[179], pdp[380]                # the two ends of the ring, at the porch mouth
+    a0, a1 = pdp[G.first('Porch Left')], pdp[G.last('Porch Right')]   # the two ends of the ring, at the porch mouth
     half = (a1 - a0) / 2
     s_ring = pd[ring] - a0                    # 0..2*half along the ring
     from_end = np.minimum(s_ring, 2 * half - s_ring)
@@ -91,7 +91,7 @@ def render(G, seed=6):
         bow = smoothstep(T_BOW, T_BOW + 1.5, t) * keys(t, [(D - 7, 1), (D - 1, 0)])
         knot = np.exp(-(from_end / 14) ** 2)
         fr[ring] = fr[ring] * (1 - 0.8 * bow * knot[:, None]) + perc(0.6 * bow * knot)[:, None] * RED
-        for side, c in ((-1, pdp[178]), (1, pdp[381])):
+        for side, c in ((-1, pdp[G.last('Left')]), (1, pdp[G.first('Right')])):
             d = np.abs(pd[wings] - c)
             sway = 1 + 0.1 * np.sin(2 * np.pi * 0.3 * t + side)
             tail = smoothstep(0, 4, d) * (1 - smoothstep(26 * sway, 36 * sway, d)) * smoothstep(0, 1.2, (t - T_BOW) * 40 / np.maximum(d, 1))

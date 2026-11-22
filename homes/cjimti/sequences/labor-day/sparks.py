@@ -37,7 +37,7 @@ def render(G, seed=22):
     s_pix = G.pd[path]
     L = G.length
     X, Z = P[:, 0], P[:, 2]
-    corners = np.array([(s_pix[a] + s_pix[a + 1]) / 2 for a in (80, 178, 260, 331, 380)])
+    corners = np.array([(s_pix[a] + s_pix[a + 1]) / 2 for a in G.corners])
     # z component of the path direction, per point along the path (+1 = running toward the street)
     tz_pix = np.gradient(Z) / np.maximum(np.gradient(s_pix), 1e-6)
 
@@ -48,12 +48,16 @@ def render(G, seed=22):
         return np.stack([np.interp(s, s_pix, X), np.interp(s, s_pix, Z)], -1)
 
     # runs that can catch a spark: (s_start, s_end) of each straight run
-    runs = [(s_pix[a], s_pix[b]) for a, b in ((0, 80), (81, 178), (179, 260), (261, 331), (332, 380), (381, 500))]
+    runs = [(s_pix[G.first(nm)], s_pix[G.last(nm)]) for nm, _ in G.path_segments()]
 
     # where the arc is, over time: (start, end, s0, s1, pulsed)
-    acts = [(2.5, 19.5, s_pix[266], s_pix[327], False),
-            (22.5, 38.0, s_pix[4], s_pix[34], False)]
-    tacks = [(41.0, 52.5, s_pix[262]), (41.6, 52.5, s_pix[330])]
+    def along(name, k, span):                      # k of span pixels along a run, kept in place when it is re-strung
+        a, b = G.first(name), G.last(name)
+        return s_pix[a + round(k / span * (b - a))]
+
+    acts = [(2.5, 19.5, along('Porch Front', 5, 70), along('Porch Front', 66, 70), False),
+            (22.5, 38.0, along('Side', 4, 80), along('Side', 34, 80), False)]
+    tacks = [(41.0, 52.5, s_pix[G.first('Porch Front') + 1]), (41.6, 52.5, s_pix[G.last('Porch Front') - 1])]
 
     def arcs(t):
         """[(s, strength)] arcs burning at time t."""

@@ -32,10 +32,11 @@ def render(G, seed=23):
     out = np.zeros((nframes(D), n, 3))
     x = G.pd[G.path]
     pi = np.arange(n)
-    DOCKM = pi >= 381
+    r0, r1 = G.first('Right'), G.last('Right')
+    DOCKM = pi >= r0
     WET = ~DOCKM
-    tip = x[500] - 12                                  # rod tip
-    shore = x[380]
+    tip = x[r1] - 12                                  # rod tip
+    shore = x[G.last('Porch Right')]
 
     # wave equation on a uniform grid along the wet part of the path
     dx = 5.0
@@ -53,7 +54,7 @@ def render(G, seed=23):
         r = (gx - pos) / width
         h[:] += (amp / 160.0) * (1 - 2 * r ** 2) * np.exp(-r ** 2)
 
-    land = x[296]
+    land = x[G.mid('Porch Front')]
     cast = [(3.4, tip - 30), (4.3, tip + 6), (4.45, tip), (6.6, land)]
     events = [(6.6, land, -260, 14)]
     for tn, a in ((11.0, 70), (14.5, 60), (15.1, 70), (21.4, 80), (21.75, 90), (22.1, 100)):
@@ -63,12 +64,12 @@ def render(G, seed=23):
     # the hook during the fight (pd), then the fish
     fight = [(bite, land), (25.6, land - 30), (28.0, land - 170), (28.4, land - 165), (31.0, land + 80),
              (31.4, land + 70), (33.2, land - 40), (33.6, land - 30), (38.0, shore - 10),
-             (39.2, x[381] + 70), (40.2, x[381] + 80)]
+             (39.2, x[r0] + 70), (40.2, x[r0] + 80)]
     crank_t = np.arange(28.4, 31.0, 0.32).tolist() + np.arange(33.6, 39.0, 0.32).tolist()
     snap = 40.2
     for tt in np.arange(25.3, 38.0, 0.45):
         events.append((tt, None, -90, 10))           # thrashing at the hook
-    fall = [(snap, x[381] + 80), (40.9, shore - 40)]
+    fall = [(snap, x[r0] + 80), (40.9, shore - 40)]
     events.append((40.9, shore - 40, -420, 18))
     swim = [(41.2, shore - 40), (44.0, shore - 360), (52.0, 640), (56.5, -60)]
     jump = 50.2
@@ -125,7 +126,7 @@ def render(G, seed=23):
         # the dock and the lantern at the end
         buf += DOCKM[:, None] * light(DOCK, 0.08 * fade * np.ones(n))
         lan = 0.45 * fade * (1 + 0.06 * shimmer(t * 2)) * keys(t, [(56.5, 1), (57.5, 0.7), (59, 1)])
-        buf += light(LANTERN, lan * np.exp(-((x - x[500]) / 14) ** 2))
+        buf += light(LANTERN, lan * np.exp(-((x - x[r1]) / 14) ** 2))
 
         # the line, from the rod tip to the hook
         line_on = (4.45 <= t < snap)
@@ -140,11 +141,11 @@ def render(G, seed=23):
             buf += light(LINE, I)
         if snap <= t < snap + 0.6:                    # the line recoils to the rod with a wiggle
             u = (t - snap) / 0.6
-            end = lerp(x[381] + 80, tip, smoothstep(0, 1, u) ** 0.6)
+            end = lerp(x[r0] + 80, tip, smoothstep(0, 1, u) ** 0.6)
             seg = (x >= end) & (x <= tip)
             wig = 0.5 + 0.5 * np.sin((x - end) / 9 + t * 40)
             buf += light(LINE, 0.3 * (1 - u) * wig * seg)
-            buf += light(hexc('#ffffff'), np.exp(-(t - snap) / 0.08) * np.exp(-((x - x[381] - 80) / 10) ** 2))
+            buf += light(hexc('#ffffff'), np.exp(-(t - snap) / 0.08) * np.exp(-((x - x[r0] - 80) / 10) ** 2))
 
         # lure in flight, then the bobber riding the surface
         if 3.4 <= t < 6.6:
@@ -173,11 +174,11 @@ def render(G, seed=23):
 
         # it was THIS big
         if 58 <= t < 72:
-            ctr = x[381] + 230
+            ctr = x[r0] + 230
             half = keys(t, [(58.3, 20), (59.4, 60), (60.4, 60), (61.3, 130), (62.3, 130), (63.2, 230),
                             (64.6, 230)])
             on = keys(t, [(58, 0), (58.4, 1), (69, 1), (70.5, 0)])
-            right = min(ctr + half, x[500] - 4)
+            right = min(ctr + half, x[r1] - 4)
             left = ctr - half if t < 64.6 else keys(t, [(64.6, ctr - 230), (66.6, 8)])
             buf += light(HANDS, 0.7 * on * (np.exp(-((x - left) / 7) ** 2) + np.exp(-((x - right) / 7) ** 2)))
             if t > 64.6:

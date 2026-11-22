@@ -51,9 +51,6 @@ ENGAGE = {'Right': 6.5, 'C5': 7.5, 'Porch Right': 8.5, 'C4': 9.5, 'Porch Front':
           'Porch Left': 12.5, 'C2': 13.5, 'Left': 14.5, 'C1': 15.5, 'Side': 16.5, 'bell': 17.5}
 T_HANDS = 18.5
 T_RUSH = 22.5
-CORNER_PI = {'C1': 80, 'C2': 178, 'C3': 260, 'C4': 331, 'C5': 380}
-# hour -> fractional path index of its numeral (clockwise from the street, 12 at the top: the porch)
-HOUR_PI = [331.5, 356.0, 380.5, 421.0, 461.0, 500.0, 80.5, 130.0, 178.5, 220.0, 260.5, 296.0]
 CHIME_NOTES = ['A4', 'F4', 'G4', 'D4', 'D4', 'G4', 'A4', 'F4']    # an original two-phrase quarter chime
 CHIME_AT = ['C4', 'C2', 'C3', 'C1', 'C1', 'C3', 'C4', 'C2']        # the gear that rings each note
 
@@ -149,13 +146,32 @@ def _roll(name, tt, dist, dur):
     return pos
 
 
-def _gear_paths(ppd):
+def _corner_pi(G):
+    """Gear -> path index of the last pixel before its corner."""
+    return dict(zip(['C1', 'C2', 'C3', 'C4', 'C5'], G.corners))
+
+
+def _hour_pi(G):
+    """Hour -> fractional path index of its numeral (clockwise from the street, 12 at the top: the porch)."""
+    c1, c2, c3, c4, c5 = G.corners
+
+    def at(name, k, span):                  # k pixels of span into a run, kept in place when it is re-strung
+        a = G.first(name)
+        return float(a + round(k / span * (G.last(name) - a)))
+
+    return [c4 + 0.5, at('Porch Right', 24, 48), c5 + 0.5, at('Right', 40, 119), at('Right', 80, 119),
+            float(G.N - 1), c1 + 0.5, at('Left', 49, 97), c2 + 0.5, at('Porch Left', 41, 81), c3 + 0.5,
+            float(G.mid('Porch Front'))]
+
+
+def _gear_paths(ppd, cpi):
     """For each gear: (start distance, direction, distance, duration, pop time)."""
     tl = TL
-    cs = {c: (ppd[a] + ppd[a + 1]) / 2 for c, a in CORNER_PI.items()}
+    cs = {c: (ppd[a] + ppd[a + 1]) / 2 for c, a in cpi.items()}
     end = ppd[-1]
-    spec = {'C3': (-1, cs['C3'] - (ppd[178] + 30), 2.2), 'C4': (1, (ppd[380] - 28) - cs['C4'], 1.5),
-            'C2': (-1, cs['C2'] - (ppd[80] + 34), 2.4), 'C5': (1, end + 80 - cs['C5'], 1.9), 'C1': (1, 0.0, 2.6)}
+    spec = {'C3': (-1, cs['C3'] - (ppd[cpi['C2']] + 30), 2.2), 'C4': (1, (ppd[cpi['C5']] - 28) - cs['C4'], 1.5),
+            'C2': (-1, cs['C2'] - (ppd[cpi['C1']] + 34), 2.4), 'C5': (1, end + 80 - cs['C5'], 1.9),
+            'C1': (1, 0.0, 2.6)}
     out = {}
     for i, c in enumerate(GEAR_ORDER):
         d, dist, dur = spec[c]
@@ -180,6 +196,7 @@ def render(G, seed=13):
     end_pd = ppd[-1]
     pxz = P[:, [0, 2]]
     path_xyz = P[G.path]
+    cpi = _corner_pi(G)
 
     def at_pi(x):
         i = int(np.clip(np.floor(x), 0, n - 2))
@@ -198,7 +215,7 @@ def render(G, seed=13):
 
     # ---- corner gears: teeth on a wheel whose axle sits inside the corner, seen where it meets the roof
     gears = {}
-    for c, a in CORNER_PI.items():
+    for c, a in cpi.items():
         nt, r0, R, col = GEARS[c]
         corner = (path_xyz[a] + path_xyz[a + 1])[[0, 2]] / 2
         lo = path_xyz[a - 6][[0, 2]] - corner
@@ -217,7 +234,7 @@ def render(G, seed=13):
         vin, vout = RUNS[NEXT[c][0]][0], RUNS[NEXT[c][1]][0]
         omega = 0.5 * (vin + vout) / (r0 * np.sqrt(2))
         gears[c] = dict(ang=ang, d=d, win=win, s=s, omega=omega, nt=nt, col=col)
-    gpaths = _gear_paths(ppd)
+    gpaths = _gear_paths(ppd, cpi)
     rets = _returns()
 
     # ---- pendulum on Porch Front
@@ -227,14 +244,14 @@ def render(G, seed=13):
     pfm = seg_mask['Porch Front']
 
     # ---- hands: minute up Porch Right (from the street end, C5, to the back, C4); hour up Porch Left
-    pr_street, pr_top = ppd[380], ppd[332]
-    pl_street, pl_top = ppd[179], ppd[260]
+    pr_street, pr_top = ppd[G.last('Porch Right')], ppd[G.first('Porch Right')]
+    pl_street, pl_top = ppd[G.first('Porch Left')], ppd[G.last('Porch Left')]
     prm, plm = seg_mask['Porch Right'], seg_mask['Porch Left']
     tocks = [tk for i, tk in enumerate(tl['run']) if tk > T_HANDS and i % 2 == 1]
 
     # ---- strikes
-    hours = [at_pi(x) for x in HOUR_PI]
-    chime_src = [at_pi(CORNER_PI[c] + 0.5) for c in CHIME_AT]
+    hours = [at_pi(x) for x in _hour_pi(G)]
+    chime_src = [at_pi(cpi[c] + 0.5) for c in CHIME_AT]
 
     # ---- dust motes drifting in the moonlight
     m_n = 34
@@ -436,7 +453,7 @@ def render(G, seed=13):
                     # the bell rope on Side jerks up toward the bell, and the bell at its end glows
                     q = tt / 0.35
                     if q < 1:
-                        buf += light(HEMP, 0.7 * (1 - q) * np.exp(-((pd - (ppd[80] - ppd[80] * q)) / 30) ** 2)
+                        buf += light(HEMP, 0.7 * (1 - q) * np.exp(-((pd - (ppd[G.last('Side')] - ppd[G.last('Side')] * q)) / 30) ** 2)
                                      * seg_mask['Side'])
                     buf += light(BRONZE, 0.9 * np.exp(-tt / 0.8) * np.exp(-(pd / 40) ** 2))
                 pip = 0.85 * np.exp(-((pd - s_src) / 13) ** 2) * min(1.0, tt / 0.15)
@@ -677,9 +694,10 @@ def score(M, G):
     def first_tick(t):
         return int(np.searchsorted(run, t - 1e-6))
 
-    pf_mid = (ppd[261] + ppd[331]) / 2
+    pf_mid = (ppd[G.first('Porch Front')] + ppd[G.last('Porch Front')]) / 2
     seg_pan = {name: pan_at(float(G.pd[G.seg[name]].mean())) for name in RUNS}
-    cs = {c: (ppd[a] + ppd[a + 1]) / 2 for c, a in CORNER_PI.items()}
+    cpi, hour_pi = _corner_pi(G), _hour_pi(G)
+    cs = {c: (ppd[a] + ppd[a + 1]) / 2 for c, a in cpi.items()}
     el_pan = dict(seg_pan, **{c: pan_at(s) for c, s in cs.items()}, bell=pan_at(0.0))
     swell = lambda t: float(keys(t, [(0, 0.8), (T_RUSH, 0.85), (tl['t_mid'], 1.25)]))
 
@@ -800,7 +818,7 @@ def score(M, G):
 
     strikes = tl['strikes']
     for h, ts in enumerate(strikes):
-        p = pan_pi(HOUR_PI[h])
+        p = pan_pi(hour_pi[h])
         g = 1.25 if h == 11 else 1.0
         put('bell', bigbell('D3'), ts, 0.9 * g, p)
         put('bell', tub.play(n('D4'), 115, dur=4.0), ts, 0.35 * g, p)
@@ -871,7 +889,7 @@ def score(M, G):
         put('band', bsn.play(n(m), 100, dur=0.25 if j < 2 else 0.6), tc2 + 1.3 + 0.3 * j, 1.0, 0.0, choke=False)
 
     # ---- the gears pop off and roll down the runs ---------------------------------------------------------
-    gp = _gear_paths(ppd)
+    gp = _gear_paths(ppd, cpi)
     rets = _returns()
     ar = 1000                                                 # roll motion sampled at 1 kHz for the rattle
     for c in GEAR_ORDER:
@@ -937,7 +955,7 @@ def score(M, G):
     put('fx', slide(0.0, 0.5, 1200, 300, 0.6, 0.35, 0.6)[0], tl['reset'], 0.3, pk, choke=False)
     tr0 = tl['reset'] + 2.0
     for h, m in enumerate(['D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'G5', 'A5']):
-        put('band', mar.play(n(m), 75 + 2 * h), tr0 + 0.1 * h, 0.45, pan_pi(HOUR_PI[h]), choke=False)
+        put('band', mar.play(n(m), 75 + 2 * h), tr0 + 0.1 * h, 0.45, pan_pi(hour_pi[h]), choke=False)
     put('bell', tub.play(n('D5'), 55, dur=3.0), tl['reset'] + 3.4, 0.4, pc, choke=False)
     put('band', bsn.play(n('A2'), 90, dur=0.12), tl['reset'] + 4.0, 0.9, 0.0, choke=False)     # ahem
     put('band', bsn.play(n('D2'), 95, dur=0.22), tl['reset'] + 4.2, 0.9, 0.0, choke=False)

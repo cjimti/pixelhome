@@ -54,6 +54,16 @@ def _path_point(G):
     return at
 
 
+def _moth_plan(G):
+    """(time, path index) of each moth that flutters up."""
+    def at(name, k, span):                  # k pixels of span into a run, kept in place when it is re-strung
+        a = G.first(name)
+        return a + round(k / span * (G.last(name) - a))
+    return [(37.0, at('Right', 59, 119)), (42.5, at('Porch Front', 39, 70)), (47.5, at('Left', 39, 97)),
+            (49.0, at('Right', 89, 119)), (54.0, at('Side', 30, 80)), (63.0, at('Right', 71, 119)),
+            (68.0, at('Right', 24, 119))]
+
+
 def render(G, seed=11):
     rng = np.random.default_rng(seed)
     F = nframes(D)
@@ -105,7 +115,7 @@ def render(G, seed=11):
     ambient_next = 27.0
 
     # moths: (appear time, path index), hunters chosen when they appear
-    moth_plan = [(37.0, 440), (42.5, 300), (47.5, 120), (49.0, 470), (54.0, 30), (63.0, 452), (68.0, 405)]
+    moth_plan = _moth_plan(G)
     moths = []                       # dicts: p, born, hunter, next_ping, caught
 
     def ping(o, tb, a, tau=0.45, c=0):
@@ -122,7 +132,7 @@ def render(G, seed=11):
         s_route = np.clip(age, 0, None) * 260 + 90
         route_goal = along(s_route)
         out_pt = np.array([-60.0, Y0, 40.0])
-        past = s_route > G.pd[G.path][178]
+        past = s_route > G.pd[G.path][G.last('Left')]
         route_goal[past] = out_pt
         # milling: one big loop around the house; from 23 s the flock funnels into the porch notch,
         # reaches Porch Front and forks, half each way, down Porch Left / Porch Right into two
@@ -414,7 +424,7 @@ def _colony(G, seed=11):
     for tb, a in ((2.6, 0.35), (3.5, 0.45), (4.2, 0.6)):
         ping(attic, tb, a, 0.35, 0, 'chirp')
     ambient_next = 27.0
-    moth_plan = [(37.0, 440), (42.5, 300), (47.5, 120), (49.0, 470), (54.0, 30), (63.0, 452), (68.0, 405)]
+    moth_plan = _moth_plan(G)
     moths = []
     track_p = np.zeros((F, B, 3))
     track_alive = np.zeros((F, B), bool)
@@ -429,7 +439,7 @@ def _colony(G, seed=11):
         s_route = np.clip(age, 0, None) * 260 + 90
         route_goal = along(s_route)
         out_pt = np.array([-60.0, Y0, 40.0])
-        past = s_route > G.pd[G.path][178]
+        past = s_route > G.pd[G.path][G.last('Left')]
         route_goal[past] = out_pt
         a_ang = ring_ph + 0.9 * t
         big = house_c + np.stack([760 * np.cos(a_ang), 0 * a_ang, 360 * np.sin(a_ang)], -1)
@@ -875,7 +885,7 @@ def score(M, G):
         m = n('E3') + 12 * (deg // 7) + hm[deg % 7] + (2 if j % 2 else 0)
         x = float(np.interp(sd, pd_path, G.pos[G.path, 0]))
         M.add('harp', vpizz.play(m, 105), t, 0.9, pan_x(x))
-    for ci in (380, 331, 260, 178, 80):
+    for ci in G.corners[::-1]:
         sd = 0.5 * (pd_path[ci] + pd_path[ci + 1])
         if sd < d0:
             t = float(t_at(sd))

@@ -28,8 +28,10 @@ def render(G, seed=25):
     pdp = G.pd[G.path]
     L = G.length
     # volleys: (time, path index of the cannon, pieces, spread along the path)
-    volleys = [(3.0, 179, 150, 520), (3.3, 380, 150, 520), (14.0, 0, 130, 700), (14.3, 500, 130, 700),
-               (24.0, 261, 200, 900), (24.0, 331, 200, 900), (31.0, 81, 130, 600), (31.4, 440, 130, 600)]
+    r0, r1 = G.first('Right'), G.last('Right')
+    volleys = [(3.0, G.first('Porch Left'), 150, 520), (3.3, G.last('Porch Right'), 150, 520), (14.0, 0, 130, 700),
+               (14.3, G.N - 1, 130, 700), (24.0, G.first('Porch Front'), 200, 900), (24.0, G.last('Porch Front'), 200, 900),
+               (31.0, G.first('Left'), 130, 600), (31.4, r0 + round(59 / 119 * (r1 - r0)), 130, 600)]
     flakes = []
     for tv, ci, k, spread in volleys:
         # each piece is aimed at a spot on the roof near the cannon, high above it
@@ -56,7 +58,7 @@ def render(G, seed=25):
     bed_tw = rng.uniform(0, 2 * np.pi, len(F))
 
     # the last piece
-    last_x = 0.5 * (pdp[261] + pdp[331])
+    last_x = 0.5 * (pdp[G.first('Porch Front')] + pdp[G.last('Porch Front')])
     last_col = COLS[0]
 
     for f in range(len(out)):

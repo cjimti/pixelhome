@@ -46,8 +46,9 @@ def render(G, seed=25):
     out = np.zeros((nframes(D), n, 3))
     x = G.pd[G.path]
     pi = np.arange(n)
-    PF = (pi >= 261) & (pi <= 331)
-    a, b = x[261], x[331]
+    f0, f1 = G.first('Porch Front'), G.last('Porch Front')
+    PF = (pi >= f0) & (pi <= f1)
+    a, b = x[f0], x[f1]
     c = (a + b) / 2
     uPF = (x - a) / (b - a) * 2 - 1                   # -1..1 across the dial
 
@@ -89,7 +90,7 @@ def render(G, seed=25):
                (66.1, 0), (66.25, 1.3), (66.6, 1), (78, 1)]
     kid_keys += [(66.1, 14), (67.4, 14), (68.4, needle_pd(-0.8) - 34), (78, needle_pd(0) - 34)]
 
-    home = x[500] - 10
+    home = x[G.last('Right')] - 10
     d1, dl1 = walk(16.8, home, needle_pd(0.6) + 30, 140, 0.2, 0.25)
     d2, dl2 = walk(21.3, needle_pd(-0.4) + 30, home, 140, 0.2, 0.25)
     d3, dl3 = walk(33.5, home, needle_pd(1.0) + 30, 150, 0.15, 0.13)

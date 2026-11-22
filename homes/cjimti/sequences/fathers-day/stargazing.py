@@ -72,7 +72,7 @@ def render(G, seed=31):
     lump = sum(rng.uniform(0.3, 1) * np.exp(-((np.angle(np.exp(1j * (ras - c)))) / rng.uniform(0.1, 0.25)) ** 2)
                for c in rng.normal(2.2, 0.35, 9))
     band = 0.1 * np.clip(lump, 0, 1.4) / 1.4
-    jup_ra, jup_dec = 4.6, float(np.median(dec[(G.pi[G.path] >= 381)]))   # crosses the Right wing
+    jup_ra, jup_dec = 4.6, float(np.median(dec[(G.pi[G.path] >= G.first('Right'))]))   # crosses the Right wing
 
     def sample(img, ra):
         fy = (dec - dlo) / res

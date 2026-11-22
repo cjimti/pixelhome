@@ -40,11 +40,10 @@ def render(G, seed=7):
     pdp = G.pd[G.path]
     L = G.length
     segs = G.path_segments()
-    corner = lambda a, b: 0.5 * (pdp[a] + pdp[b])
+    corner = lambda k: 0.5 * (pdp[G.corners[k]] + pdp[G.corners[k] + 1])     # the turn after run k
     c = pdp[G.pi[G.seg['Porch Front']]].mean()
     # (time, material position) of each snap: the porch first, then out corner by corner
-    breaks = [(17.0, c), (21.0, corner(260, 261)), (21.6, corner(331, 332)), (24.6, corner(178, 179)),
-              (25.4, corner(380, 381)), (28.4, corner(80, 81))]
+    breaks = [(17.0, c), (21.0, corner(2)), (21.6, corner(3)), (24.6, corner(1)), (25.4, corner(4)), (28.4, corner(0))]
     EXIT = 40.0
     # pieces: [m0, m1, offset, velocity, rest offset]; a piece shows material m at x = m + offset
     pieces = [[-60.0, L + 60.0, 0.0, 0.0, 0.0]]

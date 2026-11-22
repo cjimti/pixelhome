@@ -152,7 +152,7 @@ class _Ball:
 def _geo(G):
     ppd = G.pd[G.path]
     zz = G.pos[G.path, 2]
-    cp = {'A': (80, 81), 'B': (178, 179), 'C': (260, 261), 'D': (331, 332), 'E': (380, 381)}
+    cp = {k: (c, c + 1) for k, c in zip('ABCDE', G.corners)}
     P = {k: float((ppd[a] + ppd[b]) / 2) for k, (a, b) in cp.items()}
     END = float(ppd[-1])
     P['END'] = END - 34.0                                  # the plunger tip at rest

@@ -92,11 +92,12 @@ def render(G, seed=13):
     L = G.length
     Nc = int(np.ceil(L / DX)) + 1
     xc = np.arange(Nc) * DX
-    rimA = 0.5 * (pdp[178] + pdp[179])                   # Left | Porch Left
-    rimB = 0.5 * (pdp[380] + pdp[381])                   # Porch Right | Right
+    k2, k5 = G.corners[1], G.corners[4]
+    rimA = 0.5 * (pdp[k2] + pdp[k2 + 1])                 # Left | Porch Left
+    rimB = 0.5 * (pdp[k5] + pdp[k5 + 1])                 # Porch Right | Right
     inside = (xc > rimA) & (xc < rimB)
     mid = 0.5 * (pdp[0] + pdp[-1])
-    centre = 0.5 * (pdp[261] + pdp[331])                 # middle of Porch Front
+    centre = 0.5 * (pdp[G.first('Porch Front')] + pdp[G.last('Porch Front')])   # middle of Porch Front
 
     # Bed: pot floor 0, a rim of height 1.3 at each corner, wings slope from 0.95 down to the free ends.
     RIM = 1.3
@@ -473,8 +474,9 @@ def score(M, G):
     x0, x1 = xs.min(), xs.max()
     pdp = G.pd[G.path]
     L = G.length
-    rimA, rimB = 0.5 * (pdp[178] + pdp[179]), 0.5 * (pdp[380] + pdp[381])
-    centre = 0.5 * (pdp[261] + pdp[331])
+    k2, k5 = G.corners[1], G.corners[4]
+    rimA, rimB = 0.5 * (pdp[k2] + pdp[k2 + 1]), 0.5 * (pdp[k5] + pdp[k5 + 1])
+    centre = 0.5 * (pdp[G.first('Porch Front')] + pdp[G.last('Porch Front')])
 
     def pan_at(d):                          # path distance -> left/right across the facade, as seen from the street
         x = np.interp(d, ds, xs)
@@ -688,7 +690,8 @@ def score(M, G):
 
     # ---- the flood: a harp runs down each wing with the front, and a rush of water behind it ----
     lit = frames[:, G.path].max(-1) > 0.02
-    for lo_i, hi_i, sgn, top, steps in ((0, 179, -1, n('E6'), 22), (381, 501, 1, n('B6'), 14)):
+    wings = ((0, G.first('Porch Left'), -1, n('E6'), 22), (G.first('Right'), G.N, 1, n('B6'), 14))
+    for lo_i, hi_i, sgn, top, steps in wings:
         front = []
         for f in range(F):
             if not 34.0 <= ft[f] <= 47.0:

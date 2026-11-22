@@ -28,7 +28,7 @@ def render(G, seed=21):
     out = np.zeros((F, G.N, 3))
     s = G.pd[G.path]
     L = G.length
-    corners = np.array([(s[a] + s[a + 1]) / 2 for a in (80, 178, 260, 331, 380)])
+    corners = np.array([(s[a] + s[a + 1]) / 2 for a in G.corners])
 
     T_TIP, T_STOP, T_QUENCH = 4.5, 38.0, 53.0
     # integrate the flow front: slows as it goes, pauses and pools at each corner
