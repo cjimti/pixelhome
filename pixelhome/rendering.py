@@ -8,7 +8,7 @@ aren't followed (in this code they fetch audio constants for score()), so a rend
 import ast, functools, hashlib, os, time
 import numpy as np
 from PIL import Image
-from . import fseq, power
+from . import fseq
 from .fx import DT, to_bytes, to_bytes_dithered
 
 PKG = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,7 @@ def frames(s, home):
         raise ValueError(f'{s.path}: render returned NaN or inf')
     if not 1 <= len(out) * DT <= MAX_SECONDS:
         raise ValueError(f'{s.path}: {len(out) * DT:.1f}s is outside 1s..{MAX_SECONDS}s')
-    return power.night(home, out, s.id) if power.is_night_loop(s) else out
+    return out
 
 
 def write(s, home, dest):

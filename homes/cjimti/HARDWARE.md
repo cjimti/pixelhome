@@ -133,11 +133,19 @@ each channel level; currents from the K8-PB's port sensors, `GET /api/fppd/ports
 | 70%           | 3.34 A       | 3.32 A       | 6.65 A | 80 W          |
 | 80%           | 3.55 A       | 3.54 A       | 7.09 A | 86 W          |
 
-VIN stayed at 11.9-12.3 V. Idle is about 0.13 mA a pixel. The draw is far from linear in the channel value: 10%
-already draws a third of 80%, and every step after adds less. Part of the flattening at the top is the far ends
-starving without injection, so re-measure the top steps once injection works. Because of the low end, dim content
-draws about twice what `pixelhome/power.py`'s linear sum predicts: the night loops, measured the same night, drew
-0.18 A (Candlelight), 0.22 A (Food Coma) and 0.57 A (Amber Waves), about 0.33 A over the cycle, 4 W at the pixels.
+VIN stayed at 11.9-12.3 V. Idle is about 0.13 mA a pixel. The whole-house curve flattens (10% already draws a third
+of 80%) because the runs starve without injection, not because the pixels do: the first 20 pixels of port 1 alone,
+with no drop to speak of, draw in a straight line.
+
+| channel level | 10% | 20% | 40% | 60% | 80% | 100% |
+|--------------:|----:|----:|----:|----:|----:|-----:|
+| per pixel     | 5.1 mA | 8.9 mA | 18.0 mA | 26.7 mA | 36.6 mA | 45.3 mA |
+
+So a pixel draws about **45 mA at full white** with the 80% brightness (15 mA a channel), linear in the channel value,
+plus 0.13 mA idle. Low loads follow that exactly: the night loops measured 0.18 A (Candlelight), 0.22 A (Food Coma)
+and 0.57 A (Amber Waves), and Daylight 0.24 A, each within 0.01 A of `0.07 A + 15 mA x the sum of channel values`.
+Fully fed, the house at full white would draw about 24 A (290 W), about 12 A a port: the starving is what keeps the
+ports under their limits today. See [Planned](#planned-new-metal-rail-at-2-spacing) for what that means.
 
 The heaviest show moments on the first full night (2026-11-14, Das Rheingold's finale): port 1 3.8 A peak and 2.4 A
 average over Entry into Valhalla, port 2's controller end 3.0 A peak. No eFuse trips. The catalog does reach full
@@ -162,16 +170,23 @@ done (107, 2026-11-21).
 | Porch Right |    49 |         74 |
 | Right       |   120 |        180 |
 
-On the same two ports with far-end injection on both, at full white:
+At the measured 45 mA a pixel at full white (see [Measured](#measured)), fully fed from both ends, each end carrying
+about half:
 
-| port | pixels | total   | controller end (5.2 A eFuse) | far end (5 A fuse) |
-|-----:|-------:|--------:|-----------------------------:|-------------------:|
-| 1    | 392    | ~8.9 A  | ~4.4 A                        | ~4.4 A             |
-| 2    | 361    | ~8.2 A  | ~4.1 A                        | ~4.1 A             |
+| port | pixels | full white | each end | at 80% channel, each end |
+|-----:|-------:|-----------:|---------:|-------------------------:|
+| 1 today (3", 261)       | 261 | ~11.8 A | ~5.9 A | ~4.8 A |
+| 2 today (276)           | 276 | ~12.5 A | ~6.3 A | ~5.1 A |
+| 1 at 2" on two ports    | 392 | ~17.7 A | ~8.9 A | ~7.2 A |
+| 2 at 2" on two ports    | 361 | ~16.3 A | ~8.2 A | ~6.6 A |
 
-A run fed at both ends from the same supply splits its load about evenly, so both fuses stay under their ratings.
-The whole house at full white is about 17 A (205 W), within one LRS-350-12. Data is well inside the 800-pixel port
-rating. When a run is re-strung, its count changes in `home.json`, the start channels of the runs after it on its
+The ends are a 5.2 A eFuse and a 5 A fuse, so **once injection works, full white is already over both on today's
+ports**; the starving is what hides it now (and the catalog does reach full white: GD03 Dawn holds it a second). At
+2" the whole house is about 34 A (410 W) at full white: more than one LRS-350-12 (29 A), within the two. Before
+injection goes back in, cap the draw: FPP brightness (60% keeps today's ports at 4.4-4.7 A an end), or a cap on each
+port's frame draw in the build. For 2", spread the runs over more ports (3-8 are wired and unused, each with its own
+eFuse; PSU2 is there for injection): one run a port, e.g. Right's 180 at about 8.1 A, is about 4 A an end. Data is
+well inside the 800-pixel port rating. When a run is re-strung, its count changes in `home.json`, the start channels of the runs after it on its
 port move with it, and so do that port's virtual strings on fpp2; sequences follow from segment names, distances
 and `G.first/last/mid/corners`, never literal path indices.
 
@@ -192,3 +207,5 @@ and `G.first/last/mid/corners`, never literal path indices.
      its ground pin) should read under about 1 V.
   Then connect it while watching the port's current (`GET /api/fppd/ports`, `ma`): it should drop as the far end takes
   a share. A jump of amps is a short; unplug at once.
+  Once it works, a fully fed port at full white is over its fuses (see Planned): cap the draw before leaving it
+  connected.

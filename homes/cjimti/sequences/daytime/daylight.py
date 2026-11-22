@@ -1,17 +1,18 @@
-"""Daylight: Sparkles in the sun. The house doesn't need lighting by day, so the roofline stays dark and bright
-points of light do the work: a flurry of gold and white follows a wandering glint of sun out over the porch and
-back along the wings, loose sparkles fall everywhere else, each chord of the music sends a thin wave of its colour
-out from the porch, and when the glint turns a corner of the roof the corner bursts as the glockenspiel chimes.
-Every sparkle wraps around the end of the loop, so the end flows into the start. A seamless all-day loop, at a
-quarter of the power of the lit roofline it replaced."""
+"""Daylight: Sparkles in the sun. The house doesn't need lighting by day, and in direct sun the pixels light nothing
+around them and anything dim disappears, so the roofline stays dark and a few pixels at a time flash at full level:
+each sparkle jumps on, holds for a few frames and drops out crisply, with no fading tail. A flurry of gold and white
+follows a wandering glint of sun out over the porch and back along the wings, loose sparkles fall everywhere else,
+each chord of the music sends a thin wave of its colour out from the porch, and when the glint turns a corner of the
+roof the corner bursts as the glockenspiel chimes. Every sparkle wraps around the end of the loop, so the end flows
+into the start. A seamless all-day loop."""
 import numpy as np
-from pixelhome.fx import DT, hexc, perc, nframes
+from pixelhome.fx import DT, hexc, nframes
 
 CODE = 'DY01'
 TITLE = 'Daylight'
 KIND = 'ambient'
-DESCRIPTION = ('Bright sparkles in the sun: a flurry of gold and white follows a wandering glint over the porch '
-               'and the wings, with a wave of colour on every chord.')
+DESCRIPTION = ('Crisp sparkles made for the sun: a few pixels at a time flash at full, a flurry of gold and white '
+               'follows a wandering glint over the porch and the wings, with a wave of colour on every chord.')
 
 WHITE = hexc('#fff4e6')
 GOLD = hexc('#ffb83a')
@@ -21,14 +22,16 @@ SKY_PALE = hexc('#9ed2ff')
 ROSE = hexc('#ff8f7a')
 MINT = hexc('#8ff0c4')
 LOOP = 150.0
-FLURRY = 10.5                   # sparkles per second around the glint
+FLURRY = 13.0                   # sparkles per second around the glint
 FLURRY_SPREAD = 130.0           # layout units either side of it
-SCATTER = 7.0                   # sparkles per second over the rest of the house
+SCATTER = 8.0                   # sparkles per second over the rest of the house
 SIDE_WEIGHT = 0.25              # Side is seen from an angle: fewer there
-WAVE_THIN = 3                   # every third pixel joins a chord's wave
+WAVE_THIN = 4                   # every fourth pixel joins a chord's wave
 WAVE_SPEED = 420.0              # layout units per second
-BURST = 16                      # sparkles at a corner when the glint turns it
-TAUS = (0.3, 0.42, 0.56, 0.72)  # perceptual decay times, seconds
+BURST = 12                      # sparkles at a corner when the glint turns it
+HOLDS = (2, 3, 4, 5)            # frames a sparkle holds at full
+DROPS = (0.035, 0.05, 0.07)     # PWM decay after the hold, seconds: a crisp drop, not a glow
+CUT = 0.12                      # PWM below which a sparkle is gone: in sun a tail can't be seen, and it still draws
 PALETTES = ((GOLD, WHITE), (SKY, WHITE), (GOLD_CORE, ROSE), (SKY_PALE, GOLD), (MINT, WHITE),
             (GOLD, SKY_PALE), (ROSE, WHITE), (GOLD_CORE, SKY))     # one per chord of the score
 
@@ -40,11 +43,10 @@ def glint_path(t):
     return 1300 + 720 * np.sin(w) + 190 * np.sin(3 * w + 0.8) + 60 * np.sin(5 * w + 2.1)
 
 
-def _template(tau):
-    """PWM envelope of one sparkle: a two-frame rise, then a decay that is exponential to the eye."""
-    n = int(round(4 * tau / DT))
-    env = np.concatenate([[0.55, 1.0], np.exp(-np.arange(1, n + 1) * DT / tau)])
-    return np.asarray(perc(env), np.float32)
+def _template(hold, drop):
+    """PWM envelope of one sparkle: on in a frame, `hold` frames at full, then a fast drop cut off at CUT."""
+    n = int(np.ceil(drop * np.log(1 / CUT) / DT))
+    return np.concatenate([[0.6], np.ones(hold), np.exp(-np.arange(1, n + 1) * DT / drop)]).astype(np.float32)
 
 
 def render(G, seed=1):
@@ -52,11 +54,11 @@ def render(G, seed=1):
     F = nframes(LOOP)
     out = np.zeros((F, G.N, 3), np.float32)
     pdp = G.pd[G.path]
-    templates = [_template(tau) for tau in TAUS]
+    templates = [_template(h, d) for h in HOLDS for d in DROPS]
 
     def spark(t, node, palette):
-        env = templates[int(rng.integers(len(TAUS)))]
-        col = palette[int(rng.integers(len(palette)))] * perc(rng.uniform(0.72, 1.0))
+        env = templates[int(rng.integers(len(templates)))]
+        col = palette[int(rng.integers(len(palette)))]                # full level: dim reads as nothing in sun
         f = (int(round(t / DT)) + np.arange(len(env))) % F
         out[f, node] += env[:, None] * col
 
