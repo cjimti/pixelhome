@@ -121,7 +121,9 @@ the browser (hides what is over, says Tonight, points to Live while a show is on
 release. Every set and sequence page has its own 1200x630 share card (`cards/`, `share.label()`), set in the site's
 fonts from `pixelhome/fonts/` (OFL).
 Every page has the same header (`top()` in `pages.py`, styled by `site/header.css`); the static About and Live pages
-carry `<!--sitehead-->` where the build puts it.
+carry `<!--sitehead-->` where the build puts it. About is three pages under `site/about/` (who and why, `making/` for
+how the shows are made, `hardware/` for the physical build), each listed in `_shared_header()`. Their sidebar lists
+the pages, and `site/about/nav.js` adds the current page's sections from each `<section id>` with an `<h2>`.
 
 ## Live mode
 

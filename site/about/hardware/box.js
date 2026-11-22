@@ -1,4 +1,4 @@
-/* The controller box in 3D on the About page: the Kulp K8-PB, two Mean Well LRS-350-12 supplies, the fuse block
+/* The controller box in 3D on the About hardware page: the Kulp K8-PB, two Mean Well LRS-350-12 supplies, the fuse block
    and the wiring, built from a photo of the box and the makers' drawings. Model space is the mounting plate in mm.
    three.js (r128, the same build the player uses) and its OrbitControls load only when the figure comes near the
    screen, and it renders only while it is on screen. */

@@ -731,7 +731,7 @@ def _sequence(out, m, home, siblings, built):
 <section class="files">
   <h2>For your own show</h2>
   <p>{esc(KINDS[m['kind']])} The FSEQ (v2, zstd, 40 fps) plays in <a href="https://github.com/FalconChristmas/fpp">Falcon Player</a>
-    on a house with the same layout; see <a href="/about/">About</a> for how it is made.</p>
+    on a house with the same layout; see <a href="/about/making/">How it's made</a>.</p>
   <p class="dls">{''.join(dls)}</p>
   {intro}
 </section>
@@ -839,8 +839,10 @@ def _not_found(out, built):
 
 
 def _shared_header(out):
-    """Static pages from site/ (About, Live) get the same header as the generated ones, in place of <!--sitehead-->."""
-    for page, current in (('about/index.html', '/about/'), ('live/index.html', '/live/')):
+    """Static pages from site/ (About and its two pages, Live) get the same header as the generated ones, in place of
+    <!--sitehead-->."""
+    for page, current in (('about/index.html', '/about/'), ('about/making/index.html', '/about/'),
+                          ('about/hardware/index.html', '/about/'), ('live/index.html', '/live/')):
         f = os.path.join(out, page)
         with open(f) as fh:
             text = fh.read()

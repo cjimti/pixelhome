@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KQYBQLRBMP"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-KQYBQLRBMP');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How it's made · Pixelhome</title>
+<meta name="description" content="How a Pixelhome show is made: one Python file computes every frame and every note, open-source instruments play the score, Chatterbox reads the spoken intro, CI builds the site, and Live keeps your phone in time with the house.">
+<meta name="theme-color" content="#0b0a09">
+<link rel="canonical" href="https://pixelhome.app/about/making/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pixelhome">
+<meta property="og:title" content="How Pixelhome is made">
+<meta property="og:description" content="One Python file per show computes every frame and every note; open-source tools render the music and read the spoken intros, and FPP plays them on the roofline.">
+<meta property="og:url" content="https://pixelhome.app/about/making/">
+<meta property="og:image" content="https://pixelhome.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A single-story house at night, its roofline lit by orange and red pixel lights">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How Pixelhome is made">
+<meta name="twitter:description" content="One Python file per show computes every frame and every note; open-source tools render the music and read the spoken intros, and FPP plays them on the roofline.">
+<meta name="twitter:image" content="https://pixelhome.app/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/header.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="page">
+<!--sitehead-->
+
+<main class="doc aboutpage">
+  <div class="aboutgrid">
+    <nav class="aboutnav" aria-label="About">
+      <ul>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/about/making/" aria-current="page">How it's made</a></li>
+        <li><a href="/about/hardware/">The hardware</a></li>
+      </ul>
+    </nav>
+    <div class="aboutmain">
+
+  <section class="intro">
+    <p class="kicker">About · The shows</p>
+    <h1>How it's made</h1>
+    <p class="lede">Every show is one Python file. It computes the lights frame by frame, writes the music note by note
+      from the same timings, and carries the line that's spoken before it. Here's how that file becomes a show on the
+      roofline, and on your phone.</p>
+  </section>
+
+  <section id="pipeline">
+    <h2>From an idea to the roofline</h2>
+    <p>Each sequence is one Python file with two functions that share the same timings. <code>render()</code> computes
+      the lights and <code>score()</code> writes the music, so every hit lands on its flash and is panned to where it
+      happens on the house. A <code>VOICEOVER</code> line gives it a spoken intro.</p>
+    <p>The house itself comes from two exceptional open-source projects: I laid out the pixels in
+      <a href="https://xlights.org/">xLights</a>, and modeled the house in <a href="https://www.blender.org/">Blender</a>.
+      Pixelhome imports both, so every sequence knows where each pixel sits in 3D. Sequences find their way around the
+      house by the names of its runs and distances along them, never by pixel numbers, so when a run is re-strung with
+      more pixels, every show follows.</p>
+
+    <figure class="diagram" aria-labelledby="d2">
+      <figcaption id="d2">One file, three outputs, one house</figcaption>
+      <ol class="pipe">
+        <li class="stage1"><b>The house as data</b><span>home.json: every pixel's 3D position and the six runs,
+          imported from my <a href="https://xlights.org/">xLights</a> layout and <a href="https://www.blender.org/">Blender</a> model.</span></li>
+        <li class="stage1"><b>A story</b><span>"A ghost train stops at the porch station." AI writes one Python file in
+          numpy against that layout.</span></li>
+      </ol>
+      <div class="lanes">
+        <div class="lane">
+          <p class="lanename">Lights</p>
+          <ol class="pipe">
+            <li><b>render(G)</b><span>Every frame for every pixel at 40 fps.</span></li>
+            <li><b>Preview</b><span>A timeline and stills images, plus brightness and strobe checks. I adjust and
+              re-render.</span></li>
+            <li><b>FSEQ</b><span>FPP's sequence format, zstd compressed.</span></li>
+          </ol>
+        </div>
+        <div class="lane">
+          <p class="lanename">Music</p>
+          <ol class="pipe">
+            <li><b>score(M, G)</b><span>Notes from the same timings, panned along the roofline.</span></li>
+            <li><b>Surge XT + VSCO 2</b><span>Synth patches and orchestral samples, mixed with Spotify's
+              pedalboard.</span></li>
+            <li><b>MP3</b><span>Rendered on my Mac and committed with the script.</span></li>
+          </ol>
+        </div>
+        <div class="lane">
+          <p class="lanename">Voice</p>
+          <ol class="pipe">
+            <li><b>VOICEOVER</b><span>A line to set the mood, then what happens and where to look.</span></li>
+            <li><b>Chatterbox</b><span>Reads it in a voice based on mine, over a quiet bed made for the occasion.</span></li>
+            <li><b>MP3 + FSEQ</b><span>The title, the words and the voice's loudness become lights for the house.</span></li>
+          </ol>
+        </div>
+      </div>
+      <ol class="pipe">
+        <li class="stage2"><b>git push</b><span>GitHub Actions re-renders only the sequences that changed and builds
+          this site, with a 3D preview of each one.</span></li>
+        <li class="stage2"><b>FPP</b><span>The FSEQ and MP3 go into a playlist, the intro just before its show, and the
+          controller plays the roofline.</span></li>
+      </ol>
+    </figure>
+  </section>
+
+  <section id="music">
+    <h2>Music</h2>
+    <p>A show I invent gets original music, written note by note in Python and played through great open-source
+      instruments: the <a href="https://surge-synthesizer.github.io/">Surge XT</a> hybrid synthesizer for pads, leads,
+      bells and basses, and the <a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a>
+      orchestral samples. Spotify's <a href="https://github.com/spotify/pedalboard">pedalboard</a> adds the reverb,
+      compression and limiting. Because the score and the lights read the same timings, every hit lands on its flash,
+      and each sound is panned to where it happens on the house.</p>
+    <p>A show that tells a real work plays that work's real music. Wagner's Ring operas come from the
+      <a href="https://zenodo.org/records/7672157">Wagner Ring Dataset</a>, his score timed bar by bar to a recording:
+      a script cuts the most dramatic bars of each scene, and Pixelhome orchestrates them for the samples. Then, the
+      way a staged production would, every event the lights show gets a sound: thunder with the lightning, hoofbeats
+      with the Valkyries, fire, clashing swords.</p>
+    <p>The oratorios (Mendelssohn's <i>Elijah</i>, Handel's <i>Judas Maccabaeus</i> and <i>Messiah</i>) have no
+      dataset, so their notes are transcribed by hand from public-domain vocal scores. Scripts read the noteheads and
+      staff lines off high-resolution scans, every bar is checked against its time signature, and the cut is timed by
+      the score's own tempo markings. There's no choir in the sample library, so sung lines are played on orchestral
+      instruments, each character with an instrument and a colour of their own.</p>
+    <p>Everything plays outdoors to the street, so melodies stay in the middle register, where they carry across a
+      front yard. The all-night loops are kept soft, with no beat and nothing startling.</p>
+  </section>
+
+  <section id="intros">
+    <h2>Spoken intros</h2>
+    <p>One string of pixels is abstract. A shape moving along the roofline could be a bat, a train or a skeleton, and
+      from the street you can't always tell which. So, the way an opera is introduced with a synopsis, a show can open
+      with a short spoken intro: a line to set the mood, then what happens and where to look.</p>
+    <p>The voice is based on mine, modified with a bit of an accent. I recorded a few seconds of myself reading, and
+      <a href="https://github.com/resemble-ai/chatterbox">Chatterbox</a>, Resemble AI's open-source text-to-speech
+      model, reads each intro in that voice on my Mac. It's mixed over a quiet bed made for each occasion. While it
+      speaks, the house lights up in the occasion's colour: the show's title runs as a Morse marquee along the left
+      wing, each spoken word flashes as 8-bit ASCII on the porch front, and the voice grows as a waveform out from the
+      middle of the right wing.</p>
+    <p>On this site, the <b>Intros</b> switch next to Sound plays a sequence's intro before the show. For FPP, each
+      intro is its own FSEQ and MP3, scheduled just before the show it introduces.</p>
+  </section>
+
+  <section id="build">
+    <h2>From the repo to the house</h2>
+    <p>Everything lives in one repository. A push builds the site in GitHub Actions: it re-renders only the sequences
+      whose files changed, makes each one's 3D preview, share card and page, and works out the show times from the
+      house's schedule. Nothing goes live until a release: a version tag on the main branch deploys the site.</p>
+    <p>The same schedule drives the house. A sync script writes it into FPP, a playlist for each kind of night and the
+      whole season's calendar, uploads the sequences and music that changed, and removes anything the site no longer
+      has. The house is never fully dark: soft loops keep it lit late at night, and by day a few bright pixels sparkle
+      against the sun.</p>
+  </section>
+
+  <section id="live">
+    <h2>Live</h2>
+    <p>Stand in front of the house, open <a href="/live/">pixelhome.app/live</a>, and your phone shows what the
+      lights are doing right now and plays the soundtrack in time with them. No video or audio is streamed. The site
+      already has every sequence and every MP3, so all that has to travel is a few bytes: which file FPP is playing
+      and how far into it.</p>
+    <p>That message goes through <a href="https://workers.cloudflare.com/">Cloudflare Workers</a>. A small service on
+      the controller reads FPP's status once a second and posts to the Worker when something changes (a new song, a
+      start, a stop, a jump) and every 30 seconds as a heartbeat. The Worker hands it to a Durable Object, one per
+      house, that keeps the latest state and pushes it over a WebSocket to every phone watching. Connections only go
+      out from the house, so nothing at my house is open to the internet, and phones only listen. It all fits in
+      Cloudflare's free plan: a night is about 2,000 small requests against a limit of 100,000 a day.</p>
+
+    <figure class="diagram hw net" aria-labelledby="d4">
+      <figcaption id="d4">From the roofline to your phone</figcaption>
+      <div class="hwscroll">
+        <svg viewBox="0 0 1200 560" role="img" aria-label="The controller in the house posts what FPP is playing to a Cloudflare Worker over one kept-open HTTPS connection. The Worker stamps it and hands it to a Durable Object for the house, which pushes it over WebSockets to every phone watching. Each phone already has the lights and music and plays from the same moment.">
+          <defs>
+            <marker id="na1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
+            <marker id="na2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
+          </defs>
+          <!-- the house, its roofline lit, the controller inside -->
+          <path class="house" d="M50 210 L180 110 L310 210 V380 H50 Z"/>
+          <polyline class="dots p1" points="50,210 180,110 310,210"/>
+          <rect class="ctrl" x="75" y="270" width="215" height="80" rx="12"/>
+          <text class="ctxt" x="95" y="305">FPP</text>
+          <text class="csub" x="95" y="334">HW04 · 41.27 s</text>
+          <text class="lbl" x="180" y="80" text-anchor="middle">The house</text>
+
+          <!-- Cloudflare -->
+          <rect class="cloud" x="450" y="40" width="340" height="370" rx="22"/>
+          <text class="cfname" x="620" y="80" text-anchor="middle">Cloudflare · free plan</text>
+          <rect class="ctrl" x="480" y="110" width="280" height="100" rx="12"/>
+          <text class="ctxt" x="500" y="148">Worker</text>
+          <text class="csub" x="500" y="180">token, arrival time</text>
+          <rect class="ctrl" x="480" y="280" width="280" height="100" rx="12"/>
+          <text class="ctxt" x="500" y="318">Durable Object</text>
+          <text class="csub" x="500" y="350">"House": state + age</text>
+          <path class="link p1" d="M620 212 V272" marker-end="url(#na1)"/>
+
+          <!-- controller to Worker -->
+          <path class="link p1" d="M292 300 C365 300 380 160 472 160" marker-end="url(#na1)"/>
+          <text class="hop" x="360" y="132" text-anchor="middle">HTTPS POST</text>
+          <text class="csub" x="360" y="158" text-anchor="middle">~100 bytes</text>
+
+          <!-- Durable Object to phones -->
+          <path class="link p2" d="M762 330 C850 330 860 120 948 120" marker-end="url(#na2)"/>
+          <path class="link p2" d="M762 330 C850 330 860 240 948 240" marker-end="url(#na2)"/>
+          <path class="link p2" d="M762 330 C850 330 860 360 948 360" marker-end="url(#na2)"/>
+          <text class="hop" x="855" y="440" text-anchor="middle">WebSocket</text>
+          <!-- phones, each showing the same roofline -->
+          <g class="phone"><rect x="955" y="72" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,128 984,112 1002,128"/></g>
+          <g class="phone"><rect x="955" y="192" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,248 984,232 1002,248"/></g>
+          <g class="phone"><rect x="955" y="312" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,368 984,352 1002,368"/></g>
+          <text class="csub" x="1030" y="126">yours</text>
+          <text class="csub" x="1030" y="246">a neighbor's</text>
+          <text class="csub" x="1030" y="366">up to 250</text>
+
+          <!-- where each delay is taken out -->
+          <line class="rule" x1="40" y1="470" x2="1160" y2="470"/>
+          <text class="fix" x="40" y="508"><tspan class="num">1</tspan> House to Cloudflare</text>
+          <text class="fixsub" x="40" y="538">+ half the quickest round trip</text>
+          <text class="fix" x="450" y="508"><tspan class="num">2</tspan> Waiting at Cloudflare</text>
+          <text class="fixsub" x="450" y="538">+ the report's age</text>
+          <text class="fix" x="860" y="508"><tspan class="num">3</tspan> On the phone</text>
+          <text class="fixsub" x="860" y="538">lights follow the phone's audio</text>
+        </svg>
+      </div>
+    </figure>
+
+    <h3>Getting past the latency</h3>
+    <p>The hard part isn't knowing what's playing, it's knowing <i>where</i> it is to within a fraction of a second.
+      Clocks on the controller, a server and a phone never quite agree, so nothing compares timestamps between them.
+      Instead each delay is measured on its own:</p>
+    <ul>
+      <li><b>House to Cloudflare.</b> The controller keeps its connection open so a report never waits on a new TLS
+        handshake, times each round trip, and adds half the quickest recent one to the position before sending.</li>
+      <li><b>Waiting at Cloudflare.</b> A phone that joins mid-song gets the last report plus its age, so it adds
+        however long the report sat there.</li>
+      <li><b>On the phone.</b> From then on the phone runs its own clock and only needs a heartbeat to check it.</li>
+    </ul>
+    <p>Sound is the trickier part. A phone takes a moment to start playing after it jumps to a new spot, and every
+      jump is a gap you can hear. So the page aims a little ahead of the house, measures how late the music actually
+      came out, and remembers that lead on your phone so the next song lands right the first time. It doesn't
+      correct with a second jump; it only re-syncs if the music slips by more than a second. Once the music is
+      playing, the lights on screen follow your phone's audio, not the network, so what you see always matches what
+      you hear. Anything left over is about the same as the delay of sound crossing a front yard.</p>
+  </section>
+
+  <p class="pager"><a href="/about/">← About</a><a href="/about/hardware/">The hardware →</a></p>
+
+  <footer>
+    <p><a href="/">Back to the schedule</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> ·
+      Sequences and music <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · Code MIT ·
+      <span class="version"></span></p>
+  </footer>
+    </div>
+  </div>
+</main>
+<script src="/about/nav.js" defer></script>
+</body>
+</html>

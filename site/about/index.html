@@ -11,13 +11,13 @@ gtag('config', 'G-KQYBQLRBMP');
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>About · Pixelhome</title>
-<meta name="description" content="Why and how Pixelhome is made: AI writes Python scripts that compute every pixel and every note, open-source tools render them and read the spoken intros in a voice based on mine, and FPP plays them on a 12V pixel roofline.">
+<meta name="description" content="Pixelhome is the light show on Craig Johnston's roofline: holiday shows, whole operas and oratorios told in light, every frame and every note computed by Python scripts that AI and he wrote together.">
 <meta name="theme-color" content="#0b0a09">
 <link rel="canonical" href="https://pixelhome.app/about/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pixelhome">
 <meta property="og:title" content="About Pixelhome">
-<meta property="og:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them and read the spoken intros in a voice based on mine, and FPP plays them on a 12V pixel roofline.">
+<meta property="og:description" content="The light show on one house's roofline: every frame of light and every note computed by Python scripts that AI and I wrote together.">
 <meta property="og:url" content="https://pixelhome.app/about/">
 <meta property="og:image" content="https://pixelhome.app/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,27 +25,36 @@ gtag('config', 'G-KQYBQLRBMP');
 <meta property="og:image:alt" content="A single-story house at night, its roofline lit by orange and red pixel lights">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="About Pixelhome">
-<meta name="twitter:description" content="How Pixelhome is made: Python scripts compute every pixel and every note, open-source tools render them and read the spoken intros in a voice based on mine, and FPP plays them on a 12V pixel roofline.">
+<meta name="twitter:description" content="The light show on one house's roofline: every frame of light and every note computed by Python scripts that AI and I wrote together.">
 <meta name="twitter:image" content="https://pixelhome.app/og.png">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../header.css">
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="/header.css">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body class="page">
 <!--sitehead-->
 
-<main class="doc">
+<main class="doc aboutpage">
+  <div class="aboutgrid">
+    <nav class="aboutnav" aria-label="About">
+      <ul>
+        <li><a href="/about/" aria-current="page">About</a></li>
+        <li><a href="/about/making/">How it's made</a></li>
+        <li><a href="/about/hardware/">The hardware</a></li>
+      </ul>
+    </nav>
+    <div class="aboutmain">
+
   <section class="intro">
     <p class="kicker">About</p>
-    <h1>Scripts, not black boxes</h1>
-    <p class="lede">I'm Craig Johnston. Pixelhome is the light show on my house's roofline. Every frame of light and every
-      note of music on this site is computed by a Python script that AI and I wrote together. Even the voice that
-      introduces each Halloween show starts from mine: an open-source model reads it from a few seconds of me
-      speaking, with a bit of an accent added.</p>
+    <h1>One house, one roofline</h1>
+    <p class="lede">I'm Craig Johnston. Pixelhome is the light show on my house's roofline: shows for the holidays, whole
+      operas and oratorios told in light, and quiet loops that keep the house lit all night. Every frame of light and
+      every note of music on this site is computed by a Python script that AI and I wrote together.</p>
     <ul class="links">
       <li><a href="https://github.com/cjimti/">GitHub</a></li>
       <li><a href="https://imti.co">imti.co</a></li>
@@ -58,16 +67,15 @@ gtag('config', 'G-KQYBQLRBMP');
     </ul>
   </section>
 
-  <section>
-    <h2>Why</h2>
+  <section id="why">
+    <h2>Scripts, not black boxes</h2>
     <p>I've been a software developer for over 30 years, and I've fully embraced AI. But generative AI is often all or
       nothing: change one parameter, wait for a black box, and get back a whole new finished result. As of 2026 I only
       have one string of pixels around my house, and I wanted to get the most out of it.</p>
     <p>So rather than asking AI to generate light sequences, I have it write configurable Python scripts that compute
-      them. The music works the same way: Python writes each score note by note and plays it through great open-source
-      instruments like the <a href="https://surge-synthesizer.github.io/">Surge XT</a> free and open-source hybrid
-      synthesizer and the <a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a>
-      orchestral samples. When something's off, I change a number, not a prompt.</p>
+      them. The music works the same way: Python writes each score note by note and plays it through open-source
+      instruments. Even the voice that introduces each show starts from mine. When something's off, I change a number,
+      not a prompt.</p>
 
     <figure class="diagram" aria-labelledby="d1">
       <figcaption id="d1">Two ways to make a light show</figcaption>
@@ -95,166 +103,29 @@ gtag('config', 'G-KQYBQLRBMP');
     </figure>
   </section>
 
-  <section>
-    <h2>How a show gets made</h2>
-    <p>Each sequence is one Python file with two functions that share the same timings. <code>render()</code> computes
-      the lights and <code>score()</code> writes the music, so every hit lands on its flash and is panned to where it
-      happens on the house. A <code>VOICEOVER</code> line gives it a spoken intro.</p>
-    <p>The house itself comes from two exceptional open-source projects: I laid out the pixels in <a href="https://xlights.org/">xLights</a>, and modeled the
-      house in <a href="https://www.blender.org/">Blender</a>. Pixelhome imports both, so every sequence knows where each pixel sits in 3D.</p>
-
-    <figure class="diagram" aria-labelledby="d2">
-      <figcaption id="d2">From an idea to the roofline</figcaption>
-      <ol class="pipe">
-        <li class="stage1"><b>The house as data</b><span>home.json: 537 pixels, their 3D positions and six runs,
-          imported from my <a href="https://xlights.org/">xLights</a> layout and <a href="https://www.blender.org/">Blender</a> model.</span></li>
-        <li class="stage1"><b>A story</b><span>"A ghost train stops at the porch station." AI writes one Python file in
-          numpy against that layout.</span></li>
-      </ol>
-      <div class="lanes">
-        <div class="lane">
-          <p class="lanename">Lights</p>
-          <ol class="pipe">
-            <li><b>render(G)</b><span>Every frame for every pixel at 40 fps.</span></li>
-            <li><b>Preview</b><span>A timeline and stills images, plus brightness and strobe checks. I adjust and
-              re-render.</span></li>
-            <li><b>FSEQ</b><span>FPP's sequence format, zstd compressed.</span></li>
-          </ol>
-        </div>
-        <div class="lane">
-          <p class="lanename">Music</p>
-          <ol class="pipe">
-            <li><b>score(M, G)</b><span>Notes from the same timings, panned along the roofline.</span></li>
-            <li><b>Surge XT + VSCO 2</b><span>Synth patches and orchestral samples, mixed with Spotify's
-              pedalboard.</span></li>
-            <li><b>MP3</b><span>Rendered on my Mac and committed with the script.</span></li>
-          </ol>
-        </div>
-        <div class="lane">
-          <p class="lanename">Voice</p>
-          <ol class="pipe">
-            <li><b>VOICEOVER</b><span>A line to set the mood, then the card's description of what happens.</span></li>
-            <li><b>Chatterbox</b><span>Reads it in a voice based on mine, over a quiet bed of choir, cello and music box.</span></li>
-            <li><b>MP3 + waveform</b><span>The voice's loudness becomes a red waveform FSEQ for the house.</span></li>
-          </ol>
-        </div>
-      </div>
-      <ol class="pipe">
-        <li class="stage2"><b>git push</b><span>GitHub Actions re-renders only the sequences that changed and builds
-          this site, with a 3D preview of each one.</span></li>
-        <li class="stage2"><b>FPP</b><span>The FSEQ and MP3 go into a playlist, the intro just before its show, and the Pi plays the roofline.</span></li>
-      </ol>
-    </figure>
-  </section>
-
-  <section id="intros">
-    <h2>Spoken intros</h2>
-    <p>One string of pixels is abstract. A shape moving along the roofline could be a bat, a train or a skeleton, and
-      from the street you can't always tell which. So, the way an opera is introduced with a synopsis, each Halloween
-      show can open with a short spoken intro: a line to set the mood, then what happens and where to look.</p>
-    <p>The voice is based on mine, modified with a bit of an accent. I recorded a few seconds of myself reading, and
-      <a href="https://github.com/resemble-ai/chatterbox">Chatterbox</a>, Resemble AI's open-source text-to-speech
-      model, reads each intro in that voice on my Mac. It's mixed over a quiet bed of choir, cello, music box and a
-      distant bell, and while it speaks the house shows the voice as a red waveform growing out from the middle of the
-      left wing, the porch front and the right wing.</p>
-    <p>On this site, the <b>Intros</b> switch next to Sound plays a sequence's intro before the show. For FPP, each
-      intro is its own FSEQ and MP3, scheduled just before the show it introduces.</p>
-  </section>
-
-  <section id="live">
-    <h2>Live</h2>
-    <p>Stand in front of the house, open <a href="../live/">pixelhome.app/live</a>, and your phone shows what the
-      lights are doing right now and plays the soundtrack in time with them. No video or audio is streamed. The site
-      already has every sequence and every MP3, so all that has to travel is a few bytes: which file FPP is playing
-      and how far into it.</p>
-    <p>That message goes through <a href="https://workers.cloudflare.com/">Cloudflare Workers</a>. A small service on
-      the Pi reads FPP's status once a second and posts to the Worker when something changes (a new song, a start, a
-      stop, a jump) and every 30 seconds as a heartbeat. The Worker hands it to a Durable Object, one per house, that
-      keeps the latest state and pushes it over a WebSocket to every phone watching. Connections only go out from the
-      Pi, so nothing at my house is open to the internet, and phones only listen. It all fits in Cloudflare's free
-      plan: a night is about 2,000 small requests against a limit of 100,000 a day.</p>
-
-    <figure class="diagram hw net" aria-labelledby="d4">
-      <figcaption id="d4">From the roofline to your phone</figcaption>
-      <div class="hwscroll">
-        <svg viewBox="0 0 1200 560" role="img" aria-label="The Pi in the house posts what FPP is playing to a Cloudflare Worker over one kept-open HTTPS connection. The Worker stamps it and hands it to a Durable Object for the house, which pushes it over WebSockets to every phone watching. Each phone already has the lights and music and plays from the same moment.">
-          <defs>
-            <marker id="na1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
-            <marker id="na2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
-          </defs>
-          <!-- the house, its roofline lit, the Pi inside -->
-          <path class="house" d="M50 210 L180 110 L310 210 V380 H50 Z"/>
-          <polyline class="dots p1" points="50,210 180,110 310,210"/>
-          <rect class="ctrl" x="75" y="270" width="215" height="80" rx="12"/>
-          <text class="ctxt" x="95" y="305">Pi + FPP</text>
-          <text class="csub" x="95" y="334">HW04 · 41.27 s</text>
-          <text class="lbl" x="180" y="80" text-anchor="middle">The house</text>
-
-          <!-- Cloudflare -->
-          <rect class="cloud" x="450" y="40" width="340" height="370" rx="22"/>
-          <text class="cfname" x="620" y="80" text-anchor="middle">Cloudflare · free plan</text>
-          <rect class="ctrl" x="480" y="110" width="280" height="100" rx="12"/>
-          <text class="ctxt" x="500" y="148">Worker</text>
-          <text class="csub" x="500" y="180">token, arrival time</text>
-          <rect class="ctrl" x="480" y="280" width="280" height="100" rx="12"/>
-          <text class="ctxt" x="500" y="318">Durable Object</text>
-          <text class="csub" x="500" y="350">"House": state + age</text>
-          <path class="link p1" d="M620 212 V272" marker-end="url(#na1)"/>
-
-          <!-- Pi to Worker -->
-          <path class="link p1" d="M292 300 C365 300 380 160 472 160" marker-end="url(#na1)"/>
-          <text class="hop" x="360" y="132" text-anchor="middle">HTTPS POST</text>
-          <text class="csub" x="360" y="158" text-anchor="middle">~100 bytes</text>
-
-          <!-- Durable Object to phones -->
-          <path class="link p2" d="M762 330 C850 330 860 120 948 120" marker-end="url(#na2)"/>
-          <path class="link p2" d="M762 330 C850 330 860 240 948 240" marker-end="url(#na2)"/>
-          <path class="link p2" d="M762 330 C850 330 860 360 948 360" marker-end="url(#na2)"/>
-          <text class="hop" x="855" y="440" text-anchor="middle">WebSocket</text>
-          <!-- phones, each showing the same roofline -->
-          <g class="phone"><rect x="955" y="72" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,128 984,112 1002,128"/></g>
-          <g class="phone"><rect x="955" y="192" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,248 984,232 1002,248"/></g>
-          <g class="phone"><rect x="955" y="312" width="58" height="96" rx="10"/><polyline class="dots p1 sm" points="966,368 984,352 1002,368"/></g>
-          <text class="csub" x="1030" y="126">yours</text>
-          <text class="csub" x="1030" y="246">a neighbor's</text>
-          <text class="csub" x="1030" y="366">up to 250</text>
-
-          <!-- where each delay is taken out -->
-          <line class="rule" x1="40" y1="470" x2="1160" y2="470"/>
-          <text class="fix" x="40" y="508"><tspan class="num">1</tspan> Pi to Cloudflare</text>
-          <text class="fixsub" x="40" y="538">+ half the quickest round trip</text>
-          <text class="fix" x="450" y="508"><tspan class="num">2</tspan> Waiting at Cloudflare</text>
-          <text class="fixsub" x="450" y="538">+ the report's age</text>
-          <text class="fix" x="860" y="508"><tspan class="num">3</tspan> On the phone</text>
-          <text class="fixsub" x="860" y="538">lights follow the phone's audio</text>
-        </svg>
-      </div>
-    </figure>
-
-    <h3>Getting past the latency</h3>
-    <p>The hard part isn't knowing what's playing, it's knowing <i>where</i> it is to within a fraction of a second.
-      Clocks on a Pi, a server and a phone never quite agree, so nothing compares timestamps between them. Instead
-      each delay is measured on its own:</p>
-    <ul>
-      <li><b>Pi to Cloudflare.</b> The Pi keeps its connection open so a report never waits on a new TLS handshake,
-        times each round trip, and adds half the quickest recent one to the position before sending.</li>
-      <li><b>Waiting at Cloudflare.</b> A phone that joins mid-song gets the last report plus its age, so it adds
-        however long the report sat there.</li>
-      <li><b>On the phone.</b> From then on the phone runs its own clock and only needs a heartbeat to check it.</li>
-    </ul>
-    <p>Sound is the trickier part. A phone takes a moment to start playing after it jumps to a new spot, and every
-      jump is a gap you can hear. So the page aims a little ahead of the house, measures how late the music actually
-      came out, and remembers that lead on your phone so the next song lands right the first time. It doesn't
-      correct with a second jump; it only re-syncs if the music slips by more than a second. Once the music is
-      playing, the lights on screen follow your phone's audio, not the network, so what you see always matches what
-      you hear. Anything left over is about the same as the delay of sound crossing a front yard.</p>
+  <section id="more">
+    <h2>Go deeper</h2>
+    <div class="setcards pair">
+      <a class="setcard" href="/about/making/" style="--c: #ff6a1f">
+        <span class="sk">The shows</span>
+        <b>How it's made</b>
+        <span>From an idea to the roofline: the Python behind the lights, the music, the spoken intros, the build, and how
+          Live keeps your phone in time with the house.</span>
+      </a>
+      <a class="setcard" href="/about/hardware/" style="--c: #3fd0c9">
+        <span class="sk">The house</span>
+        <b>The hardware</b>
+        <span>The pixels, the controller and its box, power and what it draws, and the roofline's move to a pixel every
+          2 inches.</span>
+      </a>
+    </div>
   </section>
 
   <section id="license">
     <h2>Open source</h2>
     <p>This site and everything behind it is open source <a href="https://github.com/cjimti/pixelhome">on GitHub</a>.
       Everything is tailored to my pixel runs and roofline. In the future I may make it easy to adjust the segments to
-      fit other people's setups, and I plan on adding a lot more pixels.</p>
+      fit other people's setups.</p>
     <div class="licenses">
       <div class="lic">
         <p class="licbadge"><span>cc</span><span>by</span><span>sa</span></p>
@@ -272,15 +143,12 @@ gtag('config', 'G-KQYBQLRBMP');
           keep the copyright notice.</p>
       </div>
     </div>
-  </section>
-
-  <section>
-    <h2>Built with open source</h2>
+    <h3 id="oss">Built with open source</h3>
     <p>None of this exists without these projects and the people who give their time to them.</p>
     <ul class="oss">
       <li><b><a href="https://xlights.org/">xLights</a></b><span>Pixel layout and the home's channel map</span></li>
       <li><b><a href="https://www.blender.org/">Blender</a></b><span>The 3D model of the house</span></li>
-      <li><b><a href="https://github.com/FalconChristmas/fpp">Falcon Player (FPP)</a></b><span>Plays the sequences and music on the controller</span></li>
+      <li><b><a href="https://github.com/FalconChristmas/fpp">Falcon Player (FPP)</a></b><span>Plays the sequences on the controller</span></li>
       <li><b><a href="https://surge-synthesizer.github.io/">Surge XT</a></b><span>Synthesizer for pads, leads, bells and basses</span></li>
       <li><b><a href="https://versilian-studios.com/vsco-community/">VSCO 2 Community Edition</a></b><span>Orchestral and percussion samples</span></li>
       <li><b><a href="https://zenodo.org/records/7672157">Wagner Ring Dataset</a></b><span>Wagner's score for the Ring Cycle shows, timed bar by bar to Solti's 1958 recording (Weiß, Arifi-Müller, Krause, Zalkow, Klauk, Kleinertz, Müller; <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>)</span></li>
@@ -289,119 +157,21 @@ gtag('config', 'G-KQYBQLRBMP');
       <li><b><a href="https://pytorch.org/">PyTorch</a></b><span>Runs Chatterbox on my Mac's GPU</span></li>
       <li><b><a href="https://ffmpeg.org/">FFmpeg</a></b><span>MP3 encoding and preview videos</span></li>
       <li><b><a href="https://www.python.org/">Python</a> and <a href="https://numpy.org/">NumPy</a></b><span>Every frame and every note</span></li>
-      <li><b><a href="https://python-pillow.org/">Pillow</a> and <a href="https://github.com/facebook/zstd">Zstandard</a></b><span>Preview images and FSEQ compression</span></li>
-      <li><b><a href="https://threejs.org/">three.js</a></b><span>The 3D preview on this site</span></li>
+      <li><b><a href="https://python-pillow.org/">Pillow</a> and <a href="https://github.com/facebook/zstd">Zstandard</a></b><span>Preview images, share cards and FSEQ compression</span></li>
+      <li><b><a href="https://threejs.org/">three.js</a></b><span>The 3D previews on this site</span></li>
       <li><b><a href="https://github.com/astral-sh/uv">uv</a></b><span>Python environments and locked dependencies</span></li>
       <li><b><a href="https://fonts.google.com/specimen/Big+Shoulders+Display">Big Shoulders</a>, <a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a>, <a href="https://www.jetbrains.com/lp/mono/">JetBrains Mono</a></b><span>Open Font License typefaces</span></li>
     </ul>
   </section>
 
-  <section>
-    <h2>The hardware</h2>
-    <p>537 12V pixels (WS2811) in six straight runs along the roofline, driven by
-      <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Kulp K8-PB. Data leaves
-      the controller at the back-left corner of the porch on two ports. One 12V supply powers the controller end, and
-      power is injected again at the far end of each string so the last pixels stay as bright and as white as the
-      first.</p>
-
-    <figure class="diagram hw" aria-labelledby="d3">
-      <figcaption id="d3">The roofline from above, street at the bottom</figcaption>
-      <div class="hwscroll">
-        <svg viewBox="-720 -760 1480 720" role="img" aria-label="Plan of the roofline. The controller at the back-left corner of the porch sends port 1 down Porch Left, along Left and up Side, and port 2 along Porch Front, down Porch Right and out along Right. A 12V supply powers the controller and injects power at the far end of each port: the back end of Side and the free end of Right.">
-          <defs>
-            <marker id="ah1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
-            <marker id="ah2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
-          </defs>
-          <!-- runs, drawn in data order: port 1 Porch Left > Left > Side, port 2 Porch Front > Porch Right > Right -->
-          <polyline class="run p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
-          <polyline class="run p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
-          <polyline class="dots p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
-          <polyline class="dots p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
-          <!-- data direction -->
-          <path class="dir p1" d="M-172,-300 V-170" marker-end="url(#ah1)"/>
-          <path class="dir p1" d="M-300,-115 H-480" marker-end="url(#ah1)"/>
-          <path class="dir p1" d="M-630,-260 V-480" marker-end="url(#ah1)"/>
-          <path class="dir p2" d="M-60,-600 H90" marker-end="url(#ah2)"/>
-          <path class="dir p2" d="M128,-300 V-170" marker-end="url(#ah2)"/>
-          <path class="dir p2" d="M300,-158 H480" marker-end="url(#ah2)"/>
-          <!-- run labels -->
-          <text class="lbl" x="-560" y="-560">Side 81</text>
-          <text class="lbl" x="-500" y="-180">Left 98</text>
-          <text class="lbl" transform="translate(-222 -358) rotate(-90)" text-anchor="middle">Porch Left 82</text>
-          <text class="lbl" x="-120" y="-640">Porch Front 107</text>
-          <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 49</text>
-          <text class="lbl" x="340" y="-225">Right 120</text>
-          <!-- controller and supply inside the porch notch -->
-          <rect class="ctrl" x="-150" y="-545" width="250" height="118" rx="12"/>
-          <text class="ctxt" x="-132" y="-503">Kulp K8-PB</text>
-          <text class="csub" x="-132" y="-466">FPP 10.4 · 2 ports</text>
-          <rect class="psu" x="-150" y="-390" width="250" height="80" rx="12"/>
-          <text class="ctxt" x="-132" y="-341">12V supply</text>
-          <path class="pwr" d="M-25,-390 V-427"/>
-          <!-- injection runs to the far ends -->
-          <path class="pwr inj" d="M-150,-350 H-660 V-660 H-596"/>
-          <path class="pwr inj" d="M100,-350 H700 V-191 H629"/>
-          <circle class="injpt" cx="-596" cy="-637" r="16"/>
-          <circle class="injpt" cx="629" cy="-191" r="16"/>
-          <text class="plbl" x="-650" y="-690">12V injected</text>
-          <text class="plbl" x="629" y="-130" text-anchor="middle">12V injected</text>
-          <text class="street" x="16" y="-60">street</text>
-        </svg>
-      </div>
-      <dl class="legend">
-        <div><dt><i class="sw p1"></i>Port 1</dt><dd>Porch Left → Left → Side · 261 pixels</dd></div>
-        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 276 pixels</dd></div>
-        <div><dt><i class="sw pw"></i>Power</dt><dd>12V at the controller, injected at both far ends</dd></div>
-        <div><dt><i class="sw ch"></i>Channels</dt><dd>537 × RGB = 1,611, at 80% brightness, gamma 1.0</dd></div>
-      </dl>
-    </figure>
-
-    <h3>The controller box</h3>
-    <p>The controller, its power and every connection live in one IP66 box that sits on the ground at the back-left
-      corner of the porch, with all the cables coming in through glands in one wall. Inside are the Kulp K8-PB, a
-      Faststorm fuse block and two Mean Well LRS-350-12 supplies (12V, 29A each). The first supply powers the
-      controller and, through its own 5A fuse, the far-end injection of each port.</p>
-    <p>The second supply is for the expansion. I'm moving the roofline onto a new metal rail with a pixel every 2
-      inches instead of 3, a run at a time: about 752 pixels when it's done, on the same two ports. Porch Front is
-      the first, 107 pixels where it had 71. Its AC is already wired and its
-      negative is tied to the first supply's, so when the new rail goes up it can take on more injection without
-      rewiring the box.</p>
-
-    <figure class="diagram boxfig" id="box3d" aria-labelledby="d5">
-      <figcaption id="d5">Inside the controller box · drag to turn it, click a part</figcaption>
-      <div class="bx">
-        <div class="bx-stage" id="bx-stage">
-          <canvas id="bx-c" aria-label="3D model of the controller box. Drag to orbit, scroll or pinch to zoom, click a part for details."></canvas>
-          <div class="bx-tags" id="bx-tags"></div>
-          <div class="bx-tip" id="bx-tip" hidden></div>
-          <div class="bx-views" role="group" aria-label="Camera">
-            <button type="button" id="bx-v-front" aria-pressed="true">Front</button>
-            <button type="button" id="bx-v-top">Top</button>
-            <button type="button" id="bx-v-side">Side</button>
-          </div>
-          <div class="bx-toggles">
-            <label><input type="checkbox" id="bx-t-shell" checked>Box</label>
-            <label><input type="checkbox" id="bx-t-tags" checked>Labels</label>
-          </div>
-          <div class="bx-hint">drag to orbit · scroll to zoom · click a part</div>
-        </div>
-        <div class="bx-panel">
-          <section class="bx-detail" id="bx-detail" aria-live="polite"><span class="bx-kicker">Loading</span><p>The 3D model loads as you scroll to it.</p></section>
-          <section class="bx-group"><h4>Components</h4><ul id="bx-list-comp"></ul></section>
-          <section class="bx-group"><h4>Port cables</h4><ul id="bx-list-port" class="bx-pgrid"></ul></section>
-          <section class="bx-group"><h4>Wiring</h4><ul id="bx-list-wire"></ul></section>
-          <p class="bx-foot">Built from a photo of the box and the makers' drawings. Sizes in mm; cable paths are approximate.</p>
-        </div>
-      </div>
-    </figure>
-  </section>
-
   <footer>
-    <p><a href="../">Back to the sequences</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> ·
+    <p><a href="/">Back to the schedule</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> ·
       Sequences and music <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · Code MIT ·
       <span class="version"></span></p>
   </footer>
+    </div>
+  </div>
 </main>
-<script src="/about/box.js" defer></script>
+<script src="/about/nav.js" defer></script>
 </body>
 </html>

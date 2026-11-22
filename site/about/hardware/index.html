@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KQYBQLRBMP"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-KQYBQLRBMP');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The hardware · Pixelhome</title>
+<meta name="description" content="The hardware behind Pixelhome: 537 12V pixels in six runs along the roofline, a Kulp K8-PB running FPP in a weatherproof box, two Mean Well supplies, what it all draws, and the move to a pixel every 2 inches.">
+<meta name="theme-color" content="#0b0a09">
+<link rel="canonical" href="https://pixelhome.app/about/hardware/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pixelhome">
+<meta property="og:title" content="The hardware behind Pixelhome">
+<meta property="og:description" content="537 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
+<meta property="og:url" content="https://pixelhome.app/about/hardware/">
+<meta property="og:image" content="https://pixelhome.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A single-story house at night, its roofline lit by orange and red pixel lights">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The hardware behind Pixelhome">
+<meta name="twitter:description" content="537 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
+<meta name="twitter:image" content="https://pixelhome.app/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/header.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="page">
+<!--sitehead-->
+
+<main class="doc aboutpage">
+  <div class="aboutgrid">
+    <nav class="aboutnav" aria-label="About">
+      <ul>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/about/making/">How it's made</a></li>
+        <li><a href="/about/hardware/" aria-current="page">The hardware</a></li>
+      </ul>
+    </nav>
+    <div class="aboutmain">
+
+  <section class="intro">
+    <p class="kicker">About · The house</p>
+    <h1>The hardware</h1>
+    <p class="lede">537 12V pixels along the roofline, one controller in a weatherproof box on the ground, and two power
+      supplies. Here's how it's wired, what it draws, and where it's going next.</p>
+  </section>
+
+  <section id="roofline">
+    <h2>The roofline</h2>
+    <p>537 12V pixels (WS2811) in six straight runs along the roofline, driven by
+      <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Kulp K8-PB. Data leaves the controller at the
+      back-left corner of the porch on two ports, each a chain of three runs. Every pixel sits at the same height, so
+      from above the roofline is a flat outline: two wings come forward toward the street with the porch set back
+      between them.</p>
+    <p>Each port is fed 12V at the controller end, and an injection line runs to its far end so the last pixels can
+      stay as bright and as white as the first. For now the injection lines are unplugged while I track down a fault
+      in them, and the house runs from the controller end alone, well within what the ports can carry.</p>
+
+    <figure class="diagram hw" aria-labelledby="d3">
+      <figcaption id="d3">The roofline from above, street at the bottom</figcaption>
+      <div class="hwscroll">
+        <svg viewBox="-720 -760 1480 720" role="img" aria-label="Plan of the roofline. The controller at the back-left corner of the porch sends port 1 down Porch Left, along Left and up Side, and port 2 along Porch Front, down Porch Right and out along Right. A 12V supply powers the controller, and an injection line runs to the far end of each port: the back end of Side and the free end of Right.">
+          <defs>
+            <marker id="ah1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p1f"/></marker>
+            <marker id="ah2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="p2f"/></marker>
+          </defs>
+          <!-- runs, drawn in data order: port 1 Porch Left > Left > Side, port 2 Porch Front > Porch Right > Right -->
+          <polyline class="run p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
+          <polyline class="run p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
+          <polyline class="dots p1" points="-196,-565 -196,-151 -195,-148 -595,-148 -596,-146 -596,-637"/>
+          <polyline class="dots p2" points="-194,-569 150,-569 152,-565 152,-196 153,-191 629,-191"/>
+          <!-- data direction -->
+          <path class="dir p1" d="M-172,-300 V-170" marker-end="url(#ah1)"/>
+          <path class="dir p1" d="M-300,-115 H-480" marker-end="url(#ah1)"/>
+          <path class="dir p1" d="M-630,-260 V-480" marker-end="url(#ah1)"/>
+          <path class="dir p2" d="M-60,-600 H90" marker-end="url(#ah2)"/>
+          <path class="dir p2" d="M128,-300 V-170" marker-end="url(#ah2)"/>
+          <path class="dir p2" d="M300,-158 H480" marker-end="url(#ah2)"/>
+          <!-- run labels -->
+          <text class="lbl" x="-560" y="-560">Side 81</text>
+          <text class="lbl" x="-500" y="-180">Left 98</text>
+          <text class="lbl" transform="translate(-222 -358) rotate(-90)" text-anchor="middle">Porch Left 82</text>
+          <text class="lbl" x="-120" y="-640">Porch Front 107</text>
+          <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 49</text>
+          <text class="lbl" x="340" y="-225">Right 120</text>
+          <!-- controller and supply inside the porch notch -->
+          <rect class="ctrl" x="-150" y="-545" width="250" height="118" rx="12"/>
+          <text class="ctxt" x="-132" y="-503">Kulp K8-PB</text>
+          <text class="csub" x="-132" y="-466">FPP 10.4 · 2 ports</text>
+          <rect class="psu" x="-150" y="-390" width="250" height="80" rx="12"/>
+          <text class="ctxt" x="-132" y="-341">12V supply</text>
+          <path class="pwr" d="M-25,-390 V-427"/>
+          <!-- injection runs to the far ends -->
+          <path class="pwr inj" d="M-150,-350 H-660 V-660 H-596"/>
+          <path class="pwr inj" d="M100,-350 H700 V-191 H629"/>
+          <circle class="injpt" cx="-596" cy="-637" r="16"/>
+          <circle class="injpt" cx="629" cy="-191" r="16"/>
+          <text class="plbl" x="-650" y="-690">12V injection</text>
+          <text class="plbl" x="629" y="-130" text-anchor="middle">12V injection</text>
+          <text class="street" x="16" y="-60">street</text>
+        </svg>
+      </div>
+      <dl class="legend">
+        <div><dt><i class="sw p1"></i>Port 1</dt><dd>Porch Left → Left → Side · 261 pixels</dd></div>
+        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 276 pixels</dd></div>
+        <div><dt><i class="sw pw"></i>Power</dt><dd>12V at the controller; injection wired to both far ends, unplugged for now</dd></div>
+        <div><dt><i class="sw ch"></i>Channels</dt><dd>537 × RGB = 1,611, at 80% brightness, gamma 1.0</dd></div>
+      </dl>
+    </figure>
+  </section>
+
+  <section id="box">
+    <h2>The controller box</h2>
+    <p>The controller, its power and every connection live in one IP66 box that sits on the ground at the back-left
+      corner of the porch, with all the cables coming in through glands in one wall. Inside are the Kulp K8-PB, a
+      Faststorm fuse block and two Mean Well LRS-350-12 supplies (12V, 29A each). The first supply powers the
+      controller and, through its own 5A fuse, the far-end injection of each port. The second is for the expansion:
+      its AC is already wired and its negative is tied to the first supply's, so it can take on more injection
+      without rewiring the box.</p>
+    <p>All eight of the controller's ports are wired out, though the house uses two. Each port sits behind its own
+      electronic fuse, and the spare six are there for when the denser runs need spreading out.</p>
+
+    <figure class="diagram boxfig" id="box3d" aria-labelledby="d5">
+      <figcaption id="d5">Inside the controller box · drag to turn it, click a part</figcaption>
+      <div class="bx">
+        <div class="bx-stage" id="bx-stage">
+          <canvas id="bx-c" aria-label="3D model of the controller box. Drag to orbit, scroll or pinch to zoom, click a part for details."></canvas>
+          <div class="bx-tags" id="bx-tags"></div>
+          <div class="bx-tip" id="bx-tip" hidden></div>
+          <div class="bx-views" role="group" aria-label="Camera">
+            <button type="button" id="bx-v-front" aria-pressed="true">Front</button>
+            <button type="button" id="bx-v-top">Top</button>
+            <button type="button" id="bx-v-side">Side</button>
+          </div>
+          <div class="bx-toggles">
+            <label><input type="checkbox" id="bx-t-shell" checked>Box</label>
+            <label><input type="checkbox" id="bx-t-tags" checked>Labels</label>
+          </div>
+          <div class="bx-hint">drag to orbit · scroll to zoom · click a part</div>
+        </div>
+        <div class="bx-panel">
+          <section class="bx-detail" id="bx-detail" aria-live="polite"><span class="bx-kicker">Loading</span><p>The 3D model loads as you scroll to it.</p></section>
+          <section class="bx-group"><h4>Components</h4><ul id="bx-list-comp"></ul></section>
+          <section class="bx-group"><h4>Port cables</h4><ul id="bx-list-port" class="bx-pgrid"></ul></section>
+          <section class="bx-group"><h4>Wiring</h4><ul id="bx-list-wire"></ul></section>
+          <p class="bx-foot">Built from a photo of the box and the makers' drawings. Sizes in mm; cable paths are approximate.</p>
+        </div>
+      </div>
+    </figure>
+  </section>
+
+  <section id="power">
+    <h2>Power</h2>
+    <p>I measured the draw with the controller's own port sensors. A pixel draws about 45 mA at full white (at the 80%
+      brightness the house runs at), and it scales in a straight line with how bright each colour is. So the soft
+      loops that keep the house lit all night cost very little, and the bright moments of a show are where the
+      current goes.</p>
+    <ul class="stats">
+      <li><b>45 mA</b><span>one pixel at full white</span></li>
+      <li><b>2–7 W</b><span>an all-night loop, a few cents a night</span></li>
+      <li><b>3.8 A</b><span>the busiest port at the peak of a show</span></li>
+      <li><b>~290 W</b><span>the whole house at full white, fully fed</span></li>
+    </ul>
+    <p>That last number is the one to plan around. Each end of a port is protected at about 5 A, and a fully fed port
+      at full white wants about 12 A, 6 A at each end. Today the runs can't draw that much because they only get
+      power from one end, but once the injection goes back in, the brightest frames need a cap on each port's draw so
+      a show never trips a fuse.</p>
+  </section>
+
+  <section id="rail">
+    <h2>Going to 2 inches</h2>
+    <p>I'm moving the roofline onto a new metal rail with a pixel every 2 inches instead of 3, a run at a time: about
+      750 pixels when it's done, half as many again as the house started with. Porch Front is the first. The shows
+      don't need rewriting: they place everything by run names and distances, so each one fills in the new pixels on
+      the next build.</p>
+    <div class="tablewrap prose">
+      <table>
+        <thead><tr><th>Run</th><th>At 3"</th><th>At 2"</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Porch Front</td><td>71</td><td>107</td><td>Done</td></tr>
+          <tr><td>Porch Left</td><td>82</td><td>~123</td><td></td></tr>
+          <tr><td>Left</td><td>98</td><td>~147</td><td></td></tr>
+          <tr><td>Side</td><td>81</td><td>~122</td><td></td></tr>
+          <tr><td>Porch Right</td><td>49</td><td>~74</td><td></td></tr>
+          <tr><td>Right</td><td>120</td><td>~180</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>At 2 inches the house at full white would want about 34 A, more than one supply gives and within the two. The
+      plan is to spread the runs over more of the controller's ports, one run a port, with the second supply feeding
+      their far ends.</p>
+  </section>
+
+  <section id="parts">
+    <h2>Parts</h2>
+    <ul class="oss">
+      <li><b><a href="https://kulplights.com/manuals/boards/k8-pb/">Kulp K8-PB</a></b><span>Pixel controller on a PocketBeagle 2, 8 ports, running FPP</span></li>
+      <li><b>12V WS2811 pixels</b><span>537 today, on 3" and 2" spacing</span></li>
+      <li><b>2× Mean Well LRS-350-12</b><span>12V, 29A supplies: one for the controller and injection, one for the expansion</span></li>
+      <li><b>Faststorm 6-way fuse block</b><span>5A blade fuses on each injection line</span></li>
+      <li><b>QILIPSU IP66 box</b><span>PC/ABS, every cable through glands in one wall</span></li>
+      <li><b>F-Amp null pixels</b><span>One at the start of each port, so the first real pixel gets clean data</span></li>
+      <li><b>18 AWG cable</b><span>3-conductor for the ports, 2-conductor for injection; 16 AWG for the longest leads</span></li>
+      <li><b>Waterproof pigtails</b><span>3-pin for data and power, 2-pin for injection, spliced with solder-seal connectors</span></li>
+    </ul>
+  </section>
+
+  <p class="pager"><a href="/about/making/">← How it's made</a><a href="/about/">About →</a></p>
+
+  <footer>
+    <p><a href="/">Back to the schedule</a> · <a href="https://github.com/cjimti/pixelhome">Source on GitHub</a> ·
+      Sequences and music <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · Code MIT ·
+      <span class="version"></span></p>
+  </footer>
+    </div>
+  </div>
+</main>
+<script src="/about/nav.js" defer></script>
+<script src="/about/hardware/box.js" defer></script>
+</body>
+</html>
