@@ -344,6 +344,7 @@ body.page { height: auto; overflow: visible; }
   .aboutnav ol a.on { color: var(--accent); }
   .doc.aboutpage .intro { padding-top: 28px; }
 }
+.doc.aboutpage .intro .lede { margin-bottom: 14px; }
 .setcards.pair { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .stats { list-style: none; margin: 4px 0 18px; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .stats li { display: grid; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
