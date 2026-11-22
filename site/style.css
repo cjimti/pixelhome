@@ -318,6 +318,39 @@ body.page { height: auto; overflow: visible; }
 .sw.pw { background: repeating-linear-gradient(90deg, #ff4d6d 0 6px, transparent 6px 9px); }
 .sw.ch { background: var(--muted); }
 .doc footer { padding-top: 16px; }
+/* About: three pages. Wide screens: the pages and the current page's sections in a sticky column on the left (as a set
+   page lists its scenes), the text beside it. Narrow screens: the pages as tabs above the text. */
+.doc > .aboutgrid { max-width: var(--content); }
+.aboutgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.aboutmain { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; min-width: 0; max-width: 900px; container-type: inline-size; }
+.aboutmain section > p:not([class]), .aboutmain section > ul:not([class]) { font-size: 16px; max-width: 72ch; }
+.aboutnav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+.aboutnav li > a {
+  display: block; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 12px 9px;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.aboutnav li > a:hover { color: var(--ink); }
+.aboutnav li > a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.aboutnav ol { display: none; }
+@media (min-width: 1000px) {
+  .aboutgrid { grid-template-columns: 210px minmax(0, 1fr); gap: 56px; align-items: start; }
+  .aboutnav { position: sticky; top: 0; padding-top: 26px; max-height: 100dvh; overflow-y: auto; }
+  .aboutnav ul { display: grid; gap: 2px; border-bottom: 0; border-left: 1px solid var(--line); }
+  .aboutnav li > a { padding: 7px 14px; margin: 0 0 0 -1px; border-bottom: 0; border-left: 2px solid transparent; font-size: 15px; }
+  .aboutnav li > a[aria-current="page"] { border-left-color: var(--accent); font-weight: 600; }
+  .aboutnav ol { display: grid; list-style: none; margin: 0 0 10px; padding: 0; }
+  .aboutnav ol a { display: block; padding: 4px 12px 4px 26px; font-size: 13px; line-height: 1.35; color: var(--muted); text-decoration: none; }
+  .aboutnav ol a:hover { color: var(--ink); }
+  .aboutnav ol a.on { color: var(--accent); }
+  .doc.aboutpage .intro { padding-top: 28px; }
+}
+.setcards.pair { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.stats { list-style: none; margin: 4px 0 18px; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.stats li { display: grid; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.stats b { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1; color: var(--accent); }
+.stats span { font-size: 13px; color: var(--muted); }
+.pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0; border-top: 1px solid var(--line); padding-top: 16px; }
+.pager a { text-decoration: none; font-weight: 600; }
 
 @media (min-width: 760px) {
   .ways { grid-template-columns: 1fr; }
@@ -330,7 +363,7 @@ body.page { height: auto; overflow: visible; }
 .lic p { margin: 0; font-size: 14px; color: var(--muted); max-width: 60ch; }
 .lic p a { color: var(--accent); }
 
-/* the controller box in 3D (site/about/box.js) */
+/* the controller box in 3D (site/about/hardware/box.js) */
 .boxfig { --tag-bg: color-mix(in srgb, var(--night) 82%, transparent); --red: #d2382c; --blk: #4a4542; }
 .bx { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .bx-stage { position: relative; min-width: 0; height: min(70vh, 460px); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--night); }
@@ -373,7 +406,7 @@ body.page { height: auto; overflow: visible; }
 .bx-part.bx-pbtn { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 0; padding: 6px 4px; border-color: var(--line); text-align: center; }
 .bx-pbtn b { font: 700 22px/1 var(--display); }
 .bx-foot { color: var(--muted); font-size: 12px; margin: 0; }
-@media (min-width: 860px) {
+@container (min-width: 760px) {
   .bx { grid-template-columns: minmax(0, 1fr) 290px; }
   .bx-stage { height: 560px; }
   .bx-panel { max-height: 560px; overflow-y: auto; padding-right: 4px; }
