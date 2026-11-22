@@ -32,7 +32,7 @@ def render(G, seed=26):
     rng = np.random.default_rng(seed)
     s = G.pd[G.path]
     L = G.length
-    meet = s[296]
+    meet = s[G.mid('Porch Front')]
 
     # tempo: beat length per section, quickening as the crews race
     def beat(k):

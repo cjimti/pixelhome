@@ -51,15 +51,16 @@ def render(G, seed=27):
     n = G.N
     R = 13.0                           # egg half-length on the roof
     FIN = 1485.0
-    sL0 = pdp[81] + 16
+    sL0 = pdp[G.first('Left')] + 16
+    cL = pdp[G.last('Left')]
     sR0 = G.length - 16
 
     def pink(t):
-        s = leg(t, 4.5, 11.4, sL0, pdp[178] - 4, lambda u: smoothstep(0, 0.2, u) * (1 - 0.35 * u))
+        s = leg(t, 4.5, 11.4, sL0, cL - 4, lambda u: smoothstep(0, 0.2, u) * (1 - 0.35 * u))
         if t >= 11.4:
-            s = pdp[178] - 4 + rock(t, 11.4, -16, 0.7, 0.6)           # spins out at the corner
+            s = cL - 4 + rock(t, 11.4, -16, 0.7, 0.6)           # spins out at the corner
         if t >= 13.4:
-            s = leg(t, 13.4, 20.8, pdp[178] - 4, FIN - 2 * R, lambda u: smoothstep(0, 0.12, u) * (1.25 - 0.5 * u))
+            s = leg(t, 13.4, 20.8, cL - 4, FIN - 2 * R, lambda u: smoothstep(0, 0.12, u) * (1.25 - 0.5 * u))
         if t >= 37.0:
             s = keys(t, [(37.0, FIN - 2 * R), (38.6, FIN + 4)])          # nudged over the line
         return s
@@ -144,7 +145,7 @@ def render(G, seed=27):
             a = t - 38.6
             k = int(t * 12)
             r2 = np.random.default_rng(k)
-            spots = r2.uniform(pdp[261], pdp[331], 6)
+            spots = r2.uniform(pdp[G.first('Porch Front')], pdp[G.last('Porch Front')], 6)
             for j, sp in enumerate(spots):
                 ph = (t * 12) % 1
                 buf += light(CONFETTI[(k + j) % 5], 0.6 * np.sin(np.pi * ph) * smoothstep(0, 0.5, a) *

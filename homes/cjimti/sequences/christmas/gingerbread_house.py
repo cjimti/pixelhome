@@ -26,13 +26,12 @@ CRUMB = hexc('#ff8a30')
 D = 68.0
 SEED = 35
 T_START, T_END = 3.0, 33.0                               # the nozzle sets off; its window closes 8 s after T_END
-CORNER_AT = (80, 178, 260, 331, 380)                     # path indices just before each corner
 BITES = [(57.5, 55.0), (60.6, 120.0)]                    # (time, depth from the free right end)
 
 
 def corners_of(G):
     x = G.pd[G.path]
-    return np.array([(x[i] + x[i + 1]) / 2 for i in CORNER_AT])
+    return np.array([(x[i] + x[i + 1]) / 2 for i in G.corners])   # the last pixel before each corner and the first after
 
 
 def nozzle(G):

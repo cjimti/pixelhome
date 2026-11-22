@@ -36,13 +36,14 @@ def render(G, seed=33):
         out = np.zeros((nframes(D), G.N, 3), np.float32)
         s = G.pd[G.path]
         pi = np.arange(G.N)
-        # (path index range, tooth pitch, gear ratio, direction); ratio * 3600 / pitch is a whole number
-        runs = [((0, 80), 48.0, 1.0, +1), ((81, 178), 36.0, 0.5, -1), ((179, 260), 60.0, 1.5, +1),
-                ((261, 331), 40.0, 1.0, -1), ((332, 380), 45.0, 0.75, +1), ((381, 500), 24.0, 2 / 3, -1)]
-        corners = np.array([(s[a] + s[a + 1]) / 2 for a in (80, 178, 260, 331, 380)])
+        # (path index range, tooth pitch, gear ratio, direction), run by run in path order (Side .. Right);
+        # ratio * 3600 / pitch is a whole number
+        gears = [(48.0, 1.0, +1), (36.0, 0.5, -1), (60.0, 1.5, +1), (40.0, 1.0, -1), (45.0, 0.75, +1), (24.0, 2 / 3, -1)]
+        runs = [((G.first(nm), G.last(nm)), *g) for (nm, _), g in zip(G.path_segments(), gears)]
+        corners = np.array([(s[a] + s[a + 1]) / 2 for a in G.corners])
         lamp = np.exp(-((s[None] - corners[:, None]) / 70) ** 2).sum(0)
-        press = (pi >= 261) & (pi <= 331)
-        mid = s[296]
+        press = (pi >= G.first('Porch Front')) & (pi <= G.last('Porch Front'))
+        mid = s[G.mid('Porch Front')]
         grime = smooth_noise(rng, s, 40)
         spark_seeds = rng.uniform(-1, 1, (64, 3))
 

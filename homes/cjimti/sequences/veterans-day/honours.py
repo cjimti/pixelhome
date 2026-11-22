@@ -26,7 +26,7 @@ def render(G, seed=24):
     rng = np.random.default_rng(seed)
     pd = G.pd
     P = G.pos
-    pts = [G.path[i] for i in (0, 80, 178, 260, 331, 380, 500)]
+    pts = [G.path[i] for i in (0, *G.corners, G.N - 1)]
     wp = [pd[k] for k in pts]
 
     # soldiers: one every 24 units of path; each pixel knows its soldier's centre

@@ -50,7 +50,7 @@ def render(G, seed=22):
     out = np.zeros((nframes(D), G.N, 3))
     d = G.pd
     pp = G.pd[G.path]
-    corners = [(pp[k] + pp[k + 1]) / 2 for k in (380, 331, 260, 178, 80)]   # upstream order
+    corners = [(pp[k] + pp[k + 1]) / 2 for k in G.corners[::-1]]   # upstream order
 
     # water: a few travelling ripples with slightly different speeds (no two crests stay together)
     K = 6

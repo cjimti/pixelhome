@@ -73,7 +73,7 @@ T_BUTTON = at(42)
 
 def geom(G):
     x = G.pd[G.path]
-    c = [float((x[i] + x[i + 1]) / 2) for i in (80, 178, 260, 331, 380)]
+    c = [float((x[i] + x[i + 1]) / 2) for i in G.corners]
     return dict(c1=c[0], c2=c[1], c3=c[2], c4=c[3], c5=c[4], L=float(G.length))
 
 

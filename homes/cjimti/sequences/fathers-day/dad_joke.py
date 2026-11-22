@@ -46,14 +46,16 @@ def render(G, seed=22):
     out = np.zeros((nframes(D), n, 3))
     x = G.pd[G.path]
     pi = np.arange(n)
-    L = (pi >= 81) & (pi <= 178)
-    R = (pi >= 381) & (pi <= 500)
-    PF = (pi >= 261) & (pi <= 331)
+    l0, l1, r0, r1 = G.first('Left'), G.last('Left'), G.first('Right'), G.last('Right')
+    f0, f1 = G.first('Porch Front'), G.last('Porch Front')
+    L = (pi >= l0) & (pi <= l1)
+    R = (pi >= r0) & (pi <= r1)
+    PF = (pi >= f0) & (pi <= f1)
     ROOMS = ~(L | R | PF)
     # position along each wing, 0 at the inner (porch) end, 1 at the outer end
-    uL = np.clip((x[178] - x) / (x[178] - x[81]), 0, 1)
-    uR = np.clip((x - x[381]) / (x[500] - x[381]), 0, 1)
-    uPF = (x - x[261]) / (x[331] - x[261])
+    uL = np.clip((x[l1] - x) / (x[l1] - x[l0]), 0, 1)
+    uR = np.clip((x - x[r0]) / (x[r1] - x[r0]), 0, 1)
+    uPF = (x - x[f0]) / (x[f1] - x[f0])
     shimmer = Flicker(rng, n, 0.1, 0.6)
     sparkle = rng.uniform(0, 1, (int(D / DT) + 2, n))
 
@@ -109,8 +111,8 @@ def render(G, seed=22):
         return A, P
 
     # packets: (t emit, amp, source pd, direction, colour, stop pd)
-    packets = [(t0 + d / 2, a, x[178], +1, DAD) for t0, d, a, p in dad] + \
-              [(t0 + d / 2, a, x[381], -1, KID) for t0, d, a, p in kid]
+    packets = [(t0 + d / 2, a, x[l1], +1, DAD) for t0, d, a, p in dad] + \
+              [(t0 + d / 2, a, x[r0], -1, KID) for t0, d, a, p in kid]
     V = 1500.0
 
     for f in range(len(out)):
@@ -147,13 +149,13 @@ def render(G, seed=22):
         if t >= walkout[0]:
             # the kid gathers up and leaves by the free end; later peeks back in
             w = smoothstep(walkout[0], walkout[0] + 0.5, t)
-            blob = keys(t, [(walkout[0] + 0.4, x[381] + 140), (walkout[1], x[500] + 60)])
+            blob = keys(t, [(walkout[0] + 0.4, x[r0] + 140), (walkout[1], x[r1] + 60)])
             if t < peek[0]:
                 gathered = np.exp(-((x - blob) / 35) ** 2) * 0.35
                 IR = lerp(IR, gathered, w)
             else:
-                pk = keys(t, [(peek[0], x[500] + 50), (peek[1], x[500] - 40), (56.9, x[500] - 60),
-                              (57.6, x[500] - 60)])
+                pk = keys(t, [(peek[0], x[r1] + 50), (peek[1], x[r1] - 40), (56.9, x[r1] - 60),
+                              (57.6, x[r1] - 60)])
                 spread = smoothstep(56.9, 57.8, t)
                 gathered = np.exp(-((x - pk) / 30) ** 2) * 0.35
                 IR = lerp(gathered + A * np.exp(-((x - pk) / 30) ** 2), IR, spread)
@@ -209,7 +211,7 @@ def render(G, seed=22):
                 age = t - t0
                 if t0 >= big[0] and 0 <= age < 2.5:
                     r = 950 * age
-                    dl = np.where(x < x[81], x[81] - x, np.where(x > x[178], x - x[178], 0))
+                    dl = np.where(x < x[l0], x[l0] - x, np.where(x > x[l1], x - x[l1], 0))
                     ring = np.exp(-((dl - r) / 70) ** 2) * (dl > 0)
                     buf += light(GOLD, 0.45 * a * reach * ring * np.exp(-age / 1.4) * (1 - 0.7 * R))
             buf += light(GOLD, 0.1 * bl * ~L * (1 - R))

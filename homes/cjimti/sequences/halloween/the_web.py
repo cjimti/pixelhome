@@ -112,7 +112,7 @@ def _plan(G, seed=17):
     L = float(ppd[-1])
     names = [nm for nm, _ in G.path_segments()]
     K = {nm: i for i, nm in enumerate(names)}
-    cpi = [80, 178, 260, 331, 380]
+    cpi = G.corners                         # path index of the last pixel before each corner
     corner = {c: (ppd[c] + ppd[c + 1]) / 2 for c in cpi}
     cuts = np.array([corner[c] for c in cpi])
     lo = np.concatenate([[0.0], cuts])
@@ -125,7 +125,7 @@ def _plan(G, seed=17):
     rid = np.searchsorted(cuts, xs)
     pins = [int(np.argmin(np.abs(xs - corner[c]))) for c in cpi]
     pf_mid = (lo[K['Porch Front']] + hi[K['Porch Front']]) / 2
-    pd_m = corner[380] + 190.0                  # where the moth hits the bridge line
+    pd_m = corner[cpi[4]] + 190.0               # where the moth hits the bridge line
     c80, c178, c260, c331, c380 = (corner[c] for c in cpi)
     T, B = T_TUNE, BEAT
 
@@ -191,7 +191,7 @@ def _plan(G, seed=17):
         at = float(np.interp(t, wt, wp))
         pluck_at(t, K[nm], at, A, 'melody')
     race = {}
-    for c, nm in ((178, 'Porch Left'), (260, 'Porch Front'), (331, 'Porch Right'), (380, 'Right')):
+    for c, nm in zip(cpi[1:], ('Porch Left', 'Porch Front', 'Porch Right', 'Right')):
         tc = float(np.interp(corner[c], [c80, pd_m - 28], [T_RACE, T_POUNCE]))
         race[c] = tc
         k = K[nm]
@@ -605,7 +605,7 @@ def score(M, G):
 
     # ---- the spider: down her line, scurrying feet, silk drawn out as she spins ------------------------
     for t0 in (2.0, T_CODA):
-        p = float(pan_at(P['corner'][178]))
+        p = float(pan_at(P['corner'][G.corners[1]]))
         put('fx', slide(0.0, 0.95, 1300, 420, 1.05, amp=0.5)[0], t0, 0.35, p)
         for j, tb in enumerate((1.0 + 0.275, 1.0 + 0.825, 1.0 + 1.375)):
             sec = 0.3
@@ -665,7 +665,7 @@ def score(M, G):
         put('moth', y, b0, 1.0, pm)
 
     # ---- she feels it, and runs ----------------------------------------------------------------------
-    p80 = float(pan_at(P['corner'][80]))
+    p80 = float(pan_at(P['corner'][G.corners[0]]))
     M.add('pizz', vpz.play(int(_n('A4')), 110), T_FEEL, 1.0, p80)
     M.add('pizz', vpz.play(int(_n('D5')), 120), T_FEEL + 0.12, 1.0, p80)
     scale = [_n(x) for x in ('D4', 'E4', 'F4', 'G4', 'A4', 'Bb4', 'C5', 'D5')]

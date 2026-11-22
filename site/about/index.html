@@ -106,7 +106,7 @@ gtag('config', 'G-KQYBQLRBMP');
     <figure class="diagram" aria-labelledby="d2">
       <figcaption id="d2">From an idea to the roofline</figcaption>
       <ol class="pipe">
-        <li class="stage1"><b>The house as data</b><span>home.json: 501 pixels, their 3D positions and six runs,
+        <li class="stage1"><b>The house as data</b><span>home.json: 537 pixels, their 3D positions and six runs,
           imported from my <a href="https://xlights.org/">xLights</a> layout and <a href="https://www.blender.org/">Blender</a> model.</span></li>
         <li class="stage1"><b>A story</b><span>"A ghost train stops at the porch station." AI writes one Python file in
           numpy against that layout.</span></li>
@@ -298,7 +298,7 @@ gtag('config', 'G-KQYBQLRBMP');
 
   <section>
     <h2>The hardware</h2>
-    <p>501 12V pixels (WS2811) in six straight runs along the roofline, driven by
+    <p>537 12V pixels (WS2811) in six straight runs along the roofline, driven by
       <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Kulp K8-PB. Data leaves
       the controller at the back-left corner of the porch on two ports. One 12V supply powers the controller end, and
       power is injected again at the far end of each string so the last pixels stay as bright and as white as the
@@ -328,7 +328,7 @@ gtag('config', 'G-KQYBQLRBMP');
           <text class="lbl" x="-560" y="-560">Side 81</text>
           <text class="lbl" x="-500" y="-180">Left 98</text>
           <text class="lbl" transform="translate(-222 -358) rotate(-90)" text-anchor="middle">Porch Left 82</text>
-          <text class="lbl" x="-120" y="-640">Porch Front 71</text>
+          <text class="lbl" x="-120" y="-640">Porch Front 107</text>
           <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 49</text>
           <text class="lbl" x="340" y="-225">Right 120</text>
           <!-- controller and supply inside the porch notch -->
@@ -350,9 +350,9 @@ gtag('config', 'G-KQYBQLRBMP');
       </div>
       <dl class="legend">
         <div><dt><i class="sw p1"></i>Port 1</dt><dd>Porch Left → Left → Side · 261 pixels</dd></div>
-        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 240 pixels</dd></div>
+        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 276 pixels</dd></div>
         <div><dt><i class="sw pw"></i>Power</dt><dd>12V at the controller, injected at both far ends</dd></div>
-        <div><dt><i class="sw ch"></i>Channels</dt><dd>501 × RGB = 1,503, at 80% brightness, gamma 1.0</dd></div>
+        <div><dt><i class="sw ch"></i>Channels</dt><dd>537 × RGB = 1,611, at 80% brightness, gamma 1.0</dd></div>
       </dl>
     </figure>
 
@@ -362,7 +362,8 @@ gtag('config', 'G-KQYBQLRBMP');
       Faststorm fuse block and two Mean Well LRS-350-12 supplies (12V, 29A each). The first supply powers the
       controller and, through its own 5A fuse, the far-end injection of each port.</p>
     <p>The second supply is for the expansion. I'm moving the roofline onto a new metal rail with a pixel every 2
-      inches instead of 3: about 752 pixels instead of 501, on the same two ports. Its AC is already wired and its
+      inches instead of 3, a run at a time: about 752 pixels when it's done, on the same two ports. Porch Front is
+      the first, 107 pixels where it had 71. Its AC is already wired and its
       negative is tied to the first supply's, so when the new rail goes up it can take on more injection without
       rewiring the box.</p>
 

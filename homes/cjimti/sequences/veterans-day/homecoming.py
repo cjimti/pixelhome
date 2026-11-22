@@ -29,11 +29,11 @@ def render(G, seed=25):
     pd = G.pd
     L = G.length
     pfc = pd[G.seg['Porch Front']].mean()
-    pfi = (pd >= pd[G.path[261]] - 2) & (pd <= pd[G.path[331]] + 2)
-    c380 = pd[G.path[380]]
+    pfi = (pd >= pd[G.path[G.first('Porch Front')]] - 2) & (pd <= pd[G.path[G.last('Porch Front')]] + 2)
+    c_pr = pd[G.path[G.last('Porch Right')]]             # the corner where Porch Right meets the Right wing
     shimmer = Flicker(rng, G.N, 0.05, 0.3)
 
-    trav = [(2, L + 40), (12, 2290), (14.8, 2290), (15.6, 2275), (22.5, c380 + 30), (23.6, c380 + 30),
+    trav = [(2, L + 40), (12, 2290), (14.8, 2290), (15.6, 2275), (22.5, c_pr + 30), (23.6, c_pr + 30),
             (26.0, 1995), (31.5, 1990), (44, pfc + 25), (D, pfc + 25)]
     meet = 1990.0
 

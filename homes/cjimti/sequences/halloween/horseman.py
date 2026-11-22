@@ -106,7 +106,7 @@ def _plan(G):
     pdp = G.pd[G.path]
     L = float(G.length)
     corner = lambda i: float(0.5 * (pdp[i] + pdp[i + 1]))
-    C1, C2, C5 = corner(80), corner(178), corner(380)       # front-left corner, foot of the bridge, far bank
+    C1, C2, C5 = (corner(G.corners[k]) for k in (0, 1, 4))  # front-left corner, foot of the bridge, far bank
     HK = C2 - 30                                            # where the Horseman pulls up
     H = [(TH, TR1, -70.0, C1 - 14, 0.0, 0.35), (TG2, TK, C1 - 14, HK, 0.2, 0.3), (TG3, TG3 + 3.6, HK, -90.0, 0.15, 0.0)]
     I = [(TI0, TF + 0.3, -20.0, 255.0, 0.05, 0.12), (TW, TH + 1.2, 255.0, 790.0, 0.25, 0.1),

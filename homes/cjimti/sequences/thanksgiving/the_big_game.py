@@ -141,9 +141,10 @@ def render(G, seed=SEED):
     n = G.N
     d = G.pd[G.path]
     idx = np.arange(n)
-    side, left, right = idx < 81, (idx >= 81) & (idx < 179), idx >= 381
-    porch = (idx >= 179) & (idx < 381)
-    pf0, pf1 = d[261], d[331]
+    l0, pl0, r0 = G.first('Left'), G.first('Porch Left'), G.first('Right')
+    side, left, right = idx < l0, (idx >= l0) & (idx < pl0), idx >= r0
+    porch = (idx >= pl0) & (idx < r0)
+    pf0, pf1 = d[G.first('Porch Front')], d[G.last('Porch Front')]
     crowd = Flicker(rng, n, 1.0, 4.0)
     yard = 0.5 + 0.5 * np.cos(2 * np.pi * d / 100) ** 16
     excite = [(0, 0.3), (8, 0.25), (15, 0.5), (18, 0.25), (28, 0.6), (34, 0.9), (38, 0.25), (54, 0.6),

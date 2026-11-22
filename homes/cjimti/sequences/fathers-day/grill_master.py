@@ -38,13 +38,15 @@ def render(G, seed=21):
     out = np.zeros((nframes(D), n, 3))
     x = G.pd[G.path]                                  # path distance, path order
     pi = np.arange(n)
-    PF = (pi >= 261) & (pi <= 331)
-    SIDES = ((pi >= 179) & (pi <= 260)) | ((pi >= 332) & (pi <= 380))
-    a, b = x[261], x[331]
+    f0, f1 = G.first('Porch Front'), G.last('Porch Front')
+    PF = (pi >= f0) & (pi <= f1)
+    SIDES = ((pi >= G.first('Porch Left')) & (pi <= G.last('Porch Left'))) | \
+            ((pi >= G.first('Porch Right')) & (pi <= G.last('Porch Right')))
+    a, b = x[f0], x[f1]
     c = (a + b) / 2
     pats = [c - 112, c, c + 112]                      # patty centres (pd)
     HW = 24.0                                         # patty half width
-    pr_front = x[380]
+    pr_front = x[G.last('Porch Right')]
 
     wind = smooth_noise(rng, x, 60, 3)
     coal = Flicker(rng, n, 0.08, 0.5)
@@ -148,7 +150,7 @@ def render(G, seed=21):
                 buf += light(FLAME, 0.22 * rim * np.clip(fast(t), 0, 1) ** 3 * (heat / 0.62))
 
         # grill body: Porch Left/Right as the sides, a warm shimmer near the back
-        depth = np.clip(1 - np.minimum(np.abs(x - x[260]), np.abs(x - x[332])) / 300, 0, 1)
+        depth = np.clip(1 - np.minimum(np.abs(x - x[G.last('Porch Left')]), np.abs(x - x[G.first('Porch Right')])) / 300, 0, 1)
         body = keys(t, [(3, 0), (8, 1), (60, 1), (66, 0.3), (70, 0)])
         buf += SIDES[:, None] * light(STEEL, 0.07 * body * np.ones(n))
         buf += SIDES[:, None] * light(hexc('#ff3000'), 0.18 * body * depth ** 2 * (1 + 0.2 * coal(t)))
@@ -233,7 +235,7 @@ def render(G, seed=21):
             sm = keys(t, [(61, 0), (63, 0.18), (70, 0)])
             for k, ph in ((0, 0.0), (1, 1.7)):
                 drift = ((t - 61) * 55 + 120 * k) % 380
-                xs = x[260] - drift if k == 0 else x[332] + drift
+                xs = x[G.last('Porch Left')] - drift if k == 0 else x[G.first('Porch Right')] + drift
                 buf += light(SMOKE, sm * np.exp(-((x - xs) / 40) ** 2) * (0.7 + 0.3 * np.sin(t * 1.3 + ph)))
 
         out[f][G.path] = np.clip(buf, 0, 1)

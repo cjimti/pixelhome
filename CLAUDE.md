@@ -47,9 +47,9 @@ loops, `candle_bed`.
 - Determinism: all randomness from `np.random.default_rng(seed)`. The build must be reproducible.
 - `ambient` pieces play all night: peaks around 0.4 perceptual, never fully dark, nothing fast or
   strobing. They are dithered on output. Use `looped()` so the end flows into the start.
-- Power: `pixelhome/power.py` cuts every all-night loop to under half of what it renders (porch kept, wings and
-  Side thinned to sparse light and drifting pools), so compose them as usual. The daytime loop isn't touched by it:
-  Daylight is sparkles composed to a quarter of the draw of the lit roofline it replaced.
+- Power: a pixel draws about 45 mA at full white, linear in the channel value (`homes/cjimti/HARDWARE.md`), so a soft
+  all-night loop costs a few cents a night; loops play as composed. By day the sun washes out dim light and the
+  pixels light nothing around them, so the daytime loop is a few pixels at full level with crisp decays, not a glow.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.

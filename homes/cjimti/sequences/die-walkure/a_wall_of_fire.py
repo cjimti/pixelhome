@@ -159,6 +159,11 @@ def choreography(G):
     return pos
 
 
+def porch_corners(G):
+    """Path indices of the porch's four corners: where it leaves Left, its two front corners, where it meets Right."""
+    return (G.first('Porch Left'), G.last('Porch Left'), G.last('Porch Front'), G.last('Porch Right'))
+
+
 def render(G, seed=26):
     rng = np.random.default_rng(seed)
     F = nframes(D)
@@ -167,7 +172,7 @@ def render(G, seed=26):
     C = choreography(G)
     N = compose()
     porch = np.isin(G.seg_of, ['Porch Left', 'Porch Front', 'Porch Right']).astype(float)
-    corners = np.array([d[G.path[i]] for i in (179, 260, 331, 380)])
+    corners = np.array([d[G.path[i]] for i in porch_corners(G)])
     dc = np.min(np.abs(d[:, None] - corners[None, :]), axis=1)                 # distance to the nearest porch corner
     p0, p1 = d[G.seg['Porch Left']].min(), d[G.seg['Porch Right']].max()
     tw = Flicker(np.random.default_rng(2501), G.N, 1.5, 5.0)            # shared with WK25
@@ -351,7 +356,7 @@ def score(M, G):
     o.M.add('fx', whoosh(2.5, 200, 2200, 0.8, seed=28), T_LICK - 0.3, 0.5, 0.6)
     flick = np.array(sorted({e[0] for e in N if e[4] == 'flick'}))
     cflash = np.random.default_rng(26).integers(0, 4, len(flick))              # the same corners render() lights
-    cpan = [pan_at(G.pd[G.path[i]]) for i in (179, 260, 331, 380)]
+    cpan = [pan_at(G.pd[G.path[i]]) for i in porch_corners(G)]
     last = -9.0
     for i, t in enumerate(flick):                                              # each flame leaping at a corner
         if t - last >= 0.25:

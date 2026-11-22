@@ -24,7 +24,6 @@ FLASH = lin('#dcd6ff')
 SHOOT = lin('#6ee07a')
 BUDS = [lin(h) for h in ('#ff8fbf', '#ffe17a', '#c39bff', '#fff3f6', '#8fd0ff')]
 BOW = [(0.0, '#ff9aa8'), (0.2, '#ffc08a'), (0.4, '#fff09a'), (0.6, '#a8f0b0'), (0.8, '#a8d0ff'), (1.0, '#c8a8ff')]
-CORNERS = [80.5, 178.5, 260.5, 331.5, 380.5]
 
 
 def render(G, seed=26):
@@ -43,7 +42,7 @@ def render(G, seed=26):
         rate = keys(t, [(3, 2.0), (12, 3.5), (16, 9), (30, 10), (36, 4), (41, 0.5)])
         t += rng.exponential(1 / rate)
         drops.append((t, rng.uniform(0, G.length), rng.uniform(0.6, 1.3)))
-    corner_d = [np.interp(c, np.arange(n), pdp) for c in CORNERS]
+    corner_d = [np.interp(c + 0.5, np.arange(n), pdp) for c in G.corners]
     for k, cd in enumerate(corner_d):
         t = 33.0 + k * 0.7
         period = 1.6 + 0.35 * k

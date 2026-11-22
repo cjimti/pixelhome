@@ -117,15 +117,16 @@ def render(G, seed=2):
     z = P[:, 2]
 
     # ---- coils at the five corners, in charge order
-    corner_pi = {80: (80, 81), 178: (178, 179), 260: (260, 261), 331: (331, 332), 380: (380, 381)}
-    order = [(80, 0, 2.0), (380, 1, 4.5), (178, 2, 7.0), (331, 3, 9.5), (260, 4, 12.0)]
+    k1, k2, k3, k4, k5 = G.corners                          # path index of the last pixel before each corner
+    corner_pi = {c: (c, c + 1) for c in G.corners}
+    order = [(k1, 0, 2.0), (k5, 1, 4.5), (k2, 2, 7.0), (k4, 3, 9.5), (k3, 4, 12.0)]
     cs = {c: (ppd[a] + ppd[b]) / 2 for c, (a, b) in corner_pi.items()}
     cdist = {c: np.abs(pd - s) for c, s in cs.items()}
     dip = {c: 0.0 for c in cs}
     hum_ph = {c: 0.0 for c in cs}
 
     # ---- arcs between corners (and out to the free ends)
-    adj = [(80, 178), (178, 260), (260, 331), (331, 380)]
+    adj = list(zip(G.corners, G.corners[1:]))
     arcs = []
 
     def add_arc(t0, a, b, k=1.0, fizzle=None):
@@ -140,20 +141,20 @@ def render(G, seed=2):
         arcs.append(_Arc(rng, t0, sa, sb, k, fizzle, forks))
         return arcs[-1]
 
-    add_arc(8.6, 80, 178, 0.7, fizzle=0.35)                 # first try: not enough charge
-    add_arc(10.4, 80, 178, 0.8, fizzle=0.7)
-    add_arc(12.2, 80, 178, 1.0)                             # first real arc
-    add_arc(14.6, 178, 260, 1.0)
-    add_arc(16.3, 380, 331, 1.0)
-    add_arc(17.8, 260, 331, 1.0)
-    add_arc(19.0, 80, 0.0, 0.9)                             # off the back of the Side
+    add_arc(8.6, k1, k2, 0.7, fizzle=0.35)                  # first try: not enough charge
+    add_arc(10.4, k1, k2, 0.8, fizzle=0.7)
+    add_arc(12.2, k1, k2, 1.0)                              # first real arc
+    add_arc(14.6, k2, k3, 1.0)
+    add_arc(16.3, k5, k4, 1.0)
+    add_arc(17.8, k3, k4, 1.0)
+    add_arc(19.0, k1, 0.0, 0.9)                             # off the back of the Side
     t = 20.2
     while t < 39.5:
         r = rng.random()
         if r < 0.15:
-            add_arc(t, 380, end_pd, 0.9)                    # out along the right wing to the free end
+            add_arc(t, k5, end_pd, 0.9)                     # out along the right wing to the free end
         elif r < 0.25:
-            add_arc(t, 80, 0.0, 0.9)
+            add_arc(t, k1, 0.0, 0.9)
         else:
             a, b = adj[rng.integers(len(adj))]
             if rng.random() < 0.5:
@@ -191,7 +192,7 @@ def render(G, seed=2):
     big_delay = (big_d - big_d.min()) / 1500
 
     # ---- the creature's walk: from the porch front, down Porch Right, along Right to the free end
-    s0 = (ppd[261] + ppd[331]) / 2
+    s0 = (ppd[G.first('Porch Front')] + ppd[G.last('Porch Front')]) / 2
     s_end = end_pd - 18
     steps = []                                              # (start, duration, length, kind)
     tt = T_WALK
@@ -316,7 +317,7 @@ def render(G, seed=2):
                 k = (1 - smoothstep(0.3, 0.42, tt)) * (0.6 + 0.4 * jit)
                 hot += pfm * k * (0.45 + 0.55 * tex) + rail * k * 0.6 * np.exp(-((z - z_hi) / w) ** 2)
                 if 0.36 < tt < 0.42:                        # snap
-                    hot += 0.9 * np.exp(-((pd - (ppd[261] + ppd[331]) / 2) / 40) ** 2)
+                    hot += 0.9 * np.exp(-((pd - (ppd[G.first('Porch Front')] + ppd[G.last('Porch Front')]) / 2) / 40) ** 2)
                 glow += pfm * 0.3 * np.exp(-tt / 0.4)
 
         # storm
@@ -433,9 +434,10 @@ def _plan(G, seed=2):
     rng = np.random.default_rng(seed)
     ppd = G.pd[G.path]
     end_pd = ppd[-1]
-    corner_pi = {80: (80, 81), 178: (178, 179), 260: (260, 261), 331: (331, 332), 380: (380, 381)}
+    k1, k2, k3, k4, k5 = G.corners
+    corner_pi = {c: (c, c + 1) for c in G.corners}
     cs = {c: (ppd[a] + ppd[b]) / 2 for c, (a, b) in corner_pi.items()}
-    adj = [(80, 178), (178, 260), (260, 331), (331, 380)]
+    adj = list(zip(G.corners, G.corners[1:]))
     arcs = []
 
     def add_arc(t0, a, b, k=1.0, fizzle=None):
@@ -449,20 +451,20 @@ def _plan(G, seed=2):
             forks.append((sa, -d, rng.uniform(20, 60)))
         arcs.append(_Arc(rng, t0, sa, sb, k, fizzle, forks))
 
-    add_arc(8.6, 80, 178, 0.7, fizzle=0.35)
-    add_arc(10.4, 80, 178, 0.8, fizzle=0.7)
-    add_arc(12.2, 80, 178, 1.0)
-    add_arc(14.6, 178, 260, 1.0)
-    add_arc(16.3, 380, 331, 1.0)
-    add_arc(17.8, 260, 331, 1.0)
-    add_arc(19.0, 80, 0.0, 0.9)
+    add_arc(8.6, k1, k2, 0.7, fizzle=0.35)
+    add_arc(10.4, k1, k2, 0.8, fizzle=0.7)
+    add_arc(12.2, k1, k2, 1.0)
+    add_arc(14.6, k2, k3, 1.0)
+    add_arc(16.3, k5, k4, 1.0)
+    add_arc(17.8, k3, k4, 1.0)
+    add_arc(19.0, k1, 0.0, 0.9)
     t = 20.2
     while t < 39.5:
         r = rng.random()
         if r < 0.15:
-            add_arc(t, 380, end_pd, 0.9)
+            add_arc(t, k5, end_pd, 0.9)
         elif r < 0.25:
-            add_arc(t, 80, 0.0, 0.9)
+            add_arc(t, k1, 0.0, 0.9)
         else:
             a, b = adj[rng.integers(len(adj))]
             if rng.random() < 0.5:
@@ -480,7 +482,7 @@ def _plan(G, seed=2):
     strikes = [(25.6, rng.uniform(-500, -200), 0.8), (31.0, rng.uniform(250, 550), 0.85),
                (36.8, rng.uniform(-200, 200), 0.9), (41.8, rng.uniform(-550, -250), 0.9),
                (45.9, rng.uniform(250, 550), 0.95)]
-    s0 = (ppd[261] + ppd[331]) / 2
+    s0 = (ppd[G.first('Porch Front')] + ppd[G.last('Porch Front')]) / 2
     s_end = end_pd - 18
     steps = []
     tt = T_WALK
@@ -510,7 +512,7 @@ def _plan(G, seed=2):
 BAR = 2.5                                   # 96 BPM, four beats a bar; the coils start one bar apart
 BEAT = BAR / 4
 T_CHORALE = 14.5                            # the organ's chorale, ten bars, until everything charges
-COIL_NOTE = {80: 'C3', 380: 'G3', 178: 'Eb3', 331: 'C4', 260: 'C2'}   # each coil a voice of C minor
+COIL_NOTE = ('C3', 'Eb3', 'C2', 'C4', 'G3')   # each coil a voice of C minor, corner by corner from the Side
 VOICING = {'Cm': ('C2', 'G3', 'C4', 'Eb4'), 'Ab': ('Ab1', 'Ab3', 'C4', 'Eb4'), 'Fm': ('F1', 'F3', 'Ab3', 'C4'),
            'G': ('G1', 'G3', 'B3', 'D4'), 'Db': ('Db2', 'F3', 'Ab3', 'Db4'), 'G7': ('G1', 'F3', 'B3', 'D4')}
 CHORALE = [('Cm', [(0, 'G4', 1), (1, 'C5', 1), (2, 'Eb5', 1.5), (3.5, 'D5', .5)]),
@@ -631,7 +633,9 @@ def score(M, G):
             organ(t, n(m), vel * 0.85, dur, **kw)
 
     # ---- the coils, exactly as render() charges and discharges them ------------------------------------
-    order_c = [(80, 0, 2.0), (380, 1, 4.5), (178, 2, 7.0), (331, 3, 9.5), (260, 4, 12.0)]
+    k1, k2, k3, k4, k5 = G.corners
+    order_c = [(k1, 0, 2.0), (k5, 1, 4.5), (k2, 2, 7.0), (k4, 3, 9.5), (k3, 4, 12.0)]
+    coil_note = dict(zip(G.corners, COIL_NOTE))
     F = nframes(D)
     tf = np.arange(F) * DT
     Lc = {c: np.zeros(F) for c in cs}
@@ -687,11 +691,11 @@ def score(M, G):
         pre = ta < T_STRIKE
         semis -= pre * 24 * np.clip(1 - glob_a / 0.55, 0, 1) * (ta > 49.0)        # and the power-down whine
         semis -= 5 * np.clip(dp, 0, 1)                                             # an arc sags it
-        fr = 440 * 2 ** ((n(COIL_NOTE[c]) - 69 + semis) / 12)
+        fr = 440 * 2 ** ((n(coil_note[c]) - 69 + semis) / 12)
         amp = np.minimum(L, 1.4) ** 0.8
         y = tone(fr, NS / SR, harm=7, tilt=1.15) + 0.5 * tone(fr * 1.004, NS / SR, harm=3)
         y = np.tanh(1.6 * y) * amp
-        put('hum', y, 0.0, 0.16 if c != 260 else 0.26, pan_at(cs[c]))
+        put('hum', y, 0.0, 0.16 if c != k3 else 0.26, pan_at(cs[c]))
     # the lab's mains bed: a low C that sags under every footstep
     c2 = 440 * 2 ** ((n('C2') - 69) / 12)
     bd_a = np.interp(ta, tf, bed) / 0.1
@@ -738,7 +742,7 @@ def score(M, G):
 
     # ---- Jacob's ladders up the porch rails: a buzz that climbs, stretches across, and snaps ------------
     pl, pr, pfp = pan_at(float(G.pd[G.seg['Porch Left']].mean())), pan_at(float(G.pd[G.seg['Porch Right']].mean())), \
-        pan_at((G.pd[G.path][261] + G.pd[G.path][331]) / 2)
+        pan_at((G.pd[G.path][G.first('Porch Front')] + G.pd[G.path][G.last('Porch Front')]) / 2)
     for i, (t0, dur) in enumerate(P['ladders']):
         sec = dur + 0.42
         tt = np.arange(int(sec * SR)) / SR
@@ -815,7 +819,7 @@ def score(M, G):
     thunder(T_STRIKE, 0.0, 1.8, 7.0, seed=123)
     tt = np.arange(int(1.6 * SR)) / SR
     for c in cs:
-        fr = 440 * 2 ** ((n(COIL_NOTE[c]) + 19 - 69 + 7 * tt) / 12)
+        fr = 440 * 2 ** ((n(coil_note[c]) + 19 - 69 + 7 * tt) / 12)
         y = np.tanh(2 * tone(fr, 1.6, harm=6)) * np.exp(-np.clip(tt - 0.05, 0, None) / 0.35) * np.clip(tt / 0.02, 0, 1)
         put('hum', y, T_STRIKE + 0.25, 0.22, pan_at(cs[c]))
 

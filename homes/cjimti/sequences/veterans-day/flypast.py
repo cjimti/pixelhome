@@ -36,7 +36,8 @@ def render(G, seed=22):
     # diamond slots (x, z offsets) and where each branch breaks to: the free ends and corners, in
     # left-to-right order so the fan-out never crosses
     DIAMOND = [(-75, 60), (-150, 130), (0, 0), (75, 60), (150, 130), (0, 190)]
-    targets = [G.path[i] for i in (0, 80, 260, 331, 500, 178)]
+    c = G.corners
+    targets = [G.path[i] for i in (0, c[0], c[2], c[3], G.N - 1, c[1])]
     bulge = np.array([[-120, 0, 120], [-140, 0, 80], [-40, 0, -60], [40, 0, -60], [140, 0, 80], [-60, 0, 160]], float)
 
     def glow(p, r=95.0):

@@ -110,7 +110,7 @@ def render(G, seed=5):
 # connection buzzes on Porch Right. The corruption cuts the tune into 0.4 s blocks that jump, stutter and change key
 # with the torn segments, under a scanner tone that follows the RGB comet and bursts of static. Then each run gets
 # its own stuck instrument looping at that run's clip length while two choirs drift apart, all snapping to one F on
-# the white syncs. The freeze holds the last 80 ms, fading pixel by pixel under 501 burn-out crackles; a heartbeat
+# the white syncs. The freeze holds the last 80 ms, fading pixel by pixel under a burn-out crackle each; a heartbeat
 # from the porch accelerates over rising tremolo, flatlines, and after the dark someone winds the box up again.
 # Every time below is computed from render()'s own constants and seeded draws.
 

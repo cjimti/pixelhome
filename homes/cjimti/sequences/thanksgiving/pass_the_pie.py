@@ -143,7 +143,8 @@ def render(G, seed=SEED):
     n = G.N
     d = G.pd[G.path]
     idx = np.arange(n)
-    side, left, right = idx < 81, (idx >= 81) & (idx < 179), idx >= 381
+    l0, pl0, r0 = G.first('Left'), G.first('Porch Left'), G.first('Right')
+    side, left, right = idx < l0, (idx >= l0) & (idx < pl0), idx >= r0
     shimmer = Flicker(rng, n, 0.3, 1.5)
     crumbs = rng.uniform(150, 450, (len(BITES), 2))
     bites_done = lambda s, t: sum(1 for tb, ss in BITES if ss == s and tb <= t)

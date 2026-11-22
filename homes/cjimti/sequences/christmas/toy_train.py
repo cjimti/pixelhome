@@ -28,7 +28,6 @@ CABOOSE = hexc('#d01008')
 
 D = 64.0
 SEED = 22
-CORNER_IDX = (80, 178, 260, 331, 380)                    # the five corners, by path index
 CARS = [('engine', 48), ('tender', 22)] + [('coach', 34)] * 4 + [('caboose', 30)]
 GAP = 6.0
 REST = np.array([CARS[i][1] + GAP for i in range(len(CARS) - 1)])
@@ -37,7 +36,7 @@ STOP = 640.0                                             # where the engine's no
 
 def _corners(G):
     x = G.pd[G.path]
-    return np.array([(x[i] + x[i + 1]) / 2 for i in CORNER_IDX])
+    return np.array([(x[i] + x[i + 1]) / 2 for i in G.corners])   # the five corners
 
 
 def _simulate(G, rng):

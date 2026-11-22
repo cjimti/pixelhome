@@ -31,10 +31,10 @@ def render(G, seed=25):
     pdp = G.pd[G.path]
     pf = G.seg['Porch Front']
     M = 0.5 * (G.pd[pf].min() + G.pd[pf].max())
-    bL = G.pd[G.path[179]]                      # left shore ends, bridge begins
-    bR = G.pd[G.path[380]]                      # bridge ends, right shore begins
-    sL0 = G.pd[G.path[81]]                      # far end of the Left wing
-    sR1 = G.pd[G.path[500]]                     # far (free) end of the Right wing
+    bL = G.pd[G.path[G.first('Porch Left')]]    # left shore ends, bridge begins
+    bR = G.pd[G.path[G.last('Porch Right')]]    # bridge ends, right shore begins
+    sL0 = G.pd[G.path[G.first('Left')]]         # far end of the Left wing
+    sR1 = G.pd[G.path[G.N - 1]]                 # far (free) end of the Right wing
     on_left_shore = (pdp >= sL0 - 1) & (pdp < bL)
     on_right_shore = (pdp > bR) & (pdp <= sR1 + 1)
     on_bridge = (pdp >= bL) & (pdp <= bR)

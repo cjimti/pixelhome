@@ -46,6 +46,24 @@ class Home:
         """[(name, path indices)] in path order."""
         return [(name, self.pi[self.seg[name]]) for name, _ in self.path_order]
 
+    def first(self, name):
+        """Path index of a segment's first pixel in path order. Use these instead of literal path indices: the pixel
+        counts change when a run is re-strung (Porch Front went from 71 to 107), the distances don't."""
+        return int(self.pi[self.seg[name]].min())
+
+    def last(self, name):
+        """Path index of a segment's last pixel in path order."""
+        return int(self.pi[self.seg[name]].max())
+
+    def mid(self, name):
+        """Path index of a segment's middle pixel (the left of the two when there is an even count)."""
+        return (self.first(name) + self.last(name)) // 2
+
+    @property
+    def corners(self):
+        """Path index of the last pixel before each turn: one per segment but the last, in path order."""
+        return [self.last(name) for name, _ in self.path_order[:-1]]
+
     def span_u(self, idx):
         """Position of nodes idx across their own left-right extent, -1..1 (by x)."""
         xs = self.pos[idx, 0]

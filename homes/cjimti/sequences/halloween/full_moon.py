@@ -110,8 +110,9 @@ def plan(G):
     L = G.length
     pdp = G.pd[G.path]
     pf = G.pd[G.seg['Porch Front']]
-    c1 = 0.5 * (pdp[331] + pdp[332])        # back-right porch corner
-    c2 = 0.5 * (pdp[380] + pdp[381])        # Porch Right -> Right
+    k4, k5 = G.corners[3], G.corners[4]
+    c1 = 0.5 * (pdp[k4] + pdp[k4 + 1])      # back-right porch corner
+    c2 = 0.5 * (pdp[k5] + pdp[k5 + 1])      # Porch Right -> Right
     mc = float(pf.mean())                   # the moon's spot over the porch
     xm = float(pf.max()) - 50.0             # his front door
     start = L + 30.0

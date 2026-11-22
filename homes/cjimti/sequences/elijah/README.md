@@ -312,7 +312,7 @@ From the street the porch is the back of the scene.
 | **Right** | Elijah's altar on Mount Carmel, and Elijah's place in Part One. |
 | **Left** | the altar of Baal and his priests. |
 | **Porch Left / Porch Right** | the people of Israel, watching from both sides. |
-| **Free end of Right** (path 500) | the sea. The little cloud rises here. |
+| **Free end of Right** | the sea. The little cloud rises here. |
 | **Side** | the wilderness in Part Two: Beersheba, the juniper tree, Horeb. |
 
 Subjects never begin on Side, a dim themed bed keeps every run lit, and the last frame of each scene sets up the

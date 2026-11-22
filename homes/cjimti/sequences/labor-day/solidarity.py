@@ -27,7 +27,7 @@ def render(G, seed=25):
     out = np.zeros((F, G.N, 3))
     s = G.pd[G.path]
     L = G.length
-    home = s[296]                                   # porch front centre
+    home = s[G.mid('Porch Front')]                  # porch front centre
 
     n = 150
     x = np.sort(rng.uniform(15, L - 15, n))

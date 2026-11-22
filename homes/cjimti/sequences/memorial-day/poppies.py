@@ -27,12 +27,12 @@ def render(G, seed=4):
     L = G.length
     pdp = G.pd[G.path]
     # flowers: a jittered layout along the path, never too close, never on a corner
-    corners = pdp[[80, 178, 260, 331, 380]]
+    corners = pdp[G.corners]
     c = np.arange(30.0, L - 20, 49.0) + rng.uniform(-12, 12, len(np.arange(30.0, L - 20, 49.0)))
     c = np.array([x for x in c if np.min(np.abs(corners - x)) > 14])
     K = len(c)
     # bloom order: start at the middle of the far porch, then seeds carry to near neighbours
-    first = int(np.argmin(np.abs(c - pdp[296])))
+    first = int(np.argmin(np.abs(c - pdp[G.mid('Porch Front')])))
     bloomed, order = {first}, [first]
     while len(order) < K:
         rest = np.array([k for k in range(K) if k not in bloomed])
