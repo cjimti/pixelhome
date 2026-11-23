@@ -47,7 +47,7 @@ function model() {
     'bottom row (nearer the ground), 1st from the left', 'bottom row, 2nd from the left', 'bottom row, 3rd from the left', 'bottom row, 4th from the left'];
   const PORTS = [
     { chips: ['house', '261 px', 'ch 1–783'], text: 'Porch Left, then Left, then Side, ending at the back corner. Its far-end injection from fuse 1 is disconnected until a fault in that line is fixed.' },
-    { chips: ['house', '276 px', 'ch 784–1611'], text: 'Porch Front, then Porch Right, then Right. Far-end injection from fuse 2 at the free end of Right.' },
+    { chips: ['house', '301 px', 'ch 784–1686'], text: 'Porch Front, then Porch Right, then Right. Far-end injection from fuse 2 at the free end of Right.' },
   ];
   for (let i = 0; i < 8; i++) {
     const p = PORTS[i] || { chips: ['spare'], text: 'Wired out to its gland, not connected to any pixels yet.' };

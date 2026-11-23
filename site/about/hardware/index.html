@@ -11,13 +11,13 @@ gtag('config', 'G-KQYBQLRBMP');
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The hardware · Pixelhome</title>
-<meta name="description" content="The hardware behind Pixelhome: 537 12V pixels in six runs along the roofline, a Kulp K8-PB running FPP in a weatherproof box, two Mean Well supplies, what it all draws, and the move to a pixel every 2 inches.">
+<meta name="description" content="The hardware behind Pixelhome: 562 12V pixels in six runs along the roofline, a Kulp K8-PB running FPP in a weatherproof box, two Mean Well supplies, what it all draws, and the move to a pixel every 2 inches.">
 <meta name="theme-color" content="#0b0a09">
 <link rel="canonical" href="https://pixelhome.app/about/hardware/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pixelhome">
 <meta property="og:title" content="The hardware behind Pixelhome">
-<meta property="og:description" content="537 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
+<meta property="og:description" content="562 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
 <meta property="og:url" content="https://pixelhome.app/about/hardware/">
 <meta property="og:image" content="https://pixelhome.app/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@ gtag('config', 'G-KQYBQLRBMP');
 <meta property="og:image:alt" content="A single-story house at night, its roofline lit by orange and red pixel lights">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The hardware behind Pixelhome">
-<meta name="twitter:description" content="537 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
+<meta name="twitter:description" content="562 12V pixels along a roofline, a Kulp K8-PB running FPP in a weatherproof box, two supplies, and what it all draws.">
 <meta name="twitter:image" content="https://pixelhome.app/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -52,13 +52,13 @@ gtag('config', 'G-KQYBQLRBMP');
   <section class="intro">
     <p class="kicker">About · The house</p>
     <h1>The hardware</h1>
-    <p class="lede">537 12V pixels along the roofline, one controller in a weatherproof box on the ground, and two power
+    <p class="lede">562 12V pixels along the roofline, one controller in a weatherproof box on the ground, and two power
       supplies. Here's how it's wired, what it draws, and where it's going next.</p>
   </section>
 
   <section id="roofline">
     <h2>The roofline</h2>
-    <p>537 12V pixels (WS2811) in six straight runs along the roofline, driven by
+    <p>562 12V pixels (WS2811) in six straight runs along the roofline, driven by
       <a href="https://github.com/FalconChristmas/fpp">FPP</a> on a Kulp K8-PB. Data leaves the controller at the
       back-left corner of the porch on two ports, each a chain of three runs. Every pixel sits at the same height, so
       from above the roofline is a flat outline: two wings come forward toward the street with the porch set back
@@ -92,7 +92,7 @@ gtag('config', 'G-KQYBQLRBMP');
           <text class="lbl" x="-500" y="-180">Left 98</text>
           <text class="lbl" transform="translate(-222 -358) rotate(-90)" text-anchor="middle">Porch Left 82</text>
           <text class="lbl" x="-120" y="-640">Porch Front 107</text>
-          <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 49</text>
+          <text class="lbl" transform="translate(196 -380) rotate(90)" text-anchor="middle">Porch Right 74</text>
           <text class="lbl" x="340" y="-225">Right 120</text>
           <!-- controller and supply inside the porch notch -->
           <rect class="ctrl" x="-150" y="-545" width="250" height="118" rx="12"/>
@@ -113,9 +113,9 @@ gtag('config', 'G-KQYBQLRBMP');
       </div>
       <dl class="legend">
         <div><dt><i class="sw p1"></i>Port 1</dt><dd>Porch Left → Left → Side · 261 pixels</dd></div>
-        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 276 pixels</dd></div>
+        <div><dt><i class="sw p2"></i>Port 2</dt><dd>Porch Front → Porch Right → Right · 301 pixels</dd></div>
         <div><dt><i class="sw pw"></i>Power</dt><dd>12V at the controller; injection wired to both far ends, unplugged for now</dd></div>
-        <div><dt><i class="sw ch"></i>Channels</dt><dd>537 × RGB = 1,611, at 80% brightness, gamma 1.0</dd></div>
+        <div><dt><i class="sw ch"></i>Channels</dt><dd>562 × RGB = 1,686, at 80% brightness, gamma 1.0</dd></div>
       </dl>
     </figure>
   </section>
@@ -170,10 +170,10 @@ gtag('config', 'G-KQYBQLRBMP');
       <li><b>45 mA</b><span>one pixel at full white</span></li>
       <li><b>2–7 W</b><span>an all-night loop, a few cents a night</span></li>
       <li><b>3.8 A</b><span>the busiest port at the peak of a show</span></li>
-      <li><b>~290 W</b><span>the whole house at full white, fully fed</span></li>
+      <li><b>~310 W</b><span>the whole house at full white, fully fed</span></li>
     </ul>
     <p>That last number is the one to plan around. Each end of a port is protected at about 5 A, and a fully fed port
-      at full white wants about 12 A, 6 A at each end. Today the runs can't draw that much because they only get
+      at full white wants 12 to 14 A, 6 to 7 A at each end. Today the runs can't draw that much because they only get
       power from one end, but once the injection goes back in, the brightest frames need a cap on each port's draw so
       a show never trips a fuse.</p>
   </section>
@@ -181,7 +181,7 @@ gtag('config', 'G-KQYBQLRBMP');
   <section id="rail">
     <h2>Going to 2 inches</h2>
     <p>I'm moving the roofline onto a new metal rail with a pixel every 2 inches instead of 3, a run at a time: about
-      750 pixels when it's done, half as many again as the house started with. Porch Front is the first. The shows
+      750 pixels when it's done, half as many again as the house started with. Porch Front went first, then Porch Right. The shows
       don't need rewriting: they place everything by run names and distances, so each one fills in the new pixels on
       the next build.</p>
     <div class="tablewrap prose">
@@ -189,10 +189,10 @@ gtag('config', 'G-KQYBQLRBMP');
         <thead><tr><th>Run</th><th>At 3"</th><th>At 2"</th><th>Status</th></tr></thead>
         <tbody>
           <tr><td>Porch Front</td><td>71</td><td>107</td><td>Done</td></tr>
+          <tr><td>Porch Right</td><td>49</td><td>74</td><td>Done</td></tr>
           <tr><td>Porch Left</td><td>82</td><td>~123</td><td></td></tr>
           <tr><td>Left</td><td>98</td><td>~147</td><td></td></tr>
           <tr><td>Side</td><td>81</td><td>~122</td><td></td></tr>
-          <tr><td>Porch Right</td><td>49</td><td>~74</td><td></td></tr>
           <tr><td>Right</td><td>120</td><td>~180</td><td></td></tr>
         </tbody>
       </table>
@@ -206,11 +206,11 @@ gtag('config', 'G-KQYBQLRBMP');
     <h2>Parts</h2>
     <ul class="oss">
       <li><b><a href="https://kulplights.com/manuals/boards/k8-pb/">Kulp K8-PB</a></b><span>Pixel controller on a PocketBeagle 2, 8 ports, running FPP</span></li>
-      <li><b>12V WS2811 pixels</b><span>537 today, on 3" and 2" spacing</span></li>
+      <li><b>12V WS2811 pixels</b><span>562 today, on 3" and 2" spacing</span></li>
       <li><b>2× Mean Well LRS-350-12</b><span>12V, 29A supplies: one for the controller and injection, one for the expansion</span></li>
       <li><b>Faststorm 6-way fuse block</b><span>5A blade fuses on each injection line</span></li>
       <li><b>QILIPSU IP66 box</b><span>PC/ABS, every cable through glands in one wall</span></li>
-      <li><b>F-Amp null pixels</b><span>One at the start of each port, so the first real pixel gets clean data</span></li>
+      <li><b>Falcon F-Amps</b><span>One at the start of each port, boosting the data for the long lead to the first run</span></li>
       <li><b>18 AWG cable</b><span>3-conductor for the ports, 2-conductor for injection; 16 AWG for the longest leads</span></li>
       <li><b>Waterproof pigtails</b><span>3-pin for data and power, 2-pin for injection, spliced with solder-seal connectors</span></li>
     </ul>

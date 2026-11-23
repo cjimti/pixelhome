@@ -53,6 +53,9 @@ loops, `candle_bed`.
 - `show` pieces may be bright and fast, but avoid full-house strobing longer than a moment.
 - Pieces are specific to a home's segment names. Read `homes/<home>/README.md` (shape, corners,
   path indices, spacing, what reads from the street) before designing for a home.
+- Runs are being re-strung at 2", one at a time: a run's count changes and its ends stay. Never write a path index or
+  pixel count as a number. Re-stringing is `python -m pixelhome restring`, `music --stale`, the docs, `make verify`,
+  `fpp_sync.py` and `scripts/fpp_strings.py`, in the order in `homes/cjimti/HARDWARE.md` › Re-stringing a run.
 
 ## Intermissions and show times
 
@@ -93,7 +96,9 @@ above E6 (C7 for bells and mallets); `music` prints what it lowered.
 Ambient pieces render as seamless loops (whatever rings past the end wraps onto the start, no fades) and play
 all night, also over an FM transmitter: keep them soft (rms around -22 dBFS), with no beat and nothing startling.
 Render: `uv run --group audio python -m pixelhome music [--video] <CODE>` (writes the MP3, and with
-`--video` a preview MP4 with sound). If a show's timing changes, re-render its music. Never auto-play
+`--video` a preview MP4 with sound). If a show's timing changes, re-render its music. Each render records the score's
+cues (a hash of everything it puts into the mix) in `homes/<home>/audio/cues.json`; `music --stale` re-renders every
+soundtrack whose cues have changed since (`--check` lists them), `music --stamp <CODE>` records cues without rendering. Never auto-play
 audio on the machine you are working on.
 
 ## Spoken intros (optional)

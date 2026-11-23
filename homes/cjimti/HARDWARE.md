@@ -17,31 +17,31 @@ file is the controller, power, wiring and what it measures. Keep it current when
 - **Live mode**: pushes to `live.pixelhome.app` from fpp2.
 - **Provisioning**: everything on fpp2 comes from this repo (`scripts/fpp_sync.py --apply`); nothing is changed on the
   device by hand. One backup of its settings is kept off-repo. The exception is the pixel ports' virtual strings
-  (name, pixel count, start channel, 80%, gamma 1.0 per run, as in the table below and `home.json`, and 1 null node
-on each port's first string): `fpp_sync` doesn't
-  write them. They're set over the API (`GET`, edit, `POST /api/channel/output/co-bbbStrings`, then
-  `/api/system/fppd/restart`) when a run's count changes, after the sync has put FSEQs with the new channel count on
-  the player.
+  (name, pixel count, start channel, 80%, gamma 1.0 per run, as in the table below and `home.json`, no null
+  nodes): `fpp_sync` doesn't write them. `scripts/fpp_strings.py --apply` sets each string's pixel count and start
+  channel from `home.json`, and clears any null nodes, when
+  a run's count changes (see [Re-stringing a run](#re-stringing-a-run)), after the sync has put FSEQs with the new
+  channel count on the player.
 - **Settings**: brightness 80% on both ports, gamma 1.0. Sequences are rendered for that.
 
 ## Pixels and ports
 
-537 12 V WS2811 pixels in six runs: Porch Front at 2" spacing on the new rail, the others still at 3" (see
+562 12 V WS2811 pixels in six runs: Porch Front and Porch Right at 2" spacing on the new rail, the others still at 3" (see
 [Planned](#planned-new-metal-rail-at-2-spacing)). The controller sits centrally, at the back-left corner of the porch;
 two ports carry the house, ports 3-8 are unused.
 
 | port | runs, in data order                              | pixels | channels | power injection                                |
 |-----:|--------------------------------------------------|-------:|----------|------------------------------------------------|
 | 1    | Porch Left (82), Left (98), Side (81)            | 261    | 1-783    | far end (back end of Side), 5 A fuse; see Open |
-| 2    | Porch Front (107), Porch Right (49), Right (120) | 276    | 784-1611 | far end (free end of Right), 5 A fuse; see Open |
+| 2    | Porch Front (107), Porch Right (74), Right (120) | 301    | 784-1686 | far end (free end of Right), 5 A fuse; see Open |
 
 Each port is fed from both ends when its injection is on: the controller end through the port's eFuse, the far end
 through its own 5 A fuse.
 
-Each port starts with one null pixel (an F-Amp) between the controller and its first run, added with the K8-PB: set
-as 1 null node on the port's first virtual string (Porch Left on port 1, Porch Front on port 2). Without it the null
-takes the first pixel's data and every pixel on the port shows its neighbour's colour, one place along. The nulls
-use no channels, so `home.json` and the sequences don't know about them.
+Each port starts with a Falcon F-Amp between the controller and its first run, added with the K8-PB. It amplifies
+the data for the long lead without taking a pixel's worth of it, so it is not a null pixel: the port's first virtual
+string has no null nodes (set as 1 null node on 2026-11-21, which put every pixel one place along; cleared
+2026-11-22).
 
 All 8 ports are wired out, one 18 AWG 3-conductor cable each (V+, data, ground). On the board the port terminals
 are two rows of four, numbered down each column: port 1 top left, port 2 below it, port 3 top of the second column,
@@ -79,7 +79,7 @@ What the runs are made of, so repairs and extensions match.
 | splices | haisstronica solder-seal connectors, 18-16 AWG (green) |
 
 The pixel strings come with JST connectors that aren't waterproof, and every run is a custom length, so each end is
-cut and spliced onto one of these pigtails. The F-Amp null pixels are bare wire. The flat plugs tuck behind the rail
+cut and spliced onto one of these pigtails. The F-Amps are bare wire. The flat plugs tuck behind the rail
 more easily than round pixel plugs, and they're sturdier.
 
 Mixing gauges is fine. The thinnest wire on a port (18 AWG) carries the port's 5.2 A eFuse limit, and voltage drop
@@ -144,7 +144,7 @@ with no drop to speak of, draw in a straight line.
 So a pixel draws about **45 mA at full white** with the 80% brightness (15 mA a channel), linear in the channel value,
 plus 0.13 mA idle. Low loads follow that exactly: the night loops measured 0.18 A (Candlelight), 0.22 A (Food Coma)
 and 0.57 A (Amber Waves), and Daylight 0.24 A, each within 0.01 A of `0.07 A + 15 mA x the sum of channel values`.
-Fully fed, the house at full white would draw about 24 A (290 W), about 12 A a port: the starving is what keeps the
+Fully fed, the house at full white would draw about 25 A (310 W), 12-14 A a port: the starving is what keeps the
 ports under their limits today. See [Planned](#planned-new-metal-rail-at-2-spacing) for what that means.
 
 The heaviest show moments on the first full night (2026-11-14, Das Rheingold's finale): port 1 3.8 A peak and 2.4 A
@@ -159,7 +159,7 @@ the box if the SoC passes about 80 °C.
 ## Planned: new metal rail at 2" spacing
 
 The same rooflines at 2" instead of 3" is 1.5x the pixels: about 752. It goes up a run at a time; Porch Front is
-done (107, 2026-11-21).
+done (107, 2026-11-21), and so is Porch Right (74, 2026-11-22).
 
 | run         | at 3" | at 2"      |
 |-------------|------:|-----------:|
@@ -167,7 +167,7 @@ done (107, 2026-11-21).
 | Left        |    98 |        147 |
 | Side        |    81 |        122 |
 | Porch Front |    71 | 107 (done) |
-| Porch Right |    49 |         74 |
+| Porch Right |    49 |  74 (done) |
 | Right       |   120 |        180 |
 
 At the measured 45 mA a pixel at full white (see [Measured](#measured)), fully fed from both ends, each end carrying
@@ -176,19 +176,39 @@ about half:
 | port | pixels | full white | each end | at 80% channel, each end |
 |-----:|-------:|-----------:|---------:|-------------------------:|
 | 1 today (3", 261)       | 261 | ~11.8 A | ~5.9 A | ~4.8 A |
-| 2 today (276)           | 276 | ~12.5 A | ~6.3 A | ~5.1 A |
+| 2 today (301)           | 301 | ~13.6 A | ~6.8 A | ~5.5 A |
 | 1 at 2" on two ports    | 392 | ~17.7 A | ~8.9 A | ~7.2 A |
 | 2 at 2" on two ports    | 361 | ~16.3 A | ~8.2 A | ~6.6 A |
 
 The ends are a 5.2 A eFuse and a 5 A fuse, so **once injection works, full white is already over both on today's
 ports**; the starving is what hides it now (and the catalog does reach full white: GD03 Dawn holds it a second). At
 2" the whole house is about 34 A (410 W) at full white: more than one LRS-350-12 (29 A), within the two. Before
-injection goes back in, cap the draw: FPP brightness (60% keeps today's ports at 4.4-4.7 A an end), or a cap on each
+injection goes back in, cap the draw: FPP brightness (60% keeps port 1 at 4.4 A an end, but port 2, at 301 pixels since Porch Right went to 2", at 5.1 A;
+55% brings it to 4.7 A), or a cap on each
 port's frame draw in the build. For 2", spread the runs over more ports (3-8 are wired and unused, each with its own
 eFuse; PSU2 is there for injection): one run a port, e.g. Right's 180 at about 8.1 A, is about 4 A an end. Data is
-well inside the 800-pixel port rating. When a run is re-strung, its count changes in `home.json`, the start channels of the runs after it on its
-port move with it, and so do that port's virtual strings on fpp2; sequences follow from segment names, distances
-and `G.first/last/mid/corners`, never literal path indices.
+well inside the 800-pixel port rating.
+
+## Re-stringing a run
+
+A run re-strung at 2" keeps its ends, so lengths and distances don't change and neither do the pieces: they place
+things by run name, distance and `G.first/last/mid/corners`, and fill in the new pixels on the next build. A few
+soundtracks take timings from pixel counts (a scan that laps `G.N` pixels, or a score that replays render()'s draws
+sized by `G.N`), so those MP3s are re-rendered. In order:
+
+1. `python -m pixelhome restring "<run>" <count>`: `home.json`'s count, every start channel after it and the total.
+   It prints the new channels, path indices, corners and spacing.
+2. `uv run --group audio python -m pixelhome music --stale`: re-renders the soundtracks whose score cues changed
+   (`--check` only lists them). `homes/cjimti/audio/cues.json` keeps the cues each MP3 was made from.
+3. The counts in [README.md](README.md) (shape, segment table, path indices, corners, free end), this file (pixels,
+   port table, Planned, power numbers) and `site/about/hardware/` (`index.html`, `box.js`): use the table `restring`
+   printed.
+4. `make verify`, then `python3 scripts/fpp_sync.py --apply`: every FSEQ goes onto the player at the new channel
+   count.
+5. `python3 scripts/fpp_strings.py --apply`: the port strings from `home.json`, with no null nodes (dry run without
+   `--apply`), and fppd restarts. If a file was playing during the sync it wasn't replaced: stop the player
+   (`/api/playlists/stop`), sync again, then restart fppd. Walk the house with a test pattern: the run's last pixel and the first of the next.
+6. Commit, PR, and a patch release, so the site's pages and 3D model show the new count.
 
 ## Open
 

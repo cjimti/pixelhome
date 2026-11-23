@@ -1,6 +1,6 @@
 {
   "name": "Roofline House",
-  "description": "Single-story house with a front porch. 537 RGB pixels along the roofline in six runs, driven by FPP on a Kulp K8-PB.",
+  "description": "Single-story house with a front porch. 562 RGB pixels along the roofline in six runs, driven by FPP on a Kulp K8-PB.",
   "units": "xLights layout units",
   "controller": {
     "name": "fpp2",
@@ -42,13 +42,13 @@
     {
       "name": "Porch Right",
       "start_channel": 1105,
-      "nodes": 49,
+      "nodes": 74,
       "first": [152.031799, 149.787903, -564.860718],
       "last": [152.031799, 149.787903, -196.425385]
     },
     {
       "name": "Right",
-      "start_channel": 1252,
+      "start_channel": 1327,
       "nodes": 120,
       "first": [152.977707, 149.444702, -190.836594],
       "last": [628.623459, 149.444702, -190.836598]

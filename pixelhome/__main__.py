@@ -7,6 +7,13 @@
                                                 timeline + stills PNGs (and MP4) into build/preview/
   uv run --group audio python -m pixelhome music [--occasion O] [--video] match [...]
                                                 render each matching show's score() to homes/<home>/audio/ (MP3)
+  uv run --group audio python -m pixelhome music --stale [--check] [match ...]
+                                                re-render the soundtracks whose score no longer matches its MP3
+                                                (--check: list them, exit 1 if any)
+  uv run --group audio python -m pixelhome music --stamp match [...]
+                                                record the matching scores as matching their MP3s, without rendering
+  python -m pixelhome restring [--home H] RUN COUNT
+                                                a run re-strung with COUNT pixels: home.json and its channels
   uv run --group audio python -m pixelhome intro [--occasion O] match [...]
                                                 read each matching sequence's VOICEOVER line in its occasion's voice,
                                                 to homes/<home>/intros/ (MP3 + loudness JSON for the FSEQ)
@@ -34,7 +41,14 @@ def main():
     m = sub.add_parser('music')
     m.add_argument('--occasion', help='only load this playlist folder, or every playlist of this occasion')
     m.add_argument('--video', action='store_true', help='also write the preview MP4 with the music')
-    m.add_argument('match', nargs='+')
+    m.add_argument('--stale', action='store_true', help="only the scores whose cues no longer match their MP3's")
+    m.add_argument('--check', action='store_true', help='with --stale: list them and exit 1 if any, render nothing')
+    m.add_argument('--stamp', action='store_true', help="record the scores' cues as matching their MP3s, no render")
+    m.add_argument('match', nargs='*')
+    r = sub.add_parser('restring')
+    r.add_argument('--home', default='cjimti')
+    r.add_argument('run')
+    r.add_argument('count', type=int)
     i = sub.add_parser('intro')
     i.add_argument('--occasion', help='only load this playlist folder, or every playlist of this occasion')
     i.add_argument('match', nargs='+')
@@ -51,8 +65,18 @@ def main():
         from .intro import intro
         intro(a.match, a.occasion)
     elif a.cmd == 'music':
-        from .audio import music
-        music(a.match, a.occasion, a.video)
+        from .audio import music, stamp, stale
+        if a.stamp:
+            stamp(a.match, a.occasion)
+        elif a.stale:
+            return stale(a.match, a.occasion, check=a.check, video=a.video)
+        else:
+            if not a.match:
+                ap.error('music needs a match (or --stale)')
+            music(a.match, a.occasion, a.video)
+    elif a.cmd == 'restring':
+        from .restring import restring
+        restring(a.home, a.run, a.count)
     else:
         preview(a.match, a.out, a.occasion, a.video)
 
