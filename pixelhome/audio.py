@@ -20,6 +20,8 @@ fifth or more under its ceiling (E6, or C7 for bells and mallets), and any note 
 down an octave. Pass ceiling=None to keep an instrument where it was written.
 """
 import glob
+import hashlib
+import json
 import math
 import os
 import re
@@ -87,6 +89,75 @@ def _octaves(heard, ceiling):
     if ceiling is None or not heard:
         return 0
     return max(0, math.ceil((np.median(heard) - (ceiling - CENTRE)) / 12))
+
+
+# ---------------------------------------------------------------------------- cues: what a score plays, and when
+# A score's cues are everything it puts into the mix (each signal, its time, gain and pan, bus and fader settings),
+# hashed. They're taken on the probe pass with Surge stubbed out (its output varies from run to run and isn't needed
+# to know what was asked of it), so they're deterministic and quick. homes/<home>/audio/cues.json keeps the cues each
+# MP3 was rendered from; when a sequence's cues no longer match (a run re-strung, a timing changed), its MP3 is stale.
+
+_CUES = None                    # while taking cues: the hash they go into
+
+
+def _plain(x):
+    if isinstance(x, (float, np.floating)):
+        return round(float(x), 4) + 0.0
+    if isinstance(x, (np.integer, np.bool_)):
+        return x.item()
+    if isinstance(x, (list, tuple)):
+        return tuple(_plain(v) for v in x)
+    if isinstance(x, dict):
+        return tuple(sorted((k, _plain(v)) for k, v in x.items()))
+    return x
+
+
+def _cue(*parts):
+    if _CUES is None:
+        return
+    for p in parts:
+        if isinstance(p, np.ndarray):
+            _CUES.update(repr(p.shape).encode() + (np.round(np.asarray(p, float), 4) + 0.0).tobytes())
+        else:
+            _CUES.update(repr(_plain(p)).encode())
+
+
+def _seconds(mod, home):
+    return len(mod.render(home)) / 40 if not hasattr(mod, 'D') else float(mod.D)
+
+
+def cues(mod, home, seconds=None):
+    """-> (cues digest, probe Mix) for a sequence module with a score()."""
+    global _CUES
+    seconds = _seconds(mod, home) if seconds is None else seconds
+    loop = getattr(mod, 'KIND', 'show') == 'ambient'
+    _CUES = hashlib.sha256(repr((round(seconds, 3), loop)).encode())
+    try:
+        probe = Mix(seconds, loop=loop)
+        mod.score(probe, home)
+        return _CUES.hexdigest()[:16], probe
+    finally:
+        _CUES = None
+
+
+def _cues_path(home_id):
+    from . import catalog
+    return os.path.join(catalog.HOMES, home_id, 'audio', 'cues.json')
+
+
+def _read_cues(home_id):
+    try:
+        return json.load(open(_cues_path(home_id)))
+    except FileNotFoundError:
+        return {}
+
+
+def _write_cues(home_id, update):
+    c = _read_cues(home_id)
+    c.update(update)
+    with open(_cues_path(home_id), 'w') as f:
+        json.dump(dict(sorted(c.items())), f, indent=1)
+        f.write('\n')
 
 
 class _Voice:
@@ -174,6 +245,9 @@ class Synth(_Voice):
     Surge's 32-sample blocks (0.7 ms); bends are (t, value -8192..8191)."""
 
     def __init__(self, patch):
+        if _CUES is not None:                   # taking cues: what's asked of Surge is enough
+            self.s, self.bs = None, 32
+            return
         sp = _surgepy()
         self.s = sp.createSurge(SR)
         path = os.path.join(self.s.getFactoryDataPath(), 'patches_factory', patch + '.fxp')
@@ -193,6 +267,9 @@ class Synth(_Voice):
         for t, v in bends:
             ev.append((int(t * SR / bs), 2, int(v), 0))
         ev.sort(key=lambda e: (e[0], e[1]))
+        if s is None:
+            _cue('synth', getattr(self, 'name', ''), ev, nb, ch)
+            return np.zeros((2, nb * bs))
         buf = s.createMultiBlock(nb)
         b, i = 0, 0
         while b < nb:
@@ -265,15 +342,18 @@ class Mix:
         self.faders = {}
 
     def bus(self, name, gain=1.0, pan=0.0, reverb=0.15):
+        _cue('bus', name, gain, pan, reverb)
         self.buses[name] = dict(sig=np.zeros((2, self.n)), gain=gain, pan=pan, reverb=reverb)
 
     def duck(self, bus, keys, margin=3.0, floor=-10.0):
         """Keep a bus (sound effects) under the music: wherever it would rise above the key buses' level less margin dB,
         it is turned down, by floor dB at most; in the music's gaps it plays at full level."""
+        _cue('duck', bus, keys, margin, floor)
         self.ducks.append((bus, keys, margin, floor))
 
     def fader(self, bus, points):
         """Ride a bus's level by hand: points [(t, dB), ...], eased between, held before the first and after the last."""
+        _cue('fader', bus, points)
         self.faders[bus] = sorted(points)
 
     def _duck_gain(self, sig, key, margin, floor):
@@ -290,6 +370,7 @@ class Mix:
         return np.interp(np.arange(sig.shape[1]), np.arange(len(g)) * hop, 10 ** (g / 20))
 
     def add(self, bus, sig, t=0.0, gain=1.0, pan=None):
+        _cue('add', bus, t, gain, pan, np.asarray(sig))
         b = self.buses[bus]
         s = int(round(t * SR))
         if s < 0:
@@ -394,30 +475,44 @@ def audio_path(s):
     return os.path.join(catalog.HOMES, s.home, 'audio', s.id + '.mp3')
 
 
-def music(want, occasion=None, video=False, out=None):
-    """Render the score of every matching sequence that has one; with video, also an MP4 of the lights with it."""
+def _scored(want, occasion=None):
+    """[(home id, Home, Sequence)] for every matching sequence that has a score()."""
+    from . import catalog
+    from .build import _matches
+    out = []
+    for h in catalog.homes():
+        home = catalog.load_home(h)
+        for s in catalog.sequences(h, occasion):
+            if _matches(s, want) and re.search(r'^def score\(', open(s.path).read(), re.M):
+                out.append((h, home, s))
+    return out
+
+
+def music(want, occasion=None, video=False, out=None, only=None):
+    """Render the score of every matching sequence that has one; with video, also an MP4 of the lights with it.
+    `only` is a list of sequence ids to render instead of matching."""
     import time
     from . import catalog
     from .build import _matches, preview
     for h in catalog.homes():
         home = catalog.load_home(h)
         for s in catalog.sequences(h, occasion):
-            if not _matches(s, want):
+            if (s.id not in only) if only is not None else not _matches(s, want):
                 continue
             mod = s.load()
             if not hasattr(mod, 'score'):
                 print(f'{h}/{s.id}: no score()')
                 continue
             t = time.time()
-            seconds = len(mod.render(home)) / 40 if not hasattr(mod, 'D') else float(mod.D)
+            seconds = _seconds(mod, home)
             loop = getattr(mod, 'KIND', 'show') == 'ambient'
-            probe = Mix(seconds, loop=loop)
-            mod.score(probe, home)
+            digest, probe = cues(mod, home, seconds)
             M = Mix(seconds, plan=probe.planned(), loop=loop)
             mod.score(M, home)
             moved = [f'{v.name} -{v.shift * 12}' for v in M.voices if v.shift]
             path = audio_path(s)
             a = M.write(path)
+            _write_cues(h, {s.id: digest})
             peak = float(np.abs(a).max())
             rms = float(np.sqrt((a ** 2).mean()))
             print(f'{h}/{s.id}: {path} {seconds:.0f}s  peak {peak:.2f}  rms {20 * np.log10(rms + 1e-9):.1f} dBFS  '
@@ -431,3 +526,43 @@ def music(want, occasion=None, video=False, out=None):
                 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', v, '-i', path, '-c:v', 'copy', '-c:a', 'aac',
                                 '-b:a', '192k', '-shortest', v.replace(' preview.mp4', ' with music.mp4')], check=True)
                 print(v.replace(' preview.mp4', ' with music.mp4'))
+
+
+def _cue_one(args):
+    h, sid, occasion = args
+    from . import catalog
+    s = next(x for x in catalog.sequences(h, occasion) if x.id == sid)
+    return h, sid, cues(s.load(), catalog.load_home(h))[0]
+
+
+def _all_cues(want, occasion=None):
+    """{(home, id): cues digest} for every matching scored sequence, taken in parallel."""
+    from concurrent.futures import ProcessPoolExecutor
+    jobs = [(h, s.id, s.playlist) for h, _, s in _scored(want, occasion)]
+    # One at a time unless asked: a cue pass renders the lights and holds the whole mix, up to about 2.5 GB each.
+    with ProcessPoolExecutor(int(os.environ.get('PIXELHOME_JOBS', 1))) as ex:
+        return {(h, sid): d for h, sid, d in ex.map(_cue_one, jobs)}
+
+
+def stamp(want, occasion=None):
+    """Record the matching scores' cues as the ones their MP3s were rendered from, without rendering: for MP3s
+    known to be right (checked by ear, or made before cues were kept)."""
+    got = _all_cues(want, occasion)
+    for h in {h for h, _ in got}:
+        _write_cues(h, {sid: d for (hh, sid), d in got.items() if hh == h})
+    print(f'stamped {len(got)} soundtracks')
+
+
+def stale(want, occasion=None, check=False, video=False):
+    """Re-render (or with check, list) the soundtracks whose score no longer matches the cues of its MP3."""
+    got = _all_cues(want, occasion)
+    kept = {h: _read_cues(h) for h in {h for h, _ in got}}
+    bad = sorted((h, sid) for (h, sid), d in got.items() if kept[h].get(sid) != d)
+    for h, sid in bad:
+        print(f'{h}/{sid}: ' + ('no cues kept' if sid not in kept[h] else 'score changed since its MP3'))
+    print(f'{len(bad)} of {len(got)} soundtracks stale')
+    if check:
+        return 1 if bad else 0
+    if bad:
+        music([], video=video, only={sid for _, sid in bad})
+    return 0

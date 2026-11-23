@@ -202,7 +202,7 @@ def build(out, want):
     by_home = {h['id']: h for h in homes}
     os.makedirs(CACHE, exist_ok=True)
     hits, bases, used = 0, {}, set()
-    with ProcessPoolExecutor() as pool:
+    with ProcessPoolExecutor(int(os.environ.get('PIXELHOME_JOBS', 0)) or None) as pool:     # default: one per core
         for (s, _, _), meta in zip(jobs, pool.map(_build_one, jobs)):
             hit = meta.pop('cached')
             used.update(meta.pop('_keys'))
