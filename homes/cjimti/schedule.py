@@ -8,6 +8,8 @@ A night's `program` starts at `shows` and runs its steps in order, each straight
   dict(sets=[playlist, ...])                    those sets, once each
   dict(rotation=[playlist, ...], until='HH:MM')  the playlists take turns until the next set would end past `until`
   dict(sets=[playlist], opener=sequence id)       that set, opened by one show played straight before it
+  dict(show=sequence id, at='HH:MM', until='HH:MM') one show over and over until `until` (past midnight as '25:00'),
+                                                from `at` if given, cutting short whatever was on
 A set is a playlist's shows, each after its spoken intro; every set but the night's first comes after its own
 five-minute intermission (an opener plays after it). `note` labels a step's sets on the Live page ('Early show').
 With `each_night`, the nights take its entries in turn, and '{each}' in a step stands for that night's (a playlist,
@@ -45,8 +47,23 @@ NIGHTS = [
                   dict(sets=FAMILY),
                   dict(sets=['{each}'], note='Late show')]),
     # The Ring through the eve of Hanukkah, the cycle starting over from Das Rheingold
-    dict(dates=('2026-11-06', '2026-12-03'), shows='17:30', day='daytime', late='thanksgiving',
+    dict(dates=('2026-11-06', '2026-11-23'), shows='17:30', day='daytime', late='thanksgiving',
          each_night=['das-rheingold', 'die-walkure', 'siegfried', 'gotterdammerung'],
+         program=[dict(sets=FAMILY),
+                  dict(sets=['{each}'], note='Early show'),
+                  dict(sets=FAMILY),
+                  dict(sets=['elijah']),
+                  dict(sets=FAMILY),
+                  dict(sets=['{each}'], note='Late show')]),
+    # A dance party: Disco Party from 9:09 pm until 1 am, cutting the night short (as it played)
+    dict(dates=('2026-11-24', '2026-11-24'), shows='17:30', day='daytime', late='thanksgiving',
+         program=[dict(sets=FAMILY),
+                  dict(sets=['siegfried'], note='Early show'),
+                  dict(sets=FAMILY),
+                  dict(sets=['elijah']),
+                  dict(show='other/disco-party', at='21:09', until='25:00', note='Dance party')]),
+    dict(dates=('2026-11-25', '2026-12-03'), shows='17:30', day='daytime', late='thanksgiving',
+         each_night=['gotterdammerung', 'das-rheingold', 'die-walkure', 'siegfried'],
          program=[dict(sets=FAMILY),
                   dict(sets=['{each}'], note='Early show'),
                   dict(sets=FAMILY),

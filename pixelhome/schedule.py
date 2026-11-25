@@ -105,6 +105,21 @@ def nights(home, metas):
 
             for step in spec['program']:
                 name = lambda pl: pl and (pl.replace('{each}', each) if each else pl)
+                if 'show' in step:              # one show playing over and over from `at` (cutting short what was on) until `until`
+                    m = by_id.get(name(step['show']))
+                    if m is None or m['kind'] != 'show':
+                        raise SystemExit(f"{home}/schedule.py: no show with music {step['show']!r}")
+                    if 'at' in step:
+                        t = _at(day, step['at'], tz)
+                        cut = _iso(t)
+                        blocks[:] = [dict(b, end=min(b['end'], cut)) for b in blocks if b['start'] < cut]
+                    end = _at(day, step['until'], tz)
+                    blocks.append(dict(info(m['playlist']), kind='show', id=m['id'], label=m['title'],
+                                       start=_iso(t), end=_iso(end), fseqName=m['fseqName']))
+                    if step.get('note'):
+                        blocks[-1]['note'] = step['note']
+                    t = end
+                    continue
                 if 'sets' in step:
                     for pl in step['sets']:
                         add(name(pl), step.get('note'), opener=name(step.get('opener')))
